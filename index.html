@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="阿記骰寶">
+<meta name="mobile-web-app-capable" content="yes">
+
+<title>骰寶 - 震撼圍骰同步版</title>
+<style>
+  :root { --table-green: #0a5c32; --gold: #ffd86b; --red: #ff4757; --green: #2ecc71; }
+  * { 
+    box-sizing: border-box; 
+    -webkit-tap-highlight-color: transparent; 
+    margin: 0; padding: 0; 
+    /* 防止手機雙擊縮放影響操作 */
+    touch-action: manipulation;
+  }
+  body { height: -webkit-fill-available; height: 100vh; width: 100vw; font-family: "Microsoft JhengHei", Arial; background: #05140b; color: #fff; display: flex; flex-direction: column; overflow: hidden; }
+html {
+  height: -webkit-fill-available;
+}
+  .topbar { height: 50px; background: linear-gradient(#4a0404, #2a0202); display: flex; align-items: center; padding: 0 15px; gap: 15px; border-bottom: 2px solid #5c0a0a; flex-shrink: 0; }
+  .balance-box { background: rgba(0,0,0,0.5); border: 1px solid var(--gold); border-radius: 15px; padding: 4px 15px; color: var(--gold); font-weight: bold; }
+  #centerDisplay { position: fixed; top: 45%; left: 50%; transform: translate(-50%, -50%) scale(0); background: rgba(0, 0, 0, 0.95); border: 4px solid var(--gold); border-radius: 20px; padding: 40px; z-index: 3000; text-align: center; display: none; box-shadow: 0 0 50px #000; transition: transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
+  #centerDisplay.show { display: block; transform: translate(-50%, -50%) scale(1.1); }
+  .big-dice { font-size: 80px; letter-spacing: 10px; margin-bottom: 10px; text-shadow: 0 0 20px #fff; }
+  .big-result { font-size: 42px; font-weight: 900; color: var(--gold); }
+  #winAmountEffect { position: fixed; top: 65%; left: 50%; transform: translate(-50%, -50%); font-size: 80px; font-weight: 900; color: #fff000; text-shadow: 0 0 20px #ffae00, 0 0 40px #ffae00, 2px 2px 10px #000; z-index: 5000; display: none; pointer-events: none; animation: floatUp 1.8s ease-out forwards; }
+  .triple-win-scale { transform: translate(-50%, -50%) scale(1.5) !important; color: #ff4757 !important; }
+  @keyframes floatUp { 0% { opacity: 0; transform: translate(-50%, 20%); } 30% { opacity: 1; transform: translate(-50%, -50%); } 70% { opacity: 1; transform: translate(-50%, -55%); } 100% { opacity: 0; transform: translate(-50%, -100%); } }
+  .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 4000; display: none; align-items: center; justify-content: center; }
+  .modal-content { background: #1a1a1a; border: 2px solid var(--gold); padding: 30px; border-radius: 20px; text-align: center; width: 340px; }
+  .deposit-btn { display: block; width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: none; font-size: 18px; font-weight: bold; cursor: pointer; }
+  .main-layout { display: flex; flex: 1; padding: 5px; gap: 5px; overflow: hidden; }
+  .history-sidebar { width: 140px; background: rgba(0,0,0,0.4); border-radius: 8px; display: flex; flex-direction: column; padding: 5px; overflow: hidden; }
+  #historyList { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+  .hist-item { display: flex; align-items: center; justify-content: space-between; padding: 4px 2px; font-size: 11px; border-bottom: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; }
+  .full-hist-btn { background: var(--gold); border: none; color: #000; font-weight: bold; font-size: 12px; padding: 8px; border-radius: 5px; margin-top: 5px; cursor: pointer; }
+  #fullHistoryOverlay { background: rgba(0,0,0,0.98); flex-direction: column; padding: 20px; }
+  #fullHistoryList { width: 100%; height: 70vh; display: flex; flex-flow: column wrap; align-content: flex-start; gap: 6px; overflow: hidden; }
+  .full-hist-item { width: 135px; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 4px; display: flex; justify-content: space-between; border: 1px solid rgba(255,215,107,0.1); }
+  .sum-big { color: var(--gold); } .sum-small { color: #5cc9ff; } .sum-triple { background: var(--red); color: #fff; border-radius: 3px; padding: 0 2px; }
+  .table-container { flex: 1; display: flex; flex-direction: column; position: relative; }
+  .betting-table { flex: 1; background: var(--table-green); border: 3px solid #084325; border-radius: 15px; display: grid; grid-template-rows: repeat(4, 1fr); gap: 1px; padding: 2px; }
+  .bet-row { display: flex; gap: 1px; }
+  .bet-cell { flex: 1; border: 1px solid rgba(255,215,0,0.1); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; cursor: pointer; font-weight: bold; }
+  .odds-label { font-size: 9px; color: rgba(255,255,255,0.6); font-weight: normal; }
+  .chip-on-cell { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 32px; height: 32px; border-radius: 50%; background: radial-gradient(circle, #ff4757, #b91c1c); border: 2px dashed #fff; font-size: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 10; }
+  .timer-box { position: absolute; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: rgba(128,0,128,0.7); border: 3px solid var(--gold); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: bold; color: var(--gold); }
+  .footer-bar { height: 125px; background: linear-gradient(#333, #111); border-top: 2px solid #555; display: flex; align-items: center; padding: 0 10px; flex-shrink: 0; }
+  .info-area { width: 80px; text-align: center; flex-shrink: 0; }
+  .info-area div:first-child { font-size: 11px; color: var(--gold); }
+  .info-area #totalBetText { font-size: 20px; font-weight: bold; }
+  .chip-area { display: flex; gap: 10px; flex: 1; justify-content: center; align-items: center; }
+  .chip-btn { width: 56px; height: 56px; border-radius: 50%; border: 3px solid #fff; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; transition: transform 0.1s; }
+  .chip-btn.active { transform: translateY(-10px); border-color: var(--gold); box-shadow: 0 0 15px var(--gold); }
+  .btn-area-row { display: flex; gap: 6px; height: 85px; flex-shrink: 0; width: 380px; }
+  .btn-ui { flex: 1; height: 100%; border-radius: 10px; font-weight: 900; border: none; background: #eee; font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #000; }
+  .btn-auto-active { background: var(--gold) !important; box-shadow: 0 0 12px var(--gold); }
+</style>
+</head>
+<body>
+
+<audio id="sndChip" src="https://assets.mixkit.co/active_storage/sfx/3005/3005-preview.mp3" preload="auto"></audio>
+<audio id="sndDice" src="https://assets.mixkit.co/active_storage/sfx/2045/2045-preview.mp3" preload="auto"></audio>
+<audio id="sndWin" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="auto"></audio>
+<audio id="sndTriple" src="https://www.myinstants.com/media/sounds/explosion.mp3"></audio>
+<audio id="sndTick" src="https://assets.mixkit.co/active_storage/sfx/1115/1115-preview.mp3" preload="auto"></audio>
+<audio id="sndCash" src="https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3" preload="auto"></audio>
+
+<div id="centerDisplay">
+  <div class="big-dice" id="bigDiceIcons"></div>
+  <div class="big-result" id="bigResultText"></div>
+</div>
+<div id="winAmountEffect"></div>
+
+<div id="depositModal" class="modal">
+  <div class="modal-content">
+    <div style="font-size:24px; color:var(--gold); margin-bottom:20px; font-weight:bold;">💸刷阿記的卡儲值</div>
+    <button class="deposit-btn" style="background:#3b82f6; color:#fff;" onclick="handleDeposit(1000)">儲值 1,000</button>
+    <button class="deposit-btn" style="background:#a855f7; color:#fff;" onclick="handleDeposit(5000)">儲值 5,000</button>
+    <button class="deposit-btn" style="background:#f59e0b; color:#fff;" onclick="handleDeposit(10000)">儲值 10,000</button>
+    <button class="deposit-btn" style="background:#444; color:#ccc;" onclick="closeModal('depositModal')">算了</button>
+  </div>
+</div>
+
+<div id="fullHistoryOverlay" class="modal">
+  <div style="color:var(--gold); font-size:24px; margin-bottom:15px; font-weight:bold;">完整紀錄</div>
+  <div id="fullHistoryList"></div>
+  <button class="btn-ui" style="background:var(--gold); margin-top:20px; width:150px; height: 50px; flex: none;" onclick="closeModal('fullHistoryOverlay')">關閉</button>
+</div>
+
+<div class="topbar">
+  <div class="sound-toggle" onclick="toggleMute()" id="soundIcon" style="cursor:pointer; font-size:20px;">🔊</div>
+  <div class="balance-box">💰 <span id="balanceText">0</span></div>
+  <marquee style="flex:1; color:var(--gold);">有問題找阿記</marquee>
+</div>
+
+<div class="main-layout">
+  <div class="history-sidebar">
+    <div style="text-align:center; color:var(--gold); font-size:12px; font-weight:bold; padding-bottom:5px; border-bottom:1px solid #444;">開骰紀錄</div>
+    <div id="historyList"></div>
+    <button class="full-hist-btn" onclick="openModal('fullHistoryOverlay')">完整紀錄 ▽</button>
+  </div>
+  <div class="table-container">
+    <div class="betting-table">
+      <div class="bet-row">
+        <div class="bet-cell" style="flex:1.2" onclick="placeBet('small')">小<div class="odds-label">1:1</div><div id="chip-small"></div></div>
+        <div class="bet-cell" onclick="placeBet('triple_1')">111<div class="odds-label">1:210</div><div id="chip-triple_1"></div></div>
+        <div class="bet-cell" onclick="placeBet('triple_2')">222<div class="odds-label">1:210</div><div id="chip-triple_2"></div></div>
+        <div class="bet-cell" onclick="placeBet('triple_3')">333<div class="odds-label">1:210</div><div id="chip-triple_3"></div></div>
+        <div class="bet-cell" style="background:rgba(255,216,107,0.1)" onclick="placeBet('anyTriple')">全圍<div class="odds-label">1:34</div><div id="chip-anyTriple"></div></div>
+        <div class="bet-cell" onclick="placeBet('triple_4')">444<div class="odds-label">1:210</div><div id="chip-triple_4"></div></div>
+        <div class="bet-cell" onclick="placeBet('triple_5')">555<div class="odds-label">1:210</div><div id="chip-triple_5"></div></div>
+        <div class="bet-cell" onclick="placeBet('triple_6')">666<div class="odds-label">1:210</div><div id="chip-triple_6"></div></div>
+        <div class="bet-cell" style="flex:1.2" onclick="placeBet('big')">大<div class="odds-label">1:1</div><div id="chip-big"></div></div>
+      </div>
+      <div class="bet-row" id="sumRow"></div>
+      <div class="bet-row" id="singleRow"></div>
+    </div>
+    <div class="timer-box" id="timer">20</div>
+  </div>
+</div>
+
+<div class="footer-bar">
+  <div class="info-area">
+    <div>總押注</div>
+    <div id="totalBetText">0</div>
+  </div>
+  <div class="chip-area">
+    <div class="chip-btn" style="background:#3b82f6;" onclick="selectChip(1, this)">1</div>
+    <div class="chip-btn active" style="background:#a855f7;" onclick="selectChip(5, this)">5</div>
+    <div class="chip-btn" style="background:#ef4444;" onclick="selectChip(10, this)">10</div>
+    <div class="chip-btn" style="background:var(--green);" onclick="selectChip(60, this)">60</div>
+  </div>
+  <div class="btn-area-row">
+    <button class="btn-ui" style="background:var(--red); color:#fff;" onclick="openModal('depositModal')">謀吉阿</button>
+    <button class="btn-ui" id="btnAuto" onclick="toggleAuto()">自動玩</button>
+    <button class="btn-ui" style="background:var(--gold);" onclick="repeatBets()">續押</button>
+    <button class="btn-ui" onclick="clearBets()">清除</button>
+  
+  </div>
+</div>
+
+<script>
+// --- 手機音效補丁：點擊螢幕解鎖所有音效 ---
+document.addEventListener('click', function unlock() {
+    const audios = document.querySelectorAll('audio');
+    audios.forEach(a => { a.play().then(() => { a.pause(); a.currentTime = 0; }).catch(() => {}); });
+    document.removeEventListener('click', unlock);
+}, { once: true });
+
+let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
+let historyData = JSON.parse(localStorage.getItem('sicbo_history')) || [];
+let currentChip = 5, totalBet = 0, betData = {}, lastRoundBets = {}, isAutoPlaying = false, isMuted = false;
+let timeLeft = 20, forceTriple = false;
+const BET_LIMIT = 60; const DICE_CHARS = ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
+const SUM_ODDS = { 4:69, 17:69, 5:34, 16:34, 6:20, 15:20, 7:13, 14:13, 8:9, 13:9, 9:7.4, 10:6.8, 11:6.8, 12:7.4 };
+
+function playSound(id) { 
+  if (!isMuted) { 
+    const s = document.getElementById(id); 
+    if(s) { 
+      s.volume = 1.0;
+      s.currentTime = 0; 
+      s.play().catch(()=>{}); 
+    } 
+  } 
+}
+function toggleMute() { isMuted = !isMuted; document.getElementById('soundIcon').textContent = isMuted ? '🔇' : '🔊'; }
+function handleDeposit(amt) { balance += amt; playSound('sndCash'); updateUI(); saveData(); closeModal('depositModal'); }
+function saveData() { localStorage.setItem('sicbo_balance', balance); localStorage.setItem('sicbo_history', JSON.stringify(historyData)); }
+function openModal(id) { document.getElementById(id).style.display = 'flex'; if(id==='fullHistoryOverlay') renderFullHistory(); }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+function initTable() {
+  const sRow = document.getElementById('sumRow'), gRow = document.getElementById('singleRow');
+  for(let i=4; i<=17; i++) sRow.innerHTML += `<div class="bet-cell" onclick="placeBet('sum_${i}')">${i}<div class="odds-label">1:${SUM_ODDS[i]}</div><div id="chip-sum_${i}"></div></div>`;
+  for(let i=1; i<=6; i++) gRow.innerHTML += `<div class="bet-cell" onclick="placeBet('single_${i}')">${i}<div class="odds-label">1:1</div><div id="chip-single_${i}"></div></div>`;
+  updateUI(); renderHistory();
+}
+
+function selectChip(val, el) { currentChip = val; document.querySelectorAll('.chip-btn').forEach(b => b.classList.remove('active')); el.classList.add('active'); playSound('sndTick'); }
+
+function placeBet(key) {
+  if (timeLeft <= 3) return;
+  if (balance < currentChip) { openModal('depositModal'); return; }
+  let cur = betData[key] || 0; 
+  if (cur + currentChip > BET_LIMIT) return;
+  betData[key] = cur + currentChip; balance -= currentChip; totalBet += currentChip;
+  playSound('sndChip'); updateUI(); renderChip(key);
+}
+
+function renderChip(key) {
+  const container = document.getElementById('chip-' + key);
+  if(!container) return;
+  let chip = container.querySelector('.chip-on-cell') || document.createElement('div');
+  chip.className = 'chip-on-cell'; chip.textContent = betData[key];
+  container.appendChild(chip);
+}
+
+function updateUI() {
+  document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString();
+  document.getElementById('totalBetText').textContent = totalBet.toLocaleString();
+}
+
+function showWinEffect(amount, isTriple) {
+  if (amount <= 0) return;
+  const effect = document.getElementById('winAmountEffect');
+  effect.textContent = `+${amount.toLocaleString()}`;
+  if (isTriple) effect.classList.add('triple-win-scale');
+  else effect.classList.remove('triple-win-scale');
+  setTimeout(() => { effect.style.display = 'block'; setTimeout(() => { effect.style.display = 'none'; }, 2000); }, 1200);
+}
+
+function testTriple() { forceTriple = true; timeLeft = 0; }
+
+function simulateRound() {
+  playSound('sndDice');
+  let d;
+  if (forceTriple) { let v = Math.floor(Math.random()*6)+1; d = [v, v, v]; forceTriple = false; }
+  else { d = [Math.floor(Math.random()*6)+1, Math.floor(Math.random()*6)+1, Math.floor(Math.random()*6)+1]; }
+
+  const sum = d[0]+d[1]+d[2], isTriple = (d[0]===d[1] && d[1]===d[2]);
+  const center = document.getElementById('centerDisplay');
+  document.getElementById('bigDiceIcons').textContent = `${DICE_CHARS[d[0]]} ${DICE_CHARS[d[1]]} ${DICE_CHARS[d[2]]}`;
+  document.getElementById('bigResultText').textContent = `${sum} 點 - ${isTriple ? "圍骰" : (sum >= 11 ? "大" : "小")}`;
+  
+  center.style.display = 'block'; 
+  setTimeout(() => center.classList.add('show'), 50);
+  
+  // 同步播放
+  if (isTriple) { playSound('sndTriple'); }
+
+  let winTotal = 0;
+  for (let key in betData) {
+    let amt = betData[key], won = 0;
+    if (!isTriple) { if (key === 'small' && sum <= 10) won = amt * 1; if (key === 'big' && sum >= 11) won = amt * 1; }
+    if (key === `sum_${sum}`) won = amt * SUM_ODDS[sum];
+    if (key === 'anyTriple' && isTriple) won = amt * 34;
+    if (key === `triple_${d[0]}` && isTriple) won = amt * 210;
+    if (key === `single_${d[0]}`) won += amt * 1;
+    if (key === `single_${d[1]}`) won += amt * 1;
+    if (key === `single_${d[2]}`) won += amt * 1;
+    if (won > 0) winTotal += (amt + won);
+  }
+
+  balance += winTotal;
+  if (winTotal > 0 && !isTriple) { setTimeout(() => { playSound('sndWin'); }, 1200); }
+  if (winTotal > 0) showWinEffect(winTotal, isTriple); 
+  
+  historyData.unshift({ dice: d.join(' '), sum, type: isTriple ? 'triple' : (sum >= 11 ? 'big' : 'small') });
+  setTimeout(() => {
+    center.classList.remove('show'); setTimeout(() => center.style.display = 'none', 300);
+    lastRoundBets = JSON.parse(JSON.stringify(betData)); betData = {}; totalBet = 0;
+    document.querySelectorAll('.chip-on-cell').forEach(c => c.remove());
+    updateUI(); renderHistory(); saveData();
+    if (isAutoPlaying) setTimeout(repeatBets, 600);
+  }, 4500);
+}
+
+function repeatBets() {
+  for (let k in lastRoundBets) {
+    let clicks = Math.floor(lastRoundBets[k] / currentChip);
+    for(let i=0; i<clicks; i++) placeBet(k);
+  }
+}
+function clearBets() { balance += totalBet; totalBet = 0; betData = {}; document.querySelectorAll('.chip-on-cell').forEach(c => c.remove()); updateUI(); }
+function toggleAuto() { isAutoPlaying = !isAutoPlaying; document.getElementById('btnAuto').classList.toggle('btn-auto-active', isAutoPlaying); if (isAutoPlaying && timeLeft > 3) repeatBets(); }
+function renderHistory() { document.getElementById('historyList').innerHTML = historyData.map(h => `<div class="hist-item"><span>${h.dice}</span><span class="sum-${h.type}">${h.sum}</span></div>`).join(''); }
+function renderFullHistory() { document.getElementById('fullHistoryList').innerHTML = historyData.slice(0, 300).map(h => `<div class="full-hist-item"><span>${h.dice}</span><span class="sum-${h.type}">${h.sum}</span></div>`).join(''); }
+
+setInterval(() => { 
+  timeLeft--; 
+  if (timeLeft < 0) { timeLeft = 20; simulateRound(); } 
+  else if (timeLeft <= 5 && timeLeft > 0) playSound('sndTick');
+  document.getElementById('timer').textContent = timeLeft; 
+}, 1000);
+
+initTable();
+</script>
+</body>
+</html>
