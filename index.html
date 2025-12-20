@@ -15,65 +15,75 @@
     box-sizing: border-box; 
     -webkit-tap-highlight-color: transparent; 
     margin: 0; padding: 0; 
-    /* 防止手機雙擊縮放影響操作 */
     touch-action: manipulation;
   }
-  body { height: -webkit-fill-available; height: 100vh; width: 100vw; font-family: "Microsoft JhengHei", Arial; background: #05140b; color: #fff; display: flex; flex-direction: column; overflow: hidden; }
-html {
-  height: -webkit-fill-available;
-}
-.footer-bar { 
-  height: 125px; 
-  background: linear-gradient(#333, #111); 
-  border-top: 2px solid #555; 
-  display: flex; 
-  align-items: center; 
-  padding-left: calc(10px + env(safe-area-inset-left));
-  padding-right: calc(10px + env(safe-area-inset-right));
-  padding-bottom: env(safe-area-inset-bottom); /* 避開底部小白條 */
-  flex-shrink: 0; 
-}
-  .topbar { height: 50px; background: linear-gradient(#4a0404, #2a0202); display: flex; align-items: center; padding-left: calc(15px + env(safe-area-inset-left)); 
-  padding-right: calc(15px + env(safe-area-inset-right)); gap: 15px; border-bottom: 2px solid #5c0a0a; flex-shrink: 0; }
+  body { height: 100dvh; width: 100vw; font-family: "Microsoft JhengHei", Arial; background: #05140b; color: #fff; display: flex; flex-direction: column; overflow: hidden; }
+  
+  /* 頂部列修正：增加音樂按鈕樣式 */
+  .topbar { 
+    height: 50px; 
+    background: linear-gradient(#4a0404, #2a0202); 
+    display: flex; 
+    align-items: center; 
+    padding-left: calc(15px + env(safe-area-inset-left)); 
+    padding-right: calc(15px + env(safe-area-inset-right)); 
+    gap: 15px; 
+    border-bottom: 2px solid #5c0a0a; 
+    flex-shrink: 0; 
+  }
+  .sound-toggle {
+    background: rgba(255,255,255,0.1);
+    padding: 4px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--gold);
+    cursor: pointer;
+    font-size: 18px;
+  }
+
   .balance-box { background: rgba(0,0,0,0.5); border: 1px solid var(--gold); border-radius: 15px; padding: 4px 15px; color: var(--gold); font-weight: bold; }
+  
   #centerDisplay { position: fixed; top: 45%; left: 50%; transform: translate(-50%, -50%) scale(0); background: rgba(0, 0, 0, 0.95); border: 4px solid var(--gold); border-radius: 20px; padding: 40px; z-index: 3000; text-align: center; display: none; box-shadow: 0 0 50px #000; transition: transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
   #centerDisplay.show { display: block; transform: translate(-50%, -50%) scale(1.1); }
   .big-dice { font-size: 80px; letter-spacing: 10px; margin-bottom: 10px; text-shadow: 0 0 20px #fff; }
   .big-result { font-size: 42px; font-weight: 900; color: var(--gold); }
+  
   #winAmountEffect { position: fixed; top: 65%; left: 50%; transform: translate(-50%, -50%); font-size: 80px; font-weight: 900; color: #fff000; text-shadow: 0 0 20px #ffae00, 0 0 40px #ffae00, 2px 2px 10px #000; z-index: 5000; display: none; pointer-events: none; animation: floatUp 1.8s ease-out forwards; }
   .triple-win-scale { transform: translate(-50%, -50%) scale(1.5) !important; color: #ff4757 !important; }
   @keyframes floatUp { 0% { opacity: 0; transform: translate(-50%, 20%); } 30% { opacity: 1; transform: translate(-50%, -50%); } 70% { opacity: 1; transform: translate(-50%, -55%); } 100% { opacity: 0; transform: translate(-50%, -100%); } }
+
   .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 4000; display: none; align-items: center; justify-content: center; }
   .modal-content { background: #1a1a1a; border: 2px solid var(--gold); padding: 30px; border-radius: 20px; text-align: center; width: 340px; }
   .deposit-btn { display: block; width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: none; font-size: 18px; font-weight: bold; cursor: pointer; }
-  .main-layout { display: flex; flex: 1; padding: 5px; padding-left: calc(5px + env(safe-area-inset-left));
-  padding-right: calc(5px + env(safe-area-inset-right)); gap: 5px; overflow: hidden; }
+
+  .main-layout { display: flex; flex: 1; padding: 5px; padding-left: calc(5px + env(safe-area-inset-left)); padding-right: calc(5px + env(safe-area-inset-right)); gap: 5px; overflow: hidden; }
   .history-sidebar { width: 140px; background: rgba(0,0,0,0.4); border-radius: 8px; display: flex; flex-direction: column; padding: 5px; overflow: hidden; }
   #historyList { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
   .hist-item { display: flex; align-items: center; justify-content: space-between; padding: 4px 2px; font-size: 11px; border-bottom: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; }
   .full-hist-btn { background: var(--gold); border: none; color: #000; font-weight: bold; font-size: 12px; padding: 8px; border-radius: 5px; margin-top: 5px; cursor: pointer; }
-  #fullHistoryOverlay { background: rgba(0,0,0,0.98); flex-direction: column; padding: 20px; padding-left: calc(5px + env(safe-area-inset-left));
-  padding-right: calc(5px + env(safe-area-inset-right)); }
+
+  /* 完整紀錄優化：縮小間距與字體，增加顯示量 */
+  #fullHistoryOverlay { background: rgba(0,0,0,0.98); flex-direction: column; padding: 20px; padding-left: calc(10px + env(safe-area-inset-left)); padding-right: calc(10px + env(safe-area-inset-right)); }
   #fullHistoryList { 
-  width: 100%; 
-  height: 75vh; /* 稍微拉高顯示區域 */
-  display: flex; 
-  flex-flow: column wrap; 
-  align-content: flex-start; 
-  gap: 3px; /* 縮小上下筆的間距（原本是 6px） */
-  overflow-x: auto; /* 如果手機寬度不夠，允許左右滑動看更多欄 */
-  -webkit-overflow-scrolling: touch;
-}
+    width: 100%; 
+    height: 75vh; 
+    display: flex; 
+    flex-flow: column wrap; 
+    align-content: flex-start; 
+    gap: 3px; 
+    overflow-x: auto; 
+    -webkit-overflow-scrolling: touch;
+  }
   .full-hist-item { 
-  width: 105px; /* 縮窄寬度（原本是 135px），讓橫向可以塞更多欄 */
-  background: rgba(255,255,255,0.05); 
-  padding: 4px 6px; /* 縮小內邊距 */
-  border-radius: 4px; 
-  display: flex; 
-  justify-content: space-between; 
-  border: 1px solid rgba(255,215,107,0.1); 
-  font-size: 10px; /* 縮小字體 */
-}
+    width: 105px; 
+    background: rgba(255,255,255,0.05); 
+    padding: 4px 6px; 
+    border-radius: 4px; 
+    display: flex; 
+    justify-content: space-between; 
+    border: 1px solid rgba(255,215,107,0.1); 
+    font-size: 10px;
+  }
+
   .sum-big { color: var(--gold); } .sum-small { color: #5cc9ff; } .sum-triple { background: var(--red); color: #fff; border-radius: 3px; padding: 0 2px; }
   .table-container { flex: 1; display: flex; flex-direction: column; position: relative; }
   .betting-table { flex: 1; background: var(--table-green); border: 3px solid #084325; border-radius: 15px; display: grid; grid-template-rows: repeat(4, 1fr); gap: 1px; padding: 2px; }
@@ -82,7 +92,18 @@ html {
   .odds-label { font-size: 9px; color: rgba(255,255,255,0.6); font-weight: normal; }
   .chip-on-cell { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 32px; height: 32px; border-radius: 50%; background: radial-gradient(circle, #ff4757, #b91c1c); border: 2px dashed #fff; font-size: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 10; }
   .timer-box { position: absolute; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: rgba(128,0,128,0.7); border: 3px solid var(--gold); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: bold; color: var(--gold); }
-  .footer-bar { height: 125px; background: linear-gradient(#333, #111); border-top: 2px solid #555; display: flex; align-items: center; padding: 0 10px; flex-shrink: 0; }
+
+  .footer-bar { 
+    height: 125px; 
+    background: linear-gradient(#333, #111); 
+    border-top: 2px solid #555; 
+    display: flex; 
+    align-items: center; 
+    padding-left: calc(10px + env(safe-area-inset-left));
+    padding-right: calc(10px + env(safe-area-inset-right));
+    padding-bottom: env(safe-area-inset-bottom);
+    flex-shrink: 0; 
+  }
   .info-area { width: 80px; text-align: center; flex-shrink: 0; }
   .info-area div:first-child { font-size: 11px; color: var(--gold); }
   .info-area #totalBetText { font-size: 20px; font-weight: bold; }
@@ -102,6 +123,7 @@ html {
 <audio id="sndTriple" src="https://www.myinstants.com/media/sounds/explosion.mp3"></audio>
 <audio id="sndTick" src="https://assets.mixkit.co/active_storage/sfx/1115/1115-preview.mp3" preload="auto"></audio>
 <audio id="sndCash" src="https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3" preload="auto"></audio>
+<audio id="bgm" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" loop preload="auto"></audio>
 
 <div id="centerDisplay">
   <div class="big-dice" id="bigDiceIcons"></div>
@@ -126,7 +148,7 @@ html {
 </div>
 
 <div class="topbar">
-  <div class="sound-toggle" onclick="toggleMute()" id="soundIcon" style="cursor:pointer; font-size:20px;">🔊</div>
+  <div class="sound-toggle" onclick="toggleMute()" id="soundIcon">🔊</div>
   <div class="balance-box">💰 <span id="balanceText">0</span></div>
   <marquee style="flex:1; color:var(--gold);">轉橫的玩，有問題找阿記</marquee>
 </div>
@@ -173,15 +195,21 @@ html {
     <button class="btn-ui" id="btnAuto" onclick="toggleAuto()">自動玩</button>
     <button class="btn-ui" style="background:var(--gold);" onclick="repeatBets()">續押</button>
     <button class="btn-ui" onclick="clearBets()">清除</button>
-  
   </div>
 </div>
 
 <script>
-// --- 手機音效補丁：點擊螢幕解鎖所有音效 ---
+// --- 手機音效補丁：點擊螢幕解鎖音效與背景音樂 ---
 document.addEventListener('click', function unlock() {
     const audios = document.querySelectorAll('audio');
-    audios.forEach(a => { a.play().then(() => { a.pause(); a.currentTime = 0; }).catch(() => {}); });
+    const bgm = document.getElementById('bgm');
+    audios.forEach(a => { 
+        a.play().then(() => { 
+            if(a.id !== 'bgm') { a.pause(); a.currentTime = 0; }
+        }).catch(() => {}); 
+    });
+    // 設定背景音樂音量並播放
+    if (!isMuted && bgm) { bgm.volume = 0.3; bgm.play().catch(()=>{}); }
     document.removeEventListener('click', unlock);
 }, { once: true });
 
@@ -195,14 +223,21 @@ const SUM_ODDS = { 4:69, 17:69, 5:34, 16:34, 6:20, 15:20, 7:13, 14:13, 8:9, 13:9
 function playSound(id) { 
   if (!isMuted) { 
     const s = document.getElementById(id); 
-    if(s) { 
-      s.volume = 1.0;
-      s.currentTime = 0; 
-      s.play().catch(()=>{}); 
-    } 
+    if(s) { s.volume = 1.0; s.currentTime = 0; s.play().catch(()=>{}); } 
   } 
 }
-function toggleMute() { isMuted = !isMuted; document.getElementById('soundIcon').textContent = isMuted ? '🔇' : '🔊'; }
+
+function toggleMute() { 
+    isMuted = !isMuted; 
+    const bgm = document.getElementById('bgm');
+    const icon = document.getElementById('soundIcon');
+    icon.textContent = isMuted ? '🔇' : '🔊'; 
+    if(bgm) {
+        if(isMuted) bgm.pause();
+        else { bgm.volume = 0.3; bgm.play().catch(()=>{}); }
+    }
+}
+
 function handleDeposit(amt) { balance += amt; playSound('sndCash'); updateUI(); saveData(); closeModal('depositModal'); }
 function saveData() { localStorage.setItem('sicbo_balance', balance); localStorage.setItem('sicbo_history', JSON.stringify(historyData)); }
 function openModal(id) { document.getElementById(id).style.display = 'flex'; if(id==='fullHistoryOverlay') renderFullHistory(); }
@@ -248,8 +283,6 @@ function showWinEffect(amount, isTriple) {
   setTimeout(() => { effect.style.display = 'block'; setTimeout(() => { effect.style.display = 'none'; }, 2000); }, 1200);
 }
 
-function testTriple() { forceTriple = true; timeLeft = 0; }
-
 function simulateRound() {
   playSound('sndDice');
   let d;
@@ -264,7 +297,6 @@ function simulateRound() {
   center.style.display = 'block'; 
   setTimeout(() => center.classList.add('show'), 50);
   
-  // 同步播放
   if (isTriple) { playSound('sndTriple'); }
 
   let winTotal = 0;
