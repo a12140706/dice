@@ -22,7 +22,19 @@
 html {
   height: -webkit-fill-available;
 }
-  .topbar { height: 50px; background: linear-gradient(#4a0404, #2a0202); display: flex; align-items: center; padding: 0 15px; gap: 15px; border-bottom: 2px solid #5c0a0a; flex-shrink: 0; }
+.footer-bar { 
+  height: 125px; 
+  background: linear-gradient(#333, #111); 
+  border-top: 2px solid #555; 
+  display: flex; 
+  align-items: center; 
+  padding-left: calc(10px + env(safe-area-inset-left));
+  padding-right: calc(10px + env(safe-area-inset-right));
+  padding-bottom: env(safe-area-inset-bottom); /* 避開底部小白條 */
+  flex-shrink: 0; 
+}
+  .topbar { height: 50px; background: linear-gradient(#4a0404, #2a0202); display: flex; align-items: center; padding-left: calc(15px + env(safe-area-inset-left)); 
+  padding-right: calc(15px + env(safe-area-inset-right)); gap: 15px; border-bottom: 2px solid #5c0a0a; flex-shrink: 0; }
   .balance-box { background: rgba(0,0,0,0.5); border: 1px solid var(--gold); border-radius: 15px; padding: 4px 15px; color: var(--gold); font-weight: bold; }
   #centerDisplay { position: fixed; top: 45%; left: 50%; transform: translate(-50%, -50%) scale(0); background: rgba(0, 0, 0, 0.95); border: 4px solid var(--gold); border-radius: 20px; padding: 40px; z-index: 3000; text-align: center; display: none; box-shadow: 0 0 50px #000; transition: transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
   #centerDisplay.show { display: block; transform: translate(-50%, -50%) scale(1.1); }
@@ -34,7 +46,8 @@ html {
   .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 4000; display: none; align-items: center; justify-content: center; }
   .modal-content { background: #1a1a1a; border: 2px solid var(--gold); padding: 30px; border-radius: 20px; text-align: center; width: 340px; }
   .deposit-btn { display: block; width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: none; font-size: 18px; font-weight: bold; cursor: pointer; }
-  .main-layout { display: flex; flex: 1; padding: 5px; gap: 5px; overflow: hidden; }
+  .main-layout { display: flex; flex: 1; padding: 5px; padding-left: calc(5px + env(safe-area-inset-left));
+  padding-right: calc(5px + env(safe-area-inset-right)); gap: 5px; overflow: hidden; }
   .history-sidebar { width: 140px; background: rgba(0,0,0,0.4); border-radius: 8px; display: flex; flex-direction: column; padding: 5px; overflow: hidden; }
   #historyList { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
   .hist-item { display: flex; align-items: center; justify-content: space-between; padding: 4px 2px; font-size: 11px; border-bottom: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; }
@@ -96,7 +109,7 @@ html {
 <div class="topbar">
   <div class="sound-toggle" onclick="toggleMute()" id="soundIcon" style="cursor:pointer; font-size:20px;">🔊</div>
   <div class="balance-box">💰 <span id="balanceText">0</span></div>
-  <marquee style="flex:1; color:var(--gold);">有問題找阿記</marquee>
+  <marquee style="flex:1; color:var(--gold);">轉橫的玩，有問題找阿記</marquee>
 </div>
 
 <div class="main-layout">
