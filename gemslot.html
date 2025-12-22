@@ -4,12 +4,6 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
 <title>寶石礦坑</title>
-<link rel="manifest" href="manifest.json">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="阿記娛樂城">
-<meta name="mobile-web-app-capable" content="yes">
-
 <style>
   :root {
     --bg-dark: #1a0f0f; --btn-gold: #ffbe0b; --text-light: #fefefe;
@@ -20,7 +14,7 @@
     height: 100dvh; width: 100vw; overflow: hidden; background: var(--bg-dark); color: var(--text-light);
     display: flex; flex-direction: column; justify-content: space-between; align-items: center;
     padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right);
-    transition: background 0.5s ease;
+    transition: background 0.8s ease;
   }
   
   @media (orientation: portrait) {
@@ -89,7 +83,7 @@
 <div class="bottom-bar">
   <div class="bet-control">
     <button class="bet-btn" onclick="changeBet(-1)">◀</button>
-    <div class="bet-info"><div id="betDisplay" style="font-size: 20px; color: var(--btn-gold); font-weight: bold;">$50</div></div>
+    <div id="betDisplay" style="font-size: 20px; color: var(--btn-gold); font-weight: bold; min-width: 60px; text-align: center;">$50</div>
     <button class="bet-btn" onclick="changeBet(1)">▶</button>
   </div>
   <button id="autoBtn" class="auto-btn" onclick="toggleAuto()">自動玩</button>
@@ -115,13 +109,14 @@ let isMuted = false;
 let isCrazyMode = false;
 let isAuto = false;
 let currentBgmIdx = 1;
+let isAudioUnlocked = false; 
 const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
 const GRID_SIZE = 5;
 const betOptions = [10, 50, 100, 300, 500, 1000];
 let currentBetIdx = 1;
 
-// 遊戲邏輯變數
-let hasBombThisTurn = false;
+let hasBombThisAction = false; // 這次消除/掉落是否有炸彈
+
 let grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
 
 const GEMS = ['💎','💰','💰','🔮','🔮','🍏','🍏','🏮','🏮','🌟','🌟','🌟','✨','✨','✨','⛏️','⛏️','⛏️','⛏️','🪨','🪨','🪨','🪨','🪵','🪵','🪵','🪵','💣'];
@@ -137,22 +132,20 @@ function updateUI() {
     document.getElementById('betDisplay').textContent = "$" + currentBet;
 }
 
-// ================= 音樂控制系統 =================
-
+// 音樂控制
 function stopAllBGM() {
-    bgmList.forEach(id => { if(id) { const a = document.getElementById(id); a.pause(); a.muted = true; } });
+    bgmList.forEach(id => { if(id) { const a = document.getElementById(id); a.pause(); a.muted = true; a.currentTime = 0; } });
     const crazy = document.getElementById('bgmCrazy');
-    crazy.pause(); crazy.muted = true;
+    crazy.pause(); crazy.muted = true; crazy.currentTime = 0;
 }
 
 function cycleBGM(shouldNext = true) {
+    if (!isAudioUnlocked) return;
     stopAllBGM();
     if (shouldNext) currentBgmIdx = (currentBgmIdx + 1) % 4;
     const btn = document.getElementById('bgmBtn');
-    
-    if (currentBgmIdx === 0) {
-        btn.textContent = '🚫 音樂關';
-    } else {
+    if (currentBgmIdx === 0) { btn.textContent = '🚫 音樂關'; } 
+    else {
         btn.textContent = '🎵 音樂 ' + currentBgmIdx;
         if (!isMuted && !isCrazyMode) {
             const bgm = document.getElementById(bgmList[currentBgmIdx]);
@@ -166,60 +159,31 @@ function toggleMute() {
     document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊';
     if (isMuted) stopAllBGM();
     else {
-        if (isCrazyMode) {
-            const crazy = document.getElementById('bgmCrazy');
-            crazy.muted = false; crazy.play().catch(()=>{});
-        } else {
-            cycleBGM(false);
-        }
+        if (!isAudioUnlocked) return;
+        if (isCrazyMode) { const crazy = document.getElementById('bgmCrazy'); crazy.muted = false; crazy.play().catch(()=>{}); } 
+        else { cycleBGM(false); }
     }
 }
 
-// 核心解鎖：移植骰寶方案
 function unlockAudio() {
-    const audios = document.querySelectorAll('audio');
-    audios.forEach(a => {
-        const oldMuted = a.muted;
-        a.muted = true;
-        a.play().then(() => {
-            a.pause();
-            a.currentTime = 0;
-            a.muted = oldMuted;
-        }).catch(() => {});
+    if (isAudioUnlocked) return;
+    document.querySelectorAll('audio').forEach(a => {
+        a.muted = true; a.play().then(() => { a.pause(); a.currentTime = 0; }).catch(() => {});
     });
-
+    isAudioUnlocked = true;
     setTimeout(() => {
-        if (!isMuted && currentBgmIdx !== 0 && !isCrazyMode) {
-            const bgm = document.getElementById(bgmList[currentBgmIdx]);
-            if (bgm) { bgm.muted = false; bgm.volume = 0.3; bgm.play().catch(()=>{}); }
+        if (!isMuted) {
+            if (isCrazyMode) { const c = document.getElementById('bgmCrazy'); c.muted = false; c.volume = 0.4; c.play().catch(()=>{}); } 
+            else if (currentBgmIdx !== 0) { const b = document.getElementById(bgmList[currentBgmIdx]); if(b){ b.muted = false; b.volume = 0.3; b.play().catch(()=>{}); } }
         }
-    }, 150);
+    }, 300);
     document.removeEventListener('click', unlockAudio);
     document.removeEventListener('touchstart', unlockAudio);
 }
 document.addEventListener('click', unlockAudio);
 document.addEventListener('touchstart', unlockAudio);
 
-// ================= 遊戲核心邏輯 =================
-
-function processBombCheck() {
-    let count = 0;
-    grid.forEach(row => row.forEach(cell => { 
-        if (cell === '💣') { count++; hasBombThisTurn = true; } 
-    }));
-    
-    if (count >= 3 && !isCrazyMode) {
-        isCrazyMode = true;
-        document.body.style.background = "#4a0404";
-        showMessage("🚨 進入瘋狂模式！ 🚨");
-        stopAllBGM();
-        if (!isMuted) {
-            const crazyBgm = document.getElementById('bgmCrazy');
-            crazyBgm.muted = false; crazyBgm.volume = 0.4; crazyBgm.play().catch(()=>{});
-        }
-    }
-}
-
+// 遊戲邏輯
 async function startSpin() {
     if (isSpinning) return;
     if (!isCrazyMode && balance < currentBet) { showMessage("牟吉阿"); if (isAuto) toggleAuto(); return; }
@@ -229,58 +193,75 @@ async function startSpin() {
     document.getElementById('spinBtn').disabled = true;
     
     let totalWinInThisTurn = 0;
-    hasBombThisTurn = false;
     updateUI();
 
     try {
-        if(!isMuted) document.getElementById('sndSpin').play().catch(()=>{});
+        if(!isMuted && isAudioUnlocked) document.getElementById('sndSpin').play().catch(()=>{});
         await fillGrid(true);
-        processBombCheck(); 
 
-        let combo = true;
-        while (combo) {
+        let stillGoing = true;
+        while (stillGoing) {
+            // 每次迴圈開始前，先算一下場上有幾顆炸彈
+            let currentBombs = 0;
+            grid.forEach(row => row.forEach(cell => { if(cell === '💣') currentBombs++; }));
+
+            // 1. 檢查進入瘋狂模式
+            if (currentBombs >= 3 && !isCrazyMode) {
+                isCrazyMode = true;
+                document.body.style.background = "#4a0404";
+                showMessage("🚨 進入瘋狂模式！ 🚨");
+                stopAllBGM();
+                if (!isMuted && isAudioUnlocked) {
+                    const cb = document.getElementById('bgmCrazy');
+                    cb.muted = false; cb.volume = 0.4; cb.play().catch(()=>{});
+                }
+            }
+
+            // 2. 處理連線
             let matches = findMatches();
             if (matches.length > 0) {
                 let win = calculateWin(matches);
                 totalWinInThisTurn += win;
                 lastWin = totalWinInThisTurn;
                 balance += win; updateUI();
-                if(!isMuted) document.getElementById('sndWin').cloneNode().play().catch(()=>{});
+                if(!isMuted && isAudioUnlocked) document.getElementById('sndWin').cloneNode().play().catch(()=>{});
                 await eliminate(matches);
                 await drop();
                 await fillGrid(false);
-                processBombCheck();
-                continue;
+                continue; // 繼續檢查連線
             }
             
+            // 3. 處理炸彈爆炸
             let bombResult = await explodeBombs();
             if (bombResult.exploded) {
-                hasBombThisTurn = true;
                 totalWinInThisTurn += bombResult.win;
                 lastWin = totalWinInThisTurn;
                 balance += bombResult.win; updateUI();
                 await drop();
                 await fillGrid(false);
-                processBombCheck();
-                continue;
+                continue; // 爆炸完可能又有新連線
             }
-            combo = false;
+            
+            stillGoing = false; // 沒連線也沒爆炸，這把結束
         }
 
-        // 結束後冷卻判定
-        if (isCrazyMode && !hasBombThisTurn) {
+        // --- 核心修正點：最終檢查場上是否還有炸彈 ---
+        let finalBombs = 0;
+        grid.forEach(row => row.forEach(cell => { if(cell === '💣') finalBombs++; }));
+
+        if (isCrazyMode && finalBombs === 0) {
             isCrazyMode = false;
             document.body.style.background = "#1a0f0f";
             showMessage("礦坑已經冷卻");
             stopAllBGM();
-            if (!isMuted && currentBgmIdx !== 0) {
-                const originalBgm = document.getElementById(bgmList[currentBgmIdx]);
-                if (originalBgm) { originalBgm.muted = false; originalBgm.play().catch(()=>{}); }
+            if (!isMuted && isAudioUnlocked && currentBgmIdx !== 0) {
+                const b = document.getElementById(bgmList[currentBgmIdx]);
+                if (b) { b.muted = false; b.volume = 0.3; b.play().catch(()=>{}); }
             }
         }
 
         if (totalWinInThisTurn >= currentBet * 50) {
-            if(!isMuted) document.getElementById('sndSuperWin').play().catch(()=>{});
+            if(!isMuted && isAudioUnlocked) document.getElementById('sndSuperWin').play().catch(()=>{});
             showMessage("🎊 MEGA WIN 🎊\n💰 " + Math.floor(totalWinInThisTurn).toLocaleString());
         }
         
@@ -289,8 +270,9 @@ async function startSpin() {
         document.getElementById('spinBtn').disabled = false;
         localStorage.setItem('sicbo_balance', balance);
         updateUI();
-        if (isAuto || isCrazyMode) {
-            setTimeout(() => { if (!isSpinning) startSpin(); }, 1200);
+        // 如果還在瘋狂模式，或者開了自動，才繼續
+        if (isCrazyMode || isAuto) {
+            setTimeout(() => { if (!isSpinning) startSpin(); }, 1000);
         }
     }
 }
@@ -314,7 +296,7 @@ async function fillGrid(isInitial) {
             }
         }
     }
-    await wait(400);
+    await wait(450);
 }
 
 async function eliminate(matches) {
@@ -331,16 +313,13 @@ async function explodeBombs() {
     let bombs = [];
     grid.forEach((row, r) => row.forEach((type, c) => { if(type === '💣') bombs.push({r, c}); }));
     if (bombs.length === 0) return { exploded: false };
-
-    if(!isMuted) document.getElementById('sndExplode').cloneNode().play().catch(()=>{});
-    if (window.navigator.vibrate) window.navigator.vibrate([100, 50, 100]);
-    
+    if(!isMuted && isAudioUnlocked) document.getElementById('sndExplode').cloneNode().play().catch(()=>{});
     let win = 0; let targets = new Set();
     bombs.forEach(b => {
         for(let i=b.r-1; i<=b.r+1; i++) for(let j=b.c-1; j<=b.c+1; j++) {
             if(i>=0 && i<GRID_SIZE && j>=0 && j<GRID_SIZE) {
                 targets.add(`${i},${j}`);
-                if(isCrazyMode && grid[i][j] && grid[i][j]!=='💣') win += currentBet * GEM_VALUES[grid[i][j]] * 0.1;
+                if(isCrazyMode && grid[i][j] && grid[i][j]!=='💣') win += currentBet * (GEM_VALUES[grid[i][j]] || 0.1) * 0.2;
             }
         }
     });
@@ -371,16 +350,16 @@ async function drop() {
             }
         }
     }
-    await wait(300);
+    await wait(350);
 }
 
 function findMatches() {
     let matched = [];
     for(let r=0; r<GRID_SIZE; r++) for(let c=0; c<GRID_SIZE-2; c++) {
-        if(grid[r][c] && grid[r][c]==grid[r][c+1] && grid[r][c]==grid[r][c+2]) matched.push({r,c}, {r,c:c+1}, {r,c:c+2});
+        if(grid[r][c] && grid[r][c]!=='💣' && grid[r][c]==grid[r][c+1] && grid[r][c]==grid[r][c+2]) matched.push({r,c}, {r,c:c+1}, {r,c:c+2});
     }
     for(let c=0; c<GRID_SIZE; c++) for(let r=0; r<GRID_SIZE-2; r++) {
-        if(grid[r][c] && grid[r][c]==grid[r+1][c] && grid[r][c]==grid[r+2][c]) matched.push({r,c}, {r:r+1,c}, {r:r+2,c});
+        if(grid[r][c] && grid[r][c]!=='💣' && grid[r][c]==grid[r+1][c] && grid[r][c]==grid[r+2][c]) matched.push({r,c}, {r:r+1,c}, {r:r+2,c});
     }
     const unique = []; const seen = new Set();
     matched.forEach(m => { const k = `${m.r}-${m.c}`; if(!seen.has(k)){ unique.push(m); seen.add(k); }});
@@ -392,7 +371,7 @@ function calculateWin(matches) {
     matches.forEach(m => { let t = grid[m.r][m.c]; if(t) counts[t] = (counts[t]||0)+1; });
     for(let t in counts) {
         const c = counts[t]; const base = GEM_VALUES[t] || 1;
-        let mult = c >= 5 ? 12 : (c === 4 ? 5 : 1.5);
+        let mult = c >= 5 ? 10 : (c === 4 ? 4 : 1.2);
         win += currentBet * base * mult;
     }
     return win;
@@ -402,22 +381,18 @@ function showMessage(msg) { const b = document.getElementById('messageBox'); b.i
 function toggleAuto() { isAuto = !isAuto; const btn = document.getElementById('autoBtn'); btn.classList.toggle('auto-active', isAuto); if(isAuto && !isSpinning) startSpin(); }
 function changeBet(dir) { if (isSpinning) return; currentBetIdx = Math.max(0, Math.min(betOptions.length - 1, currentBetIdx + dir)); updateUI(); }
 
-// 頁面初始化
-window.onload = async () => {
+window.onload = () => {
     const gridEl = document.getElementById('gemGrid');
     gridEl.innerHTML = '';
     for(let r=0; r<GRID_SIZE; r++) {
         for(let c=0; c<GRID_SIZE; c++) {
             const cell = document.createElement('div');
-            cell.className = 'grid-cell';
-            cell.id = `cell-${r}-${c}`;
+            cell.className = 'grid-cell'; cell.id = `cell-${r}-${c}`;
             gridEl.appendChild(cell);
         }
     }
     updateUI();
-    setTimeout(async () => {
-        await fillGrid(true);
-    }, 300);
+    setTimeout(() => { fillGrid(true); }, 300);
 };
 </script>
 </body>
