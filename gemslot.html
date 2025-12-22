@@ -332,7 +332,7 @@ function initGrid() {
 async function startSpin() {
   if (isSpinning) return;
   if (balance < currentBet) { 
-    showMessage("阿記：沒錢開挖啦！"); 
+    showMessage("牟吉啊"); 
     if (isAuto) toggleAuto(); // 沒錢自動關閉自動玩
     return; 
   }
@@ -369,7 +369,7 @@ async function startSpin() {
   }
 
   if (totalChainWin > 0) {
-    const msg = totalChainWin >= currentBet * 20 ? "🔥 礦坑爆發 🔥" : "中大獎！";
+    const msg = totalChainWin >= currentBet * 50 ? "贏大錢" : "贏得";
     showMessage(`${msg}\n+${totalChainWin.toLocaleString()}`);
   }
   
