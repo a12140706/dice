@@ -30,10 +30,10 @@
 
   /* 左側：賽馬跑道區 */
   .race-section {
-    flex: 3; /* 提高到 3，讓跑道佔據 75% 畫面長度 */
+    flex: 3; 
     display: flex; flex-direction: column;
     border-right: 2px solid #444; position: relative;
-    padding-top: 50px; /* 對應頂部欄高度 */
+    padding-top: 50px; 
   }
 
   .track-area {
@@ -62,10 +62,10 @@
 
   /* 右側：下注控制區 */
   .control-section {
-    flex: 0.7; /* 縮小到 0.7，讓出更多空間給馬跑 */
+    flex: 0.7; 
     background: #222; display: flex; flex-direction: column;
     padding: 8px; 
-    padding-top: 50px; /* 對應頂部欄高度 */
+    padding-top: 50px; 
     padding-bottom: env(safe-area-inset-bottom);
   }
 
@@ -96,7 +96,6 @@
   }
   .go-btn:disabled { background: #555; box-shadow: none; transform: translateY(2px); }
 
-  /* 訊息覆蓋層 */
   #msgOverlay {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
     background: rgba(0,0,0,0.85); padding: 20px 40px; border-radius: 20px;
@@ -105,11 +104,11 @@
     text-shadow: 0 0 10px #f00;
   }
 
- @keyframes gallop {
-  0% { transform: scaleX(-1) translateY(0) rotate(0deg); }
-  50% { transform: scaleX(-1) translateY(-5px) rotate(-3deg) scale(1.02); } /* 縮小垂直跳動，增加輕微縮放 */
-  100% { transform: scaleX(-1) translateY(0) rotate(0deg); }
-}
+  @keyframes gallop {
+    0% { transform: scaleX(-1) translateY(0) rotate(0deg); }
+    50% { transform: scaleX(-1) translateY(-5px) rotate(-3deg) scale(1.02); }
+    100% { transform: scaleX(-1) translateY(0) rotate(0deg); }
+  }
   .horse.running { animation: gallop var(--speed, 0.4s) infinite ease-in-out; }
 
   @media (orientation: portrait) {
@@ -158,9 +157,7 @@
     <div class="chip chip-500" id="chip500" onclick="setBet(500)">500</div>
     <div class="chip chip-1000" id="chip1000" onclick="setBet(1000)">1K</div>
   </div>
-  
   <div class="bet-grid" id="betGrid"></div>
-  
   <div class="action-area">
     <button id="goBtn" class="go-btn" onclick="startRace()">開跑</button>
   </div>
@@ -188,28 +185,72 @@ function updateUI() {
   document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString();
 }
 
-function toggleMute() {
-  isMuted = !isMuted;
-  document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊';
+// --- 背景音樂修正開始 ---
+function stopAllBGM() {
+    bgmList.forEach(id => {
+        if (id) {
+            const a = document.getElementById(id);
+            a.pause();
+            a.currentTime = 0;
+        }
+    });
 }
 
 function cycleBGM() {
-  // 停止當前音樂
-  if (bgmList[currentBgmIdx]) {
-    document.getElementById(bgmList[currentBgmIdx]).pause();
-  }
-  
-  // 切換到下一個
-  currentBgmIdx++;
-  if (currentBgmIdx >= bgmList.length) currentBgmIdx = 0;
-  
-  if (bgmList[currentBgmIdx]) {
-    document.getElementById(bgmList[currentBgmIdx]).play().catch(()=>{});
-    document.getElementById('bgmBtn').textContent = '🎵 音樂 ' + currentBgmIdx;
-  } else {
-    document.getElementById('bgmBtn').textContent = '🎵 音樂：關';
-  }
+    stopAllBGM();
+    currentBgmIdx = (currentBgmIdx + 1) % 4;
+    const btn = document.getElementById('bgmBtn');
+    
+    if (currentBgmIdx === 0) {
+        btn.textContent = '🎵 音樂：關';
+    } else {
+        btn.textContent = '🎵 音樂 ' + currentBgmIdx;
+        if (!isMuted) {
+            const bgm = document.getElementById(bgmList[currentBgmIdx]);
+            if(bgm) {
+                bgm.volume = 0.3;
+                bgm.play().catch(()=>{});
+            }
+        }
+    }
 }
+
+function toggleMute() {
+    isMuted = !isMuted;
+    document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊';
+    if (isMuted) {
+        stopAllBGM();
+    } else {
+        if (currentBgmIdx !== 0) {
+            const bgm = document.getElementById(bgmList[currentBgmIdx]);
+            if(bgm) bgm.play().catch(()=>{});
+        }
+    }
+}
+
+function unlockAudio() {
+    const audios = document.querySelectorAll('audio');
+    audios.forEach(a => {
+        const oldMuted = a.muted;
+        a.muted = true;
+        a.play().then(() => {
+            a.pause();
+            a.currentTime = 0;
+            a.muted = oldMuted;
+        }).catch(() => {});
+    });
+    setTimeout(() => {
+        if (!isMuted && currentBgmIdx !== 0) {
+            const bgm = document.getElementById(bgmList[currentBgmIdx]);
+            if (bgm) { bgm.volume = 0.3; bgm.play().catch(() => {}); }
+        }
+    }, 150);
+    document.removeEventListener('click', unlockAudio);
+    document.removeEventListener('touchstart', unlockAudio);
+}
+document.addEventListener('click', unlockAudio);
+document.addEventListener('touchstart', unlockAudio);
+// --- 背景音樂修正結束 ---
 
 function setBet(amt) {
   if (isRacing) return;
@@ -224,7 +265,6 @@ function refreshOdds() {
   const grid = document.getElementById('betGrid');
   grid.innerHTML = '';
   for (let i = 1; i <= 6; i++) {
-    // 這裡只負責生成 HTML，不改 horseOdds[i] 的數值
     grid.innerHTML += `
       <button class="bet-btn ${selectedHorse === i ? 'active' : ''}" onclick="selectHorse(${i})">
         ${i} 號<span>賠率 1:${horseOdds[i]}</span>
@@ -240,7 +280,6 @@ function generateNewOdds() {
 function selectHorse(num) {
   if (isRacing) return;
   selectedHorse = num;
-  // 直接更新 UI，不重新隨機化賠率
   document.querySelectorAll('.bet-btn').forEach((btn, idx) => {
     btn.classList.toggle('active', (idx + 1) === num);
   });
@@ -270,26 +309,15 @@ function startRace() {
   const timer = setInterval(() => {
     horses.forEach(h => {
       let odds = parseFloat(horseOdds[h.id]);
-      
-      // --- 調整後的數值邏輯 ---
-      
-      // 1. 大幅強化保底優勢 (熱門馬跑得更穩)
-      // 賠率 2 的馬 bias 約 2.5，賠率 10 的馬 bias 僅 0.5
       let bias = (5 / odds) * 1.0; 
-      
-      // 2. 縮小隨機上限 (降低高倍率馬「一波帶走」的機率)
-      // 以前隨機到 14，現在隨機上限控制在 7~9 之間
       let randomRange = 7 + (odds / 5); 
-      
-      // 3. 縮小每步位移 (讓馬跑慢一點，增加比賽步數，讓變數發揮作用)
       let step = (bias + (Math.random() * randomRange)) * 0.7; 
       
       h.pos += step;
       h.el.style.left = h.pos + 'px';
 
-      // 動作同步微調 (因為步幅變小，分母也要調小，動作才不會太慢)
       let animSpeed = Math.max(0.25, 0.5 - (step / 20)); 
-h.el.style.setProperty('--speed', animSpeed + 's');
+      h.el.style.setProperty('--speed', animSpeed + 's');
 
       if (h.pos >= trackWidth) {
         clearInterval(timer);
@@ -316,11 +344,8 @@ function finishRace(winnerId) {
       document.getElementById('goBtn').disabled = false;
       document.getElementById('msgOverlay').style.display = 'none';
       selectedHorse = null;
-      
-      // 關鍵：這局徹底結束了，這時候才生成下一局的賠率
       generateNewOdds(); 
       refreshOdds();
-      
       updateUI();
       localStorage.setItem('sicbo_balance', balance);
     }, 3000);
@@ -341,7 +366,6 @@ function showMsg(text) {
   overlay.style.display = 'block';
 }
 
-// 修正 location.href 跳轉
 document.addEventListener('click', function(e) {
   let target = e.target.closest('a') || e.target.closest('button');
   if (target && target.getAttribute('onclick')?.includes('location.href')) {
