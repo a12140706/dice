@@ -30,9 +30,10 @@
 
   /* 左側：賽馬跑道區 */
   .race-section {
-    flex: 2; display: flex; flex-direction: column;
+    flex: 3; /* 提高到 3，讓跑道佔據 75% 畫面長度 */
+    display: flex; flex-direction: column;
     border-right: 2px solid #444; position: relative;
-    padding-top: 60px; /* 留空間給頂部欄 */
+    padding-top: 50px; /* 對應頂部欄高度 */
   }
 
   .track-area {
@@ -61,9 +62,11 @@
 
   /* 右側：下注控制區 */
   .control-section {
-    flex: 1.1; background: #222; display: flex; flex-direction: column;
-    padding: 10px; padding-bottom: calc(10px + env(safe-area-inset-bottom));
-    padding-top: 60px;
+    flex: 0.7; /* 縮小到 0.7，讓出更多空間給馬跑 */
+    background: #222; display: flex; flex-direction: column;
+    padding: 8px; 
+    padding-top: 50px; /* 對應頂部欄高度 */
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
   .chip-area { display: flex; justify-content: center; gap: 15px; margin-bottom: 10px; }
@@ -267,12 +270,25 @@ function startRace() {
   const timer = setInterval(() => {
     horses.forEach(h => {
       let odds = parseFloat(horseOdds[h.id]);
-      let bias = (10 / odds) * 0.6; 
-      let randomRange = 10 + (odds / 2.5); 
-      let step = bias + (Math.random() * randomRange);
+      
+      // --- 調整後的數值邏輯 ---
+      
+      // 1. 大幅強化保底優勢 (熱門馬跑得更穩)
+      // 賠率 2 的馬 bias 約 2.5，賠率 10 的馬 bias 僅 0.5
+      let bias = (5 / odds) * 1.0; 
+      
+      // 2. 縮小隨機上限 (降低高倍率馬「一波帶走」的機率)
+      // 以前隨機到 14，現在隨機上限控制在 7~9 之間
+      let randomRange = 7 + (odds / 5); 
+      
+      // 3. 縮小每步位移 (讓馬跑慢一點，增加比賽步數，讓變數發揮作用)
+      let step = (bias + (Math.random() * randomRange)) * 0.7; 
+      
       h.pos += step;
       h.el.style.left = h.pos + 'px';
-      let animSpeed = 0.7 - (step / 22);
+
+      // 動作同步微調 (因為步幅變小，分母也要調小，動作才不會太慢)
+      let animSpeed = 0.6 - (step / 12);
       h.el.style.setProperty('--speed', (animSpeed < 0.1 ? 0.1 : animSpeed) + 's');
 
       if (h.pos >= trackWidth) {
