@@ -19,7 +19,6 @@
   }
   body { height: 100dvh; width: 100vw; font-family: "Microsoft JhengHei", Arial; background: #05140b; color: #fff; display: flex; flex-direction: column; overflow: hidden; }
   
-  /* 頂部列修正：增加音樂按鈕樣式 */
   .topbar { 
     height: 50px; 
     background: linear-gradient(#4a0404, #2a0202); 
@@ -37,7 +36,8 @@
     border-radius: 8px;
     border: 1px solid var(--gold);
     cursor: pointer;
-    font-size: 18px;
+    font-size: 14px;
+    white-space: nowrap;
   }
 
   .balance-box { background: rgba(0,0,0,0.5); border: 1px solid var(--gold); border-radius: 15px; padding: 4px 15px; color: var(--gold); font-weight: bold; }
@@ -49,7 +49,7 @@
   
   #winAmountEffect { position: fixed; top: 65%; left: 50%; transform: translate(-50%, -50%); font-size: 80px; font-weight: 900; color: #fff000; text-shadow: 0 0 20px #ffae00, 0 0 40px #ffae00, 2px 2px 10px #000; z-index: 5000; display: none; pointer-events: none; animation: floatUp 1.8s ease-out forwards; }
   .triple-win-scale { transform: translate(-50%, -50%) scale(1.5) !important; color: #ff4757 !important; }
-  @keyframes floatUp { 0% { opacity: 0; transform: translate(-50%, 20%); } 30% { opacity: 1; transform: translate(-50%, -50%); } 70% { opacity: 1; transform: translate(-50%, -55%); } 100% { opacity: 0; transform: translate(-50%, -100%); } }
+  @keyframes floatUp { 0% { opacity: 0; transform: translate(-50%, 20%); } 30% { opacity: 1; transform: translate(-50%, -55%); } 70% { opacity: 1; transform: translate(-50%, -60%); } 100% { opacity: 0; transform: translate(-50%, -100%); } }
 
   .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 4000; display: none; align-items: center; justify-content: center; }
   .modal-content { background: #1a1a1a; border: 2px solid var(--gold); padding: 30px; border-radius: 20px; text-align: center; width: 340px; }
@@ -61,30 +61,13 @@
   .hist-item { display: flex; align-items: center; justify-content: space-between; padding: 4px 2px; font-size: 11px; border-bottom: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; }
   .full-hist-btn { background: var(--gold); border: none; color: #000; font-weight: bold; font-size: 12px; padding: 8px; border-radius: 5px; margin-top: 5px; cursor: pointer; }
 
-  /* 完整紀錄優化：縮小間距與字體，增加顯示量 */
-  #fullHistoryOverlay { background: rgba(0,0,0,0.98); flex-direction: column; padding: 20px; padding-left: calc(10px + env(safe-area-inset-left)); padding-right: calc(10px + env(safe-area-inset-right)); }
-  #fullHistoryList { 
-    width: 100%; 
-    height: 75vh; 
-    display: flex; 
-    flex-flow: column wrap; 
-    align-content: flex-start; 
-    gap: 3px; 
-    overflow-x: auto; 
-    -webkit-overflow-scrolling: touch;
-  }
-  .full-hist-item { 
-    width: 105px; 
-    background: rgba(255,255,255,0.05); 
-    padding: 4px 6px; 
-    border-radius: 4px; 
-    display: flex; 
-    justify-content: space-between; 
-    border: 1px solid rgba(255,215,107,0.1); 
-    font-size: 10px;
-  }
+  #fullHistoryOverlay { background: rgba(0,0,0,0.98); flex-direction: column; padding: 20px; }
+  #fullHistoryList { width: 100%; height: 75vh; display: flex; flex-flow: column wrap; align-content: flex-start; gap: 3px; overflow-x: auto; }
+  .full-hist-item { width: 105px; background: rgba(255,255,255,0.05); padding: 4px 6px; border-radius: 4px; display: flex; justify-content: space-between; font-size: 10px; }
 
-  .sum-big { color: var(--gold); } .sum-small { color: #5cc9ff; } .sum-triple { background: var(--red); color: #fff; border-radius: 3px; padding: 0 2px; }
+  .sum-big { color: var(--gold); } 
+  .sum-small { color: #5cc9ff; } 
+  .sum-triple { background: var(--red); color: #fff; border-radius: 3px; padding: 0 2px; }
   .table-container { flex: 1; display: flex; flex-direction: column; position: relative; }
   .betting-table { flex: 1; background: var(--table-green); border: 3px solid #084325; border-radius: 15px; display: grid; grid-template-rows: repeat(4, 1fr); gap: 1px; padding: 2px; }
   .bet-row { display: flex; gap: 1px; }
@@ -93,17 +76,7 @@
   .chip-on-cell { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 32px; height: 32px; border-radius: 50%; background: radial-gradient(circle, #ff4757, #b91c1c); border: 2px dashed #fff; font-size: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 10; }
   .timer-box { position: absolute; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: rgba(128,0,128,0.7); border: 3px solid var(--gold); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: bold; color: var(--gold); }
 
-  .footer-bar { 
-    height: 125px; 
-    background: linear-gradient(#333, #111); 
-    border-top: 2px solid #555; 
-    display: flex; 
-    align-items: center; 
-    padding-left: calc(10px + env(safe-area-inset-left));
-    padding-right: calc(10px + env(safe-area-inset-right));
-    padding-bottom: env(safe-area-inset-bottom);
-    flex-shrink: 0; 
-  }
+  .footer-bar { height: 125px; background: linear-gradient(#333, #111); border-top: 2px solid #555; display: flex; align-items: center; padding: 0 10px; flex-shrink: 0; }
   .info-area { width: 80px; text-align: center; flex-shrink: 0; }
   .info-area div:first-child { font-size: 11px; color: var(--gold); }
   .info-area #totalBetText { font-size: 20px; font-weight: bold; }
@@ -123,7 +96,10 @@
 <audio id="sndTriple" src="https://www.myinstants.com/media/sounds/explosion.mp3"></audio>
 <audio id="sndTick" src="https://assets.mixkit.co/active_storage/sfx/1115/1115-preview.mp3" preload="auto"></audio>
 <audio id="sndCash" src="https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3" preload="auto"></audio>
-<audio id="bgm" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" loop preload="auto"></audio>
+
+<audio id="bgm1" src="background-music-434612.mp3" loop preload="auto"></audio>
+<audio id="bgm2" src="soft-background-music-427252.mp3" loop preload="auto"></audio>
+<audio id="bgm3" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" loop preload="auto"></audio>
 
 <div id="centerDisplay">
   <div class="big-dice" id="bigDiceIcons"></div>
@@ -149,6 +125,7 @@
 
 <div class="topbar">
   <div class="sound-toggle" onclick="toggleMute()" id="soundIcon">🔊</div>
+  <div class="sound-toggle" onclick="cycleBGM()" id="bgmBtn">🎵 音樂 1</div>
   <div class="balance-box">💰 <span id="balanceText">0</span></div>
   <marquee style="flex:1; color:var(--gold);">轉橫的玩，有問題找阿記</marquee>
 </div>
@@ -199,27 +176,18 @@
 </div>
 
 <script>
-// --- 手機音效補丁：點擊螢幕解鎖音效與背景音樂 ---
-document.addEventListener('click', function unlock() {
-    const audios = document.querySelectorAll('audio');
-    const bgm = document.getElementById('bgm');
-    audios.forEach(a => { 
-        a.play().then(() => { 
-            if(a.id !== 'bgm') { a.pause(); a.currentTime = 0; }
-        }).catch(() => {}); 
-    });
-    // 設定背景音樂音量並播放
-    if (!isMuted && bgm) { bgm.volume = 0.3; bgm.play().catch(()=>{}); }
-    document.removeEventListener('click', unlock);
-}, { once: true });
-
+// --- 核心變數 (不改動名稱以確保紀錄讀取) ---
 let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
 let historyData = JSON.parse(localStorage.getItem('sicbo_history')) || [];
-let currentChip = 5, totalBet = 0, betData = {}, lastRoundBets = {}, isAutoPlaying = false, isMuted = false;
-let timeLeft = 20, forceTriple = false;
+let currentChip = 5, totalBet = 0, betData = {}, lastRoundBets = {}, isAutoPlaying = false;
+let isMuted = false; 
+let currentBgmIdx = 1; 
+const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
+let timeLeft = 20; 
 const BET_LIMIT = 60; const DICE_CHARS = ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
 const SUM_ODDS = { 4:69, 17:69, 5:34, 16:34, 6:20, 15:20, 7:13, 14:13, 8:9, 13:9, 9:7.4, 10:6.8, 11:6.8, 12:7.4 };
 
+// --- 聲音邏輯 (優化手機解鎖) ---
 function playSound(id) { 
   if (!isMuted) { 
     const s = document.getElementById(id); 
@@ -229,17 +197,62 @@ function playSound(id) {
 
 function toggleMute() { 
     isMuted = !isMuted; 
-    const bgm = document.getElementById('bgm');
-    const icon = document.getElementById('soundIcon');
-    icon.textContent = isMuted ? '🔇' : '🔊'; 
-    if(bgm) {
-        if(isMuted) bgm.pause();
-        else { bgm.volume = 0.3; bgm.play().catch(()=>{}); }
+    document.getElementById('soundIcon').textContent = isMuted ? '🔇' : '🔊'; 
+}
+
+function cycleBGM() {
+    bgmList.forEach(id => { if(id){ const a=document.getElementById(id); a.pause(); a.muted=true; a.currentTime=0; } });
+    currentBgmIdx = (currentBgmIdx + 1) % 4;
+    const btn = document.getElementById('bgmBtn');
+    if (currentBgmIdx === 0) {
+        btn.textContent = '🚫 音樂關';
+    } else {
+        const bgm = document.getElementById(bgmList[currentBgmIdx]);
+        if(bgm) {
+            bgm.muted = false;
+            bgm.volume = 0.3;
+            bgm.play().catch(()=>{});
+            btn.textContent = '🎵 音樂 ' + currentBgmIdx;
+        }
     }
 }
 
+// 徹底修正爆音問題的解鎖補丁
+document.addEventListener('click', function unlock() {
+    const audios = document.querySelectorAll('audio');
+    audios.forEach(a => { 
+        // 暫時靜音解鎖，防止 pause() 失敗時聲音噴出
+        const oldMuted = a.muted;
+        a.muted = true; 
+        a.play().then(() => { 
+            a.pause(); 
+            a.currentTime = 0;
+            a.muted = oldMuted; // 恢復狀態
+        }).catch(() => {}); 
+    });
+    
+    // 延遲一點點再啟動第一首，避開指令堆疊
+    setTimeout(() => {
+        if(currentBgmIdx === 1) {
+            const firstBgm = document.getElementById('bgm1');
+            if(firstBgm){ 
+                firstBgm.muted = false;
+                firstBgm.volume = 0.3; 
+                firstBgm.play().catch(()=>{}); 
+            }
+        }
+    }, 150);
+
+    document.removeEventListener('click', unlock);
+}, { once: true });
+
+// --- 遊戲與儲存邏輯 (保持原有結構) ---
 function handleDeposit(amt) { balance += amt; playSound('sndCash'); updateUI(); saveData(); closeModal('depositModal'); }
-function saveData() { localStorage.setItem('sicbo_balance', balance); localStorage.setItem('sicbo_history', JSON.stringify(historyData)); }
+function saveData() { 
+    if(historyData.length > 500) historyData = historyData.slice(0, 500);
+    localStorage.setItem('sicbo_balance', balance); 
+    localStorage.setItem('sicbo_history', JSON.stringify(historyData)); 
+}
 function openModal(id) { document.getElementById(id).style.display = 'flex'; if(id==='fullHistoryOverlay') renderFullHistory(); }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
@@ -285,24 +298,22 @@ function showWinEffect(amount, isTriple) {
 
 function simulateRound() {
   playSound('sndDice');
-  let d;
-  if (forceTriple) { let v = Math.floor(Math.random()*6)+1; d = [v, v, v]; forceTriple = false; }
-  else { d = [Math.floor(Math.random()*6)+1, Math.floor(Math.random()*6)+1, Math.floor(Math.random()*6)+1]; }
-
+  let d = [Math.floor(Math.random()*6)+1, Math.floor(Math.random()*6)+1, Math.floor(Math.random()*6)+1];
   const sum = d[0]+d[1]+d[2], isTriple = (d[0]===d[1] && d[1]===d[2]);
   const center = document.getElementById('centerDisplay');
   document.getElementById('bigDiceIcons').textContent = `${DICE_CHARS[d[0]]} ${DICE_CHARS[d[1]]} ${DICE_CHARS[d[2]]}`;
   document.getElementById('bigResultText').textContent = `${sum} 點 - ${isTriple ? "圍骰" : (sum >= 11 ? "大" : "小")}`;
-  
   center.style.display = 'block'; 
   setTimeout(() => center.classList.add('show'), 50);
-  
   if (isTriple) { playSound('sndTriple'); }
 
   let winTotal = 0;
   for (let key in betData) {
     let amt = betData[key], won = 0;
-    if (!isTriple) { if (key === 'small' && sum <= 10) won = amt * 1; if (key === 'big' && sum >= 11) won = amt * 1; }
+    if (!isTriple) { 
+        if (key === 'small' && sum <= 10) won = amt * 1; 
+        if (key === 'big' && sum >= 11) won = amt * 1; 
+    }
     if (key === `sum_${sum}`) won = amt * SUM_ODDS[sum];
     if (key === 'anyTriple' && isTriple) won = amt * 34;
     if (key === `triple_${d[0]}` && isTriple) won = amt * 210;
@@ -315,8 +326,8 @@ function simulateRound() {
   balance += winTotal;
   if (winTotal > 0 && !isTriple) { setTimeout(() => { playSound('sndWin'); }, 1200); }
   if (winTotal > 0) showWinEffect(winTotal, isTriple); 
-  
   historyData.unshift({ dice: d.join(' '), sum, type: isTriple ? 'triple' : (sum >= 11 ? 'big' : 'small') });
+  
   setTimeout(() => {
     center.classList.remove('show'); setTimeout(() => center.style.display = 'none', 300);
     lastRoundBets = JSON.parse(JSON.stringify(betData)); betData = {}; totalBet = 0;
