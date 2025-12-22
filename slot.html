@@ -17,10 +17,12 @@
   body { background: #1a0505; color: #fff; font-family: "Microsoft JhengHei", Arial; display: flex; flex-direction: column; align-items: center; height: 100dvh; width: 100vw; overflow: hidden; }
 
   /* 頂部欄 */
-  .topbar { width: 100%; height: 50px; background: linear-gradient(#4a0404, #2a0202); display: flex; align-items: center; padding: 0 15px; gap: 10px; border-bottom: 2px solid #5c0a0a; flex-shrink: 0; }
+  .topbar { width: 100%; height: calc(50px + env(safe-area-inset-top)); background: linear-gradient(#4a0404, #2a0202); display: flex; align-items: center; padding: 0 15px; gap: 10px; border-bottom: 2px solid #5c0a0a; flex-shrink: 0; }
   .sound-toggle { background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 8px; border: 1px solid var(--gold); cursor: pointer; font-size: 13px; color: #fff; }
   .balance-box { background: rgba(0,0,0,0.5); border: 1px solid var(--gold); border-radius: 15px; padding: 4px 12px; color: var(--gold); font-weight: bold; font-size: 16px; }
-
+.topbar > * {
+    margin-bottom: 5px; /* 讓錢幣和按鈕往下一點，避開頂部邊緣 */
+}
   /* 九宮格遊戲區 - 結構調整為捲軸 */
   .game-area { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; }
   .slot-machine { background: linear-gradient(#555, #222, #555); padding: 10px; border: 8px solid #333; border-radius: 15px; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
@@ -96,7 +98,7 @@
   </div>
   <div class="btn-group">
     <button id="autoBtn" class="auto-btn" onclick="toggleAuto()">自動玩</button>
-    <button id="spinBtn" class="spin-btn" onclick="spin()">旋轉</button>
+    <button id="spinBtn" class="spin-btn" onclick="spin()">拉動</button>
   </div>
 </div>
 
