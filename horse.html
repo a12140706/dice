@@ -19,7 +19,6 @@
     padding-right: env(safe-area-inset-right);
   }
 
-  /* 頂部欄：同步拉霸機風格 */
   .topbar {
     height: calc(50px + env(safe-area-inset-top)); background: linear-gradient(#4a0404, #2a0202);
     display: flex; align-items: center; padding: 0 15px; gap: 10px; border-bottom: 2px solid #5c0a0a; flex-shrink: 0;
@@ -28,7 +27,6 @@
   .sound-btn { background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 8px; border: 1px solid var(--gold); cursor: pointer; font-size: 13px; color: #fff; }
   .balance-box { background: rgba(0,0,0,0.5); border: 1px solid var(--gold); border-radius: 15px; padding: 4px 12px; color: var(--gold); font-weight: bold; font-size: 16px; }
 
-  /* 左側：賽馬跑道區 */
   .race-section {
     flex: 3; 
     display: flex; flex-direction: column;
@@ -60,7 +58,6 @@
     border-left: 2px solid #ccc; z-index: 1;
   }
 
-  /* 右側：下注控制區 */
   .control-section {
     flex: 0.7; 
     background: #222; display: flex; flex-direction: column;
@@ -176,6 +173,7 @@ let currentBet = 100;
 let isRacing = false;
 let isMuted = false;
 let horseOdds = [0, 5, 5, 5, 5, 5, 5];
+let isAudioUnlocked = false; 
 
 // 音樂控制
 let currentBgmIdx = 1;
@@ -185,18 +183,20 @@ function updateUI() {
   document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString();
 }
 
-// --- 背景音樂修正開始 ---
+// --- 修正後的音訊管理邏輯 ---
 function stopAllBGM() {
     bgmList.forEach(id => {
         if (id) {
             const a = document.getElementById(id);
             a.pause();
+            a.muted = true;
             a.currentTime = 0;
         }
     });
 }
 
 function cycleBGM() {
+    if (!isAudioUnlocked) return;
     stopAllBGM();
     currentBgmIdx = (currentBgmIdx + 1) % 4;
     const btn = document.getElementById('bgmBtn');
@@ -208,6 +208,7 @@ function cycleBGM() {
         if (!isMuted) {
             const bgm = document.getElementById(bgmList[currentBgmIdx]);
             if(bgm) {
+                bgm.muted = false;
                 bgm.volume = 0.3;
                 bgm.play().catch(()=>{});
             }
@@ -221,36 +222,46 @@ function toggleMute() {
     if (isMuted) {
         stopAllBGM();
     } else {
-        if (currentBgmIdx !== 0) {
+        if (currentBgmIdx !== 0 && isAudioUnlocked) {
             const bgm = document.getElementById(bgmList[currentBgmIdx]);
-            if(bgm) bgm.play().catch(()=>{});
+            if(bgm) {
+                bgm.muted = false;
+                bgm.play().catch(()=>{});
+            }
         }
     }
 }
 
 function unlockAudio() {
+    if (isAudioUnlocked) return;
     const audios = document.querySelectorAll('audio');
     audios.forEach(a => {
-        const oldMuted = a.muted;
-        a.muted = true;
-        a.play().then(() => {
-            a.pause();
-            a.currentTime = 0;
-            a.muted = oldMuted;
-        }).catch(() => {});
+        a.muted = true; 
+        let p = a.play();
+        if (p !== undefined) {
+            p.then(() => {
+                a.pause();
+                a.currentTime = 0;
+            }).catch(() => {});
+        }
     });
+    isAudioUnlocked = true;
     setTimeout(() => {
         if (!isMuted && currentBgmIdx !== 0) {
             const bgm = document.getElementById(bgmList[currentBgmIdx]);
-            if (bgm) { bgm.volume = 0.3; bgm.play().catch(() => {}); }
+            if (bgm) { 
+                bgm.muted = false;
+                bgm.volume = 0.3; 
+                bgm.play().catch(() => {}); 
+            }
         }
-    }, 150);
+    }, 300);
     document.removeEventListener('click', unlockAudio);
     document.removeEventListener('touchstart', unlockAudio);
 }
 document.addEventListener('click', unlockAudio);
 document.addEventListener('touchstart', unlockAudio);
-// --- 背景音樂修正結束 ---
+// --- 修正結束 ---
 
 function setBet(amt) {
   if (isRacing) return;
@@ -296,7 +307,12 @@ function startRace() {
   updateUI();
   isRacing = true;
   document.getElementById('goBtn').disabled = true;
-  if(!isMuted) document.getElementById('sndRace').play().catch(()=>{});
+  
+  if(!isMuted && isAudioUnlocked) {
+      const raceSnd = document.getElementById('sndRace');
+      raceSnd.muted = false;
+      raceSnd.play().catch(()=>{});
+  }
 
   const horses = [1, 2, 3, 4, 5, 6].map(n => {
     const el = document.getElementById('h' + n);
@@ -333,7 +349,11 @@ function finishRace(winnerId) {
       let winAmt = Math.floor(currentBet * horseOdds[winnerId]);
       balance += winAmt;
       showMsg(`🎊 ${winnerId}號獲勝 🎊<br>贏得 $${winAmt.toLocaleString()}`);
-      if(!isMuted) document.getElementById('sndWin').play().catch(()=>{});
+      if(!isMuted && isAudioUnlocked) {
+          const winSnd = document.getElementById('sndWin');
+          winSnd.muted = false;
+          winSnd.play().catch(()=>{});
+      }
     } else {
       showMsg(`${winnerId}號獲勝<br>再接再厲！`);
     }
@@ -366,12 +386,12 @@ function showMsg(text) {
   overlay.style.display = 'block';
 }
 
+// 修正手機點擊與導航
 document.addEventListener('click', function(e) {
-  let target = e.target.closest('a') || e.target.closest('button');
-  if (target && target.getAttribute('onclick')?.includes('location.href')) {
-    let href = target.getAttribute('onclick').match(/'([^']+)'/)[1];
+  let target = e.target.closest('a');
+  if (target) {
+    const href = target.getAttribute('href');
     if (href) {
-      e.preventDefault();
       window.location.href = href;
     }
   }
