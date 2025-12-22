@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
-<title>寶石礦坑</title>
+<title>寶石礦坑 - 阿記娛樂城</title>
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -11,12 +11,6 @@
 <meta name="mobile-web-app-capable" content="yes">
 
 <style>
-  /* 完全保留阿記原始樣式 */
-  .sound-controls { display: flex; gap: 8px; }
-  .sound-btn {
-    background: rgba(255,255,255,0.1); border: 1px solid var(--btn-gold);
-    color: #fff; padding: 4px 8px; border-radius: 8px; font-size: 12px; cursor: pointer;
-  }
   :root {
     --bg-dark: #1a0f0f; --btn-gold: #ffbe0b; --text-light: #fefefe;
     --game-width: 80vw; --game-height: 70vh; --grid-size: 5;
@@ -26,7 +20,9 @@
     height: 100dvh; width: 100vw; overflow: hidden; background: var(--bg-dark); color: var(--text-light);
     display: flex; flex-direction: column; justify-content: space-between; align-items: center;
     padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right);
+    transition: background 0.5s ease;
   }
+  
   @media (orientation: portrait) {
     .portrait-tip {
       position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
@@ -35,12 +31,18 @@
     }
   }
   @media (orientation: landscape) { .portrait-tip { display: none; } }
+
   .top-bar {
     width: 100%; height: 50px; background: linear-gradient(#4a0404, #2a0202);
     display: flex; justify-content: space-between; align-items: center; padding: 0 15px; flex-shrink: 0; border-bottom: 2px solid #5c0a0a;
   }
+  .sound-controls { display: flex; gap: 8px; }
+  .sound-btn {
+    background: rgba(255,255,255,0.1); border: 1px solid var(--btn-gold);
+    color: #fff; padding: 4px 8px; border-radius: 8px; font-size: 12px; cursor: pointer;
+  }
   .balance-display { background: rgba(0,0,0,0.4); border: 1px solid var(--btn-gold); border-radius: 10px; padding: 5px 12px; font-weight: bold; color: var(--btn-gold); font-size: 16px; }
-  .bet-control { display: flex; align-items: center; background: rgba(0,0,0,0.4); border-radius: 50px; border: 1px solid #555; padding: 2px 10px; gap: 5px; }
+
   .game-area { display: flex; flex-direction: column; justify-content: center; align-items: center; flex: 1; width: var(--game-width); max-width: 900px; position: relative; padding: 10px; }
   .gem-grid {
     display: grid; grid-template-columns: repeat(var(--grid-size), 1fr); grid-template-rows: repeat(var(--grid-size), 1fr);
@@ -53,17 +55,22 @@
   .gem.dropped { transform: translateY(0); transition: transform 0.3s ease-out; }
   .gem.vanishing { animation: vanish 0.4s ease-out forwards; pointer-events: none; }
   @keyframes vanish { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.8; } 100% { transform: scale(0); opacity: 0; } }
+
+  .message-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); border: 2px solid var(--btn-gold); border-radius: 10px; padding: 15px 25px; font-size: 20px; font-weight: bold; z-index: 100; display: none; text-align: center; white-space: pre-wrap; }
+
+  .bottom-bar { width: 100%; height: 80px; background: linear-gradient(#333, #111); display: flex; justify-content: center; align-items: center; gap: 20px; flex-shrink: 0; border-top: 2px solid #555; padding-bottom: env(safe-area-inset-bottom); }
+  .bet-control { display: flex; align-items: center; background: rgba(0,0,0,0.4); border-radius: 50px; border: 1px solid #555; padding: 2px 10px; gap: 5px; }
+  .bet-btn { background: none; border: none; color: var(--btn-gold); font-size: 28px; padding: 0 10px; cursor: pointer; }
   .auto-btn { background: #333; color: #fff; border: 2px solid #777; padding: 10px 15px; border-radius: 12px; font-weight: bold; cursor: pointer; transition: all 0.3s; }
   .auto-active { background: #2ecc71; border-color: #fff; box-shadow: 0 0 15px #2ecc71; color: #000; }
-  .bet-btn { background: none; border: none; color: var(--btn-gold); font-size: 28px; padding: 0 10px; cursor: pointer; }
-  .message-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); border: 2px solid var(--btn-gold); border-radius: 10px; padding: 15px 25px; font-size: 20px; font-weight: bold; z-index: 100; display: none; }
-  .bottom-bar { width: 100%; height: 80px; background: linear-gradient(#333, #111); display: flex; justify-content: center; align-items: center; gap: 20px; flex-shrink: 0; border-top: 2px solid #555; padding-bottom: env(safe-area-inset-bottom); }
   .spin-btn { background: var(--btn-gold); color: #000; font-size: 24px; font-weight: bold; padding: 10px 30px; border-radius: 15px; border: none; cursor: pointer; box-shadow: 0 5px 0 #b38b00; transition: all 0.1s ease; }
+  .spin-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #b38b00; }
+  .spin-btn:disabled { background: #555; box-shadow: 0 2px 0 #333; color: #888; cursor: not-allowed; }
   .win-display { font-size: 22px; color: #2ecc71; font-weight: bold; min-width: 100px; text-align: center; }
 </style>
 </head>
 <body>
-<div class="portrait-tip"><div style="font-size: 50px;">🔄</div><p style="margin-top: 20px;">橫著玩</p></div>
+<div class="portrait-tip"><div style="font-size: 50px;">🔄</div><p style="margin-top: 20px;">請旋轉手機橫屏遊玩</p></div>
 
 <div class="top-bar">
   <div class="sound-controls">
@@ -93,10 +100,10 @@
 <audio id="sndSpin" src="https://assets.mixkit.co/active_storage/sfx/2045/2045-preview.mp3" preload="auto"></audio>
 <audio id="sndWin" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="auto"></audio>
 <audio id="sndExplode" src="https://assets.mixkit.co/active_storage/sfx/1461/1461-preview.mp3" preload="auto"></audio>
+<audio id="sndSuperWin" src="https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3" preload="auto"></audio>
 <audio id="bgm1" src="background-music-434612.mp3" loop preload="auto"></audio>
 <audio id="bgm2" src="soft-background-music-427252.mp3" loop preload="auto"></audio>
 <audio id="bgm3" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" loop preload="auto"></audio>
-<audio id="sndSuperWin" src="https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3" preload="auto"></audio>
 <audio id="bgmCrazy" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" loop preload="auto"></audio>
 
 <script>
@@ -112,83 +119,123 @@ const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
 const GRID_SIZE = 5;
 const betOptions = [10, 50, 100, 300, 500, 1000];
 let currentBetIdx = 1;
-const GEMS = [
-    '💎',                      // 鑽石（最稀有）
-    '💰', '💰',                // 錢袋
-    '🔮', '🔮',                // 紫水晶
-    '🍏', '🍏',                // 綠寶石
-    '🏮', '🏮',                // 燈籠
-    '🌟', '🌟', '🌟',          // 星星
-    '✨', '✨', '✨',          // 閃光
-    '⛏️', '⛏️', '⛏️', '⛏️',    // 十字鎬（普通）
-    '🪨', '🪨', '🪨', '🪨',    // 碎石（多，增加連線難度）
-    '🪵', '🪵', '🪵', '🪵',    // 木頭（多，增加連線難度）
-    '💣'                       // 炸彈（一般模式下維持稀有，確保三炸彈的珍貴感）
-];
-const CRAZY_POOL = [
-    '💎','💰','💰','🌟','🌟','🌟','✨','✨','✨', '🪨', '🪨', '🪨', '🪨', '🪨', '🪵', '🪵', '🪵', '🪵', '🪵',
-    '🔮','🔮','🍏','🍏','🏮','🏮','⛏️','⛏️','⛏️','⛏️','💣','💣','💣'
-];
-const GEM_VALUES = { 
-    '💎': 5, '💰': 3, '🔮': 3, '🍏': 3, '🏮': 3, 
-    '🌟': 2, '✨': 2, '⛏️': 1, '🪨': 0.5, '🪵': 0.5, '💣': 0 
-};
+
+// 遊戲邏輯變數
+let hasBombThisTurn = false;
 let grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
+
+const GEMS = ['💎','💰','💰','🔮','🔮','🍏','🍏','🏮','🏮','🌟','🌟','🌟','✨','✨','✨','⛏️','⛏️','⛏️','⛏️','🪨','🪨','🪨','🪨','🪵','🪵','🪵','🪵','💣'];
+const CRAZY_POOL = ['💎','💰','💰','🌟','🌟','🌟','✨','✨','✨','🪨','🪨','🪨','🪨','🪨','🪵','🪵','🪵','🪵','🪵','🔮','🔮','🍏','🍏','🏮','🏮','⛏️','⛏️','⛏️','⛏️','💣','💣','💣'];
+const GEM_VALUES = { '💎': 5, '💰': 3, '🔮': 3, '🍏': 3, '🏮': 3, '🌟': 2, '✨': 2, '⛏️': 1, '🪨': 0.5, '🪵': 0.5, '💣': 0 };
 
 function wait(ms) { return new Promise(res => setTimeout(res, ms)); }
 
 function updateUI() {
     currentBet = betOptions[currentBetIdx];
     document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString();
-    document.getElementById('winAmount').textContent = lastWin.toLocaleString();
+    document.getElementById('winAmount').textContent = Math.floor(lastWin).toLocaleString();
     document.getElementById('betDisplay').textContent = "$" + currentBet;
+}
+
+// ================= 音樂控制系統 =================
+
+function stopAllBGM() {
+    bgmList.forEach(id => { if(id) { const a = document.getElementById(id); a.pause(); a.muted = true; } });
+    const crazy = document.getElementById('bgmCrazy');
+    crazy.pause(); crazy.muted = true;
+}
+
+function cycleBGM(shouldNext = true) {
+    stopAllBGM();
+    if (shouldNext) currentBgmIdx = (currentBgmIdx + 1) % 4;
+    const btn = document.getElementById('bgmBtn');
+    
+    if (currentBgmIdx === 0) {
+        btn.textContent = '🚫 音樂關';
+    } else {
+        btn.textContent = '🎵 音樂 ' + currentBgmIdx;
+        if (!isMuted && !isCrazyMode) {
+            const bgm = document.getElementById(bgmList[currentBgmIdx]);
+            if (bgm) { bgm.muted = false; bgm.volume = 0.3; bgm.play().catch(()=>{}); }
+        }
+    }
+}
+
+function toggleMute() {
+    isMuted = !isMuted;
+    document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊';
+    if (isMuted) stopAllBGM();
+    else {
+        if (isCrazyMode) {
+            const crazy = document.getElementById('bgmCrazy');
+            crazy.muted = false; crazy.play().catch(()=>{});
+        } else {
+            cycleBGM(false);
+        }
+    }
+}
+
+// 核心解鎖：移植骰寶方案
+function unlockAudio() {
+    const audios = document.querySelectorAll('audio');
+    audios.forEach(a => {
+        const oldMuted = a.muted;
+        a.muted = true;
+        a.play().then(() => {
+            a.pause();
+            a.currentTime = 0;
+            a.muted = oldMuted;
+        }).catch(() => {});
+    });
+
+    setTimeout(() => {
+        if (!isMuted && currentBgmIdx !== 0 && !isCrazyMode) {
+            const bgm = document.getElementById(bgmList[currentBgmIdx]);
+            if (bgm) { bgm.muted = false; bgm.volume = 0.3; bgm.play().catch(()=>{}); }
+        }
+    }, 150);
+    document.removeEventListener('click', unlockAudio);
+    document.removeEventListener('touchstart', unlockAudio);
+}
+document.addEventListener('click', unlockAudio);
+document.addEventListener('touchstart', unlockAudio);
+
+// ================= 遊戲核心邏輯 =================
+
+function processBombCheck() {
+    let count = 0;
+    grid.forEach(row => row.forEach(cell => { 
+        if (cell === '💣') { count++; hasBombThisTurn = true; } 
+    }));
+    
+    if (count >= 3 && !isCrazyMode) {
+        isCrazyMode = true;
+        document.body.style.background = "#4a0404";
+        showMessage("🚨 進入瘋狂模式！ 🚨");
+        stopAllBGM();
+        if (!isMuted) {
+            const crazyBgm = document.getElementById('bgmCrazy');
+            crazyBgm.muted = false; crazyBgm.volume = 0.4; crazyBgm.play().catch(()=>{});
+        }
+    }
 }
 
 async function startSpin() {
     if (isSpinning) return;
     if (!isCrazyMode && balance < currentBet) { showMessage("牟吉阿"); if (isAuto) toggleAuto(); return; }
-    if (!isCrazyMode) balance -= currentBet;
     
+    if (!isCrazyMode) balance -= currentBet;
     isSpinning = true;
     document.getElementById('spinBtn').disabled = true;
     
-    let totalWinInThisTurn = 0; 
-    lastWin = 0;
+    let totalWinInThisTurn = 0;
+    hasBombThisTurn = false;
     updateUI();
-
-    // 關鍵：這局是否有出現過炸彈的標記
-    let bombFoundInThisTurn = false;
-
-    // 即時觸發瘋狂模式檢查
-    const checkAndTriggerCrazy = () => {
-        let count = 0;
-        grid.forEach(row => row.forEach(cell => { 
-            if(cell === '💣') { 
-                count++; 
-                bombFoundInThisTurn = true; // 只要看到炸彈，標記就立起來
-            } 
-        }));
-        
-        // 進入瘋狂模式判定
-        if (count >= 3 && !document.body.style.background.includes("rgb(74, 4, 4)")) {
-            isCrazyMode = true;
-            document.body.style.background = "#4a0404";
-            showMessage("🚨 進入瘋狂模式！ 🚨");
-            if (!isMuted) {
-                stopAllBGM(); // 先停掉一般的音樂
-                const crazyBgm = document.getElementById('bgmCrazy');
-                crazyBgm.volume = 0.4;
-                crazyBgm.play().catch(()=>{});
-            }
-            if (window.navigator.vibrate) window.navigator.vibrate([200, 100, 200]);
-        }
-    };
 
     try {
         if(!isMuted) document.getElementById('sndSpin').play().catch(()=>{});
-        
         await fillGrid(true);
-        checkAndTriggerCrazy(); 
+        processBombCheck(); 
 
         let combo = true;
         while (combo) {
@@ -197,56 +244,44 @@ async function startSpin() {
                 let win = calculateWin(matches);
                 totalWinInThisTurn += win;
                 lastWin = totalWinInThisTurn;
-                balance += win; 
-                updateUI();
+                balance += win; updateUI();
                 if(!isMuted) document.getElementById('sndWin').cloneNode().play().catch(()=>{});
                 await eliminate(matches);
                 await drop();
                 await fillGrid(false);
-                checkAndTriggerCrazy(); // 補位後再次檢查炸彈
+                processBombCheck();
                 continue;
             }
             
             let bombResult = await explodeBombs();
             if (bombResult.exploded) {
+                hasBombThisTurn = true;
                 totalWinInThisTurn += bombResult.win;
                 lastWin = totalWinInThisTurn;
-                balance += bombResult.win; 
-                updateUI();
+                balance += bombResult.win; updateUI();
                 await drop();
                 await fillGrid(false);
-                checkAndTriggerCrazy(); // 炸完補位後再次檢查
+                processBombCheck();
                 continue;
             }
             combo = false;
         }
 
-        // --- 局末判定：MEGA WIN 檢查 ---
-        if (totalWinInThisTurn >= currentBet * 50) {
-            // MEGA WIN 播放音效邏輯
-            if(!isMuted) {
-                const superWinSnd = document.getElementById('sndSuperWin');
-                superWinSnd.currentTime = 0;
-                superWinSnd.play().catch(()=>{});
+        // 結束後冷卻判定
+        if (isCrazyMode && !hasBombThisTurn) {
+            isCrazyMode = false;
+            document.body.style.background = "#1a0f0f";
+            showMessage("礦坑已經冷卻");
+            stopAllBGM();
+            if (!isMuted && currentBgmIdx !== 0) {
+                const originalBgm = document.getElementById(bgmList[currentBgmIdx]);
+                if (originalBgm) { originalBgm.muted = false; originalBgm.play().catch(()=>{}); }
             }
-            showMessage("🎊 MEGA WIN 🎊\n💰 " + Math.floor(totalWinInThisTurn).toLocaleString());
-            if (window.navigator.vibrate) window.navigator.vibrate([500, 100, 500, 100, 500]);
         }
 
-        // --- 關鍵修正：結束瘋狂模式判定 ---
-        // 只有在瘋狂模式中，且這一局「完全沒有」出現過任何一顆炸彈，才退出
-        if (isCrazyMode && !bombFoundInThisTurn) {
-            isCrazyMode = false;
-            document.body.style.background = "#1a0f0f"; // 變回黑色
-            showMessage("礦坑已經冷卻");
-            if (!isMuted) {
-                document.getElementById('bgmCrazy').pause();
-                document.getElementById('bgmCrazy').currentTime = 0;
-                if (currentBgmIdx !== 0) { // 如果原本沒關音樂，就播回原本選的那首
-                    const originalBgm = document.getElementById(bgmList[currentBgmIdx]);
-                    if (originalBgm) originalBgm.play().catch(()=>{});
-                }
-            }
+        if (totalWinInThisTurn >= currentBet * 50) {
+            if(!isMuted) document.getElementById('sndSuperWin').play().catch(()=>{});
+            showMessage("🎊 MEGA WIN 🎊\n💰 " + Math.floor(totalWinInThisTurn).toLocaleString());
         }
         
     } finally {
@@ -254,17 +289,12 @@ async function startSpin() {
         document.getElementById('spinBtn').disabled = false;
         localStorage.setItem('sicbo_balance', balance);
         updateUI();
-        
-        // 如果是自動玩或瘋狂模式中，繼續下一把
         if (isAuto || isCrazyMode) {
             setTimeout(() => { if (!isSpinning) startSpin(); }, 1200);
         }
     }
 }
-function stopAllBGM() {
-    bgmList.forEach(id => { if(id) { const a = document.getElementById(id); a.pause(); } });
-    document.getElementById('bgmCrazy').pause();
-}
+
 async function fillGrid(isInitial) {
     const pool = isCrazyMode ? CRAZY_POOL : GEMS;
     if(isInitial) {
@@ -371,22 +401,11 @@ function calculateWin(matches) {
 function showMessage(msg) { const b = document.getElementById('messageBox'); b.innerText = msg; b.style.display = 'block'; setTimeout(()=> b.style.display = 'none', 2000); }
 function toggleAuto() { isAuto = !isAuto; const btn = document.getElementById('autoBtn'); btn.classList.toggle('auto-active', isAuto); if(isAuto && !isSpinning) startSpin(); }
 function changeBet(dir) { if (isSpinning) return; currentBetIdx = Math.max(0, Math.min(betOptions.length - 1, currentBetIdx + dir)); updateUI(); }
-function toggleMute() { isMuted = !isMuted; document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊'; }
-function cycleBGM() {
-    bgmList.forEach(id => { if(id) { const a = document.getElementById(id); a.pause(); a.currentTime = 0; } });
-    currentBgmIdx = (currentBgmIdx + 1) % 4;
-    const btn = document.getElementById('bgmBtn');
-    if (currentBgmIdx === 0) { btn.textContent = '🚫 音樂關'; } else {
-        const bgm = document.getElementById(bgmList[currentBgmIdx]);
-        bgm.volume = 0.3; bgm.play().catch(()=>{}); btn.textContent = '🎵 音樂 ' + currentBgmIdx;
-    }
-}
 
+// 頁面初始化
 window.onload = async () => {
     const gridEl = document.getElementById('gemGrid');
     gridEl.innerHTML = '';
-    
-    // 1. 先建立 5x5 的空格子
     for(let r=0; r<GRID_SIZE; r++) {
         for(let c=0; c<GRID_SIZE; c++) {
             const cell = document.createElement('div');
@@ -395,14 +414,10 @@ window.onload = async () => {
             gridEl.appendChild(cell);
         }
     }
-    
-    // 2. 更新錢包顯示
     updateUI();
-    
-    // 3. 關鍵修正：進場直接掉落一盤寶石（純顯示，不扣錢也不算獎）
-    // 稍微延遲 300ms 讓畫面載入更穩
     setTimeout(async () => {
         await fillGrid(true);
+        showMessage("點擊畫面開啟音效");
     }, 300);
 };
 </script>
