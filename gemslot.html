@@ -11,214 +11,59 @@
 <meta name="mobile-web-app-capable" content="yes">
 
 <style>
-  .sound-controls {
-    display: flex;
-    gap: 8px;
-  }
+  /* 完全保留阿記原始樣式 */
+  .sound-controls { display: flex; gap: 8px; }
   .sound-btn {
-    background: rgba(255,255,255,0.1);
-    border: 1px solid var(--btn-gold);
-    color: #fff;
-    padding: 4px 8px;
-    border-radius: 8px;
-    font-size: 12px;
-    cursor: pointer;
+    background: rgba(255,255,255,0.1); border: 1px solid var(--btn-gold);
+    color: #fff; padding: 4px 8px; border-radius: 8px; font-size: 12px; cursor: pointer;
   }
   :root {
-    --bg-dark: #1a0f0f;
-    --btn-gold: #ffbe0b;
-    --text-light: #fefefe;
-    --game-width: 80vw;
-    --game-height: 70vh;
-    --grid-size: 5; /* 5x5 的網格 */
+    --bg-dark: #1a0f0f; --btn-gold: #ffbe0b; --text-light: #fefefe;
+    --game-width: 80vw; --game-height: 70vh; --grid-size: 5;
   }
-
-  * { 
-    box-sizing: border-box; 
-    -webkit-tap-highlight-color: transparent; 
-    margin: 0; padding: 0; 
-    touch-action: manipulation;
-    font-family: "Microsoft JhengHei", Arial, sans-serif;
-  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; touch-action: manipulation; font-family: "Microsoft JhengHei", Arial, sans-serif; }
   body { 
-    height: 100dvh; width: 100vw; overflow: hidden;
-    background: var(--bg-dark); color: var(--text-light);
+    height: 100dvh; width: 100vw; overflow: hidden; background: var(--bg-dark); color: var(--text-light);
     display: flex; flex-direction: column; justify-content: space-between; align-items: center;
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
+    padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right);
   }
-
-  /* 強制橫向提示 */
   @media (orientation: portrait) {
     .portrait-tip {
       position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
       background: #1a0505; z-index: 9999; display: flex; flex-direction: column;
-      justify-content: center; align-items: center; text-align: center; color: #fff;
-      font-size: 24px;
+      justify-content: center; align-items: center; text-align: center; color: #fff; font-size: 24px;
     }
   }
   @media (orientation: landscape) { .portrait-tip { display: none; } }
-
   .top-bar {
     width: 100%; height: 50px; background: linear-gradient(#4a0404, #2a0202);
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 0 15px; flex-shrink: 0; border-bottom: 2px solid #5c0a0a;
+    display: flex; justify-content: space-between; align-items: center; padding: 0 15px; flex-shrink: 0; border-bottom: 2px solid #5c0a0a;
   }
-  .balance-display {
-    background: rgba(0,0,0,0.4); border: 1px solid var(--btn-gold); border-radius: 10px;
-    padding: 5px 12px; font-weight: bold; color: var(--btn-gold); font-size: 16px;
-  }
-  .home-btn {
-    background: none; border: 1px solid #777; color: #ccc; border-radius: 5px;
-    padding: 5px 12px; font-size: 14px; cursor: pointer;
-  }
-  .bet-control {
-  display: flex;
-  align-items: center;
-  background: rgba(0,0,0,0.4);
-  border-radius: 50px;
-  border: 1px solid #555;
-  padding: 2px 10px;
-  gap: 5px;
-}
-
-/* 讓籌碼顯示區塊固定寬度，數字才不會跳動 */
-.bet-info {
-  text-align: center;
-  min-width: 60px;
-}
-  /* 遊戲主區域 */
-  .game-area {
-    display: flex; flex-direction: column; justify-content: center; align-items: center;
-    flex: 1; width: var(--game-width); max-width: 900px; /* 限制最大寬度 */
-    position: relative;
-    padding: 10px;
-  }
-
-  /* 寶石網格 */
+  .balance-display { background: rgba(0,0,0,0.4); border: 1px solid var(--btn-gold); border-radius: 10px; padding: 5px 12px; font-weight: bold; color: var(--btn-gold); font-size: 16px; }
+  .bet-control { display: flex; align-items: center; background: rgba(0,0,0,0.4); border-radius: 50px; border: 1px solid #555; padding: 2px 10px; gap: 5px; }
+  .game-area { display: flex; flex-direction: column; justify-content: center; align-items: center; flex: 1; width: var(--game-width); max-width: 900px; position: relative; padding: 10px; }
   .gem-grid {
-    display: grid;
-    grid-template-columns: repeat(var(--grid-size), 1fr);
-    grid-template-rows: repeat(var(--grid-size), 1fr);
-    gap: 2px;
-    background: rgba(0,0,0,0.5);
-    border: 5px solid #3d2b0e;
-    border-radius: 10px;
-    width: min(calc(var(--game-height) * 0.9), var(--game-width) * 0.7); /* 讓網格盡量方形並適應寬度 */
-    aspect-ratio: 1 / 1; /* 強制正方形 */
-    max-width: 500px;
-    overflow: hidden; /* 隱藏掉落前的寶石 */
+    display: grid; grid-template-columns: repeat(var(--grid-size), 1fr); grid-template-rows: repeat(var(--grid-size), 1fr);
+    gap: 2px; background: rgba(0,0,0,0.5); border: 5px solid #3d2b0e; border-radius: 10px;
+    width: min(calc(var(--game-height) * 0.9), var(--game-width) * 0.7); aspect-ratio: 1 / 1; max-width: 500px; overflow: hidden;
   }
-
-  .grid-cell {
-    background: #2b1f0d;
-    display: flex; justify-content: center; align-items: center;
-    font-size: clamp(20px, 5vw, 40px); /* 讓寶石大小自適應 */
-    border-radius: 3px;
-    position: relative;
-  }
-
-  .gem {
-    position: absolute;
-    width: 100%; height: 100%;
-    display: flex; justify-content: center; align-items: center;
-    font-size: inherit;
-    transition: transform 0.3s ease-out, opacity 0.3s ease-out; /* 掉落與消除動畫 */
-    will-change: transform, opacity;
-  }
-
-  .gem.dropping {
-    transform: translateY(-100%); /* 模擬從上方掉落 */
-    transition: transform 0s; /* 掉落前瞬間歸位 */
-  }
-  .gem.dropped {
-    transform: translateY(0);
-    transition: transform 0.3s ease-out;
-  }
-  .gem.vanishing {
-    animation: vanish 0.4s ease-out forwards; /* 消除動畫 */
-    pointer-events: none;
-  }
-
-  @keyframes vanish {
-    0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.2); opacity: 0.8; }
-    100% { transform: scale(0); opacity: 0; }
-  }
-  .auto-btn {
-  background: #333;
-  color: #fff;
-  border: 2px solid #777;
-  padding: 10px 15px;
-  border-radius: 12px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-/* 自動玩開啟時的狀態 */
-.auto-active {
-  background: #2ecc71; /* 變成綠色 */
-  border-color: #fff;
-  box-shadow: 0 0 15px #2ecc71;
-  color: #000;
-}
-.bet-selector-new {
-  display: flex;
-  align-items: center;
-  background: rgba(0,0,0,0.4);
-  border-radius: 50px;
-  border: 2px solid #555;
-  padding: 5px 15px;
-  gap: 10px;
-}
-.bet-btn {
-  background: none;
-  border: none;
-  color: var(--btn-gold);
-  font-size: 28px;
-  padding: 0 10px;
-  cursor: pointer;
-  transition: transform 0.1s;
-}
-.bet-btn:active { transform: scale(1.2); }
-.bet-info { text-align: center; min-width: 70px; }
-
-  /* 遊戲訊息與結果 */
-  .message-box {
-    position: absolute;
-    top: 50%; left: 50%; transform: translate(-50%, -50%);
-    background: rgba(0,0,0,0.8); border: 2px solid var(--btn-gold); border-radius: 10px;
-    padding: 15px 25px; font-size: 20px; font-weight: bold; z-index: 100;
-    display: none; /* 預設隱藏 */
-  }
-
-  /* 底部操作區 */
-  .bottom-bar {
-    width: 100%; height: 80px; background: linear-gradient(#333, #111);
-    display: flex; justify-content: center; align-items: center;
-    gap: 20px; flex-shrink: 0; border-top: 2px solid #555;
-    padding-bottom: env(safe-area-inset-bottom); /* 避開底部安全區 */
-  }
-  .spin-btn {
-    background: var(--btn-gold); color: #000; font-size: 24px; font-weight: bold;
-    padding: 10px 30px; border-radius: 15px; border: none; cursor: pointer;
-    box-shadow: 0 5px 0 #b38b00; transition: all 0.1s ease;
-  }
-  .spin-btn:active {
-    transform: translateY(3px);
-    box-shadow: 0 2px 0 #b38b00;
-  }
-  .win-display {
-    font-size: 22px; color: #2ecc71; font-weight: bold;
-    min-width: 100px; text-align: center;
-  }
+  .grid-cell { background: #2b1f0d; display: flex; justify-content: center; align-items: center; font-size: clamp(20px, 5vw, 40px); border-radius: 3px; position: relative; }
+  .gem { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; font-size: inherit; transition: transform 0.3s ease-out, opacity 0.3s ease-out; will-change: transform, opacity; }
+  .gem.dropping { transform: translateY(-100%); transition: transform 0s; }
+  .gem.dropped { transform: translateY(0); transition: transform 0.3s ease-out; }
+  .gem.vanishing { animation: vanish 0.4s ease-out forwards; pointer-events: none; }
+  @keyframes vanish { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.8; } 100% { transform: scale(0); opacity: 0; } }
+  .auto-btn { background: #333; color: #fff; border: 2px solid #777; padding: 10px 15px; border-radius: 12px; font-weight: bold; cursor: pointer; transition: all 0.3s; }
+  .auto-active { background: #2ecc71; border-color: #fff; box-shadow: 0 0 15px #2ecc71; color: #000; }
+  .bet-btn { background: none; border: none; color: var(--btn-gold); font-size: 28px; padding: 0 10px; cursor: pointer; }
+  .message-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); border: 2px solid var(--btn-gold); border-radius: 10px; padding: 15px 25px; font-size: 20px; font-weight: bold; z-index: 100; display: none; }
+  .bottom-bar { width: 100%; height: 80px; background: linear-gradient(#333, #111); display: flex; justify-content: center; align-items: center; gap: 20px; flex-shrink: 0; border-top: 2px solid #555; padding-bottom: env(safe-area-inset-bottom); }
+  .spin-btn { background: var(--btn-gold); color: #000; font-size: 24px; font-weight: bold; padding: 10px 30px; border-radius: 15px; border: none; cursor: pointer; box-shadow: 0 5px 0 #b38b00; transition: all 0.1s ease; }
+  .win-display { font-size: 22px; color: #2ecc71; font-weight: bold; min-width: 100px; text-align: center; }
 </style>
 </head>
-<div class="portrait-tip">
-  <div style="font-size: 50px;">🔄</div>
-  <p style="margin-top: 20px;">橫著玩</p>
-</div>
+<body>
+<div class="portrait-tip"><div style="font-size: 50px;">🔄</div><p style="margin-top: 20px;">橫著玩</p></div>
 
 <div class="top-bar">
   <div class="sound-controls">
@@ -226,9 +71,7 @@
     <button class="sound-btn" onclick="cycleBGM()" id="bgmBtn">🎵 音樂 1</button>
   </div>
   <div class="balance-display">💰 <span id="balanceText">10000</span></div>
-  <a href="index.html" style="text-decoration:none;">
-    <button class="sound-btn">🏠 回大廳</button>
-  </a>
+  <a href="index.html" style="text-decoration:none;"><button class="sound-btn">🏠 回大廳</button></a>
 </div>
 
 <div class="game-area">
@@ -238,309 +81,297 @@
 
 <div class="bottom-bar">
   <div class="bet-control">
-        <button class="bet-btn" onclick="changeBet(-1)">◀</button>
-    <div class="bet-info">
-      <div id="betDisplay" style="font-size: 20px; color: var(--btn-gold); font-weight: bold;">$50</div>
-    </div>
+    <button class="bet-btn" onclick="changeBet(-1)">◀</button>
+    <div class="bet-info"><div id="betDisplay" style="font-size: 20px; color: var(--btn-gold); font-weight: bold;">$50</div></div>
     <button class="bet-btn" onclick="changeBet(1)">▶</button>
   </div>
   <button id="autoBtn" class="auto-btn" onclick="toggleAuto()">自動玩</button>
-  <button class="spin-btn" id="spinBtn">拉吧</button>
+  <button class="spin-btn" id="spinBtn" onclick="startSpin()">拉吧</button>
   <div class="win-display">WIN: <span id="winAmount">0</span></div>
 </div>
 
 <audio id="sndSpin" src="https://assets.mixkit.co/active_storage/sfx/2045/2045-preview.mp3" preload="auto"></audio>
 <audio id="sndWin" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="auto"></audio>
-<audio id="sndSuperWin" src="https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3" preload="auto"></audio>
+<audio id="sndExplode" src="https://assets.mixkit.co/active_storage/sfx/1461/1461-preview.mp3" preload="auto"></audio>
 <audio id="bgm1" src="background-music-434612.mp3" loop preload="auto"></audio>
 <audio id="bgm2" src="soft-background-music-427252.mp3" loop preload="auto"></audio>
 <audio id="bgm3" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" loop preload="auto"></audio>
 
 <script>
-// --- 核心變數 (延續阿記的設定) ---
 let balance = parseFloat(localStorage.getItem('gem_slot_balance')) || 10000;
 let currentBet = 50;
 let lastWin = 0;
 let isSpinning = false;
 let isMuted = false;
+let isCrazyMode = false;
+let isAuto = false;
 let currentBgmIdx = 1;
 const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
 const GRID_SIZE = 5;
-const GEMS = ['💎', '💰', '⛏️', '💣', '🌟', '✨'];
-const GEM_VALUES = { '💎': 5, '💰': 4, '🌟': 3, '✨': 2, '⛏️': 1, '💣': 0.5 };
-let grid = [];
+const betOptions = [10, 50, 100, 300, 500, 1000];
+let currentBetIdx = 1;
+const GEMS = [
+    '💎',                      // 鑽石（最稀有）
+    '💰', '💰',                // 錢袋
+    '🔮', '🔮',                // 紫水晶
+    '🍏', '🍏',                // 綠寶石
+    '🏮', '🏮',                // 燈籠
+    '🌟', '🌟', '🌟',          // 星星
+    '✨', '✨', '✨',          // 閃光
+    '⛏️', '⛏️', '⛏️', '⛏️',    // 十字鎬（普通）
+    '🪨', '🪨', '🪨', '🪨',    // 碎石（多，增加連線難度）
+    '🪵', '🪵', '🪵', '🪵',    // 木頭（多，增加連線難度）
+    '💣'                       // 炸彈（一般模式下維持稀有，確保三炸彈的珍貴感）
+];
+const CRAZY_POOL = [
+    '💎','💰','💰','🌟','🌟','🌟','✨','✨','✨', '🪨', '🪨', '🪨', '🪨', '🪨', '🪵', '🪵', '🪵', '🪵', '🪵',
+    '🔮','🔮','🍏','🍏','🏮','🏮','⛏️','⛏️','⛏️','⛏️','💣','💣','💣'
+];
+const GEM_VALUES = { 
+    '💎': 5, '💰': 3, '🔮': 3, '🍏': 3, '🏮': 3, 
+    '🌟': 2, '✨': 2, '⛏️': 1, '🪨': 0.5, '🪵': 0.5, '💣': 0 
+};
+let grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
 
-// --- 音效控制功能 ---
-function toggleMute() {
-    isMuted = !isMuted;
-    document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊';
+function wait(ms) { return new Promise(res => setTimeout(res, ms)); }
+
+function updateUI() {
+    currentBet = betOptions[currentBetIdx];
+    document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString();
+    document.getElementById('winAmount').textContent = lastWin.toLocaleString();
+    document.getElementById('betDisplay').textContent = "$" + currentBet;
 }
 
+async function startSpin() {
+    if (isSpinning) return;
+    if (!isCrazyMode && balance < currentBet) { showMessage("牟吉阿"); if (isAuto) toggleAuto(); return; }
+    if (!isCrazyMode) balance -= currentBet;
+    
+    isSpinning = true;
+    document.getElementById('spinBtn').disabled = true;
+    
+    // 這一局的總累計獎金
+    let totalWinInThisTurn = 0; 
+    lastWin = 0;
+    updateUI();
+
+    let anyBombInRound = false;
+
+    // 即時觸發瘋狂模式檢查
+    const checkAndTriggerCrazy = () => {
+        let count = 0;
+        grid.forEach(row => row.forEach(cell => { if(cell === '💣') { count++; anyBombInRound = true; } }));
+        if (count >= 3 && !document.body.style.background.includes("rgb(74, 4, 4)")) {
+            isCrazyMode = true;
+            document.body.style.background = "#4a0404";
+            showMessage("🚨 進入瘋狂模式！ 🚨");
+            if (window.navigator.vibrate) window.navigator.vibrate([200, 100, 200]);
+        } else if (count > 0) {
+            anyBombInRound = true;
+        }
+    };
+
+    try {
+        if(!isMuted) document.getElementById('sndSpin').play().catch(()=>{});
+        
+        await fillGrid(true);
+        checkAndTriggerCrazy(); 
+
+        let combo = true;
+        while (combo) {
+            let matches = findMatches();
+            if (matches.length > 0) {
+                let win = calculateWin(matches);
+                totalWinInThisTurn += win; // 累計這局總獎金
+                lastWin = totalWinInThisTurn;
+                balance += win; 
+                updateUI();
+                if(!isMuted) document.getElementById('sndWin').cloneNode().play().catch(()=>{});
+                await eliminate(matches);
+                await drop();
+                await fillGrid(false);
+                checkAndTriggerCrazy(); 
+                continue;
+            }
+            
+            let bombResult = await explodeBombs();
+            if (bombResult.exploded) {
+                totalWinInThisTurn += bombResult.win; // 累計炸彈獎金
+                lastWin = totalWinInThisTurn;
+                balance += bombResult.win; 
+                updateUI();
+                await drop();
+                await fillGrid(false);
+                checkAndTriggerCrazy(); 
+                continue;
+            }
+            combo = false;
+        }
+
+        // --- 局末判定：MEGA WIN 檢查 ---
+        if (totalWinInThisTurn >= currentBet * 50) {
+            // 如果超過 50 倍，跳出震撼提示
+            showMessage("🎊 MEGA WIN 🎊\n💰 " + Math.floor(totalWinInThisTurn).toLocaleString());
+            if (window.navigator.vibrate) window.navigator.vibrate([500, 100, 500, 100, 500]);
+        }
+
+        // 結束瘋狂模式判定
+        if (isCrazyMode && !anyBombInRound) {
+            isCrazyMode = false;
+            document.body.style.background = "#1a0f0f";
+            showMessage("礦坑冷卻中...");
+        }
+        
+    } finally {
+        isSpinning = false;
+        document.getElementById('spinBtn').disabled = false;
+        localStorage.setItem('gem_slot_balance', balance);
+        updateUI();
+        if (isAuto || isCrazyMode) {
+            setTimeout(() => { if (!isSpinning) startSpin(); }, 1500); // 稍微延遲一點讓玩家看清楚 MEGA WIN
+        }
+    }
+}
+
+async function fillGrid(isInitial) {
+    const pool = isCrazyMode ? CRAZY_POOL : GEMS;
+    if(isInitial) {
+        for(let r=0; r<GRID_SIZE; r++) for(let c=0; c<GRID_SIZE; c++) {
+            grid[r][c] = null; document.getElementById(`cell-${r}-${c}`).innerHTML = '';
+        }
+    }
+    for (let c = 0; c < GRID_SIZE; c++) {
+        for (let r = 0; r < GRID_SIZE; r++) {
+            if (grid[r][c] === null) {
+                let type = pool[Math.floor(Math.random() * pool.length)];
+                grid[r][c] = type;
+                const cell = document.getElementById(`cell-${r}-${c}`);
+                cell.innerHTML = `<div class="gem dropping">${type}</div>`;
+                const gem = cell.firstChild;
+                setTimeout(() => { gem.classList.remove('dropping'); gem.classList.add('dropped'); }, 10);
+            }
+        }
+    }
+    await wait(400);
+}
+
+async function eliminate(matches) {
+    matches.forEach(m => {
+        const cell = document.getElementById(`cell-${m.r}-${m.c}`);
+        if(cell.firstChild) cell.firstChild.classList.add('vanishing');
+        grid[m.r][m.c] = null;
+    });
+    await wait(400);
+    matches.forEach(m => { document.getElementById(`cell-${m.r}-${m.c}`).innerHTML = ''; });
+}
+
+async function explodeBombs() {
+    let bombs = [];
+    grid.forEach((row, r) => row.forEach((type, c) => { if(type === '💣') bombs.push({r, c}); }));
+    if (bombs.length === 0) return { exploded: false };
+
+    if(!isMuted) document.getElementById('sndExplode').cloneNode().play().catch(()=>{});
+    if (window.navigator.vibrate) window.navigator.vibrate([100, 50, 100]);
+    
+    let win = 0; let targets = new Set();
+    bombs.forEach(b => {
+        for(let i=b.r-1; i<=b.r+1; i++) for(let j=b.c-1; j<=b.c+1; j++) {
+            if(i>=0 && i<GRID_SIZE && j>=0 && j<GRID_SIZE) {
+                targets.add(`${i},${j}`);
+                if(isCrazyMode && grid[i][j] && grid[i][j]!=='💣') win += currentBet * GEM_VALUES[grid[i][j]] * 0.1;
+            }
+        }
+    });
+    targets.forEach(t => {
+        let [r, c] = t.split(',').map(Number);
+        const cell = document.getElementById(`cell-${r}-${c}`);
+        if(cell.firstChild) cell.firstChild.classList.add('vanishing');
+        grid[r][c] = null;
+    });
+    await wait(400);
+    targets.forEach(t => {
+        let [r, c] = t.split(',').map(Number);
+        document.getElementById(`cell-${r}-${c}`).innerHTML = '';
+    });
+    return { exploded: true, win };
+}
+
+async function drop() {
+    for (let c = 0; c < GRID_SIZE; c++) {
+        let empty = 0;
+        for (let r = GRID_SIZE - 1; r >= 0; r--) {
+            if (grid[r][c] === null) empty++;
+            else if (empty > 0) {
+                grid[r + empty][c] = grid[r][c]; grid[r][c] = null;
+                const oldCell = document.getElementById(`cell-${r}-${c}`);
+                const newCell = document.getElementById(`cell-${r+empty}-${c}`);
+                newCell.innerHTML = oldCell.innerHTML; oldCell.innerHTML = '';
+            }
+        }
+    }
+    await wait(300);
+}
+
+function findMatches() {
+    let matched = [];
+    for(let r=0; r<GRID_SIZE; r++) for(let c=0; c<GRID_SIZE-2; c++) {
+        if(grid[r][c] && grid[r][c]==grid[r][c+1] && grid[r][c]==grid[r][c+2]) matched.push({r,c}, {r,c:c+1}, {r,c:c+2});
+    }
+    for(let c=0; c<GRID_SIZE; c++) for(let r=0; r<GRID_SIZE-2; r++) {
+        if(grid[r][c] && grid[r][c]==grid[r+1][c] && grid[r][c]==grid[r+2][c]) matched.push({r,c}, {r:r+1,c}, {r:r+2,c});
+    }
+    const unique = []; const seen = new Set();
+    matched.forEach(m => { const k = `${m.r}-${m.c}`; if(!seen.has(k)){ unique.push(m); seen.add(k); }});
+    return unique;
+}
+
+function calculateWin(matches) {
+    let win = 0; let counts = {};
+    matches.forEach(m => { let t = grid[m.r][m.c]; if(t) counts[t] = (counts[t]||0)+1; });
+    for(let t in counts) {
+        const c = counts[t]; const base = GEM_VALUES[t] || 1;
+        let mult = c >= 5 ? 12 : (c === 4 ? 5 : 1.5);
+        win += currentBet * base * mult;
+    }
+    return win;
+}
+
+function showMessage(msg) { const b = document.getElementById('messageBox'); b.innerText = msg; b.style.display = 'block'; setTimeout(()=> b.style.display = 'none', 2000); }
+function toggleAuto() { isAuto = !isAuto; const btn = document.getElementById('autoBtn'); btn.classList.toggle('auto-active', isAuto); if(isAuto && !isSpinning) startSpin(); }
+function changeBet(dir) { if (isSpinning) return; currentBetIdx = Math.max(0, Math.min(betOptions.length - 1, currentBetIdx + dir)); updateUI(); }
+function toggleMute() { isMuted = !isMuted; document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊'; }
 function cycleBGM() {
     bgmList.forEach(id => { if(id) { const a = document.getElementById(id); a.pause(); a.currentTime = 0; } });
     currentBgmIdx = (currentBgmIdx + 1) % 4;
     const btn = document.getElementById('bgmBtn');
-    if (currentBgmIdx === 0) {
-        btn.textContent = '🚫 音樂關';
-    } else {
+    if (currentBgmIdx === 0) { btn.textContent = '🚫 音樂關'; } else {
         const bgm = document.getElementById(bgmList[currentBgmIdx]);
-        bgm.volume = 0.3;
-        bgm.play().catch(()=>{});
-        btn.textContent = '🎵 音樂 ' + currentBgmIdx;
+        bgm.volume = 0.3; bgm.play().catch(()=>{}); btn.textContent = '🎵 音樂 ' + currentBgmIdx;
     }
 }
 
-// 解鎖行動裝置音效限制
-document.addEventListener('click', () => {
-    const audios = document.querySelectorAll('audio');
-    audios.forEach(a => { a.play().then(()=>{a.pause(); a.currentTime=0;}).catch(()=>{}); });
-}, { once: true });
-
-// --- 遊戲邏輯 ---
-window.onload = () => {
-  updateUI();
-  initGrid();
-  document.getElementById('spinBtn').addEventListener('click', startSpin);
-  document.getElementById('betAmount').addEventListener('change', (e) => currentBet = parseInt(e.target.value));
-};
-
-function updateUI() {
-  document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString();
-  document.getElementById('winAmount').textContent = lastWin.toLocaleString();
-}
-
-function initGrid() {
-  const gemGridEl = document.getElementById('gemGrid');
-  gemGridEl.innerHTML = '';
-  for (let r = 0; r < GRID_SIZE; r++) {
-    grid[r] = [];
-    for (let c = 0; c < GRID_SIZE; c++) {
-      const gemType = GEMS[Math.floor(Math.random() * GEMS.length)];
-      grid[r][c] = gemType;
-      const cell = document.createElement('div');
-      cell.classList.add('grid-cell');
-      cell.id = `cell-${r}-${c}`;
-      const gemEl = document.createElement('div');
-      gemEl.className = 'gem';
-      gemEl.textContent = gemType;
-      cell.appendChild(gemEl);
-      gemGridEl.appendChild(cell);
-    }
-  }
-}
-
-async function startSpin() {
-  if (isSpinning) return;
-  if (balance < currentBet) { 
-    showMessage("牟吉啊"); 
-    if (isAuto) toggleAuto(); // 沒錢自動關閉自動玩
-    return; 
-  }
-
-  isSpinning = true;
-  balance -= currentBet;
-  lastWin = 0;
-  updateUI();
-  document.getElementById('spinBtn').disabled = true;
-  if(!isMuted) document.getElementById('sndSpin').play().catch(()=>{});
-
-  await fillGridWithNewGems();
-  
-  let totalChainWin = 0;
-  while (true) {
-    await new Promise(r => setTimeout(r, 400));
-    const matches = findMatches();
-    if (matches.length === 0) break;
-
-    const chainWin = calculateWin(matches);
-    totalChainWin += chainWin;
-    lastWin = totalChainWin;
-    balance += chainWin;
-    updateUI();
-
-    if(!isMuted) {
-      if (chainWin >= currentBet * 10) document.getElementById('sndSuperWin').cloneNode().play().catch(()=>{});
-      else document.getElementById('sndWin').cloneNode().play().catch(()=>{});
-    }
-
-    await animateElimination(matches);
-    await dropGems();
-    await fillEmptyCells();
-  }
-
-  if (totalChainWin > 0) {
-    const msg = totalChainWin >= currentBet * 50 ? "贏大錢" : "贏得";
-    showMessage(`${msg}\n+${totalChainWin.toLocaleString()}`);
-  }
-  
-  // --- 重點改動在這裡 ---
-  isSpinning = false;
-  document.getElementById('spinBtn').disabled = false;
-  localStorage.setItem('gem_slot_balance', balance);
-
-  // 如果自動玩開啟中，等 1.2 秒後再下一輪
-  if (isAuto) {
-    setTimeout(() => {
-      if (isAuto) startSpin(); 
-    }, 1200); 
-  }
-}
-
-// ... (findMatches, calculateWin, animateElimination, dropGems, fillEmptyCells 與之前邏輯一致) ...
-// 為了簡潔，這裡保留核心邏輯並確保 DOM 操作與音效同步
-
-function findMatches() {
-  const matches = [];
-  for (let r = 0; r < GRID_SIZE; r++) {
-    for (let c = 0; c <= GRID_SIZE - 3; c++) {
-      if (grid[r][c] && grid[r][c] === grid[r][c+1] && grid[r][c] === grid[r][c+2]) {
-        let len = 3; while(c+len < GRID_SIZE && grid[r][c] === grid[r][c+len]) len++;
-        for(let i=0; i<len; i++) matches.push({r, c: c+i, type: grid[r][c]});
-        c += len - 1;
-      }
-    }
-  }
-  for (let c = 0; c < GRID_SIZE; c++) {
-    for (let r = 0; r <= GRID_SIZE - 3; r++) {
-      if (grid[r][c] && grid[r][c] === grid[r+1][c] && grid[r][c] === grid[r+2][c]) {
-        let len = 3; while(r+len < GRID_SIZE && grid[r][c] === grid[r+len][c]) len++;
-        for(let i=0; i<len; i++) matches.push({r: r+i, c, type: grid[r][c]});
-        r += len - 1;
-      }
-    }
-  }
-  const unique = []; const seen = new Set();
-  matches.forEach(m => { const k = `${m.r}-${m.c}`; if(!seen.has(k)){ unique.push(m); seen.add(k); }});
-  return unique;
-}
-
-function calculateWin(matches) {
-  let win = 0; const counts = {};
-  matches.forEach(m => { counts[m.type] = (counts[m.type] || 0) + 1; });
-  for(const t in counts) {
-    const c = counts[t]; const base = GEM_VALUES[t] || 1;
-    let mult = c >= 5 ? 15 : (c === 4 ? 6 : 2);
-    win += currentBet * base * mult;
-  }
-  return win;
-}
-
-async function animateElimination(matches) {
-  const anims = [];
-  matches.forEach(m => {
-    const el = document.getElementById(`cell-${m.r}-${m.c}`).querySelector('.gem');
-    if(el) { el.classList.add('vanishing'); anims.push(new Promise(res => el.onanimationend = res)); }
-    grid[m.r][m.c] = null;
-  });
-  await Promise.all(anims);
-  matches.forEach(m => { document.getElementById(`cell-${m.r}-${m.c}`).innerHTML = ''; });
-}
-
-async function dropGems() {
-  const anims = [];
-  for(let c=0; c<GRID_SIZE; c++) {
-    let empty = 0;
-    for(let r=GRID_SIZE-1; r>=0; r--) {
-      if(grid[r][c] === null) empty++;
-      else if(empty > 0) {
-        const type = grid[r][c]; grid[r+empty][c] = type; grid[r][c] = null;
-        const gem = document.getElementById(`cell-${r}-${c}`).querySelector('.gem');
-        if(gem) {
-          gem.style.transition = 'none';
-          document.getElementById(`cell-${r+empty}-${c}`).appendChild(gem);
-          gem.style.transform = `translateY(-${empty*100}%)`;
-          setTimeout(() => { gem.style.transition = 'transform 0.3s ease-out'; gem.style.transform = 'translateY(0)'; }, 10);
-          anims.push(new Promise(res => gem.ontransitionend = res));
-        }
-      }
-    }
-  }
-  await Promise.all(anims);
-}
-
-async function fillEmptyCells() {
-  const anims = [];
-  for(let c=0; c<GRID_SIZE; c++) {
+window.onload = async () => {
+    const gridEl = document.getElementById('gemGrid');
+    gridEl.innerHTML = '';
+    
+    // 1. 先建立 5x5 的空格子
     for(let r=0; r<GRID_SIZE; r++) {
-      if(grid[r][c] === null) {
-        const type = GEMS[Math.floor(Math.random()*GEMS.length)]; grid[r][c] = type;
-        const cell = document.getElementById(`cell-${r}-${c}`);
-        const gem = document.createElement('div'); gem.className = 'gem dropping'; gem.textContent = type;
-        cell.appendChild(gem);
-        setTimeout(() => { gem.classList.remove('dropping'); gem.classList.add('dropped'); }, 50 + r*50);
-        anims.push(new Promise(res => gem.ontransitionend = res));
-      }
-    }
-  }
-  await Promise.all(anims);
-}
-
-async function fillGridWithNewGems() {
-    for (let r=0; r<GRID_SIZE; r++) for(let c=0; c<GRID_SIZE; c++) document.getElementById(`cell-${r}-${c}`).innerHTML = '';
-    await new Promise(r => setTimeout(r, 100));
-    const anims = [];
-    for (let c=0; c<GRID_SIZE; c++) {
-        for (let r=0; r<GRID_SIZE; r++) {
-            const type = GEMS[Math.floor(Math.random()*GEMS.length)]; grid[r][c] = type;
-            const cell = document.getElementById(`cell-${r}-${c}`);
-            const gem = document.createElement('div'); gem.className = 'gem dropping'; gem.textContent = type;
-            cell.appendChild(gem);
-            setTimeout(() => { gem.classList.remove('dropping'); gem.classList.add('dropped'); }, 50 + r*50);
-            anims.push(new Promise(res => gem.ontransitionend = res));
+        for(let c=0; c<GRID_SIZE; c++) {
+            const cell = document.createElement('div');
+            cell.className = 'grid-cell';
+            cell.id = `cell-${r}-${c}`;
+            gridEl.appendChild(cell);
         }
     }
-    await Promise.all(anims);
-}
-
-function showMessage(msg) {
-  const box = document.getElementById('messageBox');
-  box.innerText = msg; box.style.display = 'block';
-  setTimeout(() => box.style.display = 'none', 2000);
-}
-const betOptions = [10, 50, 100, 300, 500, 1000];
-let currentBetIdx = 1; // 預設指向 50
-
-// 2. 更新 UI 的函式
-function updateUI() {
-  currentBet = betOptions[currentBetIdx]; // 同步更新全域變數 currentBet
-  document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString();
-  document.getElementById('winAmount').textContent = lastWin.toLocaleString();
-  document.getElementById('betDisplay').textContent = "$" + currentBet;
-}
-let isAuto = false; // 自動玩狀態
-
-function toggleAuto() {
-  isAuto = !isAuto;
-  const btn = document.getElementById('autoBtn');
-  if (isAuto) {
-    btn.classList.add('auto-active');
-    btn.textContent = "停止";
-    if (!isSpinning) startSpin(); // 如果當下沒在轉，立即開始
-  } else {
-    btn.classList.remove('auto-active');
-    btn.textContent = "自動";
-  }
-}
-// 3. 左右切換按鈕的函式
-function changeBet(dir) {
-  if (isSpinning) return; // 轉動中不能改注
-  
-  // 索引循環或限制範圍
-  currentBetIdx = currentBetIdx + dir;
-  if (currentBetIdx < 0) currentBetIdx = 0;
-  if (currentBetIdx >= betOptions.length) currentBetIdx = betOptions.length - 1;
-  
-  // 播放個小音效（選配）
-  // if(!isMuted) document.getElementById('sndWin').cloneNode().play(); 
-  
-  updateUI();
-}
-
-// 4. 記得在 window.onload 裡面把原本的 select 監聽刪掉，改呼叫一次 updateUI()
-window.onload = () => {
-  updateUI();
-  initGrid();
-  document.getElementById('spinBtn').addEventListener('click', startSpin);
+    
+    // 2. 更新錢包顯示
+    updateUI();
+    
+    // 3. 關鍵修正：進場直接掉落一盤寶石（純顯示，不扣錢也不算獎）
+    // 稍微延遲 300ms 讓畫面載入更穩
+    setTimeout(async () => {
+        await fillGrid(true);
+    }, 300);
 };
 </script>
 </body>
