@@ -98,7 +98,7 @@
 <audio id="bgm3" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" loop preload="auto"></audio>
 <audio id="sndSuperWin" src="https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3" preload="auto"></audio>
 <script>
-let balance = parseFloat(localStorage.getItem('gem_slot_balance')) || 10000;
+let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 10000;
 let currentBet = 50;
 let lastWin = 0;
 let isSpinning = false;
@@ -236,7 +236,7 @@ async function startSpin() {
     } finally {
         isSpinning = false;
         document.getElementById('spinBtn').disabled = false;
-        localStorage.setItem('gem_slot_balance', balance);
+        localStorage.setItem('sicbo_balance', balance);
         updateUI();
         
         // 如果是自動玩或瘋狂模式中，繼續下一把
