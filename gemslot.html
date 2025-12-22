@@ -150,24 +150,29 @@ async function startSpin() {
     isSpinning = true;
     document.getElementById('spinBtn').disabled = true;
     
-    // 這一局的總累計獎金
     let totalWinInThisTurn = 0; 
     lastWin = 0;
     updateUI();
 
-    let anyBombInRound = false;
+    // 關鍵：這局是否有出現過炸彈的標記
+    let bombFoundInThisTurn = false;
 
     // 即時觸發瘋狂模式檢查
     const checkAndTriggerCrazy = () => {
         let count = 0;
-        grid.forEach(row => row.forEach(cell => { if(cell === '💣') { count++; anyBombInRound = true; } }));
+        grid.forEach(row => row.forEach(cell => { 
+            if(cell === '💣') { 
+                count++; 
+                bombFoundInThisTurn = true; // 只要看到炸彈，標記就立起來
+            } 
+        }));
+        
+        // 進入瘋狂模式判定
         if (count >= 3 && !document.body.style.background.includes("rgb(74, 4, 4)")) {
             isCrazyMode = true;
             document.body.style.background = "#4a0404";
             showMessage("🚨 進入瘋狂模式！ 🚨");
             if (window.navigator.vibrate) window.navigator.vibrate([200, 100, 200]);
-        } else if (count > 0) {
-            anyBombInRound = true;
         }
     };
 
@@ -182,7 +187,7 @@ async function startSpin() {
             let matches = findMatches();
             if (matches.length > 0) {
                 let win = calculateWin(matches);
-                totalWinInThisTurn += win; // 累計這局總獎金
+                totalWinInThisTurn += win;
                 lastWin = totalWinInThisTurn;
                 balance += win; 
                 updateUI();
@@ -190,19 +195,19 @@ async function startSpin() {
                 await eliminate(matches);
                 await drop();
                 await fillGrid(false);
-                checkAndTriggerCrazy(); 
+                checkAndTriggerCrazy(); // 補位後再次檢查炸彈
                 continue;
             }
             
             let bombResult = await explodeBombs();
             if (bombResult.exploded) {
-                totalWinInThisTurn += bombResult.win; // 累計炸彈獎金
+                totalWinInThisTurn += bombResult.win;
                 lastWin = totalWinInThisTurn;
                 balance += bombResult.win; 
                 updateUI();
                 await drop();
                 await fillGrid(false);
-                checkAndTriggerCrazy(); 
+                checkAndTriggerCrazy(); // 炸完補位後再次檢查
                 continue;
             }
             combo = false;
@@ -210,15 +215,21 @@ async function startSpin() {
 
         // --- 局末判定：MEGA WIN 檢查 ---
         if (totalWinInThisTurn >= currentBet * 50) {
-            // 如果超過 50 倍，跳出震撼提示
+            // MEGA WIN 播放音效邏輯
+            if(!isMuted) {
+                const superWinSnd = document.getElementById('sndSuperWin');
+                superWinSnd.currentTime = 0;
+                superWinSnd.play().catch(()=>{});
+            }
             showMessage("🎊 MEGA WIN 🎊\n💰 " + Math.floor(totalWinInThisTurn).toLocaleString());
             if (window.navigator.vibrate) window.navigator.vibrate([500, 100, 500, 100, 500]);
         }
 
-        // 結束瘋狂模式判定
-        if (isCrazyMode && !anyBombInRound) {
+        // --- 關鍵修正：結束瘋狂模式判定 ---
+        // 只有在瘋狂模式中，且這一局「完全沒有」出現過任何一顆炸彈，才退出
+        if (isCrazyMode && !bombFoundInThisTurn) {
             isCrazyMode = false;
-            document.body.style.background = "#1a0f0f";
+            document.body.style.background = "#1a0f0f"; // 變回黑色
             showMessage("礦坑冷卻中...");
         }
         
@@ -227,8 +238,10 @@ async function startSpin() {
         document.getElementById('spinBtn').disabled = false;
         localStorage.setItem('gem_slot_balance', balance);
         updateUI();
+        
+        // 如果是自動玩或瘋狂模式中，繼續下一把
         if (isAuto || isCrazyMode) {
-            setTimeout(() => { if (!isSpinning) startSpin(); }, 1500); // 稍微延遲一點讓玩家看清楚 MEGA WIN
+            setTimeout(() => { if (!isSpinning) startSpin(); }, 1200);
         }
     }
 }
