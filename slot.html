@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
+<title>阿記九宮格發財機</title>
+<style>
+  :root { --gold: #ffd86b; --red: #ff4757; --green: #2ecc71; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+  
+  body { 
+    background: #1a0505; color: #fff; font-family: "Microsoft JhengHei", Arial;
+    display: flex; flex-direction: column; align-items: center; 
+    height: 100dvh; width: 100vw; overflow: hidden;
+  }
+  
+  /* 頂部欄 (同步骰寶) */
+  .topbar { 
+    width: 100%; height: 50px; background: linear-gradient(#4a0404, #2a0202); 
+    display: flex; align-items: center; padding: 0 15px; gap: 10px; border-bottom: 2px solid #5c0a0a; flex-shrink: 0; 
+  }
+  .sound-toggle { background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 8px; border: 1px solid var(--gold); cursor: pointer; font-size: 13px; color: #fff; }
+  .balance-box { background: rgba(0,0,0,0.5); border: 1px solid var(--gold); border-radius: 15px; padding: 4px 12px; color: var(--gold); font-weight: bold; font-size: 16px; }
+
+  /* 九宮格遊戲區 */
+  .game-area { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; }
+  
+  .slot-machine { 
+    background: linear-gradient(#555, #222, #555);
+    padding: 10px; border: 8px solid #333; border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.8);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 5px;
+    background: #000;
+  }
+
+  .cell {
+    width: 85px; height: 85px; background: #fff; border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 50px; position: relative;
+  }
+@media (min-width: 768px) {
+  /* 當螢幕寬度大於 768px (平板) 時 */
+  .cell {
+    width: 120px; /* 從 85px 放大到 120px */
+    height: 120px;
+    font-size: 70px;
+  }
+  .slot-machine {
+    padding: 20px;
+    border-width: 12px;
+  }
+}
+  /* 中獎閃爍動畫 */
+  .win-glow { animation: win-flash 0.5s infinite alternate; z-index: 10; }
+  @keyframes win-flash { from { background: #fff; } to { background: var(--gold); transform: scale(1.05); } }
+
+  /* 控制區 */
+  .controls { padding-bottom: calc(20px + env(safe-area-inset-bottom)); width: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .bet-selector { display: flex; align-items: center; gap: 15px; background: rgba(0,0,0,0.5); padding: 8px 20px; border-radius: 50px; border: 2px solid #444; }
+  .bet-value { font-size: 24px; font-weight: bold; min-width: 80px; text-align: center; color: var(--gold); }
+  .btn-group { display: flex; gap: 15px; align-items: center; }
+  .spin-btn { width: 90px; height: 90px; border-radius: 50%; border: 4px solid var(--gold); background: var(--red); color: #fff; font-size: 22px; font-weight: bold; cursor: pointer; }
+  .spin-btn:disabled { background: #555; }
+  .auto-btn { padding: 10px 20px; border-radius: 10px; border: 1px solid #777; background: #333; color: #fff; font-weight: bold; }
+  .auto-active { background: var(--green); box-shadow: 0 0 15px var(--green); }
+
+  #winText { position: fixed; top: 25%; color: #fff000; font-size: 40px; font-weight: bold; text-shadow: 0 0 15px #f00; display: none; z-index: 100; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="sound-toggle" onclick="toggleMute()" id="soundIcon">🔊</div>
+  <div class="sound-toggle" onclick="cycleBGM()" id="bgmBtn">🎵 音樂 1</div>
+  <div class="balance-box">💰 <span id="balanceText">0</span></div>
+  <marquee style="flex:1; color:var(--gold); font-size: 12px;">直的玩，有問題找阿記</marquee>
+  <button onclick="location.href='index.html'" style="background:none; border:1px solid #777; color:#ccc; border-radius:5px; padding:2px 8px; font-size:12px;">🏠 回大廳</button>
+</div>
+
+<div class="game-area">
+  <div id="winText">BIG WIN!</div>
+  <div class="slot-machine">
+    <div class="grid" id="slotGrid">
+      <div class="cell" id="c0">🍎</div><div class="cell" id="c1">🍋</div><div class="cell" id="c2">🍒</div>
+      <div class="cell" id="c3">🍇</div><div class="cell" id="c4">🔔</div><div class="cell" id="c5">💎</div>
+      <div class="cell" id="c6">7️⃣</div><div class="cell" id="c7">🍎</div><div class="cell" id="c8">🍋</div>
+    </div>
+  </div>
+</div>
+
+<div class="controls">
+  <div class="bet-selector">
+    <button style="background:none; border:none; color:var(--gold); font-size:24px;" onclick="changeBet(-1)">◀</button>
+    <div class="bet-value" id="betDisplay">$10</div>
+    <button style="background:none; border:none; color:var(--gold); font-size:24px;" onclick="changeBet(1)">▶</button>
+  </div>
+  <div class="btn-group">
+    <button id="autoBtn" class="auto-btn" onclick="toggleAuto()">自動玩</button>
+    <button id="spinBtn" class="spin-btn" onclick="spin()">旋轉</button>
+</div>
+  </div>
+</div>
+
+<audio id="sndSpin" src="https://assets.mixkit.co/active_storage/sfx/2045/2045-preview.mp3" preload="auto"></audio>
+<audio id="sndWin" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="auto"></audio>
+<audio id="bgm1" src="background-music-434612.mp3" loop preload="auto"></audio>
+<audio id="bgm2" src="soft-background-music-427252.mp3" loop preload="auto"></audio>
+<audio id="bgm3" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" loop preload="auto"></audio>
+<audio id="sndSuperWin" src="https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3" preload="auto"></audio>
+<script>
+let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
+const betOptions = [1, 5, 10, 30, 50, 100, 150, 300];
+let currentBetIdx = 2;
+const SYMBOLS = ['🍎', '🍋', '🍒', '🍇', '🔔', '💎', '7️⃣'];
+let isSpinning = false, isAuto = false, isMuted = false;
+let currentBgmIdx = 1;
+const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
+
+// 定義 5 條中獎線索引
+const PAYLINES = [
+    [0, 1, 2], [3, 4, 5], [6, 7, 8], // 橫三條
+    [0, 4, 8], [2, 4, 6]             // 斜兩條
+];
+
+function toggleMute() { isMuted = !isMuted; document.getElementById('soundIcon').textContent = isMuted ? '🔇' : '🔊'; }
+function cycleBGM() {
+    bgmList.forEach(id => { if(id){ const a=document.getElementById(id); a.pause(); a.muted=true; a.currentTime=0; } });
+    currentBgmIdx = (currentBgmIdx + 1) % 4;
+    const btn = document.getElementById('bgmBtn');
+    if (currentBgmIdx === 0) btn.textContent = '🚫 關';
+    else {
+        const bgm = document.getElementById(bgmList[currentBgmIdx]);
+        if(bgm) { bgm.muted = false; bgm.volume = 0.3; bgm.play().catch(()=>{}); btn.textContent = '🎵 音樂 ' + currentBgmIdx; }
+    }
+}
+
+document.addEventListener('click', function unlock() {
+    const audios = document.querySelectorAll('audio');
+    audios.forEach(a => {
+        const oldMuted = a.muted; a.muted = true;
+        a.play().then(() => { a.pause(); a.currentTime = 0; a.muted = oldMuted; }).catch(() => {});
+    });
+    document.removeEventListener('click', unlock);
+}, { once: true });
+
+function updateUI() {
+    document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString();
+    document.getElementById('betDisplay').textContent = "$" + betOptions[currentBetIdx];
+}
+
+function changeBet(dir) {
+    if (isSpinning) return;
+    currentBetIdx = Math.max(0, Math.min(betOptions.length - 1, currentBetIdx + dir));
+    updateUI();
+}
+
+function toggleAuto() {
+    isAuto = !isAuto;
+    document.getElementById('autoBtn').classList.toggle('auto-active', isAuto);
+    if (isAuto && !isSpinning) spin();
+}
+
+function spin() {
+    const cost = betOptions[currentBetIdx];
+    if (balance < cost) { alert("謀吉阿"); isAuto = false; return; }
+    
+    isSpinning = true; balance -= cost; updateUI();
+    document.getElementById('spinBtn').disabled = true;
+    document.querySelectorAll('.cell').forEach(c => c.classList.remove('win-glow'));
+    document.getElementById('winText').style.display = 'none';
+    if(!isMuted) document.getElementById('sndSpin').play().catch(()=>{});
+
+    let startTime = Date.now();
+    const timer = setInterval(() => {
+        for(let i=0; i<9; i++) {
+            document.getElementById('c'+i).textContent = SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)];
+        }
+        if(Date.now() - startTime > 1200) {
+            clearInterval(timer);
+            finalize();
+        }
+    }, 80);
+}
+
+function finalize() {
+    let results = [];
+    for(let i=0; i<9; i++) results.push(document.getElementById('c'+i).textContent);
+
+    let totalWinMultiplier = 0;
+    let winCells = new Set();
+
+    // 1. 計算中獎線
+    PAYLINES.forEach(line => {
+        const [a, b, c] = line;
+        if (results[a] === results[b] && results[b] === results[c]) {
+            let symbol = results[a];
+            let mult = (symbol === '7️⃣') ? 50 : (symbol === '💎' ? 20 : (symbol === '🔔' ? 10 : 5));
+            totalWinMultiplier += mult;
+            line.forEach(idx => winCells.add(idx));
+        }
+    });
+
+    // 2. 全中判斷 (9格一樣)
+    const isFullHouse = results.every(s => s === results[0]);
+    if (isFullHouse) totalWinMultiplier *= 10; 
+
+    if (totalWinMultiplier > 0) {
+        let winAmt = betOptions[currentBetIdx] * totalWinMultiplier;
+        balance += winAmt;
+        
+        const winDisplay = document.getElementById('winText');
+        winCells.forEach(idx => document.getElementById('c'+idx).classList.add('win-glow'));
+        
+        if (isFullHouse) {
+            // --- 視覺震撼特效 ---
+            winDisplay.innerHTML = `🎊 SUPER WIN 🎊<br>$${winAmt.toLocaleString()}`;
+            winDisplay.style.color = "#ff3e3e";
+            winDisplay.style.fontSize = "50px";
+            
+            // 畫面劇烈震動
+            document.querySelector('.slot-machine').animate([
+                { transform: 'translate(2px, 2px) scale(1.05)' },
+                { transform: 'translate(-2px, -4px) scale(1.05)' },
+                { transform: 'translate(-5px, 0px) scale(1.05)' },
+                { transform: 'translate(5px, 4px) scale(1.05)' },
+                { transform: 'translate(0px, 0px) scale(1)' }
+            ], { duration: 80, iterations: 25 });
+
+            // 🔊 雙重音效組合
+            if(!isMuted) {
+                // 1. 先播放原本的中獎音效當底
+                document.getElementById('sndWin').play().catch(()=>{});
+
+                // 2. 疊加連噴金幣聲 (cloneNode 達成重疊效果)
+                let count = 0;
+                let timer = setInterval(() => {
+                    const coinAudio = document.getElementById('sndSuperWin').cloneNode();
+                    coinAudio.volume = 0.9; // 金幣聲音調響一點
+                    coinAudio.play().catch(()=>{});
+                    count++;
+                    if(count >= 10) clearInterval(timer); // 這次噴 10 次，噴更久一點！
+                }, 150); // 每 0.12 秒噴一聲
+            }
+        } else {
+            // 普通中獎
+            winDisplay.textContent = `WIN $${winAmt.toLocaleString()}!`;
+            winDisplay.style.color = "#fff000";
+            winDisplay.style.fontSize = "40px";
+            if(!isMuted) document.getElementById('sndWin').play().catch(()=>{});
+        }
+        winDisplay.style.display = 'block';
+    }
+
+    isSpinning = false;
+    document.getElementById('spinBtn').disabled = false;
+    updateUI();
+    localStorage.setItem('sicbo_balance', balance);
+    if (isAuto) setTimeout(spin, 1500);
+}
+
+// 測試全中用的邏輯
+function testFullHouse() {
+    if (isSpinning) return;
+    
+    // 扣錢還是要扣，模擬真實情況
+    const cost = betOptions[currentBetIdx];
+    if (balance < cost) { alert("錢不夠測啦！"); return; }
+    
+    isSpinning = true; balance -= cost; updateUI();
+    document.getElementById('spinBtn').disabled = true;
+    document.querySelectorAll('.cell').forEach(c => c.classList.remove('win-glow'));
+    document.getElementById('winText').style.display = 'none';
+    if(!isMuted) document.getElementById('sndSpin').play().catch(()=>{});
+
+    let startTime = Date.now();
+    const timer = setInterval(() => {
+        // 轉動中隨機跳動
+        for(let i=0; i<9; i++) {
+            document.getElementById('c'+i).textContent = SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)];
+        }
+        
+        // 1.2秒後，強行把 9 格都設定成 7️⃣
+        if(Date.now() - startTime > 1200) {
+            clearInterval(timer);
+            for(let i=0; i<9; i++) {
+                document.getElementById('c'+i).textContent = '7️⃣';
+            }
+            finalize(); // 進入結算，就會觸發 SUPER WIN
+        }
+    }, 80);
+}
+
+updateUI();
+</script>
+</body>
+</html>
