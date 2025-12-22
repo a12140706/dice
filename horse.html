@@ -105,11 +105,11 @@
     text-shadow: 0 0 10px #f00;
   }
 
-  @keyframes gallop {
-    0% { transform: scaleX(-1) translateY(0) rotate(0deg); }
-    50% { transform: scaleX(-1) translateY(-10px) rotate(-5deg); }
-    100% { transform: scaleX(-1) translateY(0) rotate(0deg); }
-  }
+ @keyframes gallop {
+  0% { transform: scaleX(-1) translateY(0) rotate(0deg); }
+  50% { transform: scaleX(-1) translateY(-5px) rotate(-3deg) scale(1.02); } /* 縮小垂直跳動，增加輕微縮放 */
+  100% { transform: scaleX(-1) translateY(0) rotate(0deg); }
+}
   .horse.running { animation: gallop var(--speed, 0.4s) infinite ease-in-out; }
 
   @media (orientation: portrait) {
@@ -288,8 +288,8 @@ function startRace() {
       h.el.style.left = h.pos + 'px';
 
       // 動作同步微調 (因為步幅變小，分母也要調小，動作才不會太慢)
-      let animSpeed = 0.6 - (step / 12);
-      h.el.style.setProperty('--speed', (animSpeed < 0.1 ? 0.1 : animSpeed) + 's');
+      let animSpeed = Math.max(0.25, 0.5 - (step / 20)); 
+h.el.style.setProperty('--speed', animSpeed + 's');
 
       if (h.pos >= trackWidth) {
         clearInterval(timer);
