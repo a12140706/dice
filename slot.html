@@ -3,11 +3,10 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
-<title>阿記九宮格發財機</title>
+<title>阿記拉霸機</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="阿記娛樂城">
-
 <meta name="mobile-web-app-capable" content="yes">
 <style>
   :root { --gold: #ffd86b; --red: #ff4757; --green: #2ecc71; }
@@ -302,6 +301,17 @@ function testFullHouse() {
 }
 
 updateUI();
+document.addEventListener('click', function(e) {
+    let target = e.target.closest('a') || e.target.closest('button');
+    // 如果是首頁按鈕或任何連結
+    if (target && (target.tagName === 'A' || target.getAttribute('onclick')?.includes('location.href'))) {
+        let href = target.href || target.getAttribute('onclick').match(/'([^']+)'/)[1];
+        if (href && href !== '#' && !href.startsWith('javascript')) {
+            e.preventDefault();
+            window.location.href = href;
+        }
+    }
+}, false);
 </script>
 </body>
 </html>

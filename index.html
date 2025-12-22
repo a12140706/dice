@@ -197,6 +197,13 @@
   }
 
   window.onload = updateMainBalance;
+  document.addEventListener('click', function(e) {
+    let target = e.target.closest('a');
+    if (target && target.href && target.getAttribute('href') !== '#') {
+        e.preventDefault();
+        window.location.href = target.href;
+    }
+}, false);
   window.addEventListener('storage', (e) => {
     if (e.key === 'sicbo_balance') updateMainBalance();
   });
