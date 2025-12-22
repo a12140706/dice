@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
+<title>賽馬場</title>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+  :root { --gold: #ffd86b; --grass: #27ae60; --red: #ff4757; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+  
+  body { 
+    background: #1a0505; color: #fff; font-family: "Microsoft JhengHei", Arial; 
+    height: 100dvh; width: 100vw; overflow: hidden;
+    display: flex;
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* 頂部欄：同步拉霸機風格 */
+  .topbar {
+    height: calc(50px + env(safe-area-inset-top)); background: linear-gradient(#4a0404, #2a0202);
+    display: flex; align-items: center; padding: 0 15px; gap: 10px; border-bottom: 2px solid #5c0a0a; flex-shrink: 0;
+    position: absolute; top: 0; left: 0; right: 0; z-index: 10;
+  }
+  .sound-btn { background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 8px; border: 1px solid var(--gold); cursor: pointer; font-size: 13px; color: #fff; }
+  .balance-box { background: rgba(0,0,0,0.5); border: 1px solid var(--gold); border-radius: 15px; padding: 4px 12px; color: var(--gold); font-weight: bold; font-size: 16px; }
+
+  /* 左側：賽馬跑道區 */
+  .race-section {
+    flex: 2; display: flex; flex-direction: column;
+    border-right: 2px solid #444; position: relative;
+    padding-top: 60px; /* 留空間給頂部欄 */
+  }
+
+  .track-area {
+    flex: 1; background: var(--grass); position: relative;
+    display: flex; flex-direction: column; justify-content: space-around;
+    padding: 5px 0; overflow: hidden;
+  }
+  .lane {
+    height: 15%; width: 100%; border-bottom: 1px dashed rgba(255,255,255,0.2);
+    position: relative; display: flex; align-items: center;
+  }
+  .horse {
+    position: absolute; left: 10px; font-size: 40px; transition: left 0.1s linear;
+    z-index: 2; transform: scaleX(-1); display: flex; justify-content: center; align-items: center;
+  }
+  .horse-num { 
+    position: absolute; top: -12px; transform: translateX(-50%) scaleX(-1); left: 50%;
+    background: #000; color: #fff; font-size: 12px; padding: 1px 6px; border-radius: 10px; 
+    white-space: nowrap; border: 1px solid var(--gold);
+  }
+  .finish-line {
+    position: absolute; right: 60px; top: 0; bottom: 0; width: 15px;
+    background: repeating-linear-gradient(0deg, #fff, #fff 10px, #000 10px, #000 20px);
+    border-left: 2px solid #ccc; z-index: 1;
+  }
+
+  /* 右側：下注控制區 */
+  .control-section {
+    flex: 1.1; background: #222; display: flex; flex-direction: column;
+    padding: 10px; padding-bottom: calc(10px + env(safe-area-inset-bottom));
+    padding-top: 60px;
+  }
+
+  .chip-area { display: flex; justify-content: center; gap: 15px; margin-bottom: 10px; }
+  .chip {
+    width: 45px; height: 45px; border-radius: 50%; border: 2px dashed #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: bold; background: #444; color: #fff; transition: 0.2s;
+  }
+  .chip.active { transform: scale(1.15); border-style: solid; border-color: var(--gold); background: #856404; box-shadow: 0 0 10px var(--gold); }
+  .chip-100 { background: #2980b9; }
+  .chip-500 { background: #8e44ad; }
+  .chip-1000 { background: #c0392b; }
+
+  .bet-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex: 1; }
+  .bet-btn {
+    background: #333; border: 2px solid #555; border-radius: 10px; color: #fff;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: bold;
+  }
+  .bet-btn span { color: var(--gold); font-size: 11px; margin-top: 2px; }
+  .bet-btn.active { border-color: var(--gold); background: #4a3a00; box-shadow: 0 0 10px var(--gold); }
+
+  .action-area { height: 70px; display: flex; align-items: center; gap: 10px; }
+  .go-btn {
+    flex: 1; height: 50px; border-radius: 25px; background: var(--red);
+    color: #fff; border: none; font-size: 20px; font-weight: bold; box-shadow: 0 4px 0 #8b0000;
+  }
+  .go-btn:disabled { background: #555; box-shadow: none; transform: translateY(2px); }
+
+  /* 訊息覆蓋層 */
+  #msgOverlay {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.85); padding: 20px 40px; border-radius: 20px;
+    color: var(--gold); font-size: 28px; font-weight: bold; display: none; z-index: 100;
+    border: 2px solid var(--gold); text-align: center; pointer-events: none;
+    text-shadow: 0 0 10px #f00;
+  }
+
+  @keyframes gallop {
+    0% { transform: scaleX(-1) translateY(0) rotate(0deg); }
+    50% { transform: scaleX(-1) translateY(-10px) rotate(-5deg); }
+    100% { transform: scaleX(-1) translateY(0) rotate(0deg); }
+  }
+  .horse.running { animation: gallop var(--speed, 0.4s) infinite ease-in-out; }
+
+  @media (orientation: portrait) {
+    .portrait-tip {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
+      background: #1a0505; z-index: 999; display: flex; flex-direction: column;
+      justify-content: center; align-items: center; text-align: center;
+    }
+  }
+  @media (orientation: landscape) { .portrait-tip { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="portrait-tip">
+  <div style="font-size: 50px;">🔄</div>
+  <p style="margin-top: 20px;">橫著玩</p>
+</div>
+
+<div class="topbar">
+  <div class="sound-btn" onclick="toggleMute()" id="muteBtn">🔊</div>
+  <div class="sound-btn" onclick="cycleBGM()" id="bgmBtn">🎵 音樂 1</div>
+  <div class="balance-box">💰 <span id="balanceText">0</span></div>
+  <marquee style="flex:1; color:var(--gold); font-size: 12px;">有問題找阿記</marquee>
+  <a href="index.html" style="text-decoration:none;">
+    <button style="background:none; border:1px solid #777; color:#ccc; border-radius:5px; padding:5px 12px; font-size:14px; font-weight:bold;">🏠 回大廳</button>
+  </a>
+</div>
+
+<div class="race-section">
+  <div id="msgOverlay"></div>
+  <div class="track-area" id="track">
+    <div class="finish-line"></div>
+    <div class="lane"><div class="horse" id="h1"><span class="horse-num">1</span>🐎</div></div>
+    <div class="lane"><div class="horse" id="h2"><span class="horse-num">2</span>🐎</div></div>
+    <div class="lane"><div class="horse" id="h3"><span class="horse-num">3</span>🐎</div></div>
+    <div class="lane"><div class="horse" id="h4"><span class="horse-num">4</span>🐎</div></div>
+    <div class="lane"><div class="horse" id="h5"><span class="horse-num">5</span>🐎</div></div>
+    <div class="lane"><div class="horse" id="h6"><span class="horse-num">6</span>🐎</div></div>
+  </div>
+</div>
+
+<div class="control-section">
+  <div class="chip-area">
+    <div class="chip chip-100 active" id="chip100" onclick="setBet(100)">100</div>
+    <div class="chip chip-500" id="chip500" onclick="setBet(500)">500</div>
+    <div class="chip chip-1000" id="chip1000" onclick="setBet(1000)">1K</div>
+  </div>
+  
+  <div class="bet-grid" id="betGrid"></div>
+  
+  <div class="action-area">
+    <button id="goBtn" class="go-btn" onclick="startRace()">開跑</button>
+  </div>
+</div>
+
+<audio id="sndRace" src="https://assets.mixkit.co/active_storage/sfx/2045/2045-preview.mp3" preload="auto"></audio>
+<audio id="sndWin" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="auto"></audio>
+<audio id="bgm1" src="background-music-434612.mp3" loop preload="auto"></audio>
+<audio id="bgm2" src="soft-background-music-427252.mp3" loop preload="auto"></audio>
+<audio id="bgm3" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" loop preload="auto"></audio>
+
+<script>
+let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
+let selectedHorse = null;
+let currentBet = 100;
+let isRacing = false;
+let isMuted = false;
+let horseOdds = [0, 5, 5, 5, 5, 5, 5];
+
+// 音樂控制
+let currentBgmIdx = 1;
+const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
+
+function updateUI() {
+  document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString();
+}
+
+function toggleMute() {
+  isMuted = !isMuted;
+  document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊';
+}
+
+function cycleBGM() {
+  // 停止當前音樂
+  if (bgmList[currentBgmIdx]) {
+    document.getElementById(bgmList[currentBgmIdx]).pause();
+  }
+  
+  // 切換到下一個
+  currentBgmIdx++;
+  if (currentBgmIdx >= bgmList.length) currentBgmIdx = 0;
+  
+  if (bgmList[currentBgmIdx]) {
+    document.getElementById(bgmList[currentBgmIdx]).play().catch(()=>{});
+    document.getElementById('bgmBtn').textContent = '🎵 音樂 ' + currentBgmIdx;
+  } else {
+    document.getElementById('bgmBtn').textContent = '🎵 音樂：關';
+  }
+}
+
+function setBet(amt) {
+  if (isRacing) return;
+  currentBet = amt;
+  document.querySelectorAll('.chip').forEach(c => {
+    let val = parseInt(c.innerText.replace('K','000'));
+    c.classList.toggle('active', val === amt);
+  });
+}
+
+function refreshOdds() {
+  const grid = document.getElementById('betGrid');
+  grid.innerHTML = '';
+  for (let i = 1; i <= 6; i++) {
+    // 這裡只負責生成 HTML，不改 horseOdds[i] 的數值
+    grid.innerHTML += `
+      <button class="bet-btn ${selectedHorse === i ? 'active' : ''}" onclick="selectHorse(${i})">
+        ${i} 號<span>賠率 1:${horseOdds[i]}</span>
+      </button>
+    `;
+  }
+}
+function generateNewOdds() {
+  for (let i = 1; i <= 6; i++) {
+    horseOdds[i] = (Math.random() * 8 + 2).toFixed(1);
+  }
+}
+function selectHorse(num) {
+  if (isRacing) return;
+  selectedHorse = num;
+  // 直接更新 UI，不重新隨機化賠率
+  document.querySelectorAll('.bet-btn').forEach((btn, idx) => {
+    btn.classList.toggle('active', (idx + 1) === num);
+  });
+}
+
+function startRace() {
+  if (isRacing || selectedHorse === null) {
+    if (selectedHorse === null) showMsg("請先選擇馬匹");
+    return;
+  }
+  if (balance < currentBet) { showMsg("餘額不足"); return; }
+
+  balance -= currentBet;
+  updateUI();
+  isRacing = true;
+  document.getElementById('goBtn').disabled = true;
+  if(!isMuted) document.getElementById('sndRace').play().catch(()=>{});
+
+  const horses = [1, 2, 3, 4, 5, 6].map(n => {
+    const el = document.getElementById('h' + n);
+    el.classList.add('running');
+    return { id: n, el: el, pos: 10 };
+  });
+
+  const trackWidth = document.getElementById('track').clientWidth - 110;
+
+  const timer = setInterval(() => {
+    horses.forEach(h => {
+      let odds = parseFloat(horseOdds[h.id]);
+      let bias = (10 / odds) * 0.6; 
+      let randomRange = 10 + (odds / 2.5); 
+      let step = bias + (Math.random() * randomRange);
+      h.pos += step;
+      h.el.style.left = h.pos + 'px';
+      let animSpeed = 0.7 - (step / 22);
+      h.el.style.setProperty('--speed', (animSpeed < 0.1 ? 0.1 : animSpeed) + 's');
+
+      if (h.pos >= trackWidth) {
+        clearInterval(timer);
+        finishRace(h.id);
+      }
+    });
+  }, 60);
+}
+
+function finishRace(winnerId) {
+  setTimeout(() => {
+    if (selectedHorse === winnerId) {
+      let winAmt = Math.floor(currentBet * horseOdds[winnerId]);
+      balance += winAmt;
+      showMsg(`🎊 ${winnerId}號獲勝 🎊<br>贏得 $${winAmt.toLocaleString()}`);
+      if(!isMuted) document.getElementById('sndWin').play().catch(()=>{});
+    } else {
+      showMsg(`${winnerId}號獲勝<br>再接再厲！`);
+    }
+    
+    setTimeout(() => {
+      horsesReset();
+      isRacing = false;
+      document.getElementById('goBtn').disabled = false;
+      document.getElementById('msgOverlay').style.display = 'none';
+      selectedHorse = null;
+      
+      // 關鍵：這局徹底結束了，這時候才生成下一局的賠率
+      generateNewOdds(); 
+      refreshOdds();
+      
+      updateUI();
+      localStorage.setItem('sicbo_balance', balance);
+    }, 3000);
+  }, 500);
+}
+
+function horsesReset() {
+  for(let i=1; i<=6; i++) {
+    const el = document.getElementById('h'+i);
+    el.style.left = '10px';
+    el.classList.remove('running');
+  }
+}
+
+function showMsg(text) {
+  const overlay = document.getElementById('msgOverlay');
+  overlay.innerHTML = text;
+  overlay.style.display = 'block';
+}
+
+// 修正 location.href 跳轉
+document.addEventListener('click', function(e) {
+  let target = e.target.closest('a') || e.target.closest('button');
+  if (target && target.getAttribute('onclick')?.includes('location.href')) {
+    let href = target.getAttribute('onclick').match(/'([^']+)'/)[1];
+    if (href) {
+      e.preventDefault();
+      window.location.href = href;
+    }
+  }
+}, false);
+
+generateNewOdds(); 
+refreshOdds();
+updateUI();
+</script>
+</body>
+</html>
