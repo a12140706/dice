@@ -51,7 +51,6 @@
   .horse.fatigued { filter: drop-shadow(0 0 5px red); animation: blink 0.3s infinite; }
   @keyframes blink { 50% { opacity: 0.6; } }
   
-  /* 狀態文字持久化：時間增加到 2秒 */
   .status-pop {
     position: absolute; top: -35px; left: 50%; transform: translateX(-50%);
     font-size: 14px; font-weight: bold; white-space: nowrap; pointer-events: none;
@@ -158,8 +157,8 @@
   <div class="track-area" id="track">
     <div class="finish-line"></div>
     <div class="lane"><div class="horse" id="h1"><span class="horse-num">1</span><div class="horse-body">🐎</div></div></div>
-    <div class="lane"><div class="horse" id="h2"><span class="horse-num">2</span><div class="horse-body">🐎</div></div></div>
-    <div class="lane"><div class="horse" id="h3"><span class="horse-num">3</span><div class="horse-body">🐎</div></div></div>
+    <div class="lane"><div class="horse" id="h2"><span class="horse-num">2</span><div class="horse-body">🦓</div></div></div>
+    <div class="lane"><div class="horse" id="h3"><span class="horse-num">3</span><div class="horse-body">🦄</div></div></div>
     <div class="lane"><div class="horse" id="h4"><span class="horse-num">4</span><div class="horse-body">🐎</div></div></div>
     <div class="lane"><div class="horse" id="h5"><span class="horse-num">5</span><div class="horse-body">🐎</div></div></div>
     <div class="lane"><div class="horse" id="h6"><span class="horse-num">6</span><div class="horse-body">🐎</div></div></div>
@@ -197,8 +196,27 @@ let isAudioUnlocked = false;
 let currentBgmIdx = 1;
 const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
 
+const horseConfigs = [
+    { filter: 'hue-rotate(0deg)' },           
+    { filter: 'grayscale(100%)' },           
+    { filter: 'hue-rotate(280deg)' },         
+    { filter: 'hue-rotate(50deg) brightness(1.3)' }, 
+    { filter: 'hue-rotate(180deg)' },         
+    { filter: 'invert(100%) brightness(1.5)' } 
+];
+
 function updateUI() {
   document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString();
+}
+
+function applyHorseStyles() {
+    for (let i = 1; i <= 6; i++) {
+        const horseEl = document.getElementById('h' + i);
+        if (horseEl) {
+            const body = horseEl.querySelector('.horse-body');
+            body.style.filter = horseConfigs[i-1].filter;
+        }
+    }
 }
 
 function stopAllBGM() {
@@ -283,18 +301,12 @@ function refreshOdds() {
 function generateNewOdds() {
   for (let i = 1; i <= 6; i++) {
     let speed = Math.floor(Math.random() * 5) + 1;
-    let burst;
-    let burstRoll = Math.random();
-    if (speed >= 4) {
-        burst = burstRoll < 0.7 ? (Math.floor(Math.random()*2)+1) : (Math.floor(Math.random()*5)+1);
-    } else if (speed <= 2) {
-        burst = burstRoll < 0.7 ? (Math.floor(Math.random()*2)+4) : (Math.floor(Math.random()*5)+1);
-    } else {
-        burst = Math.floor(Math.random() * 5) + 1;
-    }
+    let burst = Math.floor(Math.random() * 5) + 1;
     let stamina = Math.floor(Math.random() * 5) + 1;
-    let weightedTotal = (speed * 1.5) + burst + stamina;
-    let baseOdds = (125 / (weightedTotal + 1));
+    
+    // 賠率計算：爆發跟耐力佔比加重
+    let weightedTotal = (speed * 0.8) + (burst * 1.5) + (stamina * 1.2);
+    let baseOdds = (130 / (weightedTotal + 1));
     let odds = (baseOdds + Math.random() * 2).toFixed(1);
     if (odds < 1.5) odds = 1.5;
     horseStats[i] = { speed, burst, stamina, odds, dashCount: 0 };
@@ -314,7 +326,6 @@ function spawnStatus(horseEl, text, type) {
     pop.className = `status-pop pop-${type}`;
     pop.innerText = text;
     horseEl.appendChild(pop);
-    // 配合 CSS 延長銷毀時間
     setTimeout(() => pop.remove(), 2000);
 }
 
@@ -355,7 +366,12 @@ function startRace() {
       let fatigueFactor = 1.0;
       let dashBonus = 0;
 
-      // 檢查終點前力竭邏輯
+      // 1. 基礎速度基值拉近：
+      // 速度 1: 1.2
+      // 速度 5: 1.6 
+      // 差距變得很小
+      let baseSpeedValue = 1.1 + (h.speed * 0.2);
+
       if (h.pos > trackWidth * 0.85 && !h.hasChecked) {
           h.hasChecked = true;
           if (Math.random() < (6 - h.stamina) * 0.12) {
@@ -365,33 +381,28 @@ function startRace() {
           }
       }
 
-      // 爆發力核心修正：提高衝刺的瞬間推力
+      // 2. 爆發力完全獨立：
+      // 不管基礎速度，爆發 5 就是加很大，爆發 1 就是加很少
       if (!h.isFatigued && h.dashCount < h.maxDashes) {
-          // 根據 burst 屬性決定衝刺機率
-          if (Math.random() < h.burst * 0.006) {
+          // 爆發頻率：爆發等級越高，越容易衝刺
+          if (Math.random() < (h.burst * 0.012)) {
               h.dashCount++;
-              // 修正：大幅增加 dashBonus 的影響力
-              // 1爆發馬 bonus 約 5-8，5爆發馬 bonus 可達 25-30
-              let luckFactor = h.speed <= 2 && Math.random() < 0.3 ? (Math.random() * 20 + 10) : 0;
-              dashBonus = (h.burst * 6) + luckFactor; 
-              spawnStatus(h.el, luckFactor > 0 ? "爆發!!" : "衝刺!", "dash");
+              // 爆發加成公式：直接用 Burst 等級算，不乘基礎速度
+              dashBonus = (h.burst * 14) + (Math.random() * 10); 
+              spawnStatus(h.el, h.burst >= 4 ? "超級加速!!" : "加速", "dash");
           }
       }
 
       if (h.isFatigued) fatigueFactor = 0.3;
       
-      // 核心公式調整：
-      // 1. 降低 speed 的基礎權重 (從 0.75 降到 0.4)
-      // 2. 讓隨機位移比例稍微增加，增加不確定性
-      // 3. dashBonus 獨立出來，不被 0.35 係數過度稀釋
-      let baseStep = (h.speed * 0.4 * fatigueFactor + (Math.random() * 2.5)) * 0.35;
-      let step = baseStep + (dashBonus * 0.15); // 讓爆發力的加成很有感
+      // 計算最終步長
+      let baseStep = (baseSpeedValue * fatigueFactor + (Math.random() * 4.0)) * 0.5;
+      let step = baseStep + (dashBonus * 0.22); 
       
       h.pos += step;
       h.el.style.left = h.pos + 'px';
       
-      // 調整動畫頻率，讓衝刺時看起來真的跑很快
-      let animSpeed = Math.max(0.15, 0.8 - (step / 5));
+      let animSpeed = Math.max(0.1, 0.6 - (step / 6));
       h.el.style.setProperty('--speed', animSpeed + 's');
 
       if (h.pos >= trackWidth && !finished) {
@@ -400,7 +411,7 @@ function startRace() {
         finishRace(h.id);
       }
     });
-  }, 80);
+  }, 50);
 }
 
 function finishRace(winnerId) {
@@ -453,9 +464,12 @@ document.addEventListener('click', function(e) {
   }
 }, false);
 
-generateNewOdds(); 
-refreshOdds();
-updateUI();
+window.onload = () => {
+    generateNewOdds(); 
+    refreshOdds();
+    updateUI();
+    applyHorseStyles();
+};
 </script>
 </body>
 </html>
