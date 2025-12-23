@@ -30,13 +30,11 @@
   @keyframes dropIn { from { transform: translateY(-500px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
   .tile-exit { animation: dropOut 0.3s ease-in forwards; }
   @keyframes dropOut { to { transform: translateY(500px); opacity: 0; } }
-  .eliminating { animation: vanish 0.3s forwards; z-index: 10; }
+  .eliminating { animation: vanish 0.3s forwards !important; z-index: 10; }
   @keyframes vanish { to { transform: scale(1.5); opacity: 0; } }
   .tile-hu { background: linear-gradient(#ffd700, #ff8c00) !important; color: #fff !important; }
-  .tile-wild-effect { animation: wildGlow 0.8s infinite alternate; }
+  .tile-wild-effect { animation: wildGlow 0.8s infinite alternate !important; }
   @keyframes wildGlow { from { box-shadow: 0 0 5px var(--gold); } to { box-shadow: 0 0 15px var(--gold); } }
-  .coin-particle { position: absolute; font-size: 24px; pointer-events: none; z-index: 999; }
-  @keyframes coinFly { 0% { transform: translate(0, 0) rotate(0deg); opacity: 1; } 100% { transform: translate(var(--tx), var(--ty)) rotate(720deg); opacity: 0; } }
   .big-win-alert { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 60px; font-weight: bold; color: #ffd700; text-shadow: 0 0 20px #ff0000; z-index: 1000; pointer-events: none; display: none; text-align: center; }
   .bottom-panel { background: #000; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
   .win-display { background: #001a1a; color: var(--gold); text-align: center; padding: 5px; border-radius: 5px; font-weight: bold; border: 1px solid #004d40; font-size: 18px; }
@@ -58,7 +56,7 @@
   <div class="audio-ctrl" onclick="toggleMute()" id="muteBtn">🔊</div>
   <div class="audio-ctrl" onclick="cycleBGM()" id="bgmBtn">🎵 音樂1</div>
   <div class="balance-box" id="balanceBox">💰 <span id="balanceText">0</span></div>
-  <marquee style="flex:1; color:var(--gold); font-size: 12px;">穩定平衡版已上線</marquee>
+  <marquee style="flex:1; color:var(--gold); font-size: 12px;">WILD 消除動畫修正 | 元寶 4% 版本</marquee>
 </div>
 
 <div class="free-game-bar" id="freeGameBar">
@@ -100,7 +98,7 @@ let isSpinning = false, isAuto = false, combo = 0, winThisSpin = 0;
 let freeSpins = 0, currentMultiplier = 1;
 let currentBetIdx = 2, currentBGM = 1, isMuted = false, hasInteracted = false;
 const betOptions = [50, 100, 300, 500, 1000];
-const baseIcons = ['🀎','🀚','🀝','🀑','🀔','🀄','🀅','⬜']; // 元寶改為機率觸發
+const baseIcons = ['🀎','🀚','🀝','🀑','🀔','🀄','🀅','⬜'];
 const tileColor = { '🀎':'mj-red','🀚':'mj-blue','🀝':'mj-blue','🀑':'mj-green','🀔':'mj-green','🀄':'mj-red','🀅':'mj-green','⬜':'mj-blue','胡':'tile-hu','元寶':'tile-wild' };
 let board = [];
 
@@ -133,14 +131,10 @@ function updateUI() {
   localStorage.setItem('sicbo_balance', balance);
 }
 
-// 🎰 阿記特調機率：降低連線率與元寶率
 function getRandomTile(r, c, isFreeMode) {
   const rand = Math.random();
-  
-  // 1. 元寶機率微調回 6% (讓玩家有小確幸)
-  if (rand < 0.06) return '元寶';
-  
-  // 2. 胡的機率 (維持 2% 左右進入免遊)
+  // 阿記要求：元寶 4%
+  if (rand < 0.04) return '元寶';
   if (!isFreeMode && rand > 0.98) return '胡';
 
   let pool = [...baseIcons];
@@ -149,18 +143,13 @@ function getRandomTile(r, c, isFreeMode) {
 
   let pick = pool[Math.floor(Math.random() * pool.length)];
 
-  // --- 阿記特調平衡邏輯 ---
-
-  // 如果抽到的跟左邊一樣：只有 30% 機率重抽 (還有 70% 機率會讓你連成一對)
+  // 重抽邏輯：左重複 30% 重抽，夾擊 50% 重抽
   if (pick === leftTile && Math.random() < 0.3) {
     pick = pool[Math.floor(Math.random() * pool.length)];
   }
-
-  // 如果剛好左右夾擊：50% 機率重抽 (不完全封死三連，但也不會太頻繁)
   if (pick === leftTile && pick === rightTile && Math.random() < 0.5) {
     pick = pool[Math.floor(Math.random() * pool.length)];
   }
-
   return pick;
 }
 
@@ -285,7 +274,8 @@ async function checkMatches() {
 
     toEliminate.forEach(pos => {
       const [r, c] = pos.split(',').map(Number);
-      document.getElementById(`tile-${r}-${c}`).classList.add('eliminating');
+      const el = document.getElementById(`tile-${r}-${c}`);
+      if(el) el.classList.add('eliminating'); // 此處確保 WILD 也會跑消除動畫
     });
 
     await new Promise(r => setTimeout(r, 400));
