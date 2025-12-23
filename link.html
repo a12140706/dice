@@ -11,19 +11,20 @@
   body { 
     margin: 0; padding: 0; background: var(--bg); color: #fff;
     font-family: "Microsoft JhengHei", Arial; height: 100dvh; width: 100vw; overflow: hidden;
-    display: flex; padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right);
+    display: flex; 
+    /* 增加手機安全區域縮排 */
+    padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left);
   }
 
   .topbar {
-    height: calc(50px + env(safe-area-inset-top)); background: linear-gradient(#4a0404, #2a0202);
-    display: flex; align-items: center; padding: 0 15px; gap: 10px; border-bottom: 2px solid #5c0a0a;
+    height: calc(45px + env(safe-area-inset-top)); background: linear-gradient(#4a0404, #2a0202);
+    display: flex; align-items: center; padding: env(safe-area-inset-top) 15px 0 15px; gap: 10px; border-bottom: 2px solid #5c0a0a;
     position: absolute; top: 0; left: 0; right: 0; z-index: 100;
   }
   .balance-box { background: rgba(0,0,0,0.5); border: 1px solid var(--gold); border-radius: 15px; padding: 4px 12px; color: var(--gold); font-weight: bold; font-size: 16px; }
 
-  .main-layout { flex: 1; display: flex; padding-top: 55px; width: 100%; height: 100%; }
+  .main-layout { flex: 1; display: flex; padding-top: calc(50px + env(safe-area-inset-top)); width: 100%; height: 100%; }
 
-  /* 震動與閃爍動畫 */
   @keyframes shake {
     0% { transform: translate(1px, 1px); }
     50% { transform: translate(-2px, 2px); }
@@ -34,19 +35,29 @@
   @keyframes blink { 0%, 75% { opacity: 1; } 80%, 95% { opacity: 0.1; } 100% { opacity: 1; } }
 
   .game-section { flex: 3; position: relative; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-  .game-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; padding: 10px; width: 95%; max-height: 85dvh; }
+  
+  /* 優化：限制格子的最大高度，避免手機橫屏時下方圖案溢出 */
+  .game-grid { 
+    display: grid; 
+    grid-template-columns: repeat(8, 1fr); 
+    gap: 4px; 
+    padding: 10px; 
+    width: 100%; 
+    max-height: calc(100vh - 70px - env(safe-area-inset-bottom)); 
+    max-width: 95vw;
+    margin-bottom: env(safe-area-inset-bottom);
+  }
 
-  /* 迷霧層：增加 transition 讓移動跟變淡更平滑 */
   .mist-overlay {
     position: absolute; width: 100%; height: 100%; pointer-events: none;
-    background: radial-gradient(circle 130px at var(--x) var(--y), transparent 10%, var(--mist) 100%);
+    background: radial-gradient(circle 120px at var(--x) var(--y), transparent 10%, var(--mist) 100%);
     z-index: 10; display: none; transition: opacity 0.5s, background 0.1s ease-out;
   }
 
   .tile {
     aspect-ratio: 1 / 1; background: var(--card); border: 1px solid #5c0a0a;
     border-radius: 6px; display: flex; align-items: center; justify-content: center;
-    font-size: clamp(16px, 4dvh, 32px); position: relative; transition: 0.2s;
+    font-size: clamp(14px, 5dvh, 32px); position: relative; transition: 0.2s;
   }
   .tile.selected { border-color: var(--gold); background: #4a0404; transform: scale(1.1); z-index: 20; box-shadow: 0 0 15px var(--gold); }
   .tile.hidden { visibility: hidden; pointer-events: none; }
@@ -147,12 +158,12 @@ function updateBonusInfo() {
     document.getElementById('bonusInfo').textContent = `倍率：${mult.toFixed(1)}x`;
 }
 
-// 核心修改：迷霧移動邏輯
 function moveMistTo(x, y) {
     if (!document.getElementById('mistToggle').checked) return;
     const mist = document.getElementById('mist');
+    // 這裡微調 y 軸偏移，確保亮區就在手指或點擊位置的正中心
     mist.style.setProperty('--x', x + 'px');
-    mist.style.setProperty('--y', (y - 60) + 'px'); // 固定偏移
+    mist.style.setProperty('--y', y + 'px');
 }
 
 function updateMist(e) {
@@ -216,9 +227,8 @@ function createBoard() {
         div.className = 'tile' + (tile.isLocked ? ' locked' : '');
         div.id = `tile-${i}`;
         div.innerHTML = tile.icon;
-        // 點擊事件
         div.onclick = (e) => {
-            // 對焦亮區到點擊的格子位置
+            // 對焦亮區到點擊的格子中心位置
             const rect = div.getBoundingClientRect();
             const wrapperRect = document.getElementById('gameWrapper').getBoundingClientRect();
             moveMistTo(rect.left + rect.width/2 - wrapperRect.left, rect.top + rect.height/2 - wrapperRect.top);
@@ -249,7 +259,6 @@ function eliminate(i1, i2) {
     document.getElementById(`tile-${i1}`).classList.add('hidden');
     document.getElementById(`tile-${i2}`).classList.add('hidden');
     
-    // 消除時暫時讓迷霧變淡
     const mist = document.getElementById('mist');
     mist.style.opacity = "0.3"; 
     setTimeout(() => { mist.style.opacity = "1"; }, 1500);
@@ -280,7 +289,7 @@ function eliminate(i1, i2) {
 
 function triggerShake() {
     const grid = document.getElementById('gameGrid');
-    grid.classList.add('shaking'); playSound('sndShake'); showFloat("🌪️ 地震洗牌！", "#ff9f43");
+    grid.classList.add('shaking'); playSound('sndShake'); showFloat("🌪️ 地震拉！", "#ff9f43");
     setTimeout(() => {
         grid.classList.remove('shaking');
         shuffleRemaining();
