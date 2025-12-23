@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
-<title>麻將消消樂 - 手機動畫版</title>
+<title>麻將消消樂</title>
 <style>
   :root { --gold: #ffd86b; --bg: #004d40; --m-red: #d32f2f; --m-green: #2e7d32; --m-blue: #1976d2; }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
@@ -60,23 +60,27 @@
   .step { 
     flex: 1; width: 70%; margin: 2px auto; background: rgba(255,255,255,0.1); 
     border-radius: 50%; display: flex; align-items: center; justify-content: center; 
-    font-size: 10px; color: rgba(255,255,255,0.3);
+    font-size: 10px; color: rgba(255,255,255,0.3); transition: all 0.3s ease;
   }
+  
+  .step-mj { font-size: 22px !important; color: #fff; } 
   .step.active { background: var(--gold); color: #000; box-shadow: 0 0 10px var(--gold); transform: scale(1.1); }
+  .step.active.step-mj { color: #000; }
 
   .mj-tile { 
     background: #fff; border-radius: 8px; color: #000; 
     font-size: 8vw; display: flex; align-items: center; justify-content: center; 
     font-weight: bold; box-shadow: 0 4px 0 #999; position: relative;
-    opacity: 0; /* 初始隱藏，靠動畫顯示 */
+    opacity: 1;
+    will-change: transform, opacity; /* 提升手機渲染效能 */
   }
   @media (min-width: 450px) { .mj-tile { font-size: 36px; } }
 
-  /* ⭐ 落下動畫修正：開局與補牌共用 */
-  .tile-drop { animation: dropIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1) forwards; }
+  /* 優化後的動畫 */
+  .tile-drop { animation: dropIn 0.45s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards; }
   @keyframes dropIn { 
-    from { transform: translateY(-400px); opacity: 0; } 
-    to { transform: translateY(0); opacity: 1; } 
+    0% { transform: translateY(-300px); opacity: 0; } 
+    100% { transform: translateY(0); opacity: 1; } 
   }
 
   .eliminating { animation: vanish 0.3s forwards; z-index: 10; }
@@ -127,7 +131,8 @@
   <div class="audio-ctrl" onclick="toggleMute()" id="muteBtn">🔊</div>
   <div class="audio-ctrl" onclick="cycleBGM()" id="bgmBtn">🎵 1</div>
   <div class="balance-box" id="balanceBox">💰 <span id="balanceText">0</span></div>
-  <marquee style="flex:1; color:var(--gold); font-size: 11px;">開局落下動畫修正版 - 手機優先</marquee>
+  <marquee style="flex:1; color:var(--gold); font-size: 11px;">有問題再說，例如一直跑都不會停</marquee>
+  <a href="index.html" style="text-decoration:none;"><button class="audio-ctrl">🏠 回大廳</button></a>
 </div>
 
 <div class="free-game-bar" id="freeSpinsLeftBar">
@@ -154,15 +159,15 @@
       </div>
     </div>
     <button class="spin-btn" id="spinBtn" onclick="handleFirstClick(); startSpin();">SPIN</button>
-    <button class="auto-btn" id="autoBtn" onclick="handleFirstClick(); toggleAuto()">自動</button>
+    <button class="auto-btn" id="autoBtn" onclick="handleFirstClick(); toggleAuto()">自動玩</button>
   </div>
 </div>
 
-<audio id="bgm1" src="background-music-434612.mp3" loop></audio>
-<audio id="bgm2" src="soft-background-music-427252.mp3" loop></audio>
-<audio id="bgmFree" src="https://assets.mixkit.co/music/preview/mixkit-tech-house-vibes-130.mp3" loop></audio>
-<audio id="sndSpin" src="https://assets.mixkit.co/active_storage/sfx/2014/2014-preview.mp3"></audio>
-<audio id="sndMatch" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3"></audio>
+<audio id="bgm1" src="background-music-434612.mp3" loop preload="auto"></audio>
+<audio id="bgm2" src="soft-background-music-427252.mp3" loop preload="auto"></audio>
+<audio id="bgmFree" src="https://assets.mixkit.co/music/preview/mixkit-tech-house-vibes-130.mp3" loop preload="auto"></audio>
+<audio id="sndSpin" src="https://assets.mixkit.co/active_storage/sfx/2014/2014-preview.mp3" preload="auto"></audio>
+<audio id="sndMatch" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="auto"></audio>
 
 <script>
 let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
@@ -174,6 +179,23 @@ const baseIcons = ['🀎','🀚','🀝','🀑','🀔','🀄','🀅','⬜'];
 const tileColor = { '🀎':'mj-red','🀚':'mj-blue','🀝':'mj-blue','🀑':'mj-green','🀔':'mj-green','🀄':'mj-red','🀅':'mj-green','⬜':'mj-blue','胡':'tile-hu','元寶':'tile-wild' };
 let board = [];
 
+// 初始化：只生成一次格子容器
+function initGrid() {
+    const gridEl = document.getElementById('grid');
+    gridEl.innerHTML = '';
+    for (let r = 0; r < 4; r++) {
+        board[r] = [];
+        for (let c = 0; c < 4; c++) {
+            board[r][c] = baseIcons[Math.floor(Math.random() * baseIcons.length)];
+            const t = document.createElement('div');
+            t.id = `tile-${r}-${c}`;
+            t.className = 'mj-tile';
+            gridEl.appendChild(t);
+            drawTile(r, c);
+        }
+    }
+}
+
 function createPillar() {
   const p = document.getElementById('pillar');
   p.innerHTML = '';
@@ -181,7 +203,10 @@ function createPillar() {
     const s = document.createElement('div');
     s.id = `step-${i}`;
     s.className = 'step';
-    s.innerHTML = i===2?'⬜':i===5?'🀄':i===10?'🀅':'●';
+    if (i === 2) { s.innerHTML = '⬜'; s.classList.add('step-mj'); } 
+    else if (i === 5) { s.innerHTML = '🀄'; s.classList.add('step-mj'); } 
+    else if (i === 10) { s.innerHTML = '🀅'; s.classList.add('step-mj'); } 
+    else { s.innerHTML = '●'; }
     p.appendChild(s);
   }
 }
@@ -201,7 +226,7 @@ function updateUI() {
   localStorage.setItem('sicbo_balance', balance);
 }
 
-function getRandomTile(r, c, isFreeMode) {
+function getRandomTile(isFreeMode) {
   const rand = Math.random();
   if (rand < 0.04) return '元寶'; 
   if (!isFreeMode && rand > 0.98) return '胡';
@@ -229,11 +254,6 @@ async function startSpin() {
   if (isSpinning) return;
   isSpinning = true; combo = 0; winThisSpin = 0; updateUI();
   
-  // 1. 先讓舊的方塊消失
-  const oldTiles = document.querySelectorAll('.mj-tile');
-  oldTiles.forEach(t => t.style.opacity = '0');
-  
-  // 處理免遊與下注
   if (freeSpins > 0) {
     freeSpins--;
     document.getElementById('mainBody').classList.add('in-free');
@@ -250,29 +270,23 @@ async function startSpin() {
   playBGM();
   if(!isMuted) document.getElementById('sndSpin').play();
 
-  // 2. 清空網格並準備重新落下
-  const gridEl = document.getElementById('grid');
-  gridEl.innerHTML = ''; board = [];
-
-  // ⭐ 阿記看這裡：一行一行落下，營造開局動畫感
+  // 優化點：不刪除 DOM，直接隱藏並重設內容
   for (let r=0; r<4; r++) {
-    board[r] = [];
     for (let c=0; c<4; c++) {
-      board[r][c] = getRandomTile(r, c, false);
-      const t = document.createElement('div');
-      t.id = `tile-${r}-${c}`;
-      t.className = 'mj-tile'; 
-      // 延遲添加 tile-drop，讓它有先後落下的感覺
+      const t = document.getElementById(`tile-${r}-${c}`);
+      t.style.opacity = '0';
+      t.classList.remove('tile-drop', 'eliminating');
+      board[r][c] = getRandomTile(false);
+      
+      // 使用延遲觸發動畫，避免同時執行
       setTimeout(() => {
-        t.classList.add('tile-drop');
         drawTile(r, c);
-      }, (3 - r) * 100 + (c * 50)); 
-      gridEl.appendChild(t);
+        t.classList.add('tile-drop');
+      }, (3 - r) * 60 + (c * 30)); 
     }
   }
 
-  // 等動畫跑完再開始判斷
-  await new Promise(r => setTimeout(r, 800));
+  await new Promise(r => setTimeout(r, 700));
   checkMatches();
 }
 
@@ -285,11 +299,11 @@ async function runMultiplierDraw() {
   return new Promise(resolve => {
     const timer = setInterval(() => {
       rollingText.textContent = `X${Math.floor(Math.random() * 15) + 2}`;
-      if (Date.now() - startTime > 1200) {
+      if (Date.now() - startTime > 1000) {
         clearInterval(timer);
         currentMultiplier = finalMult;
         rollingText.textContent = `X${finalMult}`;
-        setTimeout(() => { overlay.style.display = 'none'; resolve(); }, 600);
+        setTimeout(() => { overlay.style.display = 'none'; resolve(); }, 500);
       }
     }, 80);
   });
@@ -307,7 +321,7 @@ function drawTile(r, c) {
   const el = document.getElementById(`tile-${r}-${c}`);
   if(!el) return;
   const icon = board[r][c];
-  el.className = `mj-tile ${tileColor[icon] || ''} tile-drop`;
+  el.className = `mj-tile ${tileColor[icon] || ''}`; 
   el.innerHTML = icon === '元寶' ? '💰' : icon;
   if (isWild(icon) && icon !== '胡') {
     el.innerHTML += '<div style="position:absolute;top:0;right:0;background:gold;color:#000;font-size:8px;padding:1px 2px;border-radius:0 0 0 4px;">WILD</div>';
@@ -335,7 +349,7 @@ async function checkMatches() {
     combo++;
     if(!isMuted) document.getElementById('sndMatch').play();
     
-    let basePrice = betOptions[currentBetIdx] / 10;
+    let basePrice = betOptions[currentBetIdx] / 50; 
     let win = toEliminate.size * basePrice * currentMultiplier;
     winThisSpin += win; balance += win; updateUI();
 
@@ -344,27 +358,27 @@ async function checkMatches() {
       document.getElementById(`tile-${r}-${c}`).classList.add('eliminating');
     });
 
-    await new Promise(r => setTimeout(r, 350));
+    await new Promise(r => setTimeout(r, 300));
     toEliminate.forEach(pos => {
       const [r, c] = pos.split(',').map(Number);
-      board[r][c] = getRandomTile(r, c, false);
+      board[r][c] = getRandomTile(false);
       const el = document.getElementById(`tile-${r}-${c}`);
       el.classList.remove('eliminating', 'tile-drop');
-      void el.offsetWidth; // 強制重繪觸發動畫
+      void el.offsetWidth; 
       drawTile(r, c);
       el.classList.add('tile-drop');
     });
-    setTimeout(checkMatches, 600);
+    setTimeout(checkMatches, 500);
   } else {
     let huCount = 0;
     board.forEach(row => row.forEach(icon => { if(icon === '胡') huCount++; }));
     if (huCount >= 3 && freeSpins === 0 && !document.getElementById('mainBody').classList.contains('in-free')) {
-      alert("🀄 湊齊三胡！10 局免費遊戲！");
+      alert("🀄 胡了！10 局免費遊戲！");
       freeSpins = 10; isSpinning = false; updateUI();
       setTimeout(startSpin, 500);
     } else {
       isSpinning = false; updateUI();
-      if (freeSpins > 0 || isAuto) setTimeout(startSpin, 1200);
+      if (freeSpins > 0 || isAuto) setTimeout(startSpin, 1000);
     }
   }
 }
@@ -374,7 +388,11 @@ function toggleAuto() { isAuto=!isAuto; document.getElementById('autoBtn').class
 function cycleBGM() { currentBGM=currentBGM===1?2:1; document.getElementById('bgmBtn').textContent=`🎵 ${currentBGM}`; if(hasInteracted) playBGM(); }
 function toggleMute() { isMuted=!isMuted; document.getElementById('muteBtn').textContent=isMuted?'🔇':'🔊'; playBGM(); }
 
-window.onload = () => { createPillar(); updateUI(); };
+window.onload = () => { 
+    createPillar(); 
+    initGrid(); 
+    updateUI(); 
+};
 </script>
 </body>
 </html>
