@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
+<title>麻將大亨</title>
+<style>
+  :root { --gold: #ffd86b; --bg: #1a0505; --m-red: #d32f2f; --m-green: #2e7d32; --m-blue: #1976d2; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+  body { margin: 0; padding: 0; background: var(--bg); color: #fff; font-family: Arial; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0; }
+  
+  .topbar { height: 50px; flex-shrink: 0; background: linear-gradient(#4a0404, #2a0202); display: flex; align-items: center; padding: 0 10px; gap: 8px; border-bottom: 2px solid #5c0a0a; }
+  .sound-toggle { cursor: pointer; font-size: 16px; }
+  .balance-box { background: rgba(0,0,0,0.5); border: 1px solid var(--gold); border-radius: 12px; padding: 4px 8px; color: var(--gold); font-weight: bold; font-size: 14px; }
+
+  /* 新增：主要遊戲佈局 (左右分欄) */
+  .main-layout { flex: 1; display: flex; align-items: center; justify-content: space-between; overflow: hidden; padding: 5px; position: relative; }
+  
+  .game-area { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); gap: 6px; width: 100%; max-width: 320px; height: 100%; max-height: 420px; padding: 8px; background: rgba(0,0,0,0.6); border-radius: 10px; border: 2px solid #5c0a0a; }
+
+  /* 右側垂直進化條樣式 */
+  .side-evo-bar {
+    width: 65px; display: flex; flex-direction: column; justify-content: center; gap: 15px;
+    height: 100%; padding-right: 5px; border-left: 1px solid rgba(255,255,255,0.1);
+  }
+  .evo-node {
+    width: 50px; height: 50px; border-radius: 50%; background: #111; border: 2px solid #444;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 10px; opacity: 0.4; transition: all 0.5s; position: relative; color: #ccc;
+  }
+  /* 進化啟動特效：發光呼吸燈 */
+  .evo-node.active {
+    opacity: 1; border-color: var(--gold); background: #3a0505; color: var(--gold);
+    box-shadow: 0 0 15px var(--gold);
+    animation: glowPulse 1.5s infinite alternate;
+  }
+  @keyframes glowPulse {
+    from { box-shadow: 0 0 5px var(--gold); transform: scale(1); }
+    to { box-shadow: 0 0 18px var(--gold), 0 0 10px #f39c12; transform: scale(1.08); }
+  }
+
+  .mj-tile { background: linear-gradient(to bottom, #fff, #eee); border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 9vw; position: relative; font-weight: bold; box-shadow: 0 3px 0 #ccc, inset 0 -2px 4px rgba(0,0,0,0.1); }
+  @media (min-width: 400px) { .mj-tile { font-size: 38px; } }
+  .mj-red { color: var(--m-red); } .mj-green { color: var(--m-green); } .mj-blue { color: var(--m-blue); } .mj-black { color: #222; }
+  .mj-tile.eliminating { transform: scale(0); opacity: 0; transition: 0.3s; }
+  .wild-tag { position: absolute; top: 1px; right: 1px; background: gold; color: #000; font-size: 8px; padding: 1px 2px; border-radius: 2px; font-weight: bold; }
+  .wild-white { box-shadow: 0 0 12px #fff; border: 1px solid #fff; }
+  .wild-green { box-shadow: 0 0 12px #0f0; border: 1px solid #0f0; }
+  .wild-red { box-shadow: 0 0 12px #f00; border: 1px solid #f00; }
+
+  .control-panel { background: #222; padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 5px; flex-shrink: 0; }
+  .bet-selector { display: flex; align-items: center; gap: 10px; background: #000; padding: 4px 15px; border-radius: 20px; border: 1px solid #444; }
+  .bet-btn { font-size: 20px; color: var(--gold); padding: 0 8px; }
+  .bet-value { font-size: 16px; font-weight: bold; color: #fff; min-width: 50px; text-align: center; }
+  .btn-row { display: flex; justify-content: center; gap: 20px; width: 100%; margin-top: 5px; }
+  .spin-btn { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--gold); background: #b91c1c; color: #fff; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #5c0a0a; }
+  .spin-btn:disabled { background: #555; border-color: #777; box-shadow: none; transform: translateY(2px); }
+  .auto-btn { padding: 10px 20px; border-radius: 10px; border: 1px solid #777; background: #333; color: #fff; font-weight: bold; height: 45px; align-self: center; }
+  .auto-btn.active { background: #2e7d32; box-shadow: 0 0 15px #2e7d32; border-color: #fff; }
+
+  .win-float { position: absolute; color: var(--gold); font-size: 32px; font-weight: bold; animation: floatUp 1s forwards; z-index: 200; text-shadow: 0 2px 8px #000; pointer-events: none; }
+  @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-100px); } }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="sound-toggle" onclick="toggleMute()" id="soundIcon">🔊</div>
+  <div class="sound-toggle" onclick="cycleBGM()" id="bgmBtn">🎵 音樂 1</div>
+  <div class="balance-box">💰 <span id="balanceText">0</span></div>
+  <marquee id="msg" style="flex:1; color:var(--gold); font-size: 12px; margin: 0 5px;">有問題找阿記</marquee>
+  <a href="index.html" style="text-decoration:none;">
+    <button style="background:none; border:1px solid #777; color:#ccc; border-radius:5px; padding:3px 8px; font-size:12px;">🏠 回大廳</button>
+  </a>
+</div>
+
+<div class="main-layout">
+  <div class="game-area">
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <div class="side-evo-bar">
+    <div id="evo-red" class="evo-node">🀄<br>8連</div>
+    <div id="evo-green" class="evo-node">🀅<br>5連</div>
+    <div id="evo-white" class="evo-node">⚪<br>3連</div>
+  </div>
+</div>
+
+<div class="control-panel">
+  <div style="color: var(--gold); font-size: 13px; font-weight: bold;">COMBO: <span id="comboCount">0</span></div>
+  <div class="bet-selector">
+    <div class="bet-btn" onclick="changeBet(-1)">◀</div>
+    <div class="bet-value">$ <span id="betText">300</span></div>
+    <div class="bet-btn" onclick="changeBet(1)">▶</div>
+  </div>
+  <div class="btn-row">
+    <button class="auto-btn" id="autoBtn" onclick="toggleAuto()">自動玩</button>
+    <button class="spin-btn" id="spinBtn" onclick="startSpin()">轉動</button>
+  </div>
+</div>
+
+<audio id="bgm1" src="background-music-434612.mp3" loop preload="auto"></audio>
+<audio id="bgm2" src="soft-background-music-427252.mp3" loop preload="auto"></audio>
+<audio id="bgm3" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" loop preload="auto"></audio>
+
+<audio id="sndSpin" src="https://assets.mixkit.co/active_storage/sfx/2014/2014-preview.mp3"></audio>
+<audio id="sndMatch" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3"></audio>
+<audio id="sndWin" src="https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3"></audio>
+<audio id="sndEvo" src="https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3"></audio>
+
+<script>
+// 以下邏輯完全保留妳的設定，僅更新 updateUI 與佈局相關變量
+let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
+let isSpinning = false, isAuto = false, combo = 0, unlockedWilds = [];
+const betOptions = [50, 100, 300, 500, 1000];
+let currentBetIdx = 2;
+
+let isMuted = false, currentBgmIdx = 1, isAudioUnlocked = false;
+const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
+
+function toggleMute() {
+    isMuted = !isMuted;
+    document.getElementById('soundIcon').textContent = isMuted ? '🔇' : '🔊';
+    if (isMuted) stopAllBGM(); else playBGM();
+}
+
+function cycleBGM() {
+    if (!isAudioUnlocked) unlockAudio();
+    stopAllBGM();
+    currentBgmIdx = (currentBgmIdx + 1) % 4;
+    document.getElementById('bgmBtn').textContent = currentBgmIdx === 0 ? '🎵 音樂：關' : '🎵 音樂 ' + currentBgmIdx;
+    if (!isMuted) playBGM();
+}
+
+function stopAllBGM() { bgmList.forEach(id => { if (id) { const a = document.getElementById(id); a.pause(); } }); }
+function playBGM() { if (currentBgmIdx !== 0 && !isMuted) { const bgm = document.getElementById(bgmList[currentBgmIdx]); if (bgm) { bgm.volume = 0.2; bgm.play().catch(()=>{}); } } }
+function playSfx(id) { if (!isMuted) { const s = document.getElementById(id); s.currentTime = 0; s.play().catch(()=>{}); } }
+function unlockAudio() { const audios = document.querySelectorAll('audio'); audios.forEach(a => { a.muted = true; a.play().then(()=>{a.pause(); a.muted=false;}); }); isAudioUnlocked = true; }
+
+const tileData = { '🀇': 'mj-red', '🀈': 'mj-red', '🀉': 'mj-red', '🀊': 'mj-red', '🀋': 'mj-red', '🀌': 'mj-red', '🀍': 'mj-red', '🀎': 'mj-red', '🀏': 'mj-red', '🀀': 'mj-black', '🀁': 'mj-black', '🀂': 'mj-black', '🀃': 'mj-black', '⬜': 'mj-blue', '🀅': 'mj-green', '🀄': 'mj-red' };
+const icons = Object.keys(tileData);
+let board = [];
+
+function changeBet(dir) {
+    if (isSpinning) return;
+    currentBetIdx = (currentBetIdx + dir + betOptions.length) % betOptions.length;
+    document.getElementById('betText').textContent = betOptions[currentBetIdx];
+}
+
+function updateUI() {
+    document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString();
+    document.getElementById('comboCount').textContent = combo;
+    // 更新側邊垂直條
+    document.getElementById('evo-white').classList.toggle('active', combo >= 3);
+    document.getElementById('evo-green').classList.toggle('active', combo >= 5);
+    document.getElementById('evo-red').classList.toggle('active', combo >= 8);
+    localStorage.setItem('sicbo_balance', balance);
+}
+
+function initBoard() {
+    const gridEl = document.getElementById('grid');
+    gridEl.innerHTML = ''; board = [];
+    for (let r = 0; r < 4; r++) {
+        board[r] = [];
+        for (let c = 0; c < 4; c++) {
+            const icon = icons[Math.floor(Math.random() * icons.length)];
+            board[r][c] = icon;
+            const tile = document.createElement('div');
+            tile.id = `tile-${r}-${c}`;
+            tile.className = `mj-tile ${tileData[icon]}`;
+            tile.innerHTML = icon;
+            gridEl.appendChild(tile);
+        }
+    }
+}
+
+async function startSpin() {
+    if (!isAudioUnlocked) unlockAudio();
+    const bet = betOptions[currentBetIdx];
+    if (isSpinning || balance < bet) {
+        if (balance < bet) { alert("餘額不足！"); isAuto = false; document.getElementById('autoBtn').classList.remove('active'); }
+        return;
+    }
+    playSfx('sndSpin');
+    balance -= bet; combo = 0; unlockedWilds = [];
+    updateUI(); isSpinning = true;
+    document.getElementById('spinBtn').disabled = true;
+    initBoard(); 
+    await new Promise(r => setTimeout(r, 400));
+    processMatches();
+}
+
+async function processMatches() {
+    let matches = checkWinningLines();
+    if (matches.length > 0) {
+        combo++;
+        playSfx('sndMatch');
+        if (combo === 3) { unlockedWilds.push('⬜'); playSfx('sndEvo'); }
+        if (combo === 5) { unlockedWilds.push('🀅'); playSfx('sndEvo'); }
+        if (combo === 8) { unlockedWilds.push('🀄'); playSfx('sndEvo'); }
+        updateUI();
+        let winAmt = matches.length * (betOptions[currentBetIdx] * 0.15) * (1 + combo * 0.3);
+        balance += winAmt;
+        setTimeout(() => playSfx('sndWin'), 200);
+        showWinFloat(winAmt);
+        matches.forEach(m => document.getElementById(`tile-${m.r}-${m.c}`).classList.add('eliminating'));
+        await new Promise(r => setTimeout(r, 400));
+        await cascade();
+        processMatches();
+    } else {
+        isSpinning = false; document.getElementById('spinBtn').disabled = false;
+        updateUI();
+        if (isAuto) { await new Promise(r => setTimeout(r, 800)); startSpin(); }
+    }
+}
+
+function checkWinningLines() {
+    let winningCoords = [];
+    for (let r = 0; r < 4; r++) {
+        let firstIcon = board[r][0], matchCount = 1, lineIndices = [{r, c: 0}];
+        for (let c = 1; c < 4; c++) {
+            if (isSame(firstIcon, board[r][c])) { matchCount++; lineIndices.push({r, c}); }
+            else if (unlockedWilds.includes(firstIcon)) { firstIcon = board[r][c]; matchCount++; lineIndices.push({r, c}); }
+            else break;
+        }
+        if (matchCount >= 3) winningCoords.push(...lineIndices);
+    }
+    return winningCoords;
+}
+
+function isSame(iconA, iconB) { return iconA === iconB || unlockedWilds.includes(iconA) || unlockedWilds.includes(iconB); }
+
+async function cascade() {
+    for (let c = 0; c < 4; c++) {
+        let emptyCount = 0;
+        for (let r = 3; r >= 0; r--) {
+            const tileEl = document.getElementById(`tile-${r}-${c}`);
+            if (tileEl && tileEl.classList.contains('eliminating')) { emptyCount++; board[r][c] = null; }
+            else if (emptyCount > 0) { board[r + emptyCount][c] = board[r][c]; board[r][c] = null; updateTileVisual(r + emptyCount, c); }
+        }
+        for (let r = 0; r < emptyCount; r++) { board[r][c] = icons[Math.floor(Math.random() * icons.length)]; updateTileVisual(r, c); }
+    }
+    await new Promise(r => setTimeout(r, 400));
+}
+
+function updateTileVisual(r, c) {
+    const el = document.getElementById(`tile-${r}-${c}`);
+    if (!el) return;
+    const icon = board[r][c];
+    el.innerHTML = icon; el.className = `mj-tile ${tileData[icon]}`;
+    if (unlockedWilds.includes(icon)) {
+        const wildClass = icon === '⬜' ? 'wild-white' : (icon === '🀅' ? 'wild-green' : 'wild-red');
+        el.classList.add(wildClass);
+        el.innerHTML += '<div class="wild-tag">WILD</div>';
+    }
+}
+
+function toggleAuto() {
+    isAuto = !isAuto;
+    const btn = document.getElementById('autoBtn');
+    btn.classList.toggle('active', isAuto);
+    btn.textContent = isAuto ? "取消自動" : "自動玩";
+    if (isAuto && !isSpinning) startSpin();
+}
+
+function showWinFloat(amt) {
+    const f = document.createElement('div');
+    f.className = 'win-float'; f.innerText = `+$${Math.floor(amt)}`;
+    f.style.left = '35%'; f.style.top = '40%';
+    document.querySelector('.game-area').appendChild(f);
+    setTimeout(() => f.remove(), 1000);
+}
+
+window.onload = () => { initBoard(); updateUI(); };
+</script>
+</body>
+</html>
