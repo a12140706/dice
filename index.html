@@ -67,18 +67,22 @@
   .welcome-msg { font-size: 16px; color: #ccc; flex-shrink: 0; }
 
   /* 遊戲網格 */
-  .game-grid {
+ .game-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr); 
-    gap: 10px; width: 100%;
-    max-height: 55%; /* 限制網格高度避免擠壓按鈕 */
+    /* minmax(80px, 1fr) 確保按鈕寬度不會小於 80px，裝不下就自動換行 */
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); 
+    gap: 10px; 
+    width: 100%;
+    /* 移除 max-height，讓它根據內容自然向下延伸 */
+    margin-bottom: 20px;
   }
 
   .game-card {
     background: var(--card-bg); border: 2px solid #444; border-radius: 12px;
     overflow: hidden; cursor: pointer; transition: transform 0.2s;
     display: flex; flex-direction: column; text-decoration: none; color: inherit;
-    aspect-ratio: 4 / 5;
+    /* 保持正方形比例，這樣換行後也會很整齊 */
+    aspect-ratio: 1 / 1; 
   }
   .game-card:active { transform: scale(0.95); border-color: var(--gold); }
   
@@ -152,17 +156,24 @@
     </a>
 
     <a href="horse.html" class="game-card">
-      <div class="game-img" style="background: linear-gradient(45deg, #1e3a8a, #1e1b4b);">🐲</div>
+      <div class="game-img" style="background: linear-gradient(45deg, #1e3a8a, #1e1b4b);">🐎</div>
       <div class="game-info">
         <div class="game-title">賽馬</div>
-        <span class="game-desc">沒測試過有問題跟我說</span>
+        <span class="game-desc">有更新</span>
       </div>
     </a>
      <a href="gemslot.html" class="game-card">
-      <div class="game-img" style="background: linear-gradient(45deg, #1e3a8a, #1e1b4b);">💎</div>
+      <div class="game-img" style="background: linear-gradient(45deg, #5b8a1e, #d1f51e);">💎</div>
       <div class="game-info">
         <div class="game-title">寶石礦坑</div>
-        <span class="game-desc">沒測試過有問題跟我說</span>
+        <span class="game-desc">正常了</span>
+      </div>
+    </a>
+    <a href="#" class="game-card">
+      <div class="game-img" style="background: linear-gradient(45deg, #0f3fc4, #12e7f6);">🐲</div>
+      <div class="game-info">
+        <div class="game-title">連連看</div>
+        <span class="game-desc">還沒做</span>
       </div>
     </a>
   </div>
