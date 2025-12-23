@@ -349,13 +349,13 @@ function startRace() {
 
   const trackWidth = document.getElementById('track').clientWidth - 110;
 
-  // 速度調整：間隔維持 80ms，但位移係數更大幅度降低，達到 15-20秒一局
   const timer = setInterval(() => {
     let finished = false;
     horses.forEach(h => {
       let fatigueFactor = 1.0;
       let dashBonus = 0;
 
+      // 檢查終點前力竭邏輯
       if (h.pos > trackWidth * 0.85 && !h.hasChecked) {
           h.hasChecked = true;
           if (Math.random() < (6 - h.stamina) * 0.12) {
@@ -365,25 +365,34 @@ function startRace() {
           }
       }
 
+      // 爆發力核心修正：提高衝刺的瞬間推力
       if (!h.isFatigued && h.dashCount < h.maxDashes) {
-          // 衝刺機率稍微調低一點，讓爆氣更珍貴
-          if (Math.random() < h.burst * 0.005) {
+          // 根據 burst 屬性決定衝刺機率
+          if (Math.random() < h.burst * 0.006) {
               h.dashCount++;
-              let luckFactor = h.speed <= 2 && Math.random() < 0.25 ? (Math.random() * 12 + 6) : 0;
-              dashBonus = (h.burst * 3) + luckFactor;
-              spawnStatus(h.el, luckFactor > 0 ? "爆氣!!" : "衝刺!!", "dash");
+              // 修正：大幅增加 dashBonus 的影響力
+              // 1爆發馬 bonus 約 5-8，5爆發馬 bonus 可達 25-30
+              let luckFactor = h.speed <= 2 && Math.random() < 0.3 ? (Math.random() * 20 + 10) : 0;
+              dashBonus = (h.burst * 6) + luckFactor; 
+              spawnStatus(h.el, luckFactor > 0 ? "爆發!!" : "衝刺!", "dash");
           }
       }
 
-      if (h.isFatigued) fatigueFactor = 0.35;
+      if (h.isFatigued) fatigueFactor = 0.3;
       
-      // 大幅降低位移 step (0.35 縮放) 確保比賽時長在 15-20 秒
-      let step = (h.speed * 0.75 * fatigueFactor + (Math.random() * 2.5) + dashBonus) * 0.35; 
+      // 核心公式調整：
+      // 1. 降低 speed 的基礎權重 (從 0.75 降到 0.4)
+      // 2. 讓隨機位移比例稍微增加，增加不確定性
+      // 3. dashBonus 獨立出來，不被 0.35 係數過度稀釋
+      let baseStep = (h.speed * 0.4 * fatigueFactor + (Math.random() * 2.5)) * 0.35;
+      let step = baseStep + (dashBonus * 0.15); // 讓爆發力的加成很有感
       
       h.pos += step;
       h.el.style.left = h.pos + 'px';
-      // 動畫播放速度也隨之變慢
-      h.el.style.setProperty('--speed', Math.max(0.3, 0.8 - (step/10)) + 's');
+      
+      // 調整動畫頻率，讓衝刺時看起來真的跑很快
+      let animSpeed = Math.max(0.15, 0.8 - (step / 5));
+      h.el.style.setProperty('--speed', animSpeed + 's');
 
       if (h.pos >= trackWidth && !finished) {
         finished = true;
