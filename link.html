@@ -39,12 +39,17 @@
   /* 優化：限制格子的最大高度，避免手機橫屏時下方圖案溢出 */
   .game-grid { 
     display: grid; 
+    /* 保持 8 欄 */
     grid-template-columns: repeat(8, 1fr); 
+    /* 強制平分 6 列的高度，扣除頂部導航後的剩餘高度 */
+    grid-template-rows: repeat(6, 1fr); 
     gap: 4px; 
     padding: 10px; 
     width: 100%; 
-    max-height: calc(100vh - 70px - env(safe-area-inset-bottom)); 
+    /* 關鍵：高度不能超過螢幕扣除頂欄後的空間 */
+    height: calc(100dvh - 60px - env(safe-area-inset-bottom));
     max-width: 95vw;
+    margin: 0 auto;
     margin-bottom: env(safe-area-inset-bottom);
   }
 
@@ -55,9 +60,13 @@
   }
 
   .tile {
-    aspect-ratio: 1 / 1; background: var(--card); border: 1px solid #5c0a0a;
+    /* 取消固定的比例，讓它跟隨 grid 縮放 */
+    background: var(--card); border: 1px solid #5c0a0a;
     border-radius: 6px; display: flex; align-items: center; justify-content: center;
-    font-size: clamp(14px, 5dvh, 32px); position: relative; transition: 0.2s;
+    /* 字體大小改用 vh，隨高度縮放，避免字太大撐破格子 */
+    font-size: clamp(12px, 8vh, 24px); 
+    position: relative; transition: 0.2s;
+    overflow: hidden; /* 防止內容溢出 */
   }
   .tile.selected { border-color: var(--gold); background: #4a0404; transform: scale(1.1); z-index: 20; box-shadow: 0 0 15px var(--gold); }
   .tile.hidden { visibility: hidden; pointer-events: none; }
