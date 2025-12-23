@@ -302,52 +302,58 @@ function generateNewOdds() {
   let totalFieldScore = 0;
   let scores = [];
   
-  // 1. 定義「命運模板」：確保一局裡面有強、有中、有弱
-  // 模板：[頂尖, 優等, 普通, 普通, 偏弱, 極弱]
+  // 1. 定義命運模板 (保持不變)
   let templates = [
     {min: 4, max: 5}, {min: 3, max: 5}, {min: 2, max: 4}, 
     {min: 2, max: 4}, {min: 1, max: 3}, {min: 1, max: 2}
   ];
-  
-  // 隨機洗牌模板，讓每一局強馬的位置不一樣
   templates.sort(() => Math.random() - 0.5);
 
   for (let i = 1; i <= 6; i++) {
     let t = templates[i-1];
-    
-    // 根據模板隨機屬性
     let speed = Math.floor(Math.random() * (t.max - t.min + 1)) + t.min;
     let burst = Math.floor(Math.random() * (t.max - t.min + 1)) + t.min;
     let stamina = Math.floor(Math.random() * (t.max - t.min + 1)) + t.min;
     
-    // 計算戰鬥力 (加重爆發力，讓它成為變數)
-    let power = (speed * 3) + (burst * 5.0) + (stamina * 2.0);
+    // 【權重加重計算】：讓 5 分與 1 分的差距從 5 倍變成 20 倍以上
+    let pSpeed = Math.pow(speed, 2);    // 5級=25, 2級=4
+    let pBurst = Math.pow(burst, 2.2);  // 5級≈34.5, 2級≈4.6 (爆發力最值錢)
+    let pStamina = Math.pow(stamina, 1.5); // 5級≈11.2, 2級≈2.8
+
+    // 最終戰鬥力分數
+    let power = (pSpeed * 2) + (pBurst * 5) + (pStamina * 2);
     
     scores.push({ id: i, speed, burst, stamina, power });
     totalFieldScore += power;
   }
 
-  // 2. 根據「相對強度」分配賠率
+  // 2. 根據相對強度分配賠率
   scores.forEach(s => {
     let powerShare = s.power / totalFieldScore;
     
-    // 賠率 = (1 / 佔比) * 抽水
-    // 抽水係數改為 0.9，讓數字更漂亮
-    let rawOdds = (1 / powerShare) * 0.9; 
+    // 賠率公式 (抽水係數 0.88 讓數字更像專業盤口)
+    let rawOdds = (1 / powerShare) * 0.88; 
 
-    // 增加波動，讓同樣是「強馬」的賠率每次也不一樣
-    let noise = (Math.random() * 1.5 - 0.75);
-    let finalOdds = (rawOdds + noise).toFixed(1);
+    // 加入微小隨機波動
+    let noise = (Math.random() * 0.4 - 0.2);
+    let finalOdds = parseFloat((rawOdds + noise).toFixed(1));
 
-    // 3. 限制上下限，確保不會出現 0 或是負數
-    if (finalOdds < 1.3) finalOdds = (1.3 + Math.random() * 0.4).toFixed(1);
-    if (finalOdds > 50.0) finalOdds = (40.0 + Math.random() * 20).toFixed(1);
+    // 3. 賠率邊界限制
+    if (finalOdds < 1.1) finalOdds = 1.1; 
+    
+    // 如果是超級熱門馬 (佔比超過 40%)，確保賠率落在 1.2~1.8
+    if (powerShare > 0.4 && finalOdds > 1.8) {
+        finalOdds = parseFloat((1.2 + Math.random() * 0.6).toFixed(1));
+    }
+
+    // 弱馬賠率天花板
+    if (finalOdds > 99.0) finalOdds = 99.0;
 
     horseStats[s.id] = { 
       speed: s.speed, 
       burst: s.burst, 
       stamina: s.stamina, 
-      odds: finalOdds, 
+      odds: finalOdds.toFixed(1), 
       dashCount: 0 
     };
   });
@@ -403,43 +409,36 @@ function startRace() {
   const timer = setInterval(() => {
     let finished = false;
     horses.forEach(h => {
-      let fatigueFactor = 1.0;
-      let dashBonus = 0;
-
-      // 1. 基礎速度基值拉近：
-      // 速度 1: 1.2
-      // 速度 5: 1.6 
-      // 差距變得很小
-      let baseSpeedValue = 1.1 + (h.speed * 0.2);
-
+      // 1. 狀態判定（優先判斷是否力竭，不改文字）
       if (h.pos > trackWidth * 0.85 && !h.hasChecked) {
           h.hasChecked = true;
           if (Math.random() < (6 - h.stamina) * 0.12) {
               h.isFatigued = true;
-              spawnStatus(h.el, "力竭!!", "tired");
+              spawnStatus(h.el, "力竭!!", "tired"); // 維持妳的文字
               h.el.classList.add('fatigued');
           }
       }
 
+      // 2. 爆發判定（維持妳的次數與機率邏輯）
+      let dashBonus = 0;
       if (!h.isFatigued && h.dashCount < h.maxDashes) {
-    if (Math.random() < (0.01 + h.burst * 0.008)) { // 稍微調低機率，讓比賽節奏更穩
-        h.dashCount++;
-        // 邏輯：下限隨 Burst 提升，但上限大家都是 45
-        // Burst 1: 下限 10, 上限 45 (隨機區間 35)
-        // Burst 5: 下限 30, 上限 45 (隨機區間 15)
-        let minStep = 5 + (h.burst * 5); 
-        dashBonus = minStep + (Math.random() * (45 - minStep)); 
+          if (Math.random() < (0.01 + h.burst * 0.008)) {
+              h.dashCount++;
+              // 採用妳要的：下限不同、上限一致
+              let minStep = 5 + (h.burst * 5); 
+              dashBonus = minStep + (Math.random() * (45 - minStep)); 
+              spawnStatus(h.el, h.burst >= 4 ? "衝刺!!" : "加速", "dash"); // 維持妳的文字
+          }
+      }
 
-        spawnStatus(h.el, h.burst >= 4 ? "衝刺!!" : "加速", "dash");
-    }
-}
-
-      if (h.isFatigued) fatigueFactor = 0.3;
+      // 3. 數值計算（維持妳的倍率與公式）
+      let fatigueFactor = h.isFatigued ? 0.3 : 1.0; // 維持妳原本的 0.3
+      let baseSpeedValue = 1.1 + (h.speed * 0.2);
       
-      // 計算最終步長
       let baseStep = (baseSpeedValue * fatigueFactor + (Math.random() * 4.0)) * 0.5;
-      let step = baseStep + (dashBonus * 0.22); 
+      let step = baseStep + (dashBonus * 0.22); // 維持妳原本的 0.22
       
+      // 4. 執行移動
       h.pos += step;
       h.el.style.left = h.pos + 'px';
       

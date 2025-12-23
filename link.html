@@ -104,6 +104,9 @@
   <div class="sound-btn" onclick="cycleBGM()" id="bgmBtn">🎵 音樂 1</div>
   <div class="balance-box">💰 <span id="balanceText">0</span></div>
   <marquee id="bonusInfo" style="flex:1; color:var(--gold); font-size: 12px;">龍會加秒數，牛跟虎錢比較多，豬會額外消一對</marquee>
+  <a href="index.html" style="text-decoration:none;">
+    <button style="background:none; border:1px solid #777; color:#ccc; border-radius:5px; padding:5px 12px; font-size:14px; font-weight:bold;">🏠 回大廳</button>
+  </a>
 </div>
 
 <div class="main-layout">
@@ -115,10 +118,10 @@
   <div class="control-section">
     <div class="timer-display">⏱ <span id="timeLeft">0</span>s</div>
     
-    <div class="mode-switch"><label>🌑 迷霧 (+1.0)</label><input type="checkbox" id="mistToggle" onchange="updateBonusInfo()"></div>
-    <div class="mode-switch"><label>🔒 鎖頭 (+0.5)</label><input type="checkbox" id="lockToggle" onchange="updateBonusInfo()"></div>
-    <div class="mode-switch"><label>🌪️ 地震 (+0.8)</label><input type="checkbox" id="shakeToggle" onchange="updateBonusInfo()"></div>
-    <div class="mode-switch"><label>⏳ 閃爍 (+1.2)</label><input type="checkbox" id="blinkToggle" onchange="updateBonusInfo()"></div>
+    <div class="mode-switch"><label>🌑 迷霧 (+1.0倍)</label><input type="checkbox" id="mistToggle" onchange="updateBonusInfo()"></div>
+    <div class="mode-switch"><label>🔒 鎖頭 (+0.5倍)</label><input type="checkbox" id="lockToggle" onchange="updateBonusInfo()"></div>
+    <div class="mode-switch"><label>🌪️ 地震 (+0.8倍)</label><input type="checkbox" id="shakeToggle" onchange="updateBonusInfo()"></div>
+    <div class="mode-switch"><label>⏳ 閃爍 (+1.2倍)</label><input type="checkbox" id="blinkToggle" onchange="updateBonusInfo()"></div>
 
     <button class="btn-action" id="startBtn" onclick="startGame()">開一局 $500</button>
     <button class="btn-action" style="background: #444; border-color: #777; font-size:14px; margin-top:5px;" onclick="shuffleGrid()">🔄 隨機洗牌</button>
