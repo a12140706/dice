@@ -14,12 +14,11 @@
   .audio-ctrl { font-size: 11px; background: #004d40; border: 1px solid #b2dfdb; padding: 3px 6px; border-radius: 12px; }
   .free-game-bar { height: 40px; background: linear-gradient(90deg, #ff8f00, #ff6f00); display: none; align-items: center; justify-content: space-around; font-weight: bold; border-bottom: 2px solid var(--gold); }
   .free-game-active .free-game-bar { display: flex; }
-  .multiplier-tag { background: #fff; color: #d32f2f; padding: 2px 10px; border-radius: 15px; font-size: 20px; box-shadow: 0 0 15px gold; transition: transform 0.1s; }
+  .multiplier-tag { background: #fff; color: #d32f2f; padding: 2px 10px; border-radius: 15px; font-size: 20px; box-shadow: 0 0 15px gold; }
   #multOverlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; }
   .mult-box { font-size: 80px; font-weight: bold; color: var(--gold); text-shadow: 0 0 30px #f44336; animation: pulse 0.5s infinite alternate; }
   @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.1); } }
   .main-container { flex: 1; display: flex; overflow: hidden; padding: 8px; gap: 8px; align-items: stretch; position: relative; }
-  .game-area { flex: 1; display: flex; align-items: center; justify-content: center; }
   .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; max-width: 320px; aspect-ratio: 4/4.8; background: #00796b; padding: 10px; border-radius: 10px; border: 2px solid #004d40; position: relative; overflow: hidden; }
   .combo-pillar { width: 60px; background: linear-gradient(to top, #00332a, #00695c); border-radius: 10px; border: 2px solid #b2dfdb; display: flex; flex-direction: column-reverse; padding: 5px 0; }
   .step { flex: 1; width: 85%; margin: 1px auto; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: rgba(255,255,255,0.2); }
@@ -40,9 +39,6 @@
   .win-display { background: #001a1a; color: var(--gold); text-align: center; padding: 5px; border-radius: 5px; font-weight: bold; border: 1px solid #004d40; font-size: 18px; }
   .control-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   .spin-btn { width: 100px; height: 50px; background: linear-gradient(#4db6ac, #00796b); border: 2px solid #b2dfdb; border-radius: 8px; color: #fff; font-size: 20px; font-weight: bold; }
-  .spin-btn:disabled { opacity: 0.5; }
-  .auto-btn { flex: 0.6; height: 50px; background: #455a64; border: 1px solid #546e7a; border-radius: 8px; color: #fff; font-weight: bold; }
-  .auto-btn.active { background: #c2185b; }
 </style>
 </head>
 <body id="mainBody">
@@ -56,7 +52,7 @@
   <div class="audio-ctrl" onclick="toggleMute()" id="muteBtn">🔊</div>
   <div class="audio-ctrl" onclick="cycleBGM()" id="bgmBtn">🎵 音樂1</div>
   <div class="balance-box" id="balanceBox">💰 <span id="balanceText">0</span></div>
-  <marquee style="flex:1; color:var(--gold); font-size: 12px;">WILD 消除動畫修正 | 元寶 4% 版本</marquee>
+  <marquee style="flex:1; color:var(--gold); font-size: 12px;">有問題再說</marquee>
 </div>
 
 <div class="free-game-bar" id="freeGameBar">
@@ -131,25 +127,35 @@ function updateUI() {
   localStorage.setItem('sicbo_balance', balance);
 }
 
+// 🎰 阿記特調：WILD 身分動態降頻邏輯
 function getRandomTile(r, c, isFreeMode) {
   const rand = Math.random();
-  // 阿記要求：元寶 4%
-  if (rand < 0.04) return '元寶';
+  if (rand < 0.04) return '元寶'; // 4%
   if (!isFreeMode && rand > 0.98) return '胡';
 
-  let pool = [...baseIcons];
+  let pick = baseIcons[Math.floor(Math.random() * baseIcons.length)];
+
+  // --- 阿記新要求：當中發白具備 WILD 身分時，機率大幅降低 ---
+  const isWhiteWild = (combo >= 2 && pick === '⬜');
+  const isRedWild = (combo >= 5 && pick === '🀄');
+  const isGreenWild = (combo >= 10 && pick === '🀅');
+
+  // 如果抽到的圖案目前是 WILD，則有 70% 的機率強制重抽（降低出現率）
+  if ((isWhiteWild || isRedWild || isGreenWild) && Math.random() < 0.7) {
+      pick = baseIcons[Math.floor(Math.random() * baseIcons.length)];
+  }
+
+  // --- 垂直阻擋邏輯 ---
   let leftTile = (c > 0) ? board[r][c-1] : null;
-  let rightTile = (c < 3 && board[r] && board[r][c+1]) ? board[r][c+1] : null;
+  let topTile = (r > 0 && board[r-1]) ? board[r-1][c] : null;
 
-  let pick = pool[Math.floor(Math.random() * pool.length)];
+  if (topTile && pick !== topTile && Math.random() < 0.4) {
+      pick = topTile; 
+  }
+  if (pick === leftTile && Math.random() < 0.6) {
+    pick = baseIcons[Math.floor(Math.random() * baseIcons.length)];
+  }
 
-  // 重抽邏輯：左重複 30% 重抽，夾擊 50% 重抽
-  if (pick === leftTile && Math.random() < 0.3) {
-    pick = pool[Math.floor(Math.random() * pool.length)];
-  }
-  if (pick === leftTile && pick === rightTile && Math.random() < 0.5) {
-    pick = pool[Math.floor(Math.random() * pool.length)];
-  }
   return pick;
 }
 
@@ -165,10 +171,7 @@ function playBGM() {
 
 async function startSpin() {
   if (isSpinning) return;
-  isSpinning = true;
-  combo = 0; winThisSpin = 0;
-  updateUI();
-
+  isSpinning = true; combo = 0; winThisSpin = 0; updateUI();
   const oldTiles = document.querySelectorAll('.mj-tile');
   oldTiles.forEach(t => t.classList.add('tile-exit'));
   if(oldTiles.length > 0) await new Promise(r => setTimeout(r, 300));
@@ -266,16 +269,21 @@ async function checkMatches() {
     }
   });
 
-  if (toEliminate.size > 0) {
+if (toEliminate.size > 0) {
     combo++; if(!isMuted) document.getElementById('sndMatch').play();
-    let win = toEliminate.size * 5 * combo * currentMultiplier;
+    
+    // ⭐ 阿記，修正後的公式：(下注額/10) 就是每顆圖案的價值
+    // 這樣壓越多，贏越多！
+    let basePrice = betOptions[currentBetIdx] / 10; 
+    let win = toEliminate.size * basePrice * currentMultiplier; 
+    
     if (win >= betOptions[currentBetIdx] * 50) spawnBigWinEffect();
     winThisSpin += win; balance += win; updateUI();
 
     toEliminate.forEach(pos => {
       const [r, c] = pos.split(',').map(Number);
       const el = document.getElementById(`tile-${r}-${c}`);
-      if(el) el.classList.add('eliminating'); // 此處確保 WILD 也會跑消除動畫
+      if(el) el.classList.add('eliminating');
     });
 
     await new Promise(r => setTimeout(r, 400));
@@ -290,9 +298,8 @@ async function checkMatches() {
     let huCount = 0;
     board.forEach(row => row.forEach(icon => { if(icon === '胡') huCount++; }));
     if (huCount >= 3 && freeSpins === 0 && !document.getElementById('mainBody').classList.contains('in-free')) {
-      alert("🀄 湊齊三胡！進入 10 局免費遊戲！");
-      freeSpins = 10;
-      isSpinning = false; updateUI();
+      alert("🀄 胡拉！進入 10 局免費遊戲！");
+      freeSpins = 10; isSpinning = false; updateUI();
       setTimeout(startSpin, 500);
     } else {
       isSpinning = false; updateUI();
