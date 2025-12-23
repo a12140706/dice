@@ -385,7 +385,22 @@ async function checkMatches() {
   }
 }
 
-function changeBet(dir) { if(!isSpinning && freeSpins === 0) { currentBetIdx=(currentBetIdx+dir+5)%5; updateUI(); } }
+function changeBet(dir) {
+  if (!isSpinning && freeSpins === 0) {
+    // 取得新的索引位置
+    let nextIdx = currentBetIdx + dir;
+    
+    // 限制範圍：如果小於 0 就等於 0，如果大於最大索引就停在最大
+    if (nextIdx < 0) {
+      nextIdx = 0;
+    } else if (nextIdx >= betOptions.length) {
+      nextIdx = betOptions.length - 1;
+    }
+    
+    currentBetIdx = nextIdx;
+    updateUI();
+  }
+}
 function toggleAuto() { isAuto=!isAuto; document.getElementById('autoBtn').classList.toggle('active', isAuto); if(isAuto && !isSpinning) startSpin(); }
 function cycleBGM() { currentBGM=currentBGM===1?2:1; document.getElementById('bgmBtn').textContent=`🎵 ${currentBGM}`; if(hasInteracted) playBGM(); }
 function toggleMute() { isMuted=!isMuted; document.getElementById('muteBtn').textContent=isMuted?'🔇':'🔊'; playBGM(); }
