@@ -72,11 +72,10 @@
     font-size: 8vw; display: flex; align-items: center; justify-content: center; 
     font-weight: bold; box-shadow: 0 4px 0 #999; position: relative;
     opacity: 1;
-    will-change: transform, opacity; /* 提升手機渲染效能 */
+    will-change: transform, opacity;
   }
   @media (min-width: 450px) { .mj-tile { font-size: 36px; } }
 
-  /* 優化後的動畫 */
   .tile-drop { animation: dropIn 0.45s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards; }
   @keyframes dropIn { 
     0% { transform: translateY(-300px); opacity: 0; } 
@@ -129,9 +128,9 @@
 
 <div class="topbar">
   <div class="audio-ctrl" onclick="toggleMute()" id="muteBtn">🔊</div>
-  <div class="audio-ctrl" onclick="cycleBGM()" id="bgmBtn">🎵 1</div>
+  <div class="audio-ctrl" onclick="cycleBGM()" id="bgmBtn">🎵 音樂1</div>
   <div class="balance-box" id="balanceBox">💰 <span id="balanceText">0</span></div>
-  <marquee style="flex:1; color:var(--gold); font-size: 11px;">有問題再說，例如一直跑都不會停</marquee>
+  <marquee style="flex:1; color:var(--gold); font-size: 11px;">有問題再說，例如又不會停下</marquee>
   <a href="index.html" style="text-decoration:none;"><button class="audio-ctrl">🏠 回大廳</button></a>
 </div>
 
@@ -179,7 +178,6 @@ const baseIcons = ['🀎','🀚','🀝','🀑','🀔','🀄','🀅','⬜'];
 const tileColor = { '🀎':'mj-red','🀚':'mj-blue','🀝':'mj-blue','🀑':'mj-green','🀔':'mj-green','🀄':'mj-red','🀅':'mj-green','⬜':'mj-blue','胡':'tile-hu','元寶':'tile-wild' };
 let board = [];
 
-// 初始化：只生成一次格子容器
 function initGrid() {
     const gridEl = document.getElementById('grid');
     gridEl.innerHTML = '';
@@ -226,10 +224,16 @@ function updateUI() {
   localStorage.setItem('sicbo_balance', balance);
 }
 
-function getRandomTile(isFreeMode) {
+// ⭐ 阿記，這裡修好了：傳入當前是否在免費模式
+function getRandomTile() {
+  const isFree = freeSpins > 0 || document.getElementById('mainBody').classList.contains('in-free');
   const rand = Math.random();
+  
   if (rand < 0.04) return '元寶'; 
-  if (!isFreeMode && rand > 0.98) return '胡';
+  
+  // 只有非免費模式才能抽到「胡」
+  if (!isFree && rand > 0.98) return '胡';
+  
   let pick = baseIcons[Math.floor(Math.random() * baseIcons.length)];
   const isWhiteWild = (combo >= 2 && pick === '⬜');
   const isRedWild = (combo >= 5 && pick === '🀄');
@@ -270,15 +274,13 @@ async function startSpin() {
   playBGM();
   if(!isMuted) document.getElementById('sndSpin').play();
 
-  // 優化點：不刪除 DOM，直接隱藏並重設內容
   for (let r=0; r<4; r++) {
     for (let c=0; c<4; c++) {
       const t = document.getElementById(`tile-${r}-${c}`);
       t.style.opacity = '0';
       t.classList.remove('tile-drop', 'eliminating');
-      board[r][c] = getRandomTile(false);
+      board[r][c] = getRandomTile(); // 裡面已經會判斷模式了
       
-      // 使用延遲觸發動畫，避免同時執行
       setTimeout(() => {
         drawTile(r, c);
         t.classList.add('tile-drop');
@@ -361,7 +363,7 @@ async function checkMatches() {
     await new Promise(r => setTimeout(r, 300));
     toEliminate.forEach(pos => {
       const [r, c] = pos.split(',').map(Number);
-      board[r][c] = getRandomTile(false);
+      board[r][c] = getRandomTile();
       const el = document.getElementById(`tile-${r}-${c}`);
       el.classList.remove('eliminating', 'tile-drop');
       void el.offsetWidth; 
