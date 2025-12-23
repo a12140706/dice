@@ -299,29 +299,58 @@ function refreshOdds() {
 }
 
 function generateNewOdds() {
-  for (let i = 1; i <= 6; i++) {
-    
-    let speed = Math.floor(Math.random() * 5) + 1;
-    let burst = Math.floor(Math.random() * 5) + 1;
-    let stamina = Math.floor(Math.random() * 5) + 1;
-    
-    // 權重調整：大幅拉開強弱差距
-    // 爆發跟耐力是勝負手，權重給最高
-    let weightedTotal = (speed * 2) + (burst * 3) + (stamina * 2);
-    
-    // 分子調高到 220，讓強馬總分高時賠率壓得很低，弱馬總分低時賠率噴很高
-    let baseOdds = (240 / (weightedTotal + 5)); 
-    
-    // 加上隨機波動，讓每一局的賠率更有變化
-    let variation = (Math.random() * 5); 
-    let odds = (baseOdds + variation).toFixed(1);
+  let totalFieldScore = 0;
+  let scores = [];
+  
+  // 1. 定義「命運模板」：確保一局裡面有強、有中、有弱
+  // 模板：[頂尖, 優等, 普通, 普通, 偏弱, 極弱]
+  let templates = [
+    {min: 4, max: 5}, {min: 3, max: 5}, {min: 2, max: 4}, 
+    {min: 2, max: 4}, {min: 1, max: 3}, {min: 1, max: 2}
+  ];
+  
+  // 隨機洗牌模板，讓每一局強馬的位置不一樣
+  templates.sort(() => Math.random() - 0.5);
 
-    // 強制限制上下限，增加張力
-    if (odds < 1.5) odds = (1.5 + Math.random()).toFixed(1); // 最熱門 1.5~2.5
-    if (odds > 60.0) odds = (50.0 + Math.random() * 10).toFixed(1); // 最冷門 50~60
+  for (let i = 1; i <= 6; i++) {
+    let t = templates[i-1];
     
-    horseStats[i] = { speed, burst, stamina, odds, dashCount: 0 };
+    // 根據模板隨機屬性
+    let speed = Math.floor(Math.random() * (t.max - t.min + 1)) + t.min;
+    let burst = Math.floor(Math.random() * (t.max - t.min + 1)) + t.min;
+    let stamina = Math.floor(Math.random() * (t.max - t.min + 1)) + t.min;
+    
+    // 計算戰鬥力 (加重爆發力，讓它成為變數)
+    let power = (speed * 3) + (burst * 5.0) + (stamina * 2.0);
+    
+    scores.push({ id: i, speed, burst, stamina, power });
+    totalFieldScore += power;
   }
+
+  // 2. 根據「相對強度」分配賠率
+  scores.forEach(s => {
+    let powerShare = s.power / totalFieldScore;
+    
+    // 賠率 = (1 / 佔比) * 抽水
+    // 抽水係數改為 0.9，讓數字更漂亮
+    let rawOdds = (1 / powerShare) * 0.9; 
+
+    // 增加波動，讓同樣是「強馬」的賠率每次也不一樣
+    let noise = (Math.random() * 1.5 - 0.75);
+    let finalOdds = (rawOdds + noise).toFixed(1);
+
+    // 3. 限制上下限，確保不會出現 0 或是負數
+    if (finalOdds < 1.3) finalOdds = (1.3 + Math.random() * 0.4).toFixed(1);
+    if (finalOdds > 50.0) finalOdds = (40.0 + Math.random() * 20).toFixed(1);
+
+    horseStats[s.id] = { 
+      speed: s.speed, 
+      burst: s.burst, 
+      stamina: s.stamina, 
+      odds: finalOdds, 
+      dashCount: 0 
+    };
+  });
 }
 
 function selectHorse(num) {
