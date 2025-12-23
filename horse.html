@@ -47,6 +47,23 @@
     position: absolute; left: 10px; font-size: 40px; transition: left 0.1s linear;
     z-index: 2; transform: scaleX(-1); display: flex; justify-content: center; align-items: center;
   }
+
+  /* 體力不支與噴字 CSS */
+  .horse.fatigued { filter: drop-shadow(0 0 5px red); animation: blink 0.3s infinite; }
+  @keyframes blink { 50% { opacity: 0.6; } }
+  .status-pop {
+    position: absolute; top: -25px; left: 50%; transform: translateX(-50%);
+    font-size: 12px; font-weight: bold; white-space: nowrap; pointer-events: none;
+    animation: popUp 0.8s ease-out forwards; z-index: 10;
+  }
+  .pop-dash { color: #fff176; text-shadow: 0 0 5px #000; }
+  .pop-tired { color: #ff5252; text-shadow: 0 0 5px #000; }
+  @keyframes popUp {
+    0% { opacity: 0; transform: translateX(-50%) translateY(10px); }
+    30% { opacity: 1; }
+    100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+  }
+
   .horse-num { 
     position: absolute; top: -12px; transform: translateX(-50%) scaleX(-1); left: 50%;
     background: #000; color: #fff; font-size: 12px; padding: 1px 6px; border-radius: 10px; 
@@ -59,7 +76,7 @@
   }
 
   .control-section {
-    flex: 0.7; 
+    flex: 1.2; 
     background: #222; display: flex; flex-direction: column;
     padding: 8px; 
     padding-top: 50px; 
@@ -76,6 +93,7 @@
   .chip-100 { background: #2980b9; }
   .chip-500 { background: #8e44ad; }
   .chip-1000 { background: #c0392b; }
+  .chip-5000 { background: #2bc058; }
 
   .bet-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex: 1; }
   .bet-btn {
@@ -84,6 +102,7 @@
     font-size: 16px; font-weight: bold;
   }
   .bet-btn span { color: var(--gold); font-size: 11px; margin-top: 2px; }
+  .bet-btn small { font-size: 10px; color: #aaa; font-weight: normal; margin-top: 2px; }
   .bet-btn.active { border-color: var(--gold); background: #4a3a00; box-shadow: 0 0 10px var(--gold); }
 
   .action-area { height: 70px; display: flex; align-items: center; gap: 10px; }
@@ -153,6 +172,7 @@
     <div class="chip chip-100 active" id="chip100" onclick="setBet(100)">100</div>
     <div class="chip chip-500" id="chip500" onclick="setBet(500)">500</div>
     <div class="chip chip-1000" id="chip1000" onclick="setBet(1000)">1K</div>
+    <div class="chip chip-5000" id="chip5000" onclick="setBet(5000)">5K</div>
   </div>
   <div class="bet-grid" id="betGrid"></div>
   <div class="action-area">
@@ -172,10 +192,9 @@ let selectedHorse = null;
 let currentBet = 100;
 let isRacing = false;
 let isMuted = false;
-let horseOdds = [0, 5, 5, 5, 5, 5, 5];
+let horseStats = []; // 儲存各馬屬性
 let isAudioUnlocked = false; 
 
-// 音樂控制
 let currentBgmIdx = 1;
 const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
 
@@ -183,7 +202,6 @@ function updateUI() {
   document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString();
 }
 
-// --- 修正後的音訊管理邏輯 ---
 function stopAllBGM() {
     bgmList.forEach(id => {
         if (id) {
@@ -200,7 +218,6 @@ function cycleBGM() {
     stopAllBGM();
     currentBgmIdx = (currentBgmIdx + 1) % 4;
     const btn = document.getElementById('bgmBtn');
-    
     if (currentBgmIdx === 0) {
         btn.textContent = '🎵 音樂：關';
     } else {
@@ -219,15 +236,11 @@ function cycleBGM() {
 function toggleMute() {
     isMuted = !isMuted;
     document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊';
-    if (isMuted) {
-        stopAllBGM();
-    } else {
+    if (isMuted) { stopAllBGM(); } 
+    else {
         if (currentBgmIdx !== 0 && isAudioUnlocked) {
             const bgm = document.getElementById(bgmList[currentBgmIdx]);
-            if(bgm) {
-                bgm.muted = false;
-                bgm.play().catch(()=>{});
-            }
+            if(bgm) { bgm.muted = false; bgm.play().catch(()=>{}); }
         }
     }
 }
@@ -238,22 +251,13 @@ function unlockAudio() {
     audios.forEach(a => {
         a.muted = true; 
         let p = a.play();
-        if (p !== undefined) {
-            p.then(() => {
-                a.pause();
-                a.currentTime = 0;
-            }).catch(() => {});
-        }
+        if (p !== undefined) { p.then(() => { a.pause(); a.currentTime = 0; }).catch(() => {}); }
     });
     isAudioUnlocked = true;
     setTimeout(() => {
         if (!isMuted && currentBgmIdx !== 0) {
             const bgm = document.getElementById(bgmList[currentBgmIdx]);
-            if (bgm) { 
-                bgm.muted = false;
-                bgm.volume = 0.3; 
-                bgm.play().catch(() => {}); 
-            }
+            if (bgm) { bgm.muted = false; bgm.volume = 0.3; bgm.play().catch(() => {}); }
         }
     }, 300);
     document.removeEventListener('click', unlockAudio);
@@ -261,7 +265,6 @@ function unlockAudio() {
 }
 document.addEventListener('click', unlockAudio);
 document.addEventListener('touchstart', unlockAudio);
-// --- 修正結束 ---
 
 function setBet(amt) {
   if (isRacing) return;
@@ -276,24 +279,63 @@ function refreshOdds() {
   const grid = document.getElementById('betGrid');
   grid.innerHTML = '';
   for (let i = 1; i <= 6; i++) {
+    let s = horseStats[i];
     grid.innerHTML += `
       <button class="bet-btn ${selectedHorse === i ? 'active' : ''}" onclick="selectHorse(${i})">
-        ${i} 號<span>賠率 1:${horseOdds[i]}</span>
+        ${i} 號
+        <span>賠率 1:${s.odds}</span>
+        <small>速${s.speed} 爆${s.burst} 耐${s.stamina}</small>
       </button>
     `;
   }
 }
+
 function generateNewOdds() {
   for (let i = 1; i <= 6; i++) {
-    horseOdds[i] = (Math.random() * 8 + 2).toFixed(1);
+    // 1. 先決定底速 (1~5)
+    let speed = Math.floor(Math.random() * 5) + 1;
+    
+    // 2. 根據底速決定爆發力 (負相關邏輯)
+    let burst;
+    let burstRoll = Math.random();
+    if (speed >= 4) {
+        // 高速馬：通常低爆發，少數機率隨機
+        burst = burstRoll < 0.7 ? (Math.floor(Math.random()*2)+1) : (Math.floor(Math.random()*5)+1);
+    } else if (speed <= 2) {
+        // 低速馬：通常高爆發，少數機率隨機
+        burst = burstRoll < 0.7 ? (Math.floor(Math.random()*2)+4) : (Math.floor(Math.random()*5)+1);
+    } else {
+        burst = Math.floor(Math.random() * 5) + 1;
+    }
+
+    // 3. 耐力隨機 (1~5)
+    let stamina = Math.floor(Math.random() * 5) + 1;
+
+    // 4. 計算加權總分與賠率 (速度影響力加權為 1.5 倍)
+    let weightedTotal = (speed * 1.5) + burst + stamina;
+    let baseOdds = (125 / (weightedTotal + 1));
+    let odds = (baseOdds + Math.random() * 2).toFixed(1);
+    
+    if (odds < 1.5) odds = 1.5;
+
+    horseStats[i] = { speed, burst, stamina, odds, dashCount: 0 };
   }
 }
+
 function selectHorse(num) {
   if (isRacing) return;
   selectedHorse = num;
   document.querySelectorAll('.bet-btn').forEach((btn, idx) => {
     btn.classList.toggle('active', (idx + 1) === num);
   });
+}
+
+function spawnStatus(horseEl, text, type) {
+    const pop = document.createElement('div');
+    pop.className = `status-pop pop-${type}`;
+    pop.innerText = text;
+    horseEl.appendChild(pop);
+    setTimeout(() => pop.remove(), 800);
 }
 
 function startRace() {
@@ -317,25 +359,60 @@ function startRace() {
   const horses = [1, 2, 3, 4, 5, 6].map(n => {
     const el = document.getElementById('h' + n);
     el.classList.add('running');
-    return { id: n, el: el, pos: 10 };
+    const s = horseStats[n];
+    return { 
+        id: n, el: el, pos: 10, 
+        speed: s.speed,
+        burst: s.burst, 
+        stamina: s.stamina,
+        dashCount: 0,
+        maxDashes: s.stamina,
+        isFatigued: false, hasChecked: false 
+    };
   });
 
   const trackWidth = document.getElementById('track').clientWidth - 110;
 
   const timer = setInterval(() => {
+    let finished = false;
     horses.forEach(h => {
-      let odds = parseFloat(horseOdds[h.id]);
-      let bias = (5 / odds) * 1.0; 
-      let randomRange = 7 + (odds / 5); 
-      let step = (bias + (Math.random() * randomRange)) * 0.7; 
+      let fatigueFactor = 1.0;
+      let dashBonus = 0;
+
+      // 85% 判定力竭 (耐力影響機率)
+      if (h.pos > trackWidth * 0.85 && !h.hasChecked) {
+          h.hasChecked = true;
+          let fatigueChance = (6 - h.stamina) * 0.15;
+          if (Math.random() < fatigueChance) {
+              h.isFatigued = true;
+              spawnStatus(h.el, "力竭!!", "tired");
+              h.el.classList.add('fatigued');
+          }
+      }
+
+      // 衝刺判定
+      if (!h.isFatigued && h.dashCount < h.maxDashes) {
+          // 爆發力越高機率越高
+          if (Math.random() < h.burst * 0.008) {
+              h.dashCount++;
+              // 黑馬奇蹟：如果底速低，給予爆氣隨機補強
+              let luckFactor = h.speed <= 2 && Math.random() < 0.3 ? (Math.random() * 20 + 10) : 0;
+              dashBonus = (h.burst * 5) + luckFactor;
+              spawnStatus(h.el, luckFactor > 0 ? "爆氣!!" : "衝刺!!", "dash");
+          }
+      }
+
+      if (h.isFatigued) fatigueFactor = 0.3;
+      
+      // 位移計算：(底速 * 係數 + 隨機亂數 + 衝刺獎金) * 縮放
+      let step = (h.speed * 1.1 * fatigueFactor + (Math.random() * 4) + dashBonus) * 0.75; 
       
       h.pos += step;
       h.el.style.left = h.pos + 'px';
+      h.el.style.setProperty('--speed', Math.max(0.15, 0.5 - (step/25)) + 's');
 
-      let animSpeed = Math.max(0.25, 0.5 - (step / 20)); 
-      h.el.style.setProperty('--speed', animSpeed + 's');
-
-      if (h.pos >= trackWidth) {
+      if (h.pos >= trackWidth && !finished) {
+        finished = true;
         clearInterval(timer);
         finishRace(h.id);
       }
@@ -346,7 +423,7 @@ function startRace() {
 function finishRace(winnerId) {
   setTimeout(() => {
     if (selectedHorse === winnerId) {
-      let winAmt = Math.floor(currentBet * horseOdds[winnerId]);
+      let winAmt = Math.floor(currentBet * horseStats[winnerId].odds);
       balance += winAmt;
       showMsg(`🎊 ${winnerId}號獲勝 🎊<br>贏得 $${winAmt.toLocaleString()}`);
       if(!isMuted && isAudioUnlocked) {
@@ -376,7 +453,7 @@ function horsesReset() {
   for(let i=1; i<=6; i++) {
     const el = document.getElementById('h'+i);
     el.style.left = '10px';
-    el.classList.remove('running');
+    el.classList.remove('running', 'fatigued');
   }
 }
 
@@ -386,14 +463,11 @@ function showMsg(text) {
   overlay.style.display = 'block';
 }
 
-// 修正手機點擊與導航
 document.addEventListener('click', function(e) {
   let target = e.target.closest('a');
   if (target) {
     const href = target.getAttribute('href');
-    if (href) {
-      window.location.href = href;
-    }
+    if (href) window.location.href = href;
   }
 }, false);
 
