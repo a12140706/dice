@@ -372,15 +372,23 @@ async function checkMatches() {
     });
     setTimeout(checkMatches, 500);
   } else {
+    // 沒有連線了，結算本局
     let huCount = 0;
     board.forEach(row => row.forEach(icon => { if(icon === '胡') huCount++; }));
+    
     if (huCount >= 3 && freeSpins === 0 && !document.getElementById('mainBody').classList.contains('in-free')) {
       alert("🀄 胡了！10 局免費遊戲！");
       freeSpins = 10; isSpinning = false; updateUI();
-      setTimeout(startSpin, 500);
+      // 這裡原本會自動 startSpin，我把它拿掉，讓玩家點 SPIN 開始第一局免費遊戲
     } else {
-      isSpinning = false; updateUI();
-      if (freeSpins > 0 || isAuto) setTimeout(startSpin, 1000);
+      isSpinning = false; 
+      updateUI();
+      
+      // ⭐ 關鍵改動：只有在「自動玩」按鈕是打開的狀態下，才會自動跑下一局
+      // 不管是不是免費遊戲，都聽「isAuto」這個開關的話
+      if (isAuto) {
+        setTimeout(startSpin, 1000);
+      }
     }
   }
 }
