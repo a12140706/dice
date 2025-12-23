@@ -393,7 +393,7 @@ function startRace() {
     return { 
         id: n, el: el, pos: 10, 
         speed: s.speed, burst: s.burst, stamina: s.stamina,
-        dashCount: 0, maxDashes: s.stamina,
+        dashCount: 0, maxDashes: s.stamina + 2,
         isFatigued: false, hasChecked: false 
     };
   });
@@ -421,17 +421,18 @@ function startRace() {
           }
       }
 
-      // 2. 爆發力完全獨立：
-      // 不管基礎速度，爆發 5 就是加很大，爆發 1 就是加很少
       if (!h.isFatigued && h.dashCount < h.maxDashes) {
-          // 爆發頻率：爆發等級越高，越容易衝刺
-          if (Math.random() < (h.burst * 0.012)) {
-              h.dashCount++;
-              // 爆發加成公式：直接用 Burst 等級算，不乘基礎速度
-              dashBonus = (h.burst * 14) + (Math.random() * 10); 
-              spawnStatus(h.el, h.burst >= 4 ? "超級加速!!" : "加速", "dash");
-          }
-      }
+    if (Math.random() < (0.01 + h.burst * 0.008)) { // 稍微調低機率，讓比賽節奏更穩
+        h.dashCount++;
+        // 邏輯：下限隨 Burst 提升，但上限大家都是 45
+        // Burst 1: 下限 10, 上限 45 (隨機區間 35)
+        // Burst 5: 下限 30, 上限 45 (隨機區間 15)
+        let minStep = 5 + (h.burst * 5); 
+        dashBonus = minStep + (Math.random() * (45 - minStep)); 
+
+        spawnStatus(h.el, h.burst >= 4 ? "衝刺!!" : "加速", "dash");
+    }
+}
 
       if (h.isFatigued) fatigueFactor = 0.3;
       
