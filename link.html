@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
+<title>連連大亨</title>
+<style>
+  :root { --gold: #ffd86b; --bg: #1a0505; --card: #2a0202; --mist: rgba(0,0,0,0.96); }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+  
+  body { 
+    margin: 0; padding: 0; background: var(--bg); color: #fff;
+    font-family: "Microsoft JhengHei", Arial; height: 100dvh; width: 100vw; overflow: hidden;
+    display: flex; padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right);
+  }
+
+  .topbar {
+    height: calc(50px + env(safe-area-inset-top)); background: linear-gradient(#4a0404, #2a0202);
+    display: flex; align-items: center; padding: 0 15px; gap: 10px; border-bottom: 2px solid #5c0a0a;
+    position: absolute; top: 0; left: 0; right: 0; z-index: 100;
+  }
+  .balance-box { background: rgba(0,0,0,0.5); border: 1px solid var(--gold); border-radius: 15px; padding: 4px 12px; color: var(--gold); font-weight: bold; font-size: 16px; }
+
+  .main-layout { flex: 1; display: flex; padding-top: 55px; width: 100%; height: 100%; }
+
+  /* 震動與閃爍動畫 */
+  @keyframes shake {
+    0% { transform: translate(1px, 1px); }
+    50% { transform: translate(-2px, 2px); }
+    100% { transform: translate(1px, -1px); }
+  }
+  .shaking { animation: shake 0.1s infinite; }
+  .blinking .tile { animation: blink 4s infinite; }
+  @keyframes blink { 0%, 75% { opacity: 1; } 80%, 95% { opacity: 0.1; } 100% { opacity: 1; } }
+
+  .game-section { flex: 3; position: relative; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .game-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; padding: 10px; width: 95%; max-height: 85dvh; }
+
+  /* 迷霧層：增加 transition 讓移動跟變淡更平滑 */
+  .mist-overlay {
+    position: absolute; width: 100%; height: 100%; pointer-events: none;
+    background: radial-gradient(circle 130px at var(--x) var(--y), transparent 10%, var(--mist) 100%);
+    z-index: 10; display: none; transition: opacity 0.5s, background 0.1s ease-out;
+  }
+
+  .tile {
+    aspect-ratio: 1 / 1; background: var(--card); border: 1px solid #5c0a0a;
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    font-size: clamp(16px, 4dvh, 32px); position: relative; transition: 0.2s;
+  }
+  .tile.selected { border-color: var(--gold); background: #4a0404; transform: scale(1.1); z-index: 20; box-shadow: 0 0 15px var(--gold); }
+  .tile.hidden { visibility: hidden; pointer-events: none; }
+  .tile.locked { background: #111; filter: grayscale(1); }
+  .tile.locked::after { content: '🔒'; position: absolute; font-size: 10px; top: 1px; right: 1px; }
+
+  .control-section {
+    flex: 1.2; background: #222; display: flex; flex-direction: column;
+    justify-content: flex-start; align-items: center; gap: 8px; padding: 10px;
+    overflow-y: auto; border-left: 1px solid #444;
+  }
+
+  .timer-display { font-size: 24px; font-weight: bold; color: #ff4757; }
+  .mode-switch {
+    width: 100%; background: #333; padding: 6px 10px; border-radius: 8px;
+    display: flex; justify-content: space-between; align-items: center; border: 1px solid #444;
+  }
+  .mode-switch label { font-size: 12px; font-weight: bold; color: #ccc; }
+
+  .btn-action {
+    width: 100%; padding: 12px; border-radius: 30px; border: 2px solid var(--gold);
+    background: linear-gradient(#ff4757, #b91c1c); color: #fff; font-weight: 900; font-size: 18px;
+  }
+
+  .leaderboard { width: 100%; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px; border: 1px solid #555; }
+  .rank-item { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 2px; }
+
+  @media (orientation: portrait) { .portrait-tip { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background: #1a0505; z-index: 999; display: flex; flex-direction: column; justify-content: center; align-items: center; } }
+  @media (orientation: landscape) { .portrait-tip { display: none; } }
+
+  .float-msg { position: absolute; font-weight: bold; animation: floatUp 0.8s forwards; z-index: 100; font-size: 18px; pointer-events: none; }
+  @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-60px); } }
+</style>
+</head>
+<body onmousemove="updateMist(event)" ontouchmove="updateMist(event)">
+
+<div class="portrait-tip">
+  <div style="font-size: 50px;">🔄</div>
+  <p>橫著玩</p>
+</div>
+
+<div class="topbar">
+  <div class="sound-btn" onclick="toggleMute()" id="muteBtn">🔊</div>
+  <div class="sound-btn" onclick="cycleBGM()" id="bgmBtn">🎵 音樂 1</div>
+  <div class="balance-box">💰 <span id="balanceText">0</span></div>
+  <marquee id="bonusInfo" style="flex:1; color:var(--gold); font-size: 12px;">龍會加秒數，牛跟虎錢比較多，豬會額外消一對</marquee>
+</div>
+
+<div class="main-layout">
+  <div class="game-section" id="gameWrapper">
+    <div class="mist-overlay" id="mist"></div>
+    <div class="game-grid" id="gameGrid"></div>
+  </div>
+
+  <div class="control-section">
+    <div class="timer-display">⏱ <span id="timeLeft">0</span>s</div>
+    
+    <div class="mode-switch"><label>🌑 迷霧 (+1.0)</label><input type="checkbox" id="mistToggle" onchange="updateBonusInfo()"></div>
+    <div class="mode-switch"><label>🔒 鎖頭 (+0.5)</label><input type="checkbox" id="lockToggle" onchange="updateBonusInfo()"></div>
+    <div class="mode-switch"><label>🌪️ 地震 (+0.8)</label><input type="checkbox" id="shakeToggle" onchange="updateBonusInfo()"></div>
+    <div class="mode-switch"><label>⏳ 閃爍 (+1.2)</label><input type="checkbox" id="blinkToggle" onchange="updateBonusInfo()"></div>
+
+    <button class="btn-action" id="startBtn" onclick="startGame()">開一局 $500</button>
+    <button class="btn-action" style="background: #444; border-color: #777; font-size:14px; margin-top:5px;" onclick="shuffleGrid()">🔄 隨機洗牌</button>
+
+    <div class="leaderboard">
+        <div style="color:var(--gold); font-size:12px; text-align:center;">🏆 最高紀錄</div>
+        <div class="rank-item" style="color:#0f0"><span>單局</span><span id="highScoreText">$0</span></div>
+    </div>
+  </div>
+</div>
+
+<audio id="bgm1" src="background-music-434612.mp3" loop></audio>
+<audio id="bgm2" src="soft-background-music-427252.mp3" loop></audio>
+<audio id="bgm3" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" loop></audio>
+<audio id="sndNormal" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3"></audio>
+<audio id="sndSpecial" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"></audio>
+<audio id="sndExplode" src="https://assets.mixkit.co/active_storage/sfx/1494/1494-preview.mp3"></audio>
+<audio id="sndShake" src="https://assets.mixkit.co/active_storage/sfx/1103/1103-preview.mp3"></audio>
+
+<script>
+let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
+let highScore = parseFloat(localStorage.getItem('connect_high_score')) || 0;
+let currentGameProfit = 0, timeLeft = 0, timer = null, selected = null;
+let isMuted = false, currentBgmIdx = 1, isAudioUnlocked = false;
+const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
+const ROWS = 6, COLS = 8;
+const icons = ['🐭', '🐰', '🐍', '🐴', '🐑', '🐒', '🐔', '🐶', '🐲', '🐷', '🐮', '🐯'];
+let boardData = [], currentMultiplier = 1.0;
+
+function updateBonusInfo() {
+    let mult = 1.0;
+    if (document.getElementById('mistToggle').checked) mult += 1.0;
+    if (document.getElementById('lockToggle').checked) mult += 0.5;
+    if (document.getElementById('shakeToggle').checked) mult += 0.8;
+    if (document.getElementById('blinkToggle').checked) mult += 1.2;
+    currentMultiplier = mult;
+    document.getElementById('bonusInfo').textContent = `倍率：${mult.toFixed(1)}x`;
+}
+
+// 核心修改：迷霧移動邏輯
+function moveMistTo(x, y) {
+    if (!document.getElementById('mistToggle').checked) return;
+    const mist = document.getElementById('mist');
+    mist.style.setProperty('--x', x + 'px');
+    mist.style.setProperty('--y', (y - 60) + 'px'); // 固定偏移
+}
+
+function updateMist(e) {
+    const rect = document.getElementById('gameWrapper').getBoundingClientRect();
+    const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : null);
+    const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : null);
+    if (clientX !== null && clientY !== null) {
+        moveMistTo(clientX - rect.left, clientY - rect.top);
+    }
+}
+
+function startGame() {
+    if (balance < 500) { alert("金額不足！"); return; }
+    balance -= 500; currentGameProfit = 0; updateUI(); updateBonusInfo();
+    timeLeft = 60; document.getElementById('timeLeft').textContent = timeLeft;
+    document.getElementById('startBtn').disabled = true;
+    
+    document.getElementById('mist').style.display = document.getElementById('mistToggle').checked ? 'block' : 'none';
+    if (document.getElementById('blinkToggle').checked) document.getElementById('gameGrid').classList.add('blinking');
+    else document.getElementById('gameGrid').classList.remove('blinking');
+
+    createBoard();
+    clearInterval(timer);
+    timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById('timeLeft').textContent = timeLeft;
+        if (document.getElementById('shakeToggle').checked && timeLeft > 0 && timeLeft % 10 === 0) triggerShake();
+        if (timeLeft <= 0) endGame();
+    }, 1000);
+    if (!isAudioUnlocked) unlockAudio();
+}
+
+function endGame() {
+    clearInterval(timer);
+    alert(`遊戲結束！本局獲利：$${currentGameProfit}`);
+    if (currentGameProfit > highScore) {
+        highScore = currentGameProfit;
+        localStorage.setItem('connect_high_score', highScore);
+    }
+    document.getElementById('startBtn').disabled = false;
+    document.getElementById('mist').style.display = 'none';
+    document.getElementById('gameGrid').classList.remove('blinking');
+    updateUI();
+}
+
+function createBoard() {
+    const grid = document.getElementById('gameGrid');
+    grid.innerHTML = ''; boardData = [];
+    const hasLock = document.getElementById('lockToggle').checked;
+    let temp = [];
+    for (let i = 0; i < (ROWS * COLS) / 2; i++) {
+        let icon = icons[Math.floor(Math.random() * icons.length)];
+        temp.push(icon, icon);
+    }
+    temp.sort(() => Math.random() - 0.5);
+    for (let i = 0; i < ROWS * COLS; i++) {
+        const isLocked = hasLock ? (Math.random() < 0.25) : false;
+        const tile = { id: i, icon: temp[i], isLocked: isLocked, isHidden: false };
+        boardData.push(tile);
+        const div = document.createElement('div');
+        div.className = 'tile' + (tile.isLocked ? ' locked' : '');
+        div.id = `tile-${i}`;
+        div.innerHTML = tile.icon;
+        // 點擊事件
+        div.onclick = (e) => {
+            // 對焦亮區到點擊的格子位置
+            const rect = div.getBoundingClientRect();
+            const wrapperRect = document.getElementById('gameWrapper').getBoundingClientRect();
+            moveMistTo(rect.left + rect.width/2 - wrapperRect.left, rect.top + rect.height/2 - wrapperRect.top);
+            handleTileClick(i, div);
+        };
+        grid.appendChild(div);
+    }
+}
+
+function handleTileClick(idx, el) {
+    if (timeLeft <= 0 || boardData[idx].isHidden || boardData[idx].isLocked) return;
+    if (!selected) {
+        selected = { idx, el }; el.classList.add('selected');
+    } else {
+        if (selected.idx === idx) {
+            el.classList.remove('selected'); selected = null;
+        } else if (boardData[selected.idx].icon === boardData[idx].icon) {
+            eliminate(selected.idx, idx);
+        } else {
+            selected.el.classList.remove('selected'); el.classList.add('selected'); selected = { idx, el };
+        }
+    }
+}
+
+function eliminate(i1, i2) {
+    const icon = boardData[i1].icon;
+    boardData[i1].isHidden = true; boardData[i2].isHidden = true;
+    document.getElementById(`tile-${i1}`).classList.add('hidden');
+    document.getElementById(`tile-${i2}`).classList.add('hidden');
+    
+    // 消除時暫時讓迷霧變淡
+    const mist = document.getElementById('mist');
+    mist.style.opacity = "0.3"; 
+    setTimeout(() => { mist.style.opacity = "1"; }, 1500);
+
+    let baseBonus = 20;
+    let special = false;
+    if (icon === '🐲') { timeLeft += 7; showFloat("神龍續命 +7s", "#ff4757"); special = true; }
+    else if (icon === '🐮') { baseBonus = 300; special = true; }
+    else if (icon === '🐯') { baseBonus = 150; special = true; }
+    else if (icon === '🐷') { playSound('sndExplode'); autoExplode(); baseBonus = 50; special = true; }
+    if (special) playSound('sndSpecial'); else playSound('sndNormal');
+
+    let finalBonus = Math.floor(baseBonus * currentMultiplier);
+    balance += finalBonus; currentGameProfit += finalBonus;
+    updateUI();
+    showFloat(`+$${finalBonus}`, "#ffd86b");
+    
+    [i1, i2].forEach(idx => {
+        [idx-1, idx+1, idx-COLS, idx+COLS].forEach(n => {
+            if (boardData[n] && boardData[n].isLocked) {
+                boardData[n].isLocked = false;
+                document.getElementById(`tile-${n}`).classList.remove('locked');
+            }
+        });
+    });
+    selected.el.classList.remove('selected'); selected = null;
+}
+
+function triggerShake() {
+    const grid = document.getElementById('gameGrid');
+    grid.classList.add('shaking'); playSound('sndShake'); showFloat("🌪️ 地震洗牌！", "#ff9f43");
+    setTimeout(() => {
+        grid.classList.remove('shaking');
+        shuffleRemaining();
+    }, 1000);
+}
+
+function shuffleRemaining() {
+    let remaining = boardData.filter(b => !b.isHidden);
+    let tempIcons = remaining.map(b => b.icon);
+    tempIcons.sort(() => Math.random() - 0.5);
+    let idx = 0;
+    boardData.forEach(b => {
+        if (!b.isHidden) {
+            b.icon = tempIcons[idx++];
+            document.getElementById(`tile-${b.id}`).innerHTML = b.icon;
+        }
+    });
+}
+
+function shuffleGrid() { if (timeLeft > 0) shuffleRemaining(); }
+function updateUI() {
+    document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString();
+    document.getElementById('highScoreText').textContent = '$' + Math.floor(highScore).toLocaleString();
+    localStorage.setItem('sicbo_balance', balance);
+}
+function playSound(id) { if (!isMuted) { const s = document.getElementById(id); if (s) { s.currentTime = 0; s.play().catch(()=>{}); } } }
+function showFloat(txt, color) {
+    const f = document.createElement('div');
+    f.className = 'float-msg'; f.style.color = color;
+    f.style.left = '50%'; f.style.top = '40%'; f.innerText = txt;
+    document.getElementById('gameWrapper').appendChild(f);
+    setTimeout(() => f.remove(), 800);
+}
+
+function cycleBGM() {
+    if (!isAudioUnlocked) { unlockAudio(); return; }
+    stopAllBGM();
+    currentBgmIdx = (currentBgmIdx + 1) % 4;
+    document.getElementById('bgmBtn').textContent = currentBgmIdx === 0 ? '🎵 音樂：關' : '🎵 音樂 ' + currentBgmIdx;
+    if (!isMuted) playBGM();
+}
+function stopAllBGM() { bgmList.forEach(id => { if (id) { const a = document.getElementById(id); a.pause(); a.currentTime = 0; } }); }
+function playBGM() { if (currentBgmIdx !== 0 && !isMuted) { const bgm = document.getElementById(bgmList[currentBgmIdx]); if (bgm) { bgm.volume = 0.2; bgm.play().catch(()=>{}); } } }
+function toggleMute() { isMuted = !isMuted; document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊'; if (isMuted) stopAllBGM(); else playBGM(); }
+function unlockAudio() { const audios = document.querySelectorAll('audio'); audios.forEach(a => { a.muted = true; a.play().then(()=>{a.pause(); a.muted=false;}); }); isAudioUnlocked = true; }
+
+window.onload = updateUI;
+</script>
+</body>
+</html>
