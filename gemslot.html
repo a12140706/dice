@@ -14,9 +14,9 @@
     height: 100dvh; width: 100vw; overflow: hidden; background: var(--bg-dark); color: var(--text-light);
     display: flex; flex-direction: column; justify-content: space-between; align-items: center;
     padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right);
-    transition: background 0.8s ease;
   }
   
+  /* 轉向提示 */
   @media (orientation: portrait) {
     .portrait-tip {
       position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
@@ -26,9 +26,10 @@
   }
   @media (orientation: landscape) { .portrait-tip { display: none; } }
 
+  /* UI 框架 */
   .top-bar {
     width: 100%; height: 50px; background: linear-gradient(#4a0404, #2a0202);
-    display: flex; justify-content: space-between; align-items: center; padding: 0 15px; flex-shrink: 0; border-bottom: 2px solid #5c0a0a;
+    display: flex; justify-content: space-between; align-items: center; padding: 0 15px; border-bottom: 2px solid #5c0a0a;
   }
   .sound-controls { display: flex; gap: 8px; }
   .sound-btn {
@@ -37,46 +38,49 @@
   }
   .balance-display { background: rgba(0,0,0,0.4); border: 1px solid var(--btn-gold); border-radius: 10px; padding: 5px 12px; font-weight: bold; color: var(--btn-gold); font-size: 16px; }
 
-  .game-area { display: flex; flex-direction: column; justify-content: center; align-items: center; flex: 1; width: var(--game-width); max-width: 900px; position: relative; padding: 10px; }
+  .game-area { display: flex; flex-direction: column; justify-content: center; align-items: center; flex: 1; width: var(--game-width); position: relative; }
   .gem-grid {
     display: grid; grid-template-columns: repeat(var(--grid-size), 1fr); grid-template-rows: repeat(var(--grid-size), 1fr);
     gap: 2px; background: rgba(0,0,0,0.5); border: 5px solid #3d2b0e; border-radius: 10px;
     width: min(calc(var(--game-height) * 0.9), var(--game-width) * 0.7); aspect-ratio: 1 / 1; max-width: 500px; overflow: hidden;
   }
   .grid-cell { background: #2b1f0d; display: flex; justify-content: center; align-items: center; font-size: clamp(20px, 5vw, 40px); border-radius: 3px; position: relative; }
-  .gem { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; font-size: inherit; transition: transform 0.3s ease-out, opacity 0.3s ease-out; will-change: transform, opacity; }
-  .gem.dropping { transform: translateY(-100%); transition: transform 0s; }
-  .gem.dropped { transform: translateY(0); transition: transform 0.3s ease-out; }
+  
+  /* 動畫優化：使用 will-change 提高效能 */
+  .gem { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; font-size: inherit; will-change: transform, opacity; }
+  .gem.dropping { transform: translateY(-100%); transition: none; }
+  .gem.dropped { transform: translateY(0); transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
   .gem.vanishing { animation: vanish 0.4s ease-out forwards; pointer-events: none; }
-  @keyframes vanish { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.8; } 100% { transform: scale(0); opacity: 0; } }
+  @keyframes vanish { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(0); opacity: 0; } }
 
-  .message-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); border: 2px solid var(--btn-gold); border-radius: 10px; padding: 15px 25px; font-size: 20px; font-weight: bold; z-index: 100; display: none; text-align: center; white-space: pre-wrap; }
+  .message-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.85); border: 2px solid var(--btn-gold); border-radius: 10px; padding: 15px 25px; font-size: 20px; font-weight: bold; z-index: 100; display: none; text-align: center; }
 
-  .bottom-bar { width: 100%; height: 80px; background: linear-gradient(#333, #111); display: flex; justify-content: center; align-items: center; gap: 20px; flex-shrink: 0; border-top: 2px solid #555; padding-bottom: env(safe-area-inset-bottom); }
-  .bet-control { display: flex; align-items: center; background: rgba(0,0,0,0.4); border-radius: 50px; border: 1px solid #555; padding: 2px 10px; gap: 5px; }
+  .bottom-bar { width: 100%; height: 80px; background: linear-gradient(#333, #111); display: flex; justify-content: center; align-items: center; gap: 20px; border-top: 2px solid #555; padding-bottom: env(safe-area-inset-bottom); }
+  .bet-control { display: flex; align-items: center; background: rgba(0,0,0,0.4); border-radius: 50px; border: 1px solid #555; padding: 2px 10px; }
   .bet-btn { background: none; border: none; color: var(--btn-gold); font-size: 28px; padding: 0 10px; cursor: pointer; }
-  .auto-btn { background: #333; color: #fff; border: 2px solid #777; padding: 10px 15px; border-radius: 12px; font-weight: bold; cursor: pointer; transition: all 0.3s; }
-  .auto-active { background: #2ecc71; border-color: #fff; box-shadow: 0 0 15px #2ecc71; color: #000; }
-  .spin-btn { background: var(--btn-gold); color: #000; font-size: 24px; font-weight: bold; padding: 10px 30px; border-radius: 15px; border: none; cursor: pointer; box-shadow: 0 5px 0 #b38b00; transition: all 0.1s ease; }
+  .auto-btn { background: #333; color: #fff; border: 2px solid #777; padding: 10px 15px; border-radius: 12px; font-weight: bold; cursor: pointer; }
+  .auto-active { background: #2ecc71; border-color: #fff; color: #000; box-shadow: 0 0 10px #2ecc71; }
+  .spin-btn { background: var(--btn-gold); color: #000; font-size: 24px; font-weight: bold; padding: 10px 30px; border-radius: 15px; border: none; cursor: pointer; box-shadow: 0 5px 0 #b38b00; }
   .spin-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #b38b00; }
-  .spin-btn:disabled { background: #555; box-shadow: 0 2px 0 #333; color: #888; cursor: not-allowed; }
+  .spin-btn:disabled { background: #555; box-shadow: 0 2px 0 #333; color: #888; }
   .win-display { font-size: 22px; color: #2ecc71; font-weight: bold; min-width: 100px; text-align: center; }
 </style>
 </head>
 <body>
-<div class="portrait-tip"><div style="font-size: 50px;">🔄</div><p style="margin-top: 20px;">橫著玩</p></div>
+<div class="portrait-tip"><div>🔄</div><p style="margin-top:20px;">請橫屏遊玩</p></div>
 
 <div class="top-bar">
   <div class="sound-controls">
     <button class="sound-btn" onclick="toggleMute()" id="muteBtn">🔊</button>
     <button class="sound-btn" onclick="cycleBGM()" id="bgmBtn">🎵 音樂 1</button>
   </div>
-  <div class="balance-display">💰 <span id="balanceText">10000</span></div>
+  <div class="balance-display">💰 <span id="balanceText">----</span></div>
   <a href="index.html" style="text-decoration:none;"><button class="sound-btn">🏠 回大廳</button></a>
 </div>
 
 <div class="game-area">
-  <div class="gem-grid" id="gemGrid"></div>
+  <div class="gem-grid" id="gemGrid">
+    </div>
   <div class="message-box" id="messageBox"></div>
 </div>
 
@@ -91,17 +95,32 @@
   <div class="win-display">WIN: <span id="winAmount">0</span></div>
 </div>
 
-<audio id="sndSpin" src="https://assets.mixkit.co/active_storage/sfx/2045/2045-preview.mp3" preload="auto"></audio>
-<audio id="sndWin" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="auto"></audio>
-<audio id="sndExplode" src="https://assets.mixkit.co/active_storage/sfx/1461/1461-preview.mp3" preload="auto"></audio>
-<audio id="sndSuperWin" src="https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3" preload="auto"></audio>
-<audio id="bgm1" src="background-music-434612.mp3" loop preload="auto"></audio>
-<audio id="bgm2" src="soft-background-music-427252.mp3" loop preload="auto"></audio>
-<audio id="bgm3" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" loop preload="auto"></audio>
-<audio id="bgmCrazy" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" loop preload="auto"></audio>
+<audio id="sndSpin" src="https://assets.mixkit.co/active_storage/sfx/2045/2045-preview.mp3" preload="none"></audio>
+<audio id="sndWin" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="none"></audio>
+<audio id="sndExplode" src="https://assets.mixkit.co/active_storage/sfx/1461/1461-preview.mp3" preload="none"></audio>
+<audio id="sndSuperWin" src="https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3" preload="none"></audio>
+<audio id="bgm1" src="background-music-434612.mp3" loop preload="none"></audio>
+<audio id="bgm2" src="soft-background-music-427252.mp3" loop preload="none"></audio>
+<audio id="bgm3" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" loop preload="none"></audio>
+<audio id="bgmCrazy" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" loop preload="none"></audio>
 
 <script>
+// --- 1. 立即優先執行：恢復餘額 (不等待任何加載) ---
 let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 10000;
+document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString();
+
+// --- 2. 初始化格網結構 (不等待寶石掉落) ---
+const gridEl = document.getElementById('gemGrid');
+const GRID_SIZE = 5;
+for(let r=0; r<GRID_SIZE; r++) {
+    for(let c=0; c<GRID_SIZE; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'grid-cell'; cell.id = `cell-${r}-${c}`;
+        gridEl.appendChild(cell);
+    }
+}
+
+// --- 其餘變數 ---
 let currentBet = 50;
 let lastWin = 0;
 let isSpinning = false;
@@ -111,17 +130,13 @@ let isAuto = false;
 let currentBgmIdx = 1;
 let isAudioUnlocked = false; 
 const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
-const GRID_SIZE = 5;
 const betOptions = [10, 50, 100, 300, 500, 1000];
 let currentBetIdx = 1;
-
-let hasBombThisAction = false; // 這次消除/掉落是否有炸彈
-
 let grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
 
 const GEMS = ['💎','💰','💰','🔮','🔮','🍏','🍏','🏮','🏮','🌟','🌟','🌟','✨','✨','✨','⛏️','⛏️','⛏️','⛏️','🪨','🪨','🪨','🪨','🪵','🪵','🪵','🪵','💣'];
 const CRAZY_POOL = ['💎','💰','💰','🌟','🌟','🌟','✨','✨','✨','🪨','🪨','🪨','🪨','🪨','🪵','🪵','🪵','🪵','🪵','🔮','🔮','🍏','🍏','🏮','🏮','⛏️','⛏️','⛏️','⛏️','💣','💣','💣'];
-const GEM_VALUES = { '💎': 5, '💰': 3, '🔮': 3, '🍏': 3, '🏮': 3, '🌟': 2, '✨': 2, '⛏️': 1, '🪨': 0.5, '🪵': 0.5, '💣': 0 };
+const GEM_VALUES = { '💎': 4, '💰': 2, '🔮': 2, '🍏': 2, '🏮': 2, '🌟': 1.5, '✨': 1.5, '⛏️': 1, '🪨': 0.5, '🪵': 0.5, '💣': 0 };
 
 function wait(ms) { return new Promise(res => setTimeout(res, ms)); }
 
@@ -132,11 +147,11 @@ function updateUI() {
     document.getElementById('betDisplay').textContent = "$" + currentBet;
 }
 
-// 音樂控制
+// --- 音樂系統優化 ---
 function stopAllBGM() {
-    bgmList.forEach(id => { if(id) { const a = document.getElementById(id); a.pause(); a.muted = true; a.currentTime = 0; } });
+    bgmList.forEach(id => { if(id) { const a = document.getElementById(id); a.pause(); a.currentTime = 0; } });
     const crazy = document.getElementById('bgmCrazy');
-    crazy.pause(); crazy.muted = true; crazy.currentTime = 0;
+    crazy.pause(); crazy.currentTime = 0;
 }
 
 function cycleBGM(shouldNext = true) {
@@ -149,7 +164,7 @@ function cycleBGM(shouldNext = true) {
         btn.textContent = '🎵 音樂 ' + currentBgmIdx;
         if (!isMuted && !isCrazyMode) {
             const bgm = document.getElementById(bgmList[currentBgmIdx]);
-            if (bgm) { bgm.muted = false; bgm.volume = 0.3; bgm.play().catch(()=>{}); }
+            if (bgm) { bgm.volume = 0.3; bgm.play().catch(()=>{}); }
         }
     }
 }
@@ -158,122 +173,80 @@ function toggleMute() {
     isMuted = !isMuted;
     document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊';
     if (isMuted) stopAllBGM();
-    else {
-        if (!isAudioUnlocked) return;
-        if (isCrazyMode) { const crazy = document.getElementById('bgmCrazy'); crazy.muted = false; crazy.play().catch(()=>{}); } 
-        else { cycleBGM(false); }
-    }
+    else { if (!isAudioUnlocked) return; isCrazyMode ? document.getElementById('bgmCrazy').play() : cycleBGM(false); }
 }
 
 function unlockAudio() {
     if (isAudioUnlocked) return;
-    document.querySelectorAll('audio').forEach(a => {
-        a.muted = true; a.play().then(() => { a.pause(); a.currentTime = 0; }).catch(() => {});
-    });
+    document.querySelectorAll('audio').forEach(a => a.load());
     isAudioUnlocked = true;
-    setTimeout(() => {
-        if (!isMuted) {
-            if (isCrazyMode) { const c = document.getElementById('bgmCrazy'); c.muted = false; c.volume = 0.4; c.play().catch(()=>{}); } 
-            else if (currentBgmIdx !== 0) { const b = document.getElementById(bgmList[currentBgmIdx]); if(b){ b.muted = false; b.volume = 0.3; b.play().catch(()=>{}); } }
-        }
-    }, 300);
+    if (!isMuted && currentBgmIdx !== 0 && !isCrazyMode) {
+        const b = document.getElementById(bgmList[currentBgmIdx]);
+        if(b) b.play().catch(()=>{});
+    }
     document.removeEventListener('click', unlockAudio);
     document.removeEventListener('touchstart', unlockAudio);
 }
 document.addEventListener('click', unlockAudio);
 document.addEventListener('touchstart', unlockAudio);
 
-// 遊戲邏輯
+// --- 遊戲邏輯 (維持穩定性) ---
 async function startSpin() {
     if (isSpinning) return;
     if (!isCrazyMode && balance < currentBet) { showMessage("牟吉阿"); if (isAuto) toggleAuto(); return; }
-    
     if (!isCrazyMode) balance -= currentBet;
     isSpinning = true;
     document.getElementById('spinBtn').disabled = true;
-    
     let totalWinInThisTurn = 0;
     updateUI();
 
     try {
         if(!isMuted && isAudioUnlocked) document.getElementById('sndSpin').play().catch(()=>{});
         await fillGrid(true);
-
         let stillGoing = true;
         while (stillGoing) {
-            // 每次迴圈開始前，先算一下場上有幾顆炸彈
             let currentBombs = 0;
             grid.forEach(row => row.forEach(cell => { if(cell === '💣') currentBombs++; }));
-
-            // 1. 檢查進入瘋狂模式
             if (currentBombs >= 3 && !isCrazyMode) {
                 isCrazyMode = true;
                 document.body.style.background = "#4a0404";
                 showMessage("🚨 進入瘋狂模式！ 🚨");
                 stopAllBGM();
-                if (!isMuted && isAudioUnlocked) {
-                    const cb = document.getElementById('bgmCrazy');
-                    cb.muted = false; cb.volume = 0.4; cb.play().catch(()=>{});
-                }
+                if (!isMuted && isAudioUnlocked) { const cb = document.getElementById('bgmCrazy'); cb.volume = 0.4; cb.play().catch(()=>{}); }
             }
-
-            // 2. 處理連線
             let matches = findMatches();
             if (matches.length > 0) {
                 let win = calculateWin(matches);
-                totalWinInThisTurn += win;
-                lastWin = totalWinInThisTurn;
+                totalWinInThisTurn += win; lastWin = totalWinInThisTurn;
                 balance += win; updateUI();
                 if(!isMuted && isAudioUnlocked) document.getElementById('sndWin').cloneNode().play().catch(()=>{});
-                await eliminate(matches);
-                await drop();
-                await fillGrid(false);
-                continue; // 繼續檢查連線
+                await eliminate(matches); await drop(); await fillGrid(false);
+                continue;
             }
-            
-            // 3. 處理炸彈爆炸
             let bombResult = await explodeBombs();
             if (bombResult.exploded) {
-                totalWinInThisTurn += bombResult.win;
-                lastWin = totalWinInThisTurn;
+                totalWinInThisTurn += bombResult.win; lastWin = totalWinInThisTurn;
                 balance += bombResult.win; updateUI();
-                await drop();
-                await fillGrid(false);
-                continue; // 爆炸完可能又有新連線
+                await drop(); await fillGrid(false);
+                continue;
             }
-            
-            stillGoing = false; // 沒連線也沒爆炸，這把結束
+            stillGoing = false;
         }
-
-        // --- 核心修正點：最終檢查場上是否還有炸彈 ---
         let finalBombs = 0;
         grid.forEach(row => row.forEach(cell => { if(cell === '💣') finalBombs++; }));
-
         if (isCrazyMode && finalBombs === 0) {
-            isCrazyMode = false;
-            document.body.style.background = "#1a0f0f";
-            showMessage("礦坑已經冷卻");
-            stopAllBGM();
+            isCrazyMode = false; document.body.style.background = "#1a0f0f";
+            showMessage("礦坑已經冷卻"); stopAllBGM();
             if (!isMuted && isAudioUnlocked && currentBgmIdx !== 0) {
                 const b = document.getElementById(bgmList[currentBgmIdx]);
-                if (b) { b.muted = false; b.volume = 0.3; b.play().catch(()=>{}); }
+                if (b) { b.volume = 0.3; b.play().catch(()=>{}); }
             }
         }
-
-        if (totalWinInThisTurn >= currentBet * 50) {
-            if(!isMuted && isAudioUnlocked) document.getElementById('sndSuperWin').play().catch(()=>{});
-            showMessage("🎊 MEGA WIN 🎊\n💰 " + Math.floor(totalWinInThisTurn).toLocaleString());
-        }
-        
     } finally {
-        isSpinning = false;
-        document.getElementById('spinBtn').disabled = false;
+        isSpinning = false; document.getElementById('spinBtn').disabled = false;
         localStorage.setItem('sicbo_balance', balance);
         updateUI();
-        // 如果還在瘋狂模式，或者開了自動，才繼續
-        if (isCrazyMode || isAuto) {
-            setTimeout(() => { if (!isSpinning) startSpin(); }, 1000);
-        }
+        if (isCrazyMode || isAuto) setTimeout(() => { if (!isSpinning) startSpin(); }, 800);
     }
 }
 
@@ -292,11 +265,13 @@ async function fillGrid(isInitial) {
                 const cell = document.getElementById(`cell-${r}-${c}`);
                 cell.innerHTML = `<div class="gem dropping">${type}</div>`;
                 const gem = cell.firstChild;
-                setTimeout(() => { gem.classList.remove('dropping'); gem.classList.add('dropped'); }, 10);
+                // 強制回流觸發動畫
+                gem.offsetWidth; 
+                gem.classList.remove('dropping'); gem.classList.add('dropped');
             }
         }
     }
-    await wait(450);
+    await wait(350);
 }
 
 async function eliminate(matches) {
@@ -305,8 +280,7 @@ async function eliminate(matches) {
         if(cell.firstChild) cell.firstChild.classList.add('vanishing');
         grid[m.r][m.c] = null;
     });
-    await wait(400);
-    matches.forEach(m => { document.getElementById(`cell-${m.r}-${m.c}`).innerHTML = ''; });
+    await wait(350);
 }
 
 async function explodeBombs() {
@@ -319,7 +293,7 @@ async function explodeBombs() {
         for(let i=b.r-1; i<=b.r+1; i++) for(let j=b.c-1; j<=b.c+1; j++) {
             if(i>=0 && i<GRID_SIZE && j>=0 && j<GRID_SIZE) {
                 targets.add(`${i},${j}`);
-                if(isCrazyMode && grid[i][j] && grid[i][j]!=='💣') win += currentBet * (GEM_VALUES[grid[i][j]] || 0.1) * 0.2;
+                if(isCrazyMode && grid[i][j] && grid[i][j]!=='💣') win += currentBet * (GEM_VALUES[grid[i][j]] || 0.1) * 0.1;
             }
         }
     });
@@ -329,11 +303,7 @@ async function explodeBombs() {
         if(cell.firstChild) cell.firstChild.classList.add('vanishing');
         grid[r][c] = null;
     });
-    await wait(400);
-    targets.forEach(t => {
-        let [r, c] = t.split(',').map(Number);
-        document.getElementById(`cell-${r}-${c}`).innerHTML = '';
-    });
+    await wait(350);
     return { exploded: true, win };
 }
 
@@ -350,7 +320,7 @@ async function drop() {
             }
         }
     }
-    await wait(350);
+    await wait(300);
 }
 
 function findMatches() {
@@ -371,29 +341,19 @@ function calculateWin(matches) {
     matches.forEach(m => { let t = grid[m.r][m.c]; if(t) counts[t] = (counts[t]||0)+1; });
     for(let t in counts) {
         const c = counts[t]; const base = GEM_VALUES[t] || 1;
-        let mult = c >= 5 ? 10 : (c === 4 ? 4 : 1.2);
+        let mult = c >= 5 ? 5 : (c === 4 ? 2 : 1);
         win += currentBet * base * mult;
     }
     return win;
 }
 
-function showMessage(msg) { const b = document.getElementById('messageBox'); b.innerText = msg; b.style.display = 'block'; setTimeout(()=> b.style.display = 'none', 2000); }
-function toggleAuto() { isAuto = !isAuto; const btn = document.getElementById('autoBtn'); btn.classList.toggle('auto-active', isAuto); if(isAuto && !isSpinning) startSpin(); }
+function showMessage(msg) { const b = document.getElementById('messageBox'); b.innerText = msg; b.style.display = 'block'; setTimeout(()=> b.style.display = 'none', 1800); }
+function toggleAuto() { isAuto = !isAuto; document.getElementById('autoBtn').classList.toggle('auto-active', isAuto); if(isAuto && !isSpinning) startSpin(); }
 function changeBet(dir) { if (isSpinning) return; currentBetIdx = Math.max(0, Math.min(betOptions.length - 1, currentBetIdx + dir)); updateUI(); }
 
-window.onload = () => {
-    const gridEl = document.getElementById('gemGrid');
-    gridEl.innerHTML = '';
-    for(let r=0; r<GRID_SIZE; r++) {
-        for(let c=0; c<GRID_SIZE; c++) {
-            const cell = document.createElement('div');
-            cell.className = 'grid-cell'; cell.id = `cell-${r}-${c}`;
-            gridEl.appendChild(cell);
-        }
-    }
-    updateUI();
-    setTimeout(() => { fillGrid(true); }, 300);
-};
+// --- 3. 最後才掉寶石 (不再等待全部加載) ---
+updateUI();
+fillGrid(true);
 </script>
 </body>
 </html>
