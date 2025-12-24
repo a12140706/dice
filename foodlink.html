@@ -27,10 +27,20 @@
 
         /* 遊戲區域 */
         .main-layout { flex: 1; display: flex; justify-content: center; align-items: center; padding: 10px; position: relative; }
-        #game-board { 
-            display: grid; grid-template-columns: repeat(10, var(--tile-size)); grid-template-rows: repeat(6, var(--tile-size)); 
-            gap: var(--tile-gap); padding: 12px; background: var(--table-green); border: 4px solid #084325; border-radius: 15px; box-shadow: inset 0 0 50px rgba(0,0,0,0.5); position: relative;
-        }
+       #game-board { 
+    display: grid; 
+    grid-template-columns: repeat(10, var(--tile-size)); 
+    grid-template-rows: repeat(6, var(--tile-size)); 
+    gap: var(--tile-gap); 
+    padding: 12px; 
+    background: var(--table-green); 
+    border: 4px solid #084325; 
+    border-radius: 15px; 
+    box-shadow: inset 0 0 50px rgba(0,0,0,0.5); 
+    position: relative;
+    /* 確保容器不切掉畫布 */
+    overflow: visible; 
+}
         .slot { position: relative; width: var(--tile-size); height: var(--tile-size); }
         .tile { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; font-size: 30px; border-radius: 6px; transition: transform 0.2s; user-select: none; z-index: 10; }
         .layer-1 { background: #334155; box-shadow: 0 3px 6px rgba(0,0,0,0.4); border: 1px solid #475569; }
@@ -39,7 +49,15 @@
         .selected { outline: 3px solid #fff; transform: scale(1.1); z-index: 20 !important; background: #64748b !important; }
 
         /* 動畫元素 */
-        #line-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
+        #line-canvas { 
+    position: absolute; 
+    top: -30px; 
+    left: -30px; 
+    width: calc(100% + 60px); 
+    height: calc(100% + 60px); 
+    pointer-events: none; 
+    z-index: 100; 
+}
         .floating-score { position: absolute; font-weight: bold; font-size: 24px; pointer-events: none; z-index: 500; animation: floatUp 0.7s ease-out forwards; text-shadow: 0 2px 4px #000; }
         @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-60px); opacity: 0; } }
         
@@ -202,17 +220,32 @@
     }
 
     function drawConnectLine(path) {
-        const ctx = document.getElementById('line-canvas').getContext('2d');
-        ctx.lineWidth = 5; ctx.strokeStyle = '#ffd86b'; ctx.shadowBlur = 10; ctx.shadowColor = '#ffd86b';
-        ctx.beginPath();
-        path.forEach((p, i) => {
-            const x = p.c * (54 + 5) + 27 + 12;
-            const y = p.r * (54 + 5) + 27 + 12;
-            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-        });
-        ctx.stroke();
-        setTimeout(() => ctx.clearRect(0, 0, 1000, 1000), 200);
-    }
+    const canvas = document.getElementById('line-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // 重新設定畫布尺寸以符合擴大後的範圍
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+
+    ctx.lineWidth = 5; 
+    ctx.strokeStyle = '#ffd86b'; 
+    ctx.shadowBlur = 10; 
+    ctx.shadowColor = '#ffd86b';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    ctx.beginPath();
+    path.forEach((p, i) => {
+        // 54 是尺寸, 5 是間距, 12 是牌桌內邊距, 30 是畫布外擴偏移
+        const x = p.c * (54 + 5) + 27 + 12 + 30;
+        const y = p.r * (54 + 5) + 27 + 12 + 30;
+        if (i === 0) ctx.moveTo(x, y); 
+        else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    
+    setTimeout(() => ctx.clearRect(0, 0, canvas.width, canvas.height), 250);
+}
 
     function showFloatingScore(r, c, val) {
         const f = document.createElement('div');
