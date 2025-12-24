@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover" />
+    <title>愛心連連看</title>
+    <style>
+        :root {
+            --gold: #ffd86b;
+            --bg: #2e0d4d;
+            --heart-red: #ff1744;
+            --purple: #9c27b0;
+            --tile-size: 65px;
+        }
+        @media (min-width: 450px) { :root { --tile-size: 85px; } }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+
+        body {
+            margin: 0; padding: 0; background: var(--bg); color: #fff; font-family: Arial;
+            height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
+            padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0;
+        }
+
+        /* Header */
+        .topbar {
+            padding-top: env(safe-area-inset-top); height: calc(55px + env(safe-area-inset-top));
+            background: linear-gradient(#4a0404, #2a0202); display: flex; align-items: center;
+            padding-left: 15px; padding-right: 15px; gap: 8px; border-bottom: 2px solid #5c0a0a; z-index: 1000;
+        }
+
+        .balance-box {
+            background: rgba(0, 0, 0, 0.5); border: 1px solid var(--gold); border-radius: 8px;
+            padding: 4px 10px; color: var(--gold); font-weight: bold; font-size: 14px;
+        }
+
+        .audio-ctrl {
+            font-size: 11px; background: #4a148c; border: 1px solid #ce93d8;
+            padding: 4px 8px; border-radius: 12px; color: #fff;
+        }
+
+        /* 遊戲區域 */
+        .main-container {
+            flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            padding: 10px; position: relative;
+        }
+
+        /* 特殊模式標籤 */
+        #spinsLeftLabel {
+            display: none; background: var(--heart-red); color: white; padding: 5px 20px;
+            border-radius: 20px; font-weight: bold; margin-bottom: 15px;
+            box-shadow: 0 0 15px var(--heart-red); z-index: 50; animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+        /* 特殊模式大標題彈出 */
+        #bonusOverlay {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
+            z-index: 2000; color: var(--gold); font-size: 48px; font-weight: 900;
+            text-shadow: 0 0 20px #f00, 0 0 40px #f00; pointer-events: none;
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-align: center; white-space: nowrap;
+        }
+        #bonusOverlay.active { transform: translate(-50%, -50%) scale(1.2); }
+
+        .grid-wrapper { width: 100%; max-width: 450px; position: relative; overflow: hidden; }
+
+        /* 畫面震動 */
+        .shake { animation: shakeAnim 0.4s; }
+        @keyframes shakeAnim {
+            0%, 100% { transform: translate(0,0); }
+            20% { transform: translate(-5px, 5px); }
+            40% { transform: translate(5px, -5px); }
+            60% { transform: translate(-5px, -5px); }
+            80% { transform: translate(5px, 5px); }
+        }
+
+        .grid {
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; width: 100%;
+            background: #1a0633; padding: 6px; border-radius: 10px; border: 3px solid #7b1fa2;
+            position: relative; transition: all 0.5s ease;
+        }
+
+        .row-mask {
+            position: absolute; left: 6px; right: 6px; background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: grayscale(1) brightness(0.5); z-index: 20; display: flex;
+            align-items: center; justify-content: center; pointer-events: none;
+            border-radius: 4px; transition: all 0.4s ease;
+        }
+        .row-mask::after {
+            content: '🔒 ❤️ ' attr(data-need); background: rgba(211, 47, 47, 0.9);
+            color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 12px; border: 1px solid var(--gold);
+        }
+
+        .slot-tile { aspect-ratio: 1 / 1; background: #000; border-radius: 6px; position: relative; overflow: hidden; }
+        .reel-strip { position: absolute; top: 0; left: 0; width: 100%; display: flex; flex-direction: column; transform: translateY(0); }
+        .strip-item { width: 100%; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 24px; }
+
+        .win-glow { animation: winFlash 0.5s infinite alternate; z-index: 30; }
+        @keyframes winFlash { from { filter: brightness(1); } to { filter: brightness(1.8); transform: scale(0.95); } }
+
+        .decor-tile { opacity: 0.3; filter: grayscale(1); }
+        .heart-icon { font-size: 45px; line-height: 1; }
+        .heart-tile { background: #000; color: var(--heart-red); }
+        .heart-val {
+            position: absolute; z-index: 10; font-size: 11px; font-weight: 900; color: #fff;
+            text-shadow: 1px 1px 2px #000, -1px -1px 2px #000; pointer-events: none;
+            width: 100%; text-align: center; top: 55%; transform: translateY(-50%);
+        }
+
+        .heart-tile.purple { border: 2px solid #9c27b0; box-shadow: inset 0 0 10px #9c27b0; }
+        .heart-tile.gold { border: 2px solid #fbc02d; box-shadow: inset 0 0 15px #fbc02d; }
+
+        .bottom-panel { background: #000; padding: 12px; width: 100%; }
+        .win-display {
+            background: #1a0033; color: var(--gold); text-align: center; padding: 8px;
+            border-radius: 8px; font-size: 20px; margin-bottom: 10px; border: 1px solid #4a148c; font-weight: bold;
+        }
+
+        .control-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .spin-btn {
+            flex: 1.5; height: 55px; background: linear-gradient(#ba68c8, #7b1fa2);
+            border: none; border-radius: 12px; color: #fff; font-size: 22px; font-weight: bold; box-shadow: 0 4px 0 #4a148c;
+        }
+        .spin-btn:disabled { filter: grayscale(1); opacity: 0.6; }
+        .auto-btn { flex: 1; height: 55px; background: #455a64; border: none; border-radius: 12px; color: #fff; font-weight: bold; }
+        .auto-btn.active { background: #c2185b; box-shadow: 0 0 15px #c2185b; }
+        .bet-box {
+            flex: 1.2; background: #111; border-radius: 12px; border: 1px solid #444; height: 55px;
+            display: flex; flex-direction: column; justify-content: center; text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="bonusOverlay">🎉 BONUS TIME 🎉</div>
+
+    <div class="topbar">
+        <div class="audio-ctrl" onclick="toggleMute()" id="muteBtn">🔊</div>
+        <div class="audio-ctrl" onclick="cycleBGM()" id="bgmBtn">🎵 音樂1</div>
+        <div class="balance-box">💰 <span id="balanceText">0</span></div>
+        <marquee style="flex:1; color:var(--gold); font-size: 11px;">有問題找阿記</marquee>
+        <button class="audio-ctrl" onclick="location.reload()">🏠 回大廳</button>
+    </div>
+
+    <div class="main-container" id="mainWrapper">
+        <div id="spinsLeftLabel">次數: <span id="spinsLeftText">3</span></div>
+        <div class="grid-wrapper">
+            <div id="gameGrid" class="grid"></div>
+        </div>
+    </div>
+
+    <div class="bottom-panel">
+        <div class="win-display">WIN: <span id="winText">0</span></div>
+        <div class="control-row">
+            <div class="bet-box">
+                <div style="font-size: 10px; color: #888;">BET</div>
+                <div style="display:flex; align-items:center; justify-content:space-around;">
+                    <span onclick="changeBet(-1)" style="color:var(--gold); font-size:24px;">-</span>
+                    <span id="betText" style="font-weight:bold; font-size:18px;">100</span>
+                    <span onclick="changeBet(1)" style="color:var(--gold); font-size:24px;">+</span>
+                </div>
+            </div>
+            <button class="spin-btn" id="spinBtn" onclick="handleSpin()">SPIN</button>
+            <button class="auto-btn" id="autoBtn" onclick="toggleAuto()">自動玩</button>
+        </div>
+    </div>
+
+    <audio id="bgm1" src="background-music-434612.mp3" loop preload="auto"></audio>
+    <audio id="bgm2" src="soft-background-music-427252.mp3" loop preload="auto"></audio>
+    <audio id="bgm3" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" loop preload="auto"></audio>
+    <audio id="sndBell" src="https://assets.mixkit.co/active_storage/sfx/1070/1070-preview.mp3" preload="auto"></audio>
+    <audio id="sndMatch" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="auto"></audio>
+
+    <script>
+        let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
+        let rows = 4, cols = 5;
+        let isSpinning = false, isAuto = false, isSpecialMode = false;
+        let betOptions = [50, 100, 300, 500, 1000], betIdx = 1;
+
+        const SYMBOL_VALUES = { '👑': 10, '💎': 5, '🪙': 3, '💍': 2, '🔮': 1, '✨': 0.5 };
+        let symbols = Object.keys(SYMBOL_VALUES);
+        let board = [];
+        let spinsLeft = 3;
+        let currentHeartsCount = 0;
+        let isMuted = false, hasInteracted = false;
+        let currentBgmIdx = 1;
+        const bgmIds = ['bgm1', 'bgm2', 'bgm3'];
+
+        function formatMoney(amount) { return amount >= 1000 ? (amount / 1000).toFixed(1) + 'K' : amount; }
+        function stopAllBGM() { bgmIds.forEach(id => { const a = document.getElementById(id); a.pause(); a.currentTime = 0; }); }
+
+        function cycleBGM() {
+            hasInteracted = true; stopAllBGM(); currentBgmIdx = (currentBgmIdx % 3) + 1;
+            document.getElementById('bgmBtn').innerText = `🎵 音樂${currentBgmIdx}`;
+            if (!isMuted) { const activeBgm = document.getElementById(`bgm${currentBgmIdx}`); activeBgm.volume = 0.4; activeBgm.play().catch(() => {}); }
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted; document.getElementById('muteBtn').innerText = isMuted ? '🔇' : '🔊';
+            const b = document.getElementById(`bgm${currentBgmIdx}`);
+            isMuted ? b.pause() : b.play().catch(()=>{});
+        }
+
+        function initBoardData() {
+            board = [];
+            for (let r = 0; r < rows; r++) {
+                board[r] = [];
+                for (let c = 0; c < cols; c++) {
+                    board[r][c] = { type: symbols[Math.floor(Math.random() * symbols.length)], val: 0 };
+                }
+            }
+        }
+
+        function initGridUI() {
+            const grid = document.getElementById('gameGrid');
+            grid.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+            grid.innerHTML = '';
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const tile = document.createElement('div');
+                    tile.id = `tile-${r}-${c}`;
+                    tile.className = 'slot-tile';
+                    const strip = document.createElement('div');
+                    strip.id = `strip-${r}-${c}`;
+                    strip.className = 'reel-strip';
+                    tile.appendChild(strip);
+                    grid.appendChild(tile);
+                }
+            }
+            updateRowMasks();
+            for (let r = 0; r < rows; r++) { for (let c = 0; c < cols; c++) renderTile(r, c); }
+        }
+
+        function updateRowMasks() {
+            document.querySelectorAll('.row-mask').forEach(m => m.remove());
+            if (!isSpecialMode) return;
+            const grid = document.getElementById('gameGrid');
+            const config = [{ r: 3, target: 6 }, { r: 2, target: 10 }, { r: 1, target: 15 }, { r: 0, target: 20 }];
+            config.forEach(conf => {
+                if (currentHeartsCount < conf.target) {
+                    const mask = document.createElement('div');
+                    mask.className = 'row-mask';
+                    mask.style.top = (conf.r * 12.5) + '%';
+                    mask.style.height = '12.5%';
+                    mask.setAttribute('data-need', conf.target - currentHeartsCount);
+                    grid.appendChild(mask);
+                }
+            });
+        }
+
+        function renderTile(r, c) {
+            const strip = document.getElementById(`strip-${r}-${c}`);
+            if (!strip) return;
+            const data = board[r][c];
+            const currentBet = betOptions[betIdx];
+            strip.innerHTML = '';
+            const item = document.createElement('div');
+            item.className = 'strip-item';
+            if (data.type === '❤️') {
+                item.classList.add('heart-tile');
+                if (data.val >= 40) item.classList.add('gold');
+                else if (data.val >= 20) item.classList.add('purple');
+                item.innerHTML = `<div class="heart-icon">❤️</div><div class="heart-val">${formatMoney(currentBet * data.val)}</div>`;
+            } else {
+                item.innerText = data.type || '';
+                if (isSpecialMode) item.classList.add('decor-tile');
+            }
+            strip.appendChild(item);
+        }
+
+        function checkNormalWins() {
+            let totalMult = 0; let winTiles = [];
+            for (let r = 0; r < 4; r++) {
+                for (let c = 0; c <= 2; c++) {
+                    let s1 = board[r][c], s2 = board[r][c+1], s3 = board[r][c+2];
+                    if (s1.type !== '❤️' && s1.type === s2.type && s2.type === s3.type) {
+                        totalMult += SYMBOL_VALUES[s1.type];
+                        winTiles.push(`${r}-${c}`, `${r}-${c+1}`, `${r}-${c+2}`);
+                    }
+                }
+            }
+            for (let c = 0; c < 5; c++) {
+                for (let r = 0; r <= 1; r++) {
+                    let s1 = board[r][c], s2 = board[r+1][c], s3 = board[r+2][c];
+                    if (s1.type !== '❤️' && s1.type === s2.type && s2.type === s3.type) {
+                        totalMult += SYMBOL_VALUES[s1.type];
+                        winTiles.push(`${r}-${c}`, `${r+1}-${c}`, `${r+2}-${c}`);
+                    }
+                }
+            }
+            return { mult: totalMult, tiles: [...new Set(winTiles)] };
+        }
+
+        function getHeartMultiplier(r) {
+            let rand = Math.random() * 100;
+            if (isSpecialMode) {
+                if (r <= 1) return rand < 15 ? Math.floor(Math.random() * 11) + 40 : Math.floor(Math.random() * 21) + 20;
+                if (r === 2) return Math.floor(Math.random() * 21) + 20;
+                return rand < 10 ? Math.floor(Math.random() * 6) + 15 : Math.floor(Math.random() * 13) + 2;
+            }
+            return Math.floor(Math.random() * 4) + 2;
+        }
+
+        async function handleSpin() {
+            if (!hasInteracted) { hasInteracted = true; if (!isMuted) document.getElementById(`bgm${currentBgmIdx}`).play().catch(()=>{}); }
+            if (isSpinning) return;
+            if (isSpecialMode) { specialSpin(); return; }
+            if (balance < betOptions[betIdx]) { alert("餘額不足"); isAuto = false; updateUI(); return; }
+
+            balance -= betOptions[betIdx];
+            isSpinning = true;
+            document.getElementById('winText').innerText = "0";
+            document.getElementById('spinBtn').disabled = true;
+            updateUI();
+
+            const animationPromises = [];
+            const tileSize = document.querySelector('.slot-tile').offsetHeight;
+
+            for (let r = 0; r < 4; r++) {
+                for (let c = 0; c < 5; c++) {
+                    const strip = document.getElementById(`strip-${r}-${c}`);
+                    document.getElementById(`tile-${r}-${c}`).classList.remove('win-glow');
+                    for(let i=0; i<10; i++){
+                        const temp = document.createElement('div');
+                        temp.className = 'strip-item';
+                        temp.innerText = symbols[Math.floor(Math.random()*symbols.length)];
+                        strip.appendChild(temp);
+                    }
+                    let isHeart = Math.random() < 0.05;
+                    board[r][c] = isHeart ? { type: '❤️', val: getHeartMultiplier(r) } : { type: symbols[Math.floor(Math.random() * symbols.length)], val: 0 };
+                    const delay = (c * 80) + (r * 30);
+                    const duration = 800 + Math.random() * 300;
+                    strip.style.transition = 'none'; strip.style.transform = 'translateY(0)';
+                    const p = new Promise(resolve => {
+                        setTimeout(() => {
+                            strip.style.transition = `transform ${duration}ms cubic-bezier(0.45, 0.05, 0.55, 0.95)`;
+                            strip.style.transform = `translateY(-${10 * tileSize}px)`;
+                            setTimeout(() => {
+                                renderTile(r, c); strip.style.transition = 'none'; strip.style.transform = 'translateY(0)'; resolve();
+                            }, duration);
+                        }, delay);
+                    });
+                    animationPromises.push(p);
+                }
+            }
+
+            await Promise.all(animationPromises);
+
+            let heartsCountForMode = 0;
+            board.forEach(row => row.forEach(tile => { if(tile.type === '❤️') heartsCountForMode++; }));
+
+            let winRes = checkNormalWins();
+            if (winRes.mult > 0) {
+                let winAmt = betOptions[betIdx] * winRes.mult;
+                balance += winAmt;
+                document.getElementById('winText').innerText = winAmt.toLocaleString();
+                winRes.tiles.forEach(id => document.getElementById(`tile-${id}`).classList.add('win-glow'));
+                if (!isMuted) document.getElementById('sndMatch').play();
+            }
+
+            if (heartsCountForMode >= 4) {
+                // 延遲一下再進入特殊模式，給玩家看清楚愛心的時間
+                setTimeout(triggerSpecialMode, 800);
+            } else { 
+                isSpinning = false; 
+                document.getElementById('spinBtn').disabled = false;
+                if (isAuto) setTimeout(handleSpin, 1000); 
+            }
+        }
+
+        // ========================== 特殊模式轉場動畫 ==========================
+        async function triggerSpecialMode() {
+            // 1. 震動與音效
+            const wrapper = document.getElementById('mainWrapper');
+            wrapper.classList.add('shake');
+            if(!isMuted) {
+                const bell = document.getElementById('sndBell');
+                bell.play(); setTimeout(() => bell.cloneNode().play(), 300); setTimeout(() => bell.cloneNode().play(), 600);
+            }
+
+            // 2. 顯示大標題
+            const overlay = document.getElementById('bonusOverlay');
+            overlay.classList.add('active');
+            
+            // 停頓 1.5 秒讓玩家興奮一下
+            await new Promise(res => setTimeout(res, 1500));
+            
+            overlay.classList.remove('active');
+            wrapper.classList.remove('shake');
+
+            // 3. 進入邏輯切換
+            isSpecialMode = true;
+            spinsLeft = 3;
+            const oldBoard = JSON.parse(JSON.stringify(board));
+            rows = 8;
+            board = Array.from({ length: 8 }, () => Array(5).fill({ type: '', val: 0 }));
+            currentHeartsCount = 0;
+            
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 5; c++) {
+                    board[r][c] = { type: symbols[Math.floor(Math.random() * symbols.length)], val: 0 };
+                }
+            }
+
+            for (let r = 4; r < 8; r++) {
+                for (let c = 0; c < 5; c++) {
+                    if (oldBoard[r - 4][c].type === '❤️') {
+                        board[r][c] = oldBoard[r - 4][c];
+                        currentHeartsCount++;
+                    }
+                }
+            }
+
+            document.getElementById('spinsLeftLabel').style.display = 'block';
+            document.getElementById('spinsLeftText').innerText = spinsLeft;
+            
+            // 重新渲染大盤面
+            initGridUI();
+
+            if (isAuto) setTimeout(specialSpin, 1000);
+            else {
+                isSpinning = false;
+                document.getElementById('spinBtn').disabled = false;
+            }
+        }
+
+        async function specialSpin() {
+            if (isSpinning && !isAuto) return;
+            isSpinning = true;
+            document.getElementById('spinBtn').disabled = true;
+            spinsLeft--;
+            document.getElementById('spinsLeftText').innerText = spinsLeft;
+
+            const animationPromises = [];
+            const tileSize = document.querySelector('.slot-tile').offsetHeight;
+
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 5; c++) {
+                    if (board[r][c].type === '❤️') continue;
+                    const strip = document.getElementById(`strip-${r}-${c}`);
+                    for(let i=0; i<8; i++){
+                        const temp = document.createElement('div');
+                        temp.className = 'strip-item decor-tile';
+                        temp.innerText = symbols[Math.floor(Math.random()*symbols.length)];
+                        strip.appendChild(temp);
+                    }
+                    const delay = Math.random() * 200;
+                    const duration = 600 + Math.random() * 300;
+                    const p = new Promise(resolve => {
+                        setTimeout(() => {
+                            strip.style.transition = `transform ${duration}ms cubic-bezier(0.45, 0.05, 0.55, 0.95)`;
+                            strip.style.transform = `translateY(-${8 * tileSize}px)`;
+                            setTimeout(() => {
+                                if (Math.random() < 0.08) board[r][c] = { type: '❤️', val: getHeartMultiplier(r) };
+                                else board[r][c] = { type: symbols[Math.floor(Math.random() * symbols.length)], val: 0 };
+                                renderTile(r, c); strip.style.transition = 'none'; strip.style.transform = 'translateY(0)'; resolve();
+                            }, duration);
+                        }, delay);
+                    });
+                    animationPromises.push(p);
+                }
+            }
+
+            await Promise.all(animationPromises);
+
+            let gotNewInActiveZone = false;
+            let changed = true;
+            while (changed) {
+                let checkCount = 0;
+                for (let r = 0; r < 8; r++) {
+                    for (let c = 0; c < 5; c++) {
+                        if (board[r][c].type === '❤️') {
+                            let locked = (r === 3 && checkCount < 6) || (r === 2 && checkCount < 10) || 
+                                         (r === 1 && checkCount < 15) || (r === 0 && checkCount < 20);
+                            if (!locked) checkCount++;
+                        }
+                    }
+                }
+                if (checkCount > currentHeartsCount) { currentHeartsCount = checkCount; gotNewInActiveZone = true; changed = true; } 
+                else { changed = false; }
+            }
+
+            if (gotNewInActiveZone) { spinsLeft = 3; if (!isMuted) document.getElementById('sndMatch').play(); }
+            updateRowMasks();
+            let tempWin = 0;
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 5; c++) {
+                    renderTile(r, c);
+                    let isLocked = (r === 3 && currentHeartsCount < 6) || (r === 2 && currentHeartsCount < 10) || 
+                                   (r === 1 && currentHeartsCount < 15) || (r === 0 && currentHeartsCount < 20);
+                    if (board[r][c].type === '❤️' && !isLocked) tempWin += (board[r][c].val * betOptions[betIdx]);
+                }
+            }
+            document.getElementById('winText').innerText = tempWin.toLocaleString();
+            document.getElementById('spinsLeftText').innerText = spinsLeft;
+
+            if (spinsLeft <= 0) setTimeout(endSpecialMode, 1000);
+            else { isSpinning = false; document.getElementById('spinBtn').disabled = false; if (isAuto) setTimeout(specialSpin, 1200); }
+        }
+
+        function endSpecialMode() {
+            let totalWin = parseInt(document.getElementById('winText').innerText.replace(/,/g, ''));
+            balance += totalWin;
+            alert(`贏得：${totalWin.toLocaleString()}`);
+            isSpecialMode = false; isSpinning = false; rows = 4;
+            document.getElementById('spinBtn').disabled = false;
+            document.getElementById('spinsLeftLabel').style.display = 'none';
+            initBoardData(); initGridUI(); updateUI();
+            if (isAuto) setTimeout(handleSpin, 1000);
+        }
+
+        function updateUI() {
+            document.getElementById('balanceText').innerText = Math.floor(balance).toLocaleString();
+            document.getElementById('betText').innerText = betOptions[betIdx];
+            localStorage.setItem('sicbo_balance', balance);
+        }
+
+        function changeBet(dir) { if (isSpinning) return; betIdx = Math.max(0, Math.min(betOptions.length - 1, betIdx + dir)); updateUI(); }
+        function toggleAuto() { isAuto = !isAuto; document.getElementById('autoBtn').classList.toggle('active', isAuto); if (isAuto && !isSpinning) handleSpin(); }
+
+        window.onload = () => { initBoardData(); initGridUI(); updateUI(); };
+    </script>
+</body>
+</html>
