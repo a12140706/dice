@@ -270,7 +270,7 @@ function getRandomTile() {
         let rarestIcons = safeIcons.filter(icon => counts[icon] === minCount);
         
         // 80% 的機率強迫給最少的牌，20% 給一點點連線的機會 (比較自然)
-        if (Math.random() < 0.6) {
+        if (Math.random() < 0.7) {
             pick = rarestIcons[Math.floor(Math.random() * rarestIcons.length)];
         } else {
             pick = safeIcons[Math.floor(Math.random() * safeIcons.length)];
