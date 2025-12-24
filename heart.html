@@ -115,8 +115,15 @@
         }
 
         @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
         }
 
         #bonusOverlay {
@@ -150,11 +157,27 @@
         }
 
         @keyframes shakeAnim {
-            0%, 100% { transform: translate(0, 0); }
-            20% { transform: translate(-5px, 5px); }
-            40% { transform: translate(5px, -5px); }
-            60% { transform: translate(-5px, -5px); }
-            80% { transform: translate(5px, 5px); }
+
+            0%,
+            100% {
+                transform: translate(0, 0);
+            }
+
+            20% {
+                transform: translate(-5px, 5px);
+            }
+
+            40% {
+                transform: translate(5px, -5px);
+            }
+
+            60% {
+                transform: translate(-5px, -5px);
+            }
+
+            80% {
+                transform: translate(5px, 5px);
+            }
         }
 
         .grid {
@@ -233,8 +256,15 @@
         }
 
         @keyframes winImpact {
-            0% { background-color: #000; transform: scale(1); }
-            100% { background-color: #b8860b; transform: scale(0.9); }
+            0% {
+                background-color: #000;
+                transform: scale(1);
+            }
+
+            100% {
+                background-color: #b8860b;
+                transform: scale(0.9);
+            }
         }
 
         .decor-tile {
@@ -242,21 +272,56 @@
             filter: grayscale(0.5);
         }
 
-        .heart-icon {
-            font-size: 45px;
-            line-height: 1;
-            transition: all 0.3s;
-            /* 全愛心發光效果 */
-            filter: drop-shadow(0 0 8px currentColor);
-        }
-
         .heart-tile {
             background: #000;
         }
 
-        .heart-purple .heart-icon { color: #e040fb; }
-        .heart-gold .heart-icon { color: #ffeb3b; filter: drop-shadow(0 0 12px #ffeb3b); }
-        .heart-red .heart-icon { color: #ff1744; }
+        .heart-icon {
+            font-size: 45px;
+            line-height: 1;
+            transition: all 0.3s;
+            display: inline-block;
+            /* 確保濾鏡效果正確顯示 */
+        }
+
+        /* 紅愛心：基礎色，不旋轉色相 */
+        .heart-red .heart-icon {
+            color: #ff1744;
+            filter: drop-shadow(0 0 8px #ff1744);
+        }
+
+        /* 紫愛心：透過色相旋轉，讓紅心變深紫 */
+        .heart-purple .heart-icon {
+            color: #ff1744;
+            /* 保持底色一致 */
+            filter: hue-rotate(270deg) brightness(1.2) drop-shadow(0 0 10px #e040fb);
+        }
+
+        /* 金愛心：大幅改變色相與亮度，模擬黃金質感 */
+        .heart-gold .heart-icon {
+            color: #ff1744;
+            /* 保持底色一致 */
+            filter: hue-rotate(50deg) brightness(1.8) contrast(1.2) drop-shadow(0 0 15px #ffeb3b);
+            animation: gold-pulse 1.5s infinite;
+            /* 加入呼吸光效 */
+        }
+
+        @keyframes gold-pulse {
+            0% {
+                transform: scale(1);
+                filter: hue-rotate(50deg) brightness(1.8) drop-shadow(0 0 10px #ffeb3b);
+            }
+
+            50% {
+                transform: scale(1.1);
+                filter: hue-rotate(50deg) brightness(2.2) drop-shadow(0 0 20px #ffeb3b);
+            }
+
+            100% {
+                transform: scale(1);
+                filter: hue-rotate(50deg) brightness(1.8) drop-shadow(0 0 10px #ffeb3b);
+            }
+        }
 
         .heart-val {
             position: absolute;
@@ -309,7 +374,10 @@
             box-shadow: 0 4px 0 #4a148c;
         }
 
-        .spin-btn:disabled { filter: grayscale(1); opacity: 0.6; }
+        .spin-btn:disabled {
+            filter: grayscale(1);
+            opacity: 0.6;
+        }
 
         .auto-btn {
             flex: 1;
@@ -321,7 +389,10 @@
             font-weight: bold;
         }
 
-        .auto-btn.active { background: #c2185b; box-shadow: 0 0 15px #c2185b; }
+        .auto-btn.active {
+            background: #c2185b;
+            box-shadow: 0 0 15px #c2185b;
+        }
 
         .bet-box {
             flex: 1.2;
@@ -362,7 +433,9 @@
         <div class="balance-box">💰 <span id="balanceText">0</span></div>
         <marquee style="flex:1; color:var(--gold); font-size: 11px;">有問題找阿記</marquee>
         <a href="index.html" style="text-decoration:none;">
-            <button style="background:none; border:1px solid #777; color:#ccc; border-radius:5px; padding:5px 12px; font-size:14px; font-weight:bold;">🏠 回大廳</button>
+            <button
+                style="background:none; border:1px solid #777; color:#ccc; border-radius:5px; padding:5px 12px; font-size:14px; font-weight:bold;">🏠
+                回大廳</button>
         </a>
     </div>
 
@@ -391,7 +464,8 @@
 
     <div id="bigWinResult">
         <div style="color: var(--gold); font-size: 20px; font-weight: bold; margin-bottom: 10px;">TOTAL WIN</div>
-        <div id="resultAmount" style="color: #fff; font-size: 40px; font-weight: 900; text-shadow: 0 0 10px var(--gold);">0</div>
+        <div id="resultAmount"
+            style="color: #fff; font-size: 40px; font-weight: 900; text-shadow: 0 0 10px var(--gold);">0</div>
     </div>
 
     <audio id="bgm1" src="background-music-434612.mp3" loop preload="auto"></audio>
@@ -558,7 +632,7 @@
                     }
                     let isHeart = Math.random() < 0.055;
                     board[r][c] = isHeart ? { type: '❤️', val: getHeartMultiplier(r) } : { type: symbols[Math.floor(Math.random() * symbols.length)], val: 0 };
-                    
+
                     const delay = (c * 60) + (r * 20);
                     const duration = 700 + Math.random() * 300;
                     strip.style.transition = 'none'; strip.style.transform = 'translateY(0)';
