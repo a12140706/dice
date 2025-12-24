@@ -24,16 +24,16 @@
         }
 
         body {
-    height: 100dvh;
-    width: 100vw;
-    font-family: "Microsoft JhengHei", Arial;
-    background: var(--bg-dark);
-    color: #fff;
-    display: flex;
-    /* 改為水平排列，讓 topbar 站在右邊 */
-    flex-direction: row; 
-    overflow: hidden;
-}
+            height: 100dvh;
+            width: 100vw;
+            font-family: "Microsoft JhengHei", Arial;
+            background: var(--bg-dark);
+            color: #fff;
+            display: flex;
+            /* 改為水平排列，讓 topbar 站在右邊 */
+            flex-direction: row;
+            overflow: hidden;
+        }
 
         @media (orientation: portrait) {
             .portrait-tip {
@@ -59,46 +59,53 @@
         }
 
         /* 頂部欄 */
-       .topbar {
-    width: 100px; /* 固定寬度 */
-    height: 100%; /* 高度撐滿 */
-    background: linear-gradient(to bottom, #4a0404, #2a0202);
-    display: flex;
-    flex-direction: column; /* 按鈕垂直排列 */
-    align-items: center;
-    padding: env(safe-area-inset-top) 10px env(safe-area-inset-bottom) 10px;
-    gap: 15px;
-    border-left: 2px solid #5c0a0a; /* 邊框改到左邊 */
-    border-bottom: none;
-    flex-shrink: 0;
-    z-index: 1000;
-    order: 2; /* 強制排在右邊 */
-}
+        .topbar {
+            width: 100px;
+            /* 固定寬度 */
+            height: 100%;
+            /* 高度撐滿 */
+            background: linear-gradient(to bottom, #4a0404, #2a0202);
+            display: flex;
+            flex-direction: column;
+            /* 按鈕垂直排列 */
+            align-items: center;
+            padding: env(safe-area-inset-top) 10px env(safe-area-inset-bottom) 10px;
+            gap: 15px;
+            border-left: 2px solid #5c0a0a;
+            /* 邊框改到左邊 */
+            border-bottom: none;
+            flex-shrink: 0;
+            z-index: 1000;
+            order: 2;
+            /* 強制排在右邊 */
+        }
 
-       .btn-tool {
-    width: 100%;
-    text-align: center;
-    padding: 10px 5px;
-}
+        .btn-tool {
+            width: 100%;
+            text-align: center;
+            padding: 10px 5px;
+        }
 
         .balance-box {
-    width: 90%;
-    text-align: center;
-    padding: 8px 5px;
-    font-size: 12px;
-}
+            width: 90%;
+            text-align: center;
+            padding: 8px 5px;
+            font-size: 12px;
+        }
 
         /* 遊戲區域 */
         .main-layout {
-    flex: 1;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 10px;
-    position: relative;
-    order: 1; /* 排在左邊 */
-}
+            flex: 1;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            position: relative;
+            order: 1;
+            /* 排在左邊 */
+        }
+
         #game-board {
             display: grid;
             grid-template-columns: repeat(10, var(--tile-size));
@@ -221,17 +228,19 @@
     </div>
     <div class="topbar">
         <a href="index.html" style="text-decoration:none;">
-  <button style="background:none; border:1px solid #777; color:#ccc; border-radius:5px; padding:5px 12px; font-size:14px;">🏠 回大廳</button>
-</a>
-    <div class="btn-tool" onclick="toggleMute()" id="soundIcon">🔊</div>
-    <div class="btn-tool" onclick="cycleBGM()" id="bgmBtn" style="font-size: 11px;">🎵 音樂 1</div>
-    <div class="balance-box">💰<br><span id="balanceText">0</span></div>
-    
-    <div style="flex:1;"></div> 
-    
-    <button class="btn-tool" onclick="initMap()">重新開始</button>
+            <button
+                style="background:none; border:1px solid #777; color:#ccc; border-radius:5px; padding:5px 12px; font-size:14px;">🏠
+                回大廳</button>
+        </a>
+        <div class="btn-tool" onclick="toggleMute()" id="soundIcon">🔊</div>
+        <div class="btn-tool" onclick="cycleBGM()" id="bgmBtn" style="font-size: 11px;">🎵 音樂 1</div>
+        <div class="balance-box">💰<br><span id="balanceText">0</span></div>
 
-</div>
+        <div style="flex:1;"></div>
+
+        <button class="btn-tool" onclick="initMap()">重新開始</button>
+
+    </div>
 
     <div class="main-layout">
         <div id="game-board"><canvas id="line-canvas"></canvas></div>
@@ -407,23 +416,56 @@
         }
 
         function getPath(r1, c1, r2, c2) {
+            // 判定該格是否可以通行（板外或已消除）
             const isEmpty = (r, c) => {
-                if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return true; // 板外邊界視為空，可繞路
+                if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return true;
                 return boardData[0][r][c].cleared && boardData[1][r][c].cleared;
             };
+
+            // 直線檢查
             const checkStraight = (r1, c1, r2, c2) => {
                 if (r1 !== r2 && c1 !== c2) return false;
-                if (r1 === r2) { for (let c = Math.min(c1, c2) + 1; c < Math.max(c1, c2); c++) if (!isEmpty(r1, c)) return false; }
-                else { for (let r = Math.min(r1, r2) + 1; r < Math.max(r1, r2); r++) if (!isEmpty(r, c1)) return false; }
+                if (r1 === r2) {
+                    for (let c = Math.min(c1, c2) + 1; c < Math.max(c1, c2); c++) {
+                        if (!isEmpty(r1, c)) return false;
+                    }
+                } else {
+                    for (let r = Math.min(r1, r2) + 1; r < Math.max(r1, r2); r++) {
+                        if (!isEmpty(r, c1)) return false;
+                    }
+                }
                 return true;
             };
+
+            // 1. 檢查 0 折 (直線)
             if (checkStraight(r1, c1, r2, c2)) return [{ r: r1, c: c1 }, { r: r2, c: c2 }];
-            for (let i = -1; i <= 6; i++)
-                if (isEmpty(i, c1) && checkStraight(r1, c1, i, c1) && isEmpty(i, c2) && checkStraight(i, c1, i, c2) && checkStraight(i, c2, r2, c2))
+
+            // 2. 檢查 1 折 (L型)
+            // 轉折點 A (r1, c2)
+            if (isEmpty(r1, c2) && checkStraight(r1, c1, r1, c2) && checkStraight(r1, c2, r2, c2)) {
+                return [{ r: r1, c: c1 }, { r: r1, c: c2 }, { r: r2, c: c2 }];
+            }
+            // 轉折點 B (r2, c1)
+            if (isEmpty(r2, c1) && checkStraight(r1, c1, r2, c1) && checkStraight(r2, c1, r2, c2)) {
+                return [{ r: r1, c: c1 }, { r: r2, c: c1 }, { r: r2, c: c2 }];
+            }
+
+            // 3. 檢查 2 折 (Z型或U型)
+            // 水平掃描所有可能的垂直折點
+            for (let i = -1; i <= ROWS; i++) {
+                if (i === r1 || i === r2) continue; // 已經在 1 折檢查過了
+                if (isEmpty(i, c1) && isEmpty(i, c2) && checkStraight(r1, c1, i, c1) && checkStraight(i, c1, i, c2) && checkStraight(i, c2, r2, c2)) {
                     return [{ r: r1, c: c1 }, { r: i, c: c1 }, { r: i, c: c2 }, { r: r2, c: c2 }];
-            for (let j = -1; j <= 10; j++)
-                if (isEmpty(r1, j) && checkStraight(r1, c1, r1, j) && isEmpty(r2, j) && checkStraight(r1, j, r2, j) && checkStraight(r2, j, r2, c2))
+                }
+            }
+            // 垂直掃描所有可能的水平折點
+            for (let j = -1; j <= COLS; j++) {
+                if (j === c1 || j === c2) continue;
+                if (isEmpty(r1, j) && isEmpty(r2, j) && checkStraight(r1, c1, r1, j) && checkStraight(r1, j, r2, j) && checkStraight(r2, j, r2, c2)) {
                     return [{ r: r1, c: c1 }, { r: r1, c: j }, { r: r2, c: j }, { r: r2, c: c2 }];
+                }
+            }
+
             return null;
         }
 
