@@ -482,7 +482,8 @@
         function updateUI() { document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString(); }
         function showSettle() {
             playSound('sndWin');
-            const reward = Math.floor(score);
+	    const multiplier = Math.floor(Math.random() * (20 - 10 + 1)) + 10;
+            const reward = Math.floor(score) * multiplier;
             balance += reward;
             localStorage.setItem('sicbo_balance', balance);
             updateUI();
