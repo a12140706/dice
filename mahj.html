@@ -194,7 +194,7 @@ function initGrid() {
     for (let r = 0; r < 4; r++) {
         board[r] = [];
         for (let c = 0; c < 4; c++) {
-            board[r][c] = baseIcons[Math.floor(Math.random() * baseIcons.length)];
+            board[r][c] = getRandomTile(r, c);
             const t = document.createElement('div');
             t.id = `tile-${r}-${c}`;
             t.className = 'mj-tile';
@@ -235,59 +235,49 @@ function updateUI() {
 }
 
 // ⭐ 阿記，這裡修好了：傳入當前是否在免費模式
-function getRandomTile() {
+function getRandomTile(r, c) {
     const isFree = freeSpins > 0 || document.getElementById('mainBody').classList.contains('in-free');
     const rand = Math.random();
     
-    // 1. 特殊符號判定 (元寶與胡不計入 4 個限額，因為它們是獎勵，且「胡」不會連線)
+    // 1. 特殊符號 (固定機率，不計入 4 個限制)
     if (rand < 0.04) return '元寶'; 
-    if (!isFree && rand > 0.98) return '胡';
-    
-    // 2. 統計目前盤面上各個基礎圖示的數量
+    if (!isFree && rand > 0.985) return '胡';
+
+    // 2. 定義候選牌
+    const wildCandidates = ['⬜', '🀄', '🀅'];
+    const junkTiles = baseIcons.filter(icon => !wildCandidates.includes(icon));
+
+    // 3. 計算機率 (使用你調好的 0.55 和 0.8)
+    let wildChance = 0.55; 
+    wildChance *= Math.pow(0.8, combo); 
+    if (c !== undefined && c < 2) wildChance *= 0.4;
+
+    // --- 新增：計數邏輯 ---
+    // 數一下目前版面上各個圖案的數量
     let counts = {};
-    baseIcons.forEach(icon => counts[icon] = 0);
-    
-    for (let r = 0; r < 4; r++) {
-        for (let c = 0; c < 4; c++) {
-            if (board[r] && counts[board[r][c]] !== undefined) {
-                counts[board[r][c]]++;
-            }
-        }
-    }
-
-    // 3. 絕對門檻：過濾出數量 < 4 的圖示
-    let safeIcons = baseIcons.filter(icon => counts[icon] < 4);
-
-    // 如果所有牌都滿了 (理論上 4x4 盤面不會發生)，就保底用全部
-    if (safeIcons.length === 0) safeIcons = baseIcons;
+    board.forEach(row => {
+        row.forEach(icon => {
+            counts[icon] = (counts[icon] || 0) + 1;
+        });
+    });
 
     let pick;
-
-    // 4. 高 Combo 煞車機制：當 Combo > 5 時，進入「平衡模式」
-    if (combo > 10) {
-        // 找出 safeIcons 中數量最少的那幾種牌
-        let minCount = Math.min(...safeIcons.map(icon => counts[icon]));
-        let rarestIcons = safeIcons.filter(icon => counts[icon] === minCount);
-        
-        // 80% 的機率強迫給最少的牌，20% 給一點點連線的機會 (比較自然)
-        if (Math.random() < 0.7) {
-            pick = rarestIcons[Math.floor(Math.random() * rarestIcons.length)];
-        } else {
-            pick = safeIcons[Math.floor(Math.random() * safeIcons.length)];
-        }
+    if (Math.random() < wildChance) {
+        // 嘗試抽特色牌
+        pick = wildCandidates[Math.floor(Math.random() * wildCandidates.length)];
     } else {
-        // 一般情況：在安全名單內隨機抽
-        pick = safeIcons[Math.floor(Math.random() * safeIcons.length)];
+        // 嘗試抽雜牌
+        pick = junkTiles[Math.floor(Math.random() * junkTiles.length)];
     }
 
-    // 5. Wild 變身邏輯 (維持不變)
-    const isWhiteWild = (combo >= 2 && pick === '⬜');
-    const isRedWild = (combo >= 5 && pick === '🀄');
-    const isGreenWild = (combo >= 10 && pick === '🀅');
-    if ((isWhiteWild || isRedWild || isGreenWild) && Math.random() < 0.7) {
-        pick = pick; 
+    // 關鍵：如果抽中的牌已經超過 4 個，就隨機換一張
+    // 如果這張牌已經 >= 4，我們就從所有牌中選一張數量最少的換給它
+    if (counts[pick] >= 4) {
+        let allPossible = [...wildCandidates, ...junkTiles];
+        // 找出目前版面上數量最少的牌
+        pick = allPossible.reduce((a, b) => (counts[a] || 0) < (counts[b] || 0) ? a : b);
     }
-    
+
     return pick;
 }
 
@@ -326,7 +316,7 @@ async function startSpin() {
       const t = document.getElementById(`tile-${r}-${c}`);
       t.style.opacity = '0';
       t.classList.remove('tile-drop', 'eliminating');
-      board[r][c] = getRandomTile(); // 裡面已經會判斷模式了
+      board[r][c] = getRandomTile(r, c); // 裡面已經會判斷模式了
       
       setTimeout(() => {
         drawTile(r, c);
@@ -424,7 +414,7 @@ async function checkMatches() {
     
     toEliminate.forEach(pos => {
       const [r, c] = pos.split(',').map(Number);
-      board[r][c] = getRandomTile();
+      board[r][c] = getRandomTile(r, c);
       const el = document.getElementById(`tile-${r}-${c}`);
       // 記得移除 gold-bg 才能讓新下來的麻將變回白色
       el.classList.remove('eliminating', 'tile-drop', 'gold-bg'); 
@@ -462,9 +452,15 @@ async function checkMatches() {
 
     } else {
       isSpinning = false; 
+      
+      // 如果免費遊戲次數用完了，且目前在免費模式背景中
+      if (freeSpins === 0 && document.getElementById('mainBody').classList.contains('in-free')) {
+          document.getElementById('mainBody').classList.remove('in-free');
+          currentMultiplier = 1; // 倍率重置
+      }
+
       updateUI();
       
-      // 不管是不是免費遊戲，只要開著「自動玩」就繼續轉
       if (isAuto) {
         setTimeout(startSpin, 1000);
       }
