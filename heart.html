@@ -447,7 +447,7 @@
                 <div style="font-size: 10px; color: #888;">BET</div>
                 <div style="display:flex; align-items:center; justify-content:space-around;">
                     <span onclick="changeBet(-1)" style="color:var(--gold); font-size:24px;">-</span>
-                    <span id="betText" style="font-weight:bold; font-size:18px;">10000</span>
+                    <span id="betText" style="font-weight:bold; font-size:18px;">1000</span>
                     <span onclick="changeBet(1)" style="color:var(--gold); font-size:24px;">+</span>
                 </div>
             </div>
@@ -472,9 +472,9 @@
         let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
         let rows = 4, cols = 5;
         let isSpinning = false, isAuto = false, isSpecialMode = false;
-        let betOptions = [5000, 10000, 30000, 50000, 100000], betIdx = 1;
+        let betOptions = [500, 1000, 3000, 5000, 10000, 50000], betIdx = 1;
 
-        const SYMBOL_VALUES = { '👑': 2, '💎': 1, '🪙': 1, '💍': 0.5, '🔮': 0.5, '✨': 0.2 };
+        const SYMBOL_VALUES = { '👑': 3, '💎': 2, '🪙': 1, '💍': 1, '🔮': 0.5, '✨': 0.2 };
         let symbols = Object.keys(SYMBOL_VALUES);
         let board = [];
         let spinsLeft = 3, currentHeartsCount = 0;
@@ -746,9 +746,9 @@
 
                             setTimeout(() => {
                                 // 階梯式出現率判定
-                                let chance = 0.02; // 基礎層 5%
-                                if (r === 2 || r === 3) chance = 0.005;  // 中層 2%
-                                if (r === 0 || r === 1) chance = 0.001;
+                                let chance = 0.05; // 基礎層 5%
+                                if (r === 2 || r === 3) chance = 0.02;  // 中層 2%
+                                if (r === 0 || r === 1) chance = 0.005;
 
                                 if (Math.random() < chance) {
                                     board[r][c] = { type: '❤️', val: getHeartMultiplier(r) };

@@ -177,10 +177,10 @@
     <div id="totalBetText">0</div>
   </div>
   <div class="chip-area">
-    <div class="chip-btn" style="background:#3b82f6;" onclick="selectChip(1, this)">1</div>
-    <div class="chip-btn active" style="background:#a855f7;" onclick="selectChip(5, this)">5</div>
-    <div class="chip-btn" style="background:#ef4444;" onclick="selectChip(10, this)">10</div>
-    <div class="chip-btn" style="background:var(--green);" onclick="selectChip(60, this)">60</div>
+    <div class="chip-btn" style="background:#3b82f6;" onclick="selectChip(10, this)">10</div>
+    <div class="chip-btn active" style="background:#a855f7;" onclick="selectChip(50, this)">50</div>
+    <div class="chip-btn" style="background:#ef4444;" onclick="selectChip(100, this)">100</div>
+    <div class="chip-btn" style="background:var(--green);" onclick="selectChip(600, this)">600</div>
   </div>
   <div class="btn-area-row">
     <button class="btn-ui" id="btnAuto" onclick="toggleAuto()">自動玩</button>
@@ -198,7 +198,7 @@ let isMuted = false;
 let currentBgmIdx = 1; 
 const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
 let timeLeft = 20; 
-const BET_LIMIT = 60; const DICE_CHARS = ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
+const BET_LIMIT = 600; const DICE_CHARS = ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
 const SUM_ODDS = { 4:69, 17:69, 5:34, 16:34, 6:20, 15:20, 7:13, 14:13, 8:9, 13:9, 9:7.4, 10:6.8, 11:6.8, 12:7.4 };
 
 // --- 聲音邏輯 (優化手機解鎖) ---

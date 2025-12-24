@@ -87,7 +87,7 @@
 <div class="bottom-bar">
   <div class="bet-control">
     <button class="bet-btn" onclick="changeBet(-1)">◀</button>
-    <div id="betDisplay" style="font-size: 20px; color: var(--btn-gold); font-weight: bold; min-width: 60px; text-align: center;">$5000</div>
+    <div id="betDisplay" style="font-size: 20px; color: var(--btn-gold); font-weight: bold; min-width: 60px; text-align: center;">$1000</div>
     <button class="bet-btn" onclick="changeBet(1)">▶</button>
   </div>
   <button id="autoBtn" class="auto-btn" onclick="toggleAuto()">自動玩</button>
@@ -130,7 +130,7 @@ let isAuto = false;
 let currentBgmIdx = 1;
 let isAudioUnlocked = false; 
 const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
-const betOptions = [1000, 5000, 10000, 30000, 50000, 100000];
+const betOptions = [500, 1000, 3000, 5000, 10000, 50000];
 let currentBetIdx = 1;
 let grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
 
