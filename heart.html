@@ -297,13 +297,12 @@
             filter: hue-rotate(270deg) brightness(1.2) drop-shadow(0 0 10px #e040fb);
         }
 
-        /* 金愛心：大幅改變色相與亮度，模擬黃金質感 */
         .heart-gold .heart-icon {
             color: #ff1744;
-            /* 保持底色一致 */
-            filter: hue-rotate(50deg) brightness(1.8) contrast(1.2) drop-shadow(0 0 15px #ffeb3b);
-            animation: gold-pulse 1.5s infinite;
-            /* 加入呼吸光效 */
+            /* 強化金色濾鏡與外發光 */
+            filter: hue-rotate(50deg) brightness(2) contrast(1.5) drop-shadow(0 0 20px #ffeb3b);
+            animation: gold-pulse 1s infinite alternate;
+            /* 縮短時間讓它跳動更快 */
         }
 
         @keyframes gold-pulse {
@@ -312,14 +311,9 @@
                 filter: hue-rotate(50deg) brightness(1.8) drop-shadow(0 0 10px #ffeb3b);
             }
 
-            50% {
-                transform: scale(1.1);
-                filter: hue-rotate(50deg) brightness(2.2) drop-shadow(0 0 20px #ffeb3b);
-            }
-
             100% {
-                transform: scale(1);
-                filter: hue-rotate(50deg) brightness(1.8) drop-shadow(0 0 10px #ffeb3b);
+                transform: scale(1.25);
+                filter: hue-rotate(50deg) brightness(2.5) drop-shadow(0 0 30px #fff700);
             }
         }
 
@@ -594,13 +588,20 @@
         }
 
         function getHeartMultiplier(r) {
-            let rand = Math.random() * 100;
             if (isSpecialMode) {
-                // 階梯式出現率：越上層倍率越高
-                if (r <= 1) return rand < 20 ? Math.floor(Math.random() * 61) + 40 : Math.floor(Math.random() * 21) + 20;
-                if (r === 2) return Math.floor(Math.random() * 31) + 20;
-                return rand < 10 ? Math.floor(Math.random() * 6) + 15 : Math.floor(Math.random() * 13) + 2;
+                // 第 0 行 (最頂行)：40 ~ 100 倍 (必定金色)
+                if (r === 0) return Math.floor(Math.random() * 61) + 40;
+
+                // 第 1 行：20 ~ 50 倍 (紫色或金色)
+                if (r === 1) return Math.floor(Math.random() * 31) + 20;
+
+                // 第 2-3 行：5 ~ 25 倍 (通常為紫色)
+                if (r === 2 || r === 3) return Math.floor(Math.random() * 21) + 5;
+
+                // 基礎行 (第 4-7 行)：1 ~ 10 倍 (通常為紅色)
+                return Math.floor(Math.random() * 10) + 1;
             }
+            // 普通模式愛心倍數 (2~5倍)
             return Math.floor(Math.random() * 4) + 2;
         }
 
@@ -745,8 +746,10 @@
 
                             setTimeout(() => {
                                 // 階梯式出現率判定
-                                let chance = 0.07;
-                                if (r < 2) chance = 0.04; // 高倍率區出現率略低
+                                let chance = 0.05; // 基礎層 5%
+                                if (r === 2 || r === 3) chance = 0.02;  // 中層 2%
+                                if (r === 0 || r === 1) chance = 0.005;
+
                                 if (Math.random() < chance) {
                                     board[r][c] = { type: '❤️', val: getHeartMultiplier(r) };
                                 } else {
