@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover" />
+    <meta name="viewport"
+        content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover" />
     <title>愛心連連看</title>
     <style>
         :root {
@@ -13,18 +14,48 @@
             --purple: #9c27b0;
             --tile-size: 65px;
         }
-        @media (min-width: 450px) { :root { --tile-size: 85px; } }
-@media (max-height: 700px) {
-    :root { --tile-size: 50px; }
-    .grid { gap: 2px; padding: 4px; }
-    .heart-icon { font-size: 30px; }
-    .heart-val { font-size: 9px; }
-}
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+
+        @media (min-width: 450px) {
+            :root {
+                --tile-size: 85px;
+            }
+        }
+
+        @media (max-height: 700px) {
+            :root {
+                --tile-size: 50px;
+            }
+
+            .grid {
+                gap: 2px;
+                padding: 4px;
+            }
+
+            .heart-icon {
+                font-size: 30px;
+            }
+
+            .heart-val {
+                font-size: 9px;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
 
         body {
-            margin: 0; padding: 0; background: var(--bg); color: #fff; font-family: Arial;
-            height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            color: #fff;
+            font-family: Arial;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
             padding: 0 0 env(safe-area-inset-bottom) 0;
         }
 
@@ -32,126 +63,345 @@
         .topbar {
             padding-top: calc(env(safe-area-inset-top) * 0.4);
             height: calc(45px + (env(safe-area-inset-top) * 0.4));
-            background: linear-gradient(#4a0404, #2a0202); 
-            display: flex; align-items: center;
-            padding-left: 10px; padding-right: 10px; gap: 6px; 
-            border-bottom: 2px solid #5c0a0a; z-index: 1000;
+            background: linear-gradient(#4a0404, #2a0202);
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+            padding-right: 10px;
+            gap: 6px;
+            border-bottom: 2px solid #5c0a0a;
+            z-index: 1000;
         }
 
         .balance-box {
-            background: rgba(0, 0, 0, 0.5); border: 1px solid var(--gold); border-radius: 8px;
-            padding: 4px 8px; color: var(--gold); font-weight: bold; font-size: 13px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--gold);
+            border-radius: 8px;
+            padding: 4px 8px;
+            color: var(--gold);
+            font-weight: bold;
+            font-size: 13px;
         }
 
         .audio-ctrl {
-            font-size: 10px; background: #4a148c; border: 1px solid #ce93d8;
-            padding: 3px 6px; border-radius: 12px; color: #fff;
+            font-size: 10px;
+            background: #4a148c;
+            border: 1px solid #ce93d8;
+            padding: 3px 6px;
+            border-radius: 12px;
+            color: #fff;
         }
 
         .main-container {
-            flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;
-            padding: 10px; position: relative;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            position: relative;
         }
 
         #spinsLeftLabel {
-            display: none; background: var(--heart-red); color: white; padding: 5px 20px;
-            border-radius: 20px; font-weight: bold; margin-bottom: 10px;
-            box-shadow: 0 0 15px var(--heart-red); z-index: 50; animation: pulse 1s infinite;
+            display: none;
+            background: var(--heart-red);
+            color: white;
+            padding: 5px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            box-shadow: 0 0 15px var(--heart-red);
+            z-index: 50;
+            animation: pulse 1s infinite;
         }
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
 
         #bonusOverlay {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
-            z-index: 2000; color: var(--gold); font-size: 48px; font-weight: 900;
-            text-shadow: 0 0 20px #f00, 0 0 40px #f00; pointer-events: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            z-index: 2000;
+            color: var(--gold);
+            font-size: 48px;
+            font-weight: 900;
+            text-shadow: 0 0 20px #f00, 0 0 40px #f00;
+            pointer-events: none;
             transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            text-align: center; white-space: nowrap;
+            text-align: center;
+            white-space: nowrap;
         }
-        #bonusOverlay.active { transform: translate(-50%, -50%) scale(1.2); }
 
-        .grid-wrapper { width: 100%; max-width: 450px; position: relative; }
+        #bonusOverlay.active {
+            transform: translate(-50%, -50%) scale(1.2);
+        }
 
-        .shake { animation: shakeAnim 0.4s; }
+        .grid-wrapper {
+            width: 100%;
+            max-width: 450px;
+            position: relative;
+        }
+
+        .shake {
+            animation: shakeAnim 0.4s;
+        }
+
         @keyframes shakeAnim {
-            0%, 100% { transform: translate(0,0); }
-            20% { transform: translate(-5px, 5px); }
-            40% { transform: translate(5px, -5px); }
-            60% { transform: translate(-5px, -5px); }
-            80% { transform: translate(5px, 5px); }
+
+            0%,
+            100% {
+                transform: translate(0, 0);
+            }
+
+            20% {
+                transform: translate(-5px, 5px);
+            }
+
+            40% {
+                transform: translate(5px, -5px);
+            }
+
+            60% {
+                transform: translate(-5px, -5px);
+            }
+
+            80% {
+                transform: translate(5px, 5px);
+            }
         }
 
         .grid {
-            display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; width: 100%;
-            background: #1a0633; padding: 6px; border-radius: 10px; border: 3px solid #7b1fa2;
-            position: relative; transition: all 0.5s ease;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+            width: 100%;
+            background: #1a0633;
+            padding: 6px;
+            border-radius: 10px;
+            border: 3px solid #7b1fa2;
+            position: relative;
+            transition: all 0.5s ease;
         }
 
         .row-mask {
-            position: absolute; left: 6px; right: 6px; background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: grayscale(1) brightness(0.5); z-index: 20; display: flex;
-            align-items: center; justify-content: center; pointer-events: none;
-            border-radius: 4px; transition: all 0.4s ease;
-        }
-        .row-mask::after {
-            content: '🔒 ❤️ ' attr(data-need); background: rgba(211, 47, 47, 0.9);
-            color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 12px; border: 1px solid var(--gold);
+            position: absolute;
+            left: 4px;
+            right: 4px;
+            background: rgba(0, 0, 0, 0.4);
+            /* 降低透明度 */
+            backdrop-filter: blur(2px) grayscale(0.5);
+            /* 稍微模糊與去色，但保留動態感 */
+            z-index: 25;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            border-radius: 4px;
+            transition: all 0.5s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .slot-tile { aspect-ratio: 1 / 1; background: #000; border-radius: 6px; position: relative; overflow: hidden; }
-        .reel-strip { position: absolute; top: 0; left: 0; width: 100%; display: flex; flex-direction: column; transform: translateY(0); }
-        .strip-item { width: 100%; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 24px; }
+        .decor-tile {
+            opacity: 0.4;
+            filter: brightness(0.7);
+        }
+
+        .row-mask::after {
+            content: '🔒 ❤️ ' attr(data-need);
+            background: rgba(211, 47, 47, 0.9);
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            border: 1px solid var(--gold);
+        }
+
+        .slot-tile {
+            aspect-ratio: 1 / 1;
+            background: #000;
+            border-radius: 6px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .reel-strip {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            transform: translateY(0);
+        }
+
+        .strip-item {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 24px;
+        }
 
         .win-active {
             animation: winImpact 0.6s infinite alternate;
-            z-index: 50; border: 3px solid #fff !important;
+            z-index: 50;
+            border: 3px solid #fff !important;
             box-shadow: 0 0 20px #ffeb3b !important;
         }
+
         @keyframes winImpact {
-            0% { background-color: #000; transform: scale(1); }
-            100% { background-color: #b8860b; transform: scale(0.9); }
+            0% {
+                background-color: #000;
+                transform: scale(1);
+            }
+
+            100% {
+                background-color: #b8860b;
+                transform: scale(0.9);
+            }
         }
 
-        .decor-tile { opacity: 0.3; filter: grayscale(1); }
-        .heart-icon { font-size: 45px; line-height: 1; transition: all 0.3s; }
-        .heart-tile { background: #000; }
-        
+        .decor-tile {
+            opacity: 0.3;
+            filter: grayscale(1);
+        }
+
+        .heart-icon {
+            font-size: 45px;
+            line-height: 1;
+            transition: all 0.3s;
+        }
+
+        .heart-tile {
+            background: #000;
+        }
+
         /* 愛心圖案變色邏輯 */
-        .heart-purple .heart-icon { color: #e040fb; filter: drop-shadow(0 0 5px #e040fb); }
-        .heart-gold .heart-icon { color: #ffeb3b; filter: drop-shadow(0 0 8px #ffeb3b); }
-        .heart-red .heart-icon { color: #ff1744; }
+        .heart-purple .heart-icon {
+            color: #e040fb;
+            filter: drop-shadow(0 0 5px #e040fb);
+        }
+
+        .heart-gold .heart-icon {
+            color: #ffeb3b;
+            filter: drop-shadow(0 0 8px #ffeb3b);
+        }
+
+        .heart-red .heart-icon {
+            color: #ff1744;
+        }
 
         .heart-val {
-            position: absolute; z-index: 10; font-size: 11px; font-weight: 900; color: #fff;
-            text-shadow: 1px 1px 2px #000, -1px -1px 2px #000; pointer-events: none;
-            width: 100%; text-align: center; top: 55%; transform: translateY(-50%);
+            position: absolute;
+            z-index: 10;
+            font-size: 11px;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 1px 1px 2px #000, -1px -1px 2px #000;
+            pointer-events: none;
+            width: 100%;
+            text-align: center;
+            top: 55%;
+            transform: translateY(-50%);
         }
 
-        .bottom-panel { background: #000; padding: 12px; width: 100%; }
+        .bottom-panel {
+            background: #000;
+            padding: 12px;
+            width: 100%;
+        }
+
         .win-display {
-            background: #1a0033; color: var(--gold); text-align: center; padding: 8px;
-            border-radius: 8px; font-size: 20px; margin-bottom: 10px; border: 1px solid #4a148c; font-weight: bold;
+            background: #1a0033;
+            color: var(--gold);
+            text-align: center;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 20px;
+            margin-bottom: 10px;
+            border: 1px solid #4a148c;
+            font-weight: bold;
         }
 
-        .control-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-        .spin-btn {
-            flex: 1.5; height: 55px; background: linear-gradient(#ba68c8, #7b1fa2);
-            border: none; border-radius: 12px; color: #fff; font-size: 22px; font-weight: bold; box-shadow: 0 4px 0 #4a148c;
+        .control-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
         }
-        .spin-btn:disabled { filter: grayscale(1); opacity: 0.6; }
-        .auto-btn { flex: 1; height: 55px; background: #455a64; border: none; border-radius: 12px; color: #fff; font-weight: bold; }
-        .auto-btn.active { background: #c2185b; box-shadow: 0 0 15px #c2185b; }
+
+        .spin-btn {
+            flex: 1.5;
+            height: 55px;
+            background: linear-gradient(#ba68c8, #7b1fa2);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 22px;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #4a148c;
+        }
+
+        .spin-btn:disabled {
+            filter: grayscale(1);
+            opacity: 0.6;
+        }
+
+        .auto-btn {
+            flex: 1;
+            height: 55px;
+            background: #455a64;
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .auto-btn.active {
+            background: #c2185b;
+            box-shadow: 0 0 15px #c2185b;
+        }
+
         .bet-box {
-            flex: 1.2; background: #111; border-radius: 12px; border: 1px solid #444; height: 55px;
-            display: flex; flex-direction: column; justify-content: center; text-align: center;
+            flex: 1.2;
+            background: #111;
+            border-radius: 12px;
+            border: 1px solid #444;
+            height: 55px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
         }
 
         /* 結算彈窗 */
         #bigWinResult {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
-            z-index: 3000; background: rgba(0,0,0,0.95); border: 3px solid var(--gold);
-            padding: 30px; border-radius: 20px; text-align: center;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            z-index: 3000;
+            background: rgba(0, 0, 0, 0.95);
+            border: 3px solid var(--gold);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
             transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            pointer-events: none; box-shadow: 0 0 50px rgba(255, 216, 107, 0.4);
+            pointer-events: none;
+            box-shadow: 0 0 50px rgba(255, 216, 107, 0.4);
         }
     </style>
 </head>
@@ -165,8 +415,10 @@
         <div class="balance-box">💰 <span id="balanceText">0</span></div>
         <marquee style="flex:1; color:var(--gold); font-size: 11px;">有問題找阿記</marquee>
         <a href="index.html" style="text-decoration:none;">
-    <button style="background:none; border:1px solid #777; color:#ccc; border-radius:5px; padding:5px 12px; font-size:14px; font-weight:bold;">🏠 回大廳</button>
-  </a>
+            <button
+                style="background:none; border:1px solid #777; color:#ccc; border-radius:5px; padding:5px 12px; font-size:14px; font-weight:bold;">🏠
+                回大廳</button>
+        </a>
     </div>
 
     <div class="main-container" id="mainWrapper">
@@ -194,7 +446,8 @@
 
     <div id="bigWinResult">
         <div style="color: var(--gold); font-size: 20px; font-weight: bold; margin-bottom: 10px;">TOTAL WIN</div>
-        <div id="resultAmount" style="color: #fff; font-size: 40px; font-weight: 900; text-shadow: 0 0 10px var(--gold);">0</div>
+        <div id="resultAmount"
+            style="color: #fff; font-size: 40px; font-weight: 900; text-shadow: 0 0 10px var(--gold);">0</div>
     </div>
 
     <audio id="bgm1" src="background-music-434612.mp3" loop preload="auto"></audio>
@@ -217,18 +470,18 @@
         const bgmIds = ['bgm1', 'bgm2', 'bgm3'];
 
         function formatMoney(amount) { return amount >= 1000 ? (amount / 1000).toFixed(1) + 'K' : amount; }
-        function stopAllBGM() { bgmIds.forEach(id => { const a = document.getElementById(id); if(a){ a.pause(); a.currentTime = 0; } }); }
+        function stopAllBGM() { bgmIds.forEach(id => { const a = document.getElementById(id); if (a) { a.pause(); a.currentTime = 0; } }); }
 
         function cycleBGM() {
             hasInteracted = true; stopAllBGM(); currentBgmIdx = (currentBgmIdx % 3) + 1;
             document.getElementById('bgmBtn').innerText = `🎵 音樂${currentBgmIdx}`;
-            if (!isMuted) { const activeBgm = document.getElementById(`bgm${currentBgmIdx}`); if(activeBgm){ activeBgm.volume = 0.4; activeBgm.play().catch(() => {}); } }
+            if (!isMuted) { const activeBgm = document.getElementById(`bgm${currentBgmIdx}`); if (activeBgm) { activeBgm.volume = 0.4; activeBgm.play().catch(() => { }); } }
         }
 
         function toggleMute() {
             isMuted = !isMuted; document.getElementById('muteBtn').innerText = isMuted ? '🔇' : '🔊';
             const b = document.getElementById(`bgm${currentBgmIdx}`);
-            if(b) isMuted ? b.pause() : b.play().catch(()=>{});
+            if (b) isMuted ? b.pause() : b.play().catch(() => { });
         }
 
         function initBoardData() {
@@ -292,7 +545,7 @@
                 if (data.val >= 40) item.classList.add('heart-gold');
                 else if (data.val >= 20) item.classList.add('heart-purple');
                 else item.classList.add('heart-red');
-                
+
                 // 圖案統一使用 ❤️，顏色由 CSS 控制
                 item.innerHTML = `<div class="heart-icon">❤️</div><div class="heart-val">${formatMoney(currentBet * data.val)}</div>`;
             } else {
@@ -306,19 +559,19 @@
             let totalMult = 0; let winTiles = [];
             for (let r = 0; r < 4; r++) {
                 for (let c = 0; c <= 2; c++) {
-                    let s1 = board[r][c], s2 = board[r][c+1], s3 = board[r][c+2];
+                    let s1 = board[r][c], s2 = board[r][c + 1], s3 = board[r][c + 2];
                     if (s1.type !== '❤️' && s1.type === s2.type && s2.type === s3.type) {
                         totalMult += SYMBOL_VALUES[s1.type];
-                        winTiles.push(`${r}-${c}`, `${r}-${c+1}`, `${r}-${c+2}`);
+                        winTiles.push(`${r}-${c}`, `${r}-${c + 1}`, `${r}-${c + 2}`);
                     }
                 }
             }
             for (let c = 0; c < 5; c++) {
                 for (let r = 0; r <= 1; r++) {
-                    let s1 = board[r][c], s2 = board[r+1][c], s3 = board[r+2][c];
+                    let s1 = board[r][c], s2 = board[r + 1][c], s3 = board[r + 2][c];
                     if (s1.type !== '❤️' && s1.type === s2.type && s2.type === s3.type) {
                         totalMult += SYMBOL_VALUES[s1.type];
-                        winTiles.push(`${r}-${c}`, `${r+1}-${c}`, `${r+2}-${c}`);
+                        winTiles.push(`${r}-${c}`, `${r + 1}-${c}`, `${r + 2}-${c}`);
                     }
                 }
             }
@@ -336,7 +589,7 @@
         }
 
         async function handleSpin() {
-            if (!hasInteracted) { hasInteracted = true; if (!isMuted) { const bgm = document.getElementById(`bgm${currentBgmIdx}`); if(bgm) bgm.play().catch(()=>{}); } }
+            if (!hasInteracted) { hasInteracted = true; if (!isMuted) { const bgm = document.getElementById(`bgm${currentBgmIdx}`); if (bgm) bgm.play().catch(() => { }); } }
             if (isSpinning) return;
             if (isSpecialMode) { specialSpin(); return; }
             if (balance < betOptions[betIdx]) { alert("餘額不足"); isAuto = false; updateUI(); return; }
@@ -354,10 +607,10 @@
                 for (let c = 0; c < 5; c++) {
                     const strip = document.getElementById(`strip-${r}-${c}`);
                     document.getElementById(`tile-${r}-${c}`).classList.remove('win-active');
-                    for(let i=0; i<10; i++){
+                    for (let i = 0; i < 10; i++) {
                         const temp = document.createElement('div');
                         temp.className = 'strip-item';
-                        temp.innerText = symbols[Math.floor(Math.random()*symbols.length)];
+                        temp.innerText = symbols[Math.floor(Math.random() * symbols.length)];
                         strip.appendChild(temp);
                     }
                     let isHeart = Math.random() < 0.05;
@@ -386,27 +639,27 @@
                 balance += winAmt;
                 document.getElementById('winText').innerText = winAmt.toLocaleString();
                 winRes.tiles.forEach(id => document.getElementById(`tile-${id}`).classList.add('win-active'));
-                if (!isMuted) { const snd = document.getElementById('sndMatch'); if(snd) snd.play(); }
+                if (!isMuted) { const snd = document.getElementById('sndMatch'); if (snd) snd.play(); }
             }
 
             let heartsCountForMode = 0;
-            board.forEach(row => row.forEach(tile => { if(tile.type === '❤️') heartsCountForMode++; }));
+            board.forEach(row => row.forEach(tile => { if (tile.type === '❤️') heartsCountForMode++; }));
 
             if (heartsCountForMode >= 4) {
                 setTimeout(triggerSpecialMode, 800);
-            } else { 
-                isSpinning = false; 
+            } else {
+                isSpinning = false;
                 document.getElementById('spinBtn').disabled = false;
-                if (isAuto) setTimeout(handleSpin, 1000); 
+                if (isAuto) setTimeout(handleSpin, 1000);
             }
         }
 
         async function triggerSpecialMode() {
             const wrapper = document.getElementById('mainWrapper');
             wrapper.classList.add('shake');
-            if(!isMuted) {
+            if (!isMuted) {
                 const bell = document.getElementById('sndBell');
-                if(bell) { bell.play(); setTimeout(() => bell.cloneNode().play(), 300); setTimeout(() => bell.cloneNode().play(), 600); }
+                if (bell) { bell.play(); setTimeout(() => bell.cloneNode().play(), 300); setTimeout(() => bell.cloneNode().play(), 600); }
             }
             const overlay = document.getElementById('bonusOverlay');
             overlay.classList.add('active');
@@ -420,7 +673,7 @@
             rows = 8;
             board = Array.from({ length: 8 }, () => Array(5).fill({ type: '', val: 0 }));
             currentHeartsCount = 0;
-            
+
             for (let r = 0; r < 8; r++) {
                 for (let c = 0; c < 5; c++) {
                     board[r][c] = { type: symbols[Math.floor(Math.random() * symbols.length)], val: 0 };
@@ -453,26 +706,40 @@
 
             for (let r = 0; r < 8; r++) {
                 for (let c = 0; c < 5; c++) {
+                    // --- 重點修改：即使是鎖定的行，只要不是已經固定的愛心，就跑動畫 ---
                     if (board[r][c].type === '❤️') continue;
+
                     const strip = document.getElementById(`strip-${r}-${c}`);
-                    for(let i=0; i<8; i++){
+                    // 清空並加入隨機符號用於動畫滾動
+                    strip.innerHTML = '';
+                    for (let i = 0; i < 8; i++) {
                         const temp = document.createElement('div');
                         temp.className = 'strip-item decor-tile';
-                        temp.innerText = symbols[Math.floor(Math.random()*symbols.length)];
+                        temp.innerText = symbols[Math.floor(Math.random() * symbols.length)];
                         strip.appendChild(temp);
                     }
+
                     const delay = Math.random() * 200;
                     const duration = 600 + Math.random() * 300;
+
                     const p = new Promise(resolve => {
                         setTimeout(() => {
                             strip.style.transition = `transform ${duration}ms cubic-bezier(0.45, 0.05, 0.55, 0.95)`;
                             strip.style.transform = `translateY(-${8 * tileSize}px)`;
+
                             setTimeout(() => {
-                                let isLocked = (r === 3 && currentHeartsCount < 6) || (r === 2 && currentHeartsCount < 10) || 
-                                               (r === 1 && currentHeartsCount < 15) || (r === 0 && currentHeartsCount < 20);
-                                if (Math.random() < 0.08) board[r][c] = { type: '❤️', val: getHeartMultiplier(r) };
-                                else board[r][c] = { type: symbols[Math.floor(Math.random() * symbols.length)], val: 0 };
-                                renderTile(r, c); strip.style.transition = 'none'; strip.style.transform = 'translateY(0)'; resolve();
+                                // 轉完後判定是否出現愛心
+                                // 注意：這裡不阻擋生成，只是鎖定的行生成的愛心在結算前不會解鎖
+                                if (Math.random() < 0.08) {
+                                    board[r][c] = { type: '❤️', val: getHeartMultiplier(r) };
+                                } else {
+                                    board[r][c] = { type: symbols[Math.floor(Math.random() * symbols.length)], val: 0 };
+                                }
+
+                                renderTile(r, c);
+                                strip.style.transition = 'none';
+                                strip.style.transform = 'translateY(0)';
+                                resolve();
                             }, duration);
                         }, delay);
                     });
@@ -489,24 +756,24 @@
                 for (let r = 0; r < 8; r++) {
                     for (let c = 0; c < 5; c++) {
                         if (board[r][c].type === '❤️') {
-                            let locked = (r === 3 && checkCount < 6) || (r === 2 && checkCount < 10) || 
-                                         (r === 1 && checkCount < 15) || (r === 0 && checkCount < 20);
+                            let locked = (r === 3 && checkCount < 6) || (r === 2 && checkCount < 10) ||
+                                (r === 1 && checkCount < 15) || (r === 0 && checkCount < 20);
                             if (!locked) checkCount++;
                         }
                     }
                 }
-                if (checkCount > currentHeartsCount) { currentHeartsCount = checkCount; gotNewInActiveZone = true; changed = true; } 
+                if (checkCount > currentHeartsCount) { currentHeartsCount = checkCount; gotNewInActiveZone = true; changed = true; }
                 else { changed = false; }
             }
 
-            if (gotNewInActiveZone) { spinsLeft = 3; if (!isMuted) { const snd = document.getElementById('sndMatch'); if(snd) snd.play(); } }
+            if (gotNewInActiveZone) { spinsLeft = 3; if (!isMuted) { const snd = document.getElementById('sndMatch'); if (snd) snd.play(); } }
             updateRowMasks();
             let tempWin = 0;
             for (let r = 0; r < 8; r++) {
                 for (let c = 0; c < 5; c++) {
                     renderTile(r, c);
-                    let isLocked = (r === 3 && currentHeartsCount < 6) || (r === 2 && currentHeartsCount < 10) || 
-                                   (r === 1 && currentHeartsCount < 15) || (r === 0 && currentHeartsCount < 20);
+                    let isLocked = (r === 3 && currentHeartsCount < 6) || (r === 2 && currentHeartsCount < 10) ||
+                        (r === 1 && currentHeartsCount < 15) || (r === 0 && currentHeartsCount < 20);
                     if (board[r][c].type === '❤️' && !isLocked) tempWin += (board[r][c].val * betOptions[betIdx]);
                 }
             }
@@ -524,7 +791,7 @@
             const resAmt = document.getElementById('resultAmount');
             resAmt.innerText = totalWin.toLocaleString();
             resBox.style.transform = 'translate(-50%, -50%) scale(1)';
-            
+
             setTimeout(() => {
                 resBox.style.transform = 'translate(-50%, -50%) scale(0)';
                 isSpecialMode = false; isSpinning = false; rows = 4;
@@ -547,4 +814,5 @@
         window.onload = () => { initBoardData(); initGridUI(); updateUI(); };
     </script>
 </body>
+
 </html>
