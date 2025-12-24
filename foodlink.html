@@ -1,302 +1,456 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
+
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
+    <meta name="viewport"
+        content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover" />
     <title>甜點連連看 - 進階版</title>
     <style>
-        :root { --table-green: #0a5c32; --gold: #ffd86b; --bg-dark: #05140b; --tile-size: 54px; --tile-gap: 6px; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; touch-action: manipulation; }
-        body { height: 100dvh; width: 100vw; font-family: "Microsoft JhengHei", Arial; background: var(--bg-dark); color: #fff; display: flex; flex-direction: column; overflow: hidden; }
-@media (orientation: portrait) {
-            .portrait-tip { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background: #1a0505; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        :root {
+            --table-green: #0a5c32;
+            --gold: #ffd86b;
+            --bg-dark: #05140b;
+            --tile-size: 54px;
+            --tile-gap: 6px;
         }
-        @media (orientation: landscape) { .portrait-tip { display: none; } }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            padding: 0;
+            touch-action: manipulation;
+        }
+
+        body {
+    height: 100dvh;
+    width: 100vw;
+    font-family: "Microsoft JhengHei", Arial;
+    background: var(--bg-dark);
+    color: #fff;
+    display: flex;
+    /* 改為水平排列，讓 topbar 站在右邊 */
+    flex-direction: row; 
+    overflow: hidden;
+}
+
+        @media (orientation: portrait) {
+            .portrait-tip {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100dvh;
+                background: #1a0505;
+                z-index: 9999;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                text-align: center;
+            }
+        }
+
+        @media (orientation: landscape) {
+            .portrait-tip {
+                display: none;
+            }
+        }
+
         /* 頂部欄 */
-        .topbar { 
-            height: 50px; background: linear-gradient(#4a0404, #2a0202); display: flex; align-items: center; 
-            padding: 0 calc(15px + env(safe-area-inset-right)) 0 calc(15px + env(safe-area-inset-left));
-            gap: 12px; border-bottom: 2px solid #5c0a0a; flex-shrink: 0; z-index: 1000;
-        }
-        .btn-tool { background: rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 8px; border: 1px solid var(--gold); cursor: pointer; font-size: 13px; color: var(--gold); }
-        .balance-box { background: rgba(0,0,0,0.5); border: 1px solid var(--gold); border-radius: 15px; padding: 4px 15px; color: var(--gold); font-weight: bold; }
+       .topbar {
+    width: 100px; /* 固定寬度 */
+    height: 100%; /* 高度撐滿 */
+    background: linear-gradient(to bottom, #4a0404, #2a0202);
+    display: flex;
+    flex-direction: column; /* 按鈕垂直排列 */
+    align-items: center;
+    padding: env(safe-area-inset-top) 10px env(safe-area-inset-bottom) 10px;
+    gap: 15px;
+    border-left: 2px solid #5c0a0a; /* 邊框改到左邊 */
+    border-bottom: none;
+    flex-shrink: 0;
+    z-index: 1000;
+    order: 2; /* 強制排在右邊 */
+}
+
+       .btn-tool {
+    width: 100%;
+    text-align: center;
+    padding: 10px 5px;
+}
+
+        .balance-box {
+    width: 90%;
+    text-align: center;
+    padding: 8px 5px;
+    font-size: 12px;
+}
 
         /* 遊戲區域 */
-        .main-layout { flex: 1; display: flex; justify-content: center; align-items: center; padding: 10px; position: relative; }
-        
-        #game-board { 
-            display: grid; grid-template-columns: repeat(10, var(--tile-size)); grid-template-rows: repeat(6, var(--tile-size)); 
-            gap: var(--tile-gap); padding: 15px; background: var(--table-green); border: 4px solid #084325; border-radius: 15px; 
-            box-shadow: inset 0 0 50px rgba(0,0,0,0.5); position: relative; overflow: visible;
+        .main-layout {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    position: relative;
+    order: 1; /* 排在左邊 */
+}
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(10, var(--tile-size));
+            grid-template-rows: repeat(6, var(--tile-size));
+            gap: var(--tile-gap);
+            padding: 15px;
+            background: var(--table-green);
+            border: 4px solid #084325;
+            border-radius: 15px;
+            box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: visible;
         }
 
         /* 畫布外擴 */
-        #line-canvas { position: absolute; top: -35px; left: -35px; width: calc(100% + 70px); height: calc(100% + 70px); pointer-events: none; z-index: 500; }
+        #line-canvas {
+            position: absolute;
+            top: -35px;
+            left: -35px;
+            width: calc(100% + 70px);
+            height: calc(100% + 70px);
+            pointer-events: none;
+            z-index: 500;
+        }
 
-        .slot { position: relative; width: var(--tile-size); height: var(--tile-size); }
-        .tile { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; font-size: 30px; border-radius: 8px; transition: transform 0.15s; user-select: none; z-index: 10; }
-        
+        .slot {
+            position: relative;
+            width: var(--tile-size);
+            height: var(--tile-size);
+        }
+
+        .tile {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 30px;
+            border-radius: 8px;
+            transition: transform 0.15s;
+            user-select: none;
+            z-index: 10;
+        }
+
         /* 上層：加厚度感 */
-        .layer-1 { 
-            background: #254879; 
-            box-shadow: 0 4px 0 #1a222c, 0 6px 12px rgba(0,0,0,0.6);
-            border: 1px solid rgba(255,255,255,0.2);
-            transform: translateY(-4px); 
-        }
-        
-        /* 下層：平貼感 */
-        .layer-0.unlocked { 
-            background: #2d3a4d; 
-            box-shadow: 0 1px 2px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.1);
-            transform: translateY(0); 
+        .layer-1 {
+            background: #254879;
+            box-shadow: 0 4px 0 #1a222c, 0 6px 12px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transform: translateY(-4px);
         }
 
-        .layer-0.covered { background: #1a222c; border: 1px dashed #444; transform: scale(0.9); opacity: 0.5; }
+        /* 下層：平貼感 */
+        .layer-0.unlocked {
+            background: #2d3a4d;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transform: translateY(0);
+        }
+
+        .layer-0.covered {
+            background: #1a222c;
+            border: 1px dashed #444;
+            transform: scale(0.9);
+            opacity: 0.5;
+        }
 
         /* 選取效果 */
-        .selected { 
-            outline: 3px solid #fff; 
-            transform: scale(1.1) translateY(-8px) !important; 
-            box-shadow: 0 0 20px #fff, 0 10px 20px rgba(0,0,0,0.5) !important;
-            z-index: 50 !important; 
+        .selected {
+            outline: 3px solid #fff;
+            transform: scale(1.1) translateY(-8px) !important;
+            box-shadow: 0 0 20px #fff, 0 10px 20px rgba(0, 0, 0, 0.5) !important;
+            z-index: 50 !important;
         }
 
         /* 噴分與動畫 */
-        .floating-score { position: absolute; font-weight: bold; font-size: 24px; pointer-events: none; z-index: 600; animation: floatUp 0.7s ease-out forwards; text-shadow: 0 2px 4px #000; }
-        @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-60px); opacity: 0; } }
+        .floating-score {
+            position: absolute;
+            font-weight: bold;
+            font-size: 24px;
+            pointer-events: none;
+            z-index: 600;
+            animation: floatUp 0.7s ease-out forwards;
+            text-shadow: 0 2px 4px #000;
+        }
 
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: none; align-items: center; justify-content: center; flex-direction: column; }
+        @keyframes floatUp {
+            0% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(-60px);
+                opacity: 0;
+            }
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
     </style>
 </head>
+
 <body>
-<div class="portrait-tip">
-    <div style="font-size: 50px;">🔄</div>
-    <p style="margin-top: 20px; color:#fff; font-size: 18px;">橫著玩</p>
-</div>
-<div class="topbar">
+    <div class="portrait-tip">
+        <div style="font-size: 50px;">🔄</div>
+        <p style="margin-top: 20px; color:#fff; font-size: 18px;">橫著玩</p>
+    </div>
+    <div class="topbar">
+        <a href="index.html" style="text-decoration:none;">
+  <button style="background:none; border:1px solid #777; color:#ccc; border-radius:5px; padding:5px 12px; font-size:14px;">🏠 回大廳</button>
+</a>
     <div class="btn-tool" onclick="toggleMute()" id="soundIcon">🔊</div>
-    <div class="btn-tool" onclick="cycleBGM()" id="bgmBtn">🎵 音樂 1</div>
-    <div class="balance-box">💰 <span id="balanceText">0</span></div>
-    <div style="flex:1; text-align:right;">
-        <button class="btn-tool" onclick="initMap()">重新開始</button>
-        <button class="btn-tool" onclick="location.href='index.html'">🏠 回大廳</button>
+    <div class="btn-tool" onclick="cycleBGM()" id="bgmBtn" style="font-size: 11px;">🎵 音樂 1</div>
+    <div class="balance-box">💰<br><span id="balanceText">0</span></div>
+    
+    <div style="flex:1;"></div> 
+    
+    <button class="btn-tool" onclick="initMap()">重新開始</button>
+
+</div>
+
+    <div class="main-layout">
+        <div id="game-board"><canvas id="line-canvas"></canvas></div>
     </div>
-</div>
 
-<div class="main-layout">
-    <div id="game-board"><canvas id="line-canvas"></canvas></div>
-</div>
-
-<div id="settle-screen" class="modal">
-    <div style="background:#1a1a1a; border:2px solid var(--gold); padding:40px; border-radius:20px; text-align:center;">
-        <h1 style="color:var(--gold); margin-bottom:10px;">🎉 過關!</h1>
-        <p id="reward-text" style="color:#fff; font-size:18px; margin-bottom:20px;"></p>
-        <button class="btn-tool" onclick="closeSettle()" style="padding:10px 30px; font-size:18px;">領取獎勵</button>
+    <div id="settle-screen" class="modal">
+        <div
+            style="background:#1a1a1a; border:2px solid var(--gold); padding:40px; border-radius:20px; text-align:center;">
+            <h1 style="color:var(--gold); margin-bottom:10px;">🎉 過關!</h1>
+            <p id="reward-text" style="color:#fff; font-size:18px; margin-bottom:20px;"></p>
+            <button class="btn-tool" onclick="closeSettle()" style="padding:10px 30px; font-size:18px;">領取獎勵</button>
+        </div>
     </div>
-</div>
 
-<audio id="sndChip" src="https://assets.mixkit.co/active_storage/sfx/3005/3005-preview.mp3" preload="auto"></audio>
-<audio id="sndWin" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="auto"></audio>
-<audio id="bgm1" src="background-music-434612.mp3" loop preload="auto"></audio>
-<audio id="bgm2" src="soft-background-music-427252.mp3" loop preload="auto"></audio>
-<audio id="bgm3" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" loop preload="auto"></audio>
+    <audio id="sndChip" src="https://assets.mixkit.co/active_storage/sfx/3005/3005-preview.mp3" preload="auto"></audio>
+    <audio id="sndWin" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="auto"></audio>
+    <audio id="bgm1" src="background-music-434612.mp3" loop preload="auto"></audio>
+    <audio id="bgm2" src="soft-background-music-427252.mp3" loop preload="auto"></audio>
+    <audio id="bgm3" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" loop preload="auto"></audio>
 
-<script>
-    const ROWS = 6, COLS = 10, LAYERS = 2;
-    const DESSERTS = ['🍓','🍎','🍰','🍇','🍬','🍭','🍩','🍮','🍯','🍪','🧁','🍒'];
-    let boardData = [], firstSelect = null, score = 0, tilesLeft = 0;
-    let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
-    let isMuted = false;
-    let currentBgmIdx = 1; 
-    const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
+    <script>
+        const ROWS = 6, COLS = 10, LAYERS = 2;
+        const DESSERTS = ['🍓', '🍎', '🍰', '🍇', '🍬', '🍭', '🍩', '🍮', '🍯', '🍪', '🧁', '🍒'];
+        let boardData = [], firstSelect = null, score = 0, tilesLeft = 0;
+        let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
+        let isMuted = false;
+        let currentBgmIdx = 1;
+        const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
 
-    function playSound(id) { if (!isMuted) { const s = document.getElementById(id); if(s) { s.currentTime=0; s.play().catch(()=>{}); } } }
-    function toggleMute() { isMuted = !isMuted; document.getElementById('soundIcon').textContent = isMuted ? '🔇' : '🔊'; }
-    function cycleBGM() {
-        bgmList.forEach(id => { if(id){ const a=document.getElementById(id); a.pause(); a.currentTime=0; } });
-        currentBgmIdx = (currentBgmIdx + 1) % 4;
-        const btn = document.getElementById('bgmBtn');
-        if (currentBgmIdx === 0) { btn.textContent = '🚫 音樂關'; } 
-        else {
-            const bgm = document.getElementById(bgmList[currentBgmIdx]);
-            if(bgm) { bgm.volume = 0.3; bgm.play().catch(()=>{}); btn.textContent = '🎵 音樂 ' + currentBgmIdx; }
-        }
-    }
-    document.addEventListener('click', function unlock() {
-        const audios = document.querySelectorAll('audio');
-        audios.forEach(a => { a.play().then(() => { a.pause(); a.currentTime = 0; }).catch(() => {}); });
-        setTimeout(() => { if(currentBgmIdx === 1) { const b1 = document.getElementById('bgm1'); b1.volume = 0.3; b1.play().catch(()=>{}); } }, 150);
-        document.removeEventListener('click', unlock);
-    }, { once: true });
-
-    function initMap() {
-        score = 0; tilesLeft = ROWS * COLS * LAYERS;
-        updateUI();
-        let pool = [];
-        for (let i = 0; i < (tilesLeft / 2); i++) {
-            const char = DESSERTS[Math.floor(Math.random() * DESSERTS.length)];
-            const style = ['🍮','🍯','🍪','🧁'].includes(char) ? 'heart-gold' : (['🍇','🍬','🍭','🍩'].includes(char) ? 'heart-purple' : 'heart-red');
-            pool.push({char, style}, {char, style});
-        }
-        pool.sort(() => Math.random() - 0.5);
-        boardData = [];
-        for (let l = 0; l < LAYERS; l++) {
-            boardData[l] = [];
-            for (let r = 0; r < ROWS; r++) {
-                boardData[l][r] = [];
-                for (let c = 0; c < COLS; c++) { boardData[l][r][c] = { ...pool.pop(), cleared: false }; }
+        function playSound(id) { if (!isMuted) { const s = document.getElementById(id); if (s) { s.currentTime = 0; s.play().catch(() => { }); } } }
+        function toggleMute() { isMuted = !isMuted; document.getElementById('soundIcon').textContent = isMuted ? '🔇' : '🔊'; }
+        function cycleBGM() {
+            bgmList.forEach(id => { if (id) { const a = document.getElementById(id); a.pause(); a.currentTime = 0; } });
+            currentBgmIdx = (currentBgmIdx + 1) % 4;
+            const btn = document.getElementById('bgmBtn');
+            if (currentBgmIdx === 0) { btn.textContent = '🚫 音樂關'; }
+            else {
+                const bgm = document.getElementById(bgmList[currentBgmIdx]);
+                if (bgm) { bgm.volume = 0.3; bgm.play().catch(() => { }); btn.textContent = '🎵 音樂 ' + currentBgmIdx; }
             }
         }
-        renderBoard();
-    }
+        document.addEventListener('click', function unlock() {
+            const audios = document.querySelectorAll('audio');
+            audios.forEach(a => { a.play().then(() => { a.pause(); a.currentTime = 0; }).catch(() => { }); });
+            setTimeout(() => { if (currentBgmIdx === 1) { const b1 = document.getElementById('bgm1'); b1.volume = 0.3; b1.play().catch(() => { }); } }, 150);
+            document.removeEventListener('click', unlock);
+        }, { once: true });
 
-    function renderBoard() {
-        const container = document.getElementById('game-board');
-        const canvas = document.getElementById('line-canvas');
-        container.querySelectorAll('.slot').forEach(s => s.remove());
-        canvas.width = container.offsetWidth + 70; canvas.height = container.offsetHeight + 70;
-
-        for (let r = 0; r < ROWS; r++) {
-            for (let c = 0; c < COLS; c++) {
-                const slot = document.createElement('div'); slot.className = 'slot';
-                for (let l = 0; l < LAYERS; l++) {
-                    const data = boardData[l][r][c];
-                    if (data.cleared) continue;
-                    const tile = document.createElement('div');
-                    const isCovered = (l === 0 && !boardData[1][r][c].cleared);
-                    tile.className = `tile layer-${l} ${isCovered ? 'covered' : 'unlocked ' + data.style}`;
-                    tile.innerText = isCovered ? "" : data.char;
-                    tile.onclick = (e) => { e.stopPropagation(); if (!isCovered) handleSelect(l, r, c, tile); };
-                    slot.appendChild(tile);
+        function initMap() {
+            score = 0; tilesLeft = ROWS * COLS * LAYERS;
+            updateUI();
+            let pool = [];
+            for (let i = 0; i < (tilesLeft / 2); i++) {
+                const char = DESSERTS[Math.floor(Math.random() * DESSERTS.length)];
+                const style = ['🍮', '🍯', '🍪', '🧁'].includes(char) ? 'heart-gold' : (['🍇', '🍬', '🍭', '🍩'].includes(char) ? 'heart-purple' : 'heart-red');
+                pool.push({ char, style }, { char, style });
+            }
+            pool.sort(() => Math.random() - 0.5);
+            boardData = [];
+            for (let l = 0; l < LAYERS; l++) {
+                boardData[l] = [];
+                for (let r = 0; r < ROWS; r++) {
+                    boardData[l][r] = [];
+                    for (let c = 0; c < COLS; c++) { boardData[l][r][c] = { ...pool.pop(), cleared: false }; }
                 }
-                container.appendChild(slot);
+            }
+            renderBoard();
+        }
+
+        function renderBoard() {
+            const container = document.getElementById('game-board');
+            const canvas = document.getElementById('line-canvas');
+            container.querySelectorAll('.slot').forEach(s => s.remove());
+            canvas.width = container.offsetWidth + 70; canvas.height = container.offsetHeight + 70;
+
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const slot = document.createElement('div'); slot.className = 'slot';
+                    for (let l = 0; l < LAYERS; l++) {
+                        const data = boardData[l][r][c];
+                        if (data.cleared) continue;
+                        const tile = document.createElement('div');
+                        const isCovered = (l === 0 && !boardData[1][r][c].cleared);
+                        tile.className = `tile layer-${l} ${isCovered ? 'covered' : 'unlocked ' + data.style}`;
+                        tile.innerText = isCovered ? "" : data.char;
+                        tile.onclick = (e) => { e.stopPropagation(); if (!isCovered) handleSelect(l, r, c, tile); };
+                        slot.appendChild(tile);
+                    }
+                    container.appendChild(slot);
+                }
             }
         }
-    }
 
-    function handleSelect(l, r, c, el) {
-    if (firstSelect) {
-        // 點選同一個：直接取消
-        if (firstSelect.el === el) { 
-            el.classList.remove('selected'); 
-            firstSelect = null; 
-            return; 
+        function handleSelect(l, r, c, el) {
+            if (firstSelect) {
+                // 點選同一個：直接取消
+                if (firstSelect.el === el) {
+                    el.classList.remove('selected');
+                    firstSelect = null;
+                    return;
+                }
+
+                const path = getPath(firstSelect.r, firstSelect.c, r, c);
+
+                // 判斷：圖案相同 且 路徑相通
+                if (firstSelect.char === boardData[l][r][c].char && path) {
+                    // 【成功連線】
+                    drawConnectLine(path);
+                    let bonus = boardData[l][r][c].style === 'heart-gold' ? 50 : (boardData[l][r][c].style === 'heart-purple' ? 20 : 10);
+                    showFloatingScore(firstSelect.r, firstSelect.c, bonus);
+                    showFloatingScore(r, c, bonus);
+
+                    boardData[firstSelect.l][firstSelect.r][firstSelect.c].cleared = true;
+                    boardData[l][r][c].cleared = true;
+                    score += bonus; tilesLeft -= 2;
+
+                    playSound('sndChip'); // 播放成功音效
+                    firstSelect = null;
+                    setTimeout(() => { renderBoard(); if (tilesLeft === 0) showSettle(); }, 200);
+                } else {
+                    // 【失敗：圖案不同 或 路徑不通】
+                    // 播放失敗音效 (這裡使用低沉的聲音)
+                    playFailSound();
+
+                    // 視覺回饋：讓兩顆都閃爍一下紅色或震動
+                    firstSelect.el.classList.remove('selected');
+                    el.classList.add('selected');
+
+                    // 快速重設，不卡住玩家
+                    setTimeout(() => {
+                        el.classList.remove('selected');
+                        firstSelect = null;
+                    }, 150);
+                }
+            } else {
+                // 第一下選取
+                firstSelect = { l, r, c, el, char: boardData[l][r][c].char };
+                el.classList.add('selected');
+                // 可以加一個微小的點擊音
+            }
         }
-        
-        const path = getPath(firstSelect.r, firstSelect.c, r, c);
-        
-        // 判斷：圖案相同 且 路徑相通
-        if (firstSelect.char === boardData[l][r][c].char && path) {
-            // 【成功連線】
-            drawConnectLine(path);
-            let bonus = boardData[l][r][c].style === 'heart-gold' ? 50 : (boardData[l][r][c].style === 'heart-purple' ? 20 : 10);
-            showFloatingScore(firstSelect.r, firstSelect.c, bonus);
-            showFloatingScore(r, c, bonus);
-            
-            boardData[firstSelect.l][firstSelect.r][firstSelect.c].cleared = true;
-            boardData[l][r][c].cleared = true;
-            score += bonus; tilesLeft -= 2;
-            
-            playSound('sndChip'); // 播放成功音效
-            firstSelect = null;
-            setTimeout(() => { renderBoard(); if (tilesLeft === 0) showSettle(); }, 200);
-        } else {
-            // 【失敗：圖案不同 或 路徑不通】
-            // 播放失敗音效 (這裡使用低沉的聲音)
-            playFailSound(); 
-            
-            // 視覺回饋：讓兩顆都閃爍一下紅色或震動
-            firstSelect.el.classList.remove('selected');
-            el.classList.add('selected'); 
-            
-            // 快速重設，不卡住玩家
-            setTimeout(() => {
-                el.classList.remove('selected');
-                firstSelect = null;
-            }, 150);
+
+        // 專門處理連線失敗的電子音 (如果沒有音檔可以用代碼產生)
+        function playFailSound() {
+            if (isMuted) return;
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.type = 'square'; // 這種波形聽起來比較像「嗶」的錯誤聲
+                oscillator.frequency.setValueAtTime(150, audioCtx.currentTime); // 低頻
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.2);
+            } catch (e) { }
         }
-    } else {
-        // 第一下選取
-        firstSelect = { l, r, c, el, char: boardData[l][r][c].char };
-        el.classList.add('selected');
-        // 可以加一個微小的點擊音
-    }
-}
 
-// 專門處理連線失敗的電子音 (如果沒有音檔可以用代碼產生)
-function playFailSound() {
-    if (isMuted) return;
-    try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-        oscillator.type = 'square'; // 這種波形聽起來比較像「嗶」的錯誤聲
-        oscillator.frequency.setValueAtTime(150, audioCtx.currentTime); // 低頻
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-        oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.2);
-    } catch(e) {}
-}
+        function drawConnectLine(path) {
+            const ctx = document.getElementById('line-canvas').getContext('2d');
+            ctx.clearRect(0, 0, 2000, 2000);
+            ctx.lineWidth = 5; ctx.strokeStyle = '#ffd86b'; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            ctx.shadowBlur = 10; ctx.shadowColor = '#ffd86b';
+            ctx.beginPath();
+            path.forEach((p, i) => {
+                const x = p.c * (54 + 6) + 27 + 15 + 35;
+                const y = p.r * (54 + 6) + 27 + 15 + 35;
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+            setTimeout(() => ctx.clearRect(0, 0, 2000, 2000), 250);
+        }
 
-    function drawConnectLine(path) {
-        const ctx = document.getElementById('line-canvas').getContext('2d');
-        ctx.clearRect(0, 0, 2000, 2000);
-        ctx.lineWidth = 5; ctx.strokeStyle = '#ffd86b'; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-        ctx.shadowBlur = 10; ctx.shadowColor = '#ffd86b';
-        ctx.beginPath();
-        path.forEach((p, i) => {
-            const x = p.c * (54 + 6) + 27 + 15 + 35;
-            const y = p.r * (54 + 6) + 27 + 15 + 35;
-            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-        });
-        ctx.stroke();
-        setTimeout(() => ctx.clearRect(0, 0, 2000, 2000), 250);
-    }
+        function getPath(r1, c1, r2, c2) {
+            const isEmpty = (r, c) => {
+                if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return true; // 板外邊界視為空，可繞路
+                return boardData[0][r][c].cleared && boardData[1][r][c].cleared;
+            };
+            const checkStraight = (r1, c1, r2, c2) => {
+                if (r1 !== r2 && c1 !== c2) return false;
+                if (r1 === r2) { for (let c = Math.min(c1, c2) + 1; c < Math.max(c1, c2); c++) if (!isEmpty(r1, c)) return false; }
+                else { for (let r = Math.min(r1, r2) + 1; r < Math.max(r1, r2); r++) if (!isEmpty(r, c1)) return false; }
+                return true;
+            };
+            if (checkStraight(r1, c1, r2, c2)) return [{ r: r1, c: c1 }, { r: r2, c: c2 }];
+            for (let i = -1; i <= 6; i++)
+                if (isEmpty(i, c1) && checkStraight(r1, c1, i, c1) && isEmpty(i, c2) && checkStraight(i, c1, i, c2) && checkStraight(i, c2, r2, c2))
+                    return [{ r: r1, c: c1 }, { r: i, c: c1 }, { r: i, c: c2 }, { r: r2, c: c2 }];
+            for (let j = -1; j <= 10; j++)
+                if (isEmpty(r1, j) && checkStraight(r1, c1, r1, j) && isEmpty(r2, j) && checkStraight(r1, j, r2, j) && checkStraight(r2, j, r2, c2))
+                    return [{ r: r1, c: c1 }, { r: r1, c: j }, { r: r2, c: j }, { r: r2, c: c2 }];
+            return null;
+        }
 
-    function getPath(r1, c1, r2, c2) {
-        const isEmpty = (r, c) => (r < 0 || r >= 6 || c < 0 || c >= 10 || boardData[1][r][c].cleared);
-        const checkStraight = (r1, c1, r2, c2) => {
-            if (r1 !== r2 && c1 !== c2) return false;
-            if (r1 === r2) { for (let c = Math.min(c1, c2) + 1; c < Math.max(c1, c2); c++) if (!isEmpty(r1, c)) return false; }
-            else { for (let r = Math.min(r1, r2) + 1; r < Math.max(r1, r2); r++) if (!isEmpty(r, c1)) return false; }
-            return true;
-        };
-        if (checkStraight(r1, c1, r2, c2)) return [{r:r1, c:c1}, {r:r2, c:c2}];
-        for (let i = -1; i <= 6; i++) 
-            if (isEmpty(i, c1) && checkStraight(r1, c1, i, c1) && isEmpty(i, c2) && checkStraight(i, c1, i, c2) && checkStraight(i, c2, r2, c2))
-                return [{r:r1, c:c1}, {r:i, c:c1}, {r:i, c:c2}, {r:r2, c:c2}];
-        for (let j = -1; j <= 10; j++)
-            if (isEmpty(r1, j) && checkStraight(r1, c1, r1, j) && isEmpty(r2, j) && checkStraight(r1, j, r2, j) && checkStraight(r2, j, r2, c2))
-                return [{r:r1, c:c1}, {r:r1, c:j}, {r:r2, c:j}, {r:r2, c:c2}];
-        return null;
-    }
+        function showFloatingScore(r, c, val) {
+            const f = document.createElement('div');
+            f.className = 'floating-score';
+            f.innerText = `+${val}`;
+            f.style.left = `${c * 60 + 20}px`; f.style.top = `${r * 60 + 10}px`;
+            f.style.color = val === 50 ? '#ffd86b' : '#fff';
+            document.getElementById('game-board').appendChild(f);
+            setTimeout(() => f.remove(), 700);
+        }
 
-    function showFloatingScore(r, c, val) {
-        const f = document.createElement('div');
-        f.className = 'floating-score';
-        f.innerText = `+${val}`;
-        f.style.left = `${c * 60 + 20}px`; f.style.top = `${r * 60 + 10}px`;
-        f.style.color = val === 50 ? '#ffd86b' : '#fff';
-        document.getElementById('game-board').appendChild(f);
-        setTimeout(() => f.remove(), 700);
-    }
+        function updateUI() { document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString(); }
+        function showSettle() {
+            playSound('sndWin');
+            const reward = Math.floor(score);
+            balance += reward;
+            localStorage.setItem('sicbo_balance', balance);
+            updateUI();
+            document.getElementById('reward-text').innerText = `本局得分：${score}\n存入金幣：${reward} 💰`;
+            document.getElementById('settle-screen').style.display = 'flex';
+        }
+        function closeSettle() { document.getElementById('settle-screen').style.display = 'none'; initMap(); }
 
-    function updateUI() { document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString(); }
-    function showSettle() {
-        playSound('sndWin');
-        const reward = Math.floor(score);
-        balance += reward;
-        localStorage.setItem('sicbo_balance', balance);
-        updateUI();
-        document.getElementById('reward-text').innerText = `本局得分：${score}\n存入金幣：${reward} 💰`;
-        document.getElementById('settle-screen').style.display = 'flex';
-    }
-    function closeSettle() { document.getElementById('settle-screen').style.display = 'none'; initMap(); }
-
-    window.onload = initMap;
-</script>
+        window.onload = initMap;
+    </script>
 </body>
+
 </html>
