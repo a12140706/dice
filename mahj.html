@@ -132,7 +132,7 @@
 <body id="mainBody">
 
 <div id="multOverlay">
-  <div style="color:white; font-size: 18px; margin-bottom: 10px;">FREE GAME MULTIPLIER</div>
+  <div style="color:white; font-size: 18px; margin-bottom: 10px;">本局倍率</div>
   <div class="mult-box" id="rollingMult" style="font-size: 80px; color: var(--gold); font-weight: bold;">?</div>
 </div>
 
@@ -236,22 +236,59 @@ function updateUI() {
 
 // ⭐ 阿記，這裡修好了：傳入當前是否在免費模式
 function getRandomTile() {
-  const isFree = freeSpins > 0 || document.getElementById('mainBody').classList.contains('in-free');
-  const rand = Math.random();
-  
-  if (rand < 0.04) return '元寶'; 
-  
-  // 只有非免費模式才能抽到「胡」
-  if (!isFree && rand > 0.98) return '胡';
-  
-  let pick = baseIcons[Math.floor(Math.random() * baseIcons.length)];
-  const isWhiteWild = (combo >= 2 && pick === '⬜');
-  const isRedWild = (combo >= 5 && pick === '🀄');
-  const isGreenWild = (combo >= 10 && pick === '🀅');
-  if ((isWhiteWild || isRedWild || isGreenWild) && Math.random() < 0.7) {
-      pick = baseIcons[Math.floor(Math.random() * baseIcons.length)];
-  }
-  return pick;
+    const isFree = freeSpins > 0 || document.getElementById('mainBody').classList.contains('in-free');
+    const rand = Math.random();
+    
+    // 1. 特殊符號判定 (元寶與胡不計入 4 個限額，因為它們是獎勵，且「胡」不會連線)
+    if (rand < 0.04) return '元寶'; 
+    if (!isFree && rand > 0.98) return '胡';
+    
+    // 2. 統計目前盤面上各個基礎圖示的數量
+    let counts = {};
+    baseIcons.forEach(icon => counts[icon] = 0);
+    
+    for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+            if (board[r] && counts[board[r][c]] !== undefined) {
+                counts[board[r][c]]++;
+            }
+        }
+    }
+
+    // 3. 絕對門檻：過濾出數量 < 4 的圖示
+    let safeIcons = baseIcons.filter(icon => counts[icon] < 4);
+
+    // 如果所有牌都滿了 (理論上 4x4 盤面不會發生)，就保底用全部
+    if (safeIcons.length === 0) safeIcons = baseIcons;
+
+    let pick;
+
+    // 4. 高 Combo 煞車機制：當 Combo > 5 時，進入「平衡模式」
+    if (combo > 10) {
+        // 找出 safeIcons 中數量最少的那幾種牌
+        let minCount = Math.min(...safeIcons.map(icon => counts[icon]));
+        let rarestIcons = safeIcons.filter(icon => counts[icon] === minCount);
+        
+        // 80% 的機率強迫給最少的牌，20% 給一點點連線的機會 (比較自然)
+        if (Math.random() < 0.6) {
+            pick = rarestIcons[Math.floor(Math.random() * rarestIcons.length)];
+        } else {
+            pick = safeIcons[Math.floor(Math.random() * safeIcons.length)];
+        }
+    } else {
+        // 一般情況：在安全名單內隨機抽
+        pick = safeIcons[Math.floor(Math.random() * safeIcons.length)];
+    }
+
+    // 5. Wild 變身邏輯 (維持不變)
+    const isWhiteWild = (combo >= 2 && pick === '⬜');
+    const isRedWild = (combo >= 5 && pick === '🀄');
+    const isGreenWild = (combo >= 10 && pick === '🀅');
+    if ((isWhiteWild || isRedWild || isGreenWild) && Math.random() < 0.7) {
+        pick = pick; 
+    }
+    
+    return pick;
 }
 
 function handleFirstClick() { if (!hasInteracted) { hasInteracted = true; playBGM(); } }
@@ -452,7 +489,7 @@ function changeBet(dir) {
   }
 }
 function toggleAuto() { isAuto=!isAuto; document.getElementById('autoBtn').classList.toggle('active', isAuto); if(isAuto && !isSpinning) startSpin(); }
-function cycleBGM() { currentBGM=currentBGM===1?2:1; document.getElementById('bgmBtn').textContent=`🎵 ${currentBGM}`; if(hasInteracted) playBGM(); }
+function cycleBGM() { currentBGM=currentBGM===1?2:1; document.getElementById('bgmBtn').textContent=`🎵 音樂 ${currentBGM}`; if(hasInteracted) playBGM(); }
 function toggleMute() { isMuted=!isMuted; document.getElementById('muteBtn').textContent=isMuted?'🔇':'🔊'; playBGM(); }
 
 window.onload = () => { 
