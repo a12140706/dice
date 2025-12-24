@@ -8,7 +8,10 @@
         :root { --table-green: #0a5c32; --gold: #ffd86b; --bg-dark: #05140b; --tile-size: 54px; --tile-gap: 6px; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; touch-action: manipulation; }
         body { height: 100dvh; width: 100vw; font-family: "Microsoft JhengHei", Arial; background: var(--bg-dark); color: #fff; display: flex; flex-direction: column; overflow: hidden; }
-
+@media (orientation: portrait) {
+            .portrait-tip { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background: #1a0505; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        }
+        @media (orientation: landscape) { .portrait-tip { display: none; } }
         /* 頂部欄 */
         .topbar { 
             height: 50px; background: linear-gradient(#4a0404, #2a0202); display: flex; align-items: center; 
@@ -67,14 +70,17 @@
     </style>
 </head>
 <body>
-
+<div class="portrait-tip">
+    <div style="font-size: 50px;">🔄</div>
+    <p style="margin-top: 20px; color:#fff; font-size: 18px;">橫著玩</p>
+</div>
 <div class="topbar">
     <div class="btn-tool" onclick="toggleMute()" id="soundIcon">🔊</div>
     <div class="btn-tool" onclick="cycleBGM()" id="bgmBtn">🎵 音樂 1</div>
     <div class="balance-box">💰 <span id="balanceText">0</span></div>
     <div style="flex:1; text-align:right;">
         <button class="btn-tool" onclick="initMap()">重新開始</button>
-        <button class="btn-tool" onclick="location.href='index.html'">🏠 大廳</button>
+        <button class="btn-tool" onclick="location.href='index.html'">🏠 回大廳</button>
     </div>
 </div>
 
@@ -93,6 +99,8 @@
 <audio id="sndChip" src="https://assets.mixkit.co/active_storage/sfx/3005/3005-preview.mp3" preload="auto"></audio>
 <audio id="sndWin" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="auto"></audio>
 <audio id="bgm1" src="background-music-434612.mp3" loop preload="auto"></audio>
+<audio id="bgm2" src="soft-background-music-427252.mp3" loop preload="auto"></audio>
+<audio id="bgm3" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" loop preload="auto"></audio>
 
 <script>
     const ROWS = 6, COLS = 10, LAYERS = 2;
@@ -100,9 +108,27 @@
     let boardData = [], firstSelect = null, score = 0, tilesLeft = 0;
     let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
     let isMuted = false;
+    let currentBgmIdx = 1; 
+    const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
 
     function playSound(id) { if (!isMuted) { const s = document.getElementById(id); if(s) { s.currentTime=0; s.play().catch(()=>{}); } } }
     function toggleMute() { isMuted = !isMuted; document.getElementById('soundIcon').textContent = isMuted ? '🔇' : '🔊'; }
+    function cycleBGM() {
+        bgmList.forEach(id => { if(id){ const a=document.getElementById(id); a.pause(); a.currentTime=0; } });
+        currentBgmIdx = (currentBgmIdx + 1) % 4;
+        const btn = document.getElementById('bgmBtn');
+        if (currentBgmIdx === 0) { btn.textContent = '🚫 音樂關'; } 
+        else {
+            const bgm = document.getElementById(bgmList[currentBgmIdx]);
+            if(bgm) { bgm.volume = 0.3; bgm.play().catch(()=>{}); btn.textContent = '🎵 音樂 ' + currentBgmIdx; }
+        }
+    }
+    document.addEventListener('click', function unlock() {
+        const audios = document.querySelectorAll('audio');
+        audios.forEach(a => { a.play().then(() => { a.pause(); a.currentTime = 0; }).catch(() => {}); });
+        setTimeout(() => { if(currentBgmIdx === 1) { const b1 = document.getElementById('bgm1'); b1.volume = 0.3; b1.play().catch(()=>{}); } }, 150);
+        document.removeEventListener('click', unlock);
+    }, { once: true });
 
     function initMap() {
         score = 0; tilesLeft = ROWS * COLS * LAYERS;
