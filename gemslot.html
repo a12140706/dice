@@ -87,7 +87,7 @@
 <div class="bottom-bar">
   <div class="bet-control">
     <button class="bet-btn" onclick="changeBet(-1)">◀</button>
-    <div id="betDisplay" style="font-size: 20px; color: var(--btn-gold); font-weight: bold; min-width: 60px; text-align: center;">$50</div>
+    <div id="betDisplay" style="font-size: 20px; color: var(--btn-gold); font-weight: bold; min-width: 60px; text-align: center;">$5000</div>
     <button class="bet-btn" onclick="changeBet(1)">▶</button>
   </div>
   <button id="autoBtn" class="auto-btn" onclick="toggleAuto()">自動玩</button>
@@ -130,7 +130,7 @@ let isAuto = false;
 let currentBgmIdx = 1;
 let isAudioUnlocked = false; 
 const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
-const betOptions = [10, 50, 100, 300, 500, 1000];
+const betOptions = [1000, 5000, 10000, 30000, 50000, 100000];
 let currentBetIdx = 1;
 let grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
 
@@ -293,7 +293,7 @@ async function explodeBombs() {
         for(let i=b.r-1; i<=b.r+1; i++) for(let j=b.c-1; j<=b.c+1; j++) {
             if(i>=0 && i<GRID_SIZE && j>=0 && j<GRID_SIZE) {
                 targets.add(`${i},${j}`);
-                if(isCrazyMode && grid[i][j] && grid[i][j]!=='💣') win += currentBet * (GEM_VALUES[grid[i][j]] || 0.1) * 0.1;
+                if(isCrazyMode && grid[i][j] && grid[i][j]!=='💣') win += currentBet * (GEM_VALUES[grid[i][j]] || 0.1) * 0.02;
             }
         }
     });
@@ -341,7 +341,7 @@ function calculateWin(matches) {
     matches.forEach(m => { let t = grid[m.r][m.c]; if(t) counts[t] = (counts[t]||0)+1; });
     for(let t in counts) {
         const c = counts[t]; const base = GEM_VALUES[t] || 1;
-        let mult = c >= 5 ? 5 : (c === 4 ? 2 : 1);
+        let mult = c >= 5 ? 2 : (c === 4 ? 1 : 0.5);
         win += currentBet * base * mult;
     }
     return win;
