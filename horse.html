@@ -339,28 +339,22 @@ function generateNewOdds() {
 
     // 【修改處】調整權重公式：速度與爆發權重極大化，耐力權重調低
     // 使用更高次方來拉開強弱馬的實力差距，從而壓低強馬賠率
-    let pSpeed = Math.pow(speed, 3.5);  // 速度重要性增加
-    let pBurst = Math.pow(burst, 3.8);  // 爆發重要性增加
-    let pStamina = Math.pow(stamina, 1.2); // 耐力影響力顯著下調
+    let pSpeed = Math.pow(speed, 3.5);
+    let pBurst = Math.pow(burst, 3.8);
+    let pStamina = Math.pow(stamina, 1.5);
 
-    let power = pSpeed + pBurst + pStamina;
-    rawScores.push({ id: i, speed, burst, stamina, power });
-    totalFieldPower += power;
+// 加入 3% 的隨機變動率 (0.97 ~ 1.03)
+let randomFactor = 0.97 + (Math.random() * 0.06);
+let power = (pSpeed + pBurst + pStamina) * randomFactor;
+
+rawScores.push({ id: i, speed, burst, stamina, power });
+totalFieldPower += power;
   }
 
   rawScores.forEach(s => {
     let powerShare = s.power / totalFieldPower;
     // 賠率計算：使用較低的返還率(0.85)來計算基礎賠率
-    let rawOdds = (1 / powerShare) * 0.85; 
-    
-    // 【修改處】強制壓低熱門馬賠率
-    if (powerShare > 0.3) {
-        // 如果是超級強馬，賠率鎖定在 1.1~1.5 之間
-        rawOdds = 1.1 + (Math.random() * 0.4);
-    } else if (powerShare > 0.2) {
-        // 次熱門馬，賠率鎖定在 1.6~2.5 之間
-        rawOdds = 1.6 + (Math.random() * 0.9);
-    }
+    let rawOdds = (1 / powerShare) * 0.9; 
 
     // 加入隨機微調
     let finalOdds = parseFloat(rawOdds.toFixed(1));
@@ -449,9 +443,9 @@ function startRace() {
       if (!h.isFatigued && h.dashCount < h.maxDashes) {
           if (Math.random() < (0.01 + h.burst * 0.008)) {
               h.dashCount++;
-              let minStep = 5 + (h.burst * 5); 
+              let minStep = 10 + (h.burst * 3); 
               dashBonus = minStep + (Math.random() * (45 - minStep)); 
-              spawnStatus(h.el, h.burst >= 4 ? "大衝刺!!" : "小加速", "dash"); 
+              spawnStatus(h.el, dashBonus > 35 ? "大衝刺!" : "小加速", "dash");
           }
       }
 

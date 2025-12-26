@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
+<title>阿記多功能彩券行</title>
+<style>
+  :root {
+    --gold: #ffd86b; --red: #ff4757; --bg-red: #b33939; --win-green: #2ecc71;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; touch-action: none; font-family: "Microsoft JhengHei", Arial, sans-serif; }
+  
+  body { height: 100dvh; width: 100vw; background: #1a0505; color: #fff; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* 頂部欄 (阿記風格) */
+  .topbar { 
+    width: 100%; padding-top: calc(15px + env(safe-area-inset-top)); 
+    height: calc(60px + env(safe-area-inset-top)); 
+    background: linear-gradient(#4a0404, #2a0202); 
+    display: flex; align-items: center; padding: 0 15px; gap: 10px; 
+    border-bottom: 2px solid #5c0a0a; flex-shrink: 0; z-index: 1000;
+  }
+  .sound-toggle { background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 8px; border: 1px solid var(--gold); cursor: pointer; font-size: 13px; color: #fff; }
+  .balance-box { background: rgba(0,0,0,0.5); border: 1px solid var(--gold); border-radius: 15px; padding: 4px 12px; color: var(--gold); font-weight: bold; font-size: 16px; }
+
+  /* 櫃台介面 */
+  #lobby { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; padding: 20px; }
+  .card-option {
+    width: 100%; max-width: 320px; background: #fff; color: #333; border-radius: 15px;
+    padding: 20px; display: flex; align-items: center; box-shadow: 0 8px 15px rgba(0,0,0,0.4);
+    border-left: 10px solid var(--gold); position: relative;
+  }
+  .price-tag { position: absolute; top: -10px; right: 10px; background: #e67e22; color: #fff; padding: 2px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; }
+
+  /* 遊戲區域 */
+  #gameRoom { display: none; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 15px; }
+  #gameRuleDesc { font-size: 14px; color: var(--gold); background: rgba(0,0,0,0.3); padding: 5px 15px; border-radius: 20px; }
+  
+  .scratch-card-container { position: relative; width: 320px; height: 420px; }
+  .scratch-card {
+    width: 100%; height: 100%; background: #fff; border: 8px solid var(--gold); border-radius: 15px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.6); overflow: hidden; position: relative;
+  }
+
+  /* 不同的玩法佈局 */
+  .card-content { width: 100%; height: 100%; display: grid; padding: 10px; gap: 5px; }
+  
+  /* 財神到: 幸運號碼佈局 */
+  .layout-numbers { grid-template-rows: 1fr 2fr; }
+  .lucky-zone { border-bottom: 2px dashed #ccc; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+  .number-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, 1fr); gap: 5px; }
+  
+  /* 金龍: 符號佈局 */
+  .layout-symbols { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, 1fr); }
+
+  /* 通用項目樣式 */
+  .prize-item { display: flex; flex-direction: column; justify-content: center; align-items: center; background: #f9f9f9; border-radius: 8px; }
+  .prize-amount { font-size: 16px; font-weight: bold; color: #d63031; }
+  .prize-symbol { font-size: 32px; }
+  .item-win { background: rgba(46, 204, 113, 0.2) !important; animation: pulse 1s infinite; }
+
+  canvas { position: absolute; top: 0; left: 0; z-index: 10; cursor: crosshair; transition: opacity 0.5s; }
+
+  .button-group { display: flex; gap: 15px; width: 100%; justify-content: center; }
+  .btn { background: var(--gold); color: #000; border: none; padding: 12px 25px; border-radius: 12px; font-weight: bold; box-shadow: 0 5px 0 #b38b00; }
+  .btn-secondary { background: #7f8c8d; color: #fff; box-shadow: 0 5px 0 #2c3e50; }
+
+  @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="sound-toggle" onclick="toggleMute()" id="soundIcon">🔊</div>
+  <div class="sound-toggle" onclick="cycleBGM()" id="bgmBtn">🎵 音樂 1</div>
+  <div class="balance-box">💎 <span id="balanceText">0</span></div>
+  <marquee style="flex:1; color:var(--gold); font-size: 12px;">還沒做好</marquee>
+  <a href="index.html" style="text-decoration:none;"><button style="background:none; border:1px solid #777; color:#ccc; padding:5px; border-radius:5px;">🏠 大廳</button></a>
+</div>
+
+<div id="lobby">
+  <h2 style="color:var(--gold)">挑選玩法</h2>
+  <div class="card-option" onclick="selectCard('small')">
+    <div class="price-tag">$100</div>
+    <div><h3>💰 財神到</h3><p style="font-size:12px;color:#666">對中上方幸運號碼即中獎</p></div>
+  </div>
+  <div class="card-option" onclick="selectCard('mid')">
+    <div class="price-tag">$500</div>
+    <div><h3>🐲 金龍賀歲</h3><p style="font-size:12px;color:#666">刮出 🧧 或 🐲 中獎</p></div>
+  </div>
+  <div class="card-option" onclick="selectCard('big')">
+    <div class="price-tag">$2000</div>
+    <div><h3>🧧 百萬大紅包</h3><p style="font-size:12px;color:#666">刮出三個相同金額即中獎</p></div>
+  </div>
+</div>
+
+<div id="gameRoom">
+  <div id="gameRuleDesc">玩法說明</div>
+  <div class="scratch-card-container">
+    <div class="scratch-card">
+      <div id="cardContent" class="card-content"></div>
+      <canvas id="scratchCanvas" width="320" height="420"></canvas>
+    </div>
+  </div>
+  <div class="button-group">
+    <button class="btn btn-secondary" onclick="backToLobby()">回櫃台</button>
+    <button class="btn" id="quickBuyBtn" onclick="reBuy()" disabled>再刮一張</button>
+  </div>
+</div>
+
+<audio id="sndWin" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="auto"></audio>
+<audio id="bgm1" src="background-music-434612.mp3" loop preload="auto"></audio>
+<audio id="bgm2" src="soft-background-music-427252.mp3" loop preload="auto"></audio>
+<audio id="bgm3" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" loop preload="auto"></audio>
+
+<script>
+let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
+let currentConfig = null, isDrawing = false, isScratched = false, winAmount = 0, currentType = '';
+let isMuted = false, currentBgmIdx = 1;
+const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
+const canvas = document.getElementById('scratchCanvas'), ctx = canvas.getContext('2d');
+
+const CONFIGS = {
+  small: { price: 100, prizes: [100, 200, 500, 1000], winRate: 0.35, desc: "對中幸運號碼即中獎" },
+  mid: { price: 500, prizes: [500, 1000, 2000, 5000, 10000], winRate: 0.33, desc: "刮出 🧧 或 🐲 即中獎" },
+  big: { price: 2000, prizes: [2000, 5000, 10000, 50000, 100000], winRate: 0.3, desc: "三個相同金額即中獎" }
+};
+
+// --- 音樂系統 (與拉霸機一致) ---
+function stopAllBGM() { bgmList.forEach(id => { if(id) { const a = document.getElementById(id); a.pause(); a.currentTime = 0; } }); }
+function cycleBGM() {
+    stopAllBGM(); currentBgmIdx = (currentBgmIdx + 1) % 4;
+    const btn = document.getElementById('bgmBtn');
+    if (currentBgmIdx === 0) btn.textContent = '🚫 音樂關';
+    else { btn.textContent = '🎵 音樂 ' + currentBgmIdx; if (!isMuted) { const bgm = document.getElementById(bgmList[currentBgmIdx]); if(bgm) { bgm.volume = 0.3; bgm.play().catch(()=>{}); } } }
+}
+function toggleMute() {
+    isMuted = !isMuted; document.getElementById('soundIcon').textContent = isMuted ? '🔇' : '🔊';
+    if (isMuted) stopAllBGM();
+    else if (currentBgmIdx !== 0) { const bgm = document.getElementById(bgmList[currentBgmIdx]); if(bgm) bgm.play().catch(()=>{}); }
+}
+function unlockAudio() {
+    document.querySelectorAll('audio').forEach(a => { a.muted = true; a.play().then(() => { a.pause(); a.currentTime = 0; a.muted = false; }).catch(() => {}); });
+    setTimeout(() => { if (!isMuted && currentBgmIdx !== 0) { const bgm = document.getElementById(bgmList[currentBgmIdx]); if (bgm) { bgm.volume = 0.3; bgm.play().catch(() => {}); } } }, 150);
+    document.removeEventListener('click', unlockAudio); document.removeEventListener('touchstart', unlockAudio);
+}
+document.addEventListener('click', unlockAudio); document.addEventListener('touchstart', unlockAudio);
+
+// --- 核心邏輯 ---
+function updateUI() { document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString(); localStorage.setItem('sicbo_balance', balance); }
+
+function selectCard(type) {
+  currentType = type; currentConfig = CONFIGS[type];
+  if(balance < currentConfig.price) { alert("餘額不足！"); return; }
+  document.getElementById('lobby').style.display = 'none';
+  document.getElementById('gameRoom').style.display = 'flex';
+  document.getElementById('gameRuleDesc').textContent = currentConfig.desc;
+  startNewGame();
+}
+
+function startNewGame() {
+  balance -= currentConfig.price; updateUI();
+  isScratched = false; winAmount = 0; canvas.style.opacity = '1';
+  document.getElementById('quickBuyBtn').disabled = true;
+  generateCardLayout();
+  initScratchLayer();
+}
+
+function generateCardLayout() {
+  const container = document.getElementById('cardContent');
+  container.className = 'card-content';
+  const isWin = Math.random() < currentConfig.winRate;
+  let html = '';
+
+  if (currentType === 'small') {
+    container.classList.add('layout-numbers');
+    const luckyNum = Math.floor(Math.random() * 90) + 10;
+    winAmount = isWin ? currentConfig.prizes[Math.floor(Math.random() * currentConfig.prizes.length)] : 0;
+    html = `<div class="lucky-zone"><span style="font-size:12px;color:#666">幸運號碼</span><span style="font-size:40px;font-weight:bold;color:#d63031">${luckyNum}</span></div>`;
+    html += `<div class="number-grid">`;
+    for(let i=0; i<6; i++) {
+      let n = Math.floor(Math.random() * 90) + 10;
+      if (isWin && i === 2) n = luckyNum; // 假定第3格中獎
+      else if (n === luckyNum) n++;
+      html += `<div class="prize-item ${isWin && i===2 ? 'win-mark' : ''}">
+                <span style="font-size:20px;font-weight:bold">${n}</span>
+                <span class="prize-amount">$${currentConfig.prizes[Math.floor(Math.random()*currentConfig.prizes.length)]}</span>
+               </div>`;
+    }
+    html += `</div>`;
+    if(isWin) winAmount = currentConfig.prizes[0]; // 簡化處理
+  } 
+  else if (currentType === 'mid') {
+    container.classList.add('layout-symbols');
+    const symbols = ['🎋', '🏮', '🍊', '🧨', '💰', '🔥'];
+    const winSymbols = ['🧧', '🐲'];
+    winAmount = isWin ? currentConfig.prizes[Math.floor(Math.random() * currentConfig.prizes.length)] : 0;
+    for(let i=0; i<6; i++) {
+      let s = symbols[Math.floor(Math.random()*symbols.length)];
+      let isThisWin = false;
+      if (isWin && i === 4) { s = winSymbols[Math.floor(Math.random()*2)]; isThisWin = true; }
+      html += `<div class="prize-item ${isThisWin ? 'win-mark' : ''}">
+                <span class="prize-symbol">${s}</span>
+                <span class="prize-amount">$${currentConfig.prizes[Math.floor(Math.random()*currentConfig.prizes.length)]}</span>
+               </div>`;
+    }
+  } 
+  else { // big
+    container.classList.add('layout-symbols'); // 使用 3x2 佈局
+    winAmount = isWin ? currentConfig.prizes[Math.floor(Math.random() * currentConfig.prizes.length)] : 0;
+    let items = [];
+    if(isWin) {
+      for(let i=0; i<3; i++) items.push(winAmount);
+      while(items.length < 6) {
+        let p = currentConfig.prizes[Math.floor(Math.random()*currentConfig.prizes.length)];
+        if(p !== winAmount) items.push(p);
+      }
+    } else {
+      let pool = [...currentConfig.prizes, ...currentConfig.prizes];
+      while(items.length < 6) {
+        let p = pool.splice(Math.floor(Math.random()*pool.length), 1)[0];
+        if(items.filter(x=>x===p).length < 2) items.push(p);
+      }
+    }
+    items.sort(()=>Math.random()-0.5);
+    html = items.map(p => `<div class="prize-item" data-val="${p}"><span class="prize-amount">$${p.toLocaleString()}</span></div>`).join('');
+  }
+  container.innerHTML = html;
+}
+
+function initScratchLayer() {
+  ctx.globalCompositeOperation = 'source-over';
+  const g = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+  g.addColorStop(0, '#d4af37'); g.addColorStop(0.5, '#f1c40f'); g.addColorStop(1, '#b38b00');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.font = "bold 20px Arial"; ctx.textAlign = "center";
+  ctx.fillText("刮刮", canvas.width/2, canvas.height/2);
+}
+
+function handleScratch(e) {
+  if (!isDrawing || isScratched) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+  const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.beginPath(); ctx.arc(x, y, 30, 0, Math.PI * 2); ctx.fill();
+  checkProgress();
+}
+
+function checkProgress() {
+  const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+  let count = 0; for (let i = 3; i < data.length; i += 80) if (data[i] === 0) count++;
+  if (count > (data.length / 320)) revealCard();
+}
+
+function revealCard() {
+  isScratched = true; canvas.style.opacity = '0';
+  document.getElementById('quickBuyBtn').disabled = false;
+  if (winAmount > 0) {
+    balance += winAmount; updateUI();
+    if(!isMuted) document.getElementById('sndWin').play().catch(()=>{});
+    document.querySelectorAll('.win-mark').forEach(el => el.classList.add('item-win'));
+    if(currentType === 'big') {
+      document.querySelectorAll('.prize-item').forEach(el => {
+        if(el.innerText.includes(winAmount.toLocaleString())) el.classList.add('item-win');
+      });
+    }
+  }
+}
+
+function reBuy() { if(balance >= currentConfig.price) startNewGame(); else alert("餘額不足！"); }
+function backToLobby() { document.getElementById('lobby').style.display = 'flex'; document.getElementById('gameRoom').style.display = 'none'; }
+
+canvas.addEventListener('mousedown', () => isDrawing = true); window.addEventListener('mouseup', () => isDrawing = false);
+canvas.addEventListener('mousemove', handleScratch);
+canvas.addEventListener('touchstart', (e) => { isDrawing = true; handleScratch(e); });
+canvas.addEventListener('touchmove', handleScratch);
+
+updateUI();
+</script>
+</body>
+</html>
