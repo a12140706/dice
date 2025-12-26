@@ -55,7 +55,7 @@
             background: rgba(0,0,0,0.4); border-radius: 5px; border: 1px solid #444;
         }
 
-        .main-layout { flex: 1; height: 100%; display: flex; justify-content: center; align-items: center; order: 1; }
+        .main-layout { flex: 1; height: 100%; display: flex; justify-content: center; align-items: center; order: 1; position: relative; }
 
         #game-board {
             width: calc(10 * (var(--tile-size) + var(--tile-gap)) + 30px);
@@ -91,16 +91,22 @@
         .floating-score { position: absolute; font-weight: bold; font-size: 24px; pointer-events: none; z-index: 600; animation: floatUp 0.7s forwards; text-shadow: 0 2px 4px #000; }
         @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-60px); opacity: 0; } }
 
-        /* 新增：連擊文字樣式 */
+        /* 修復：Combo文字改為 fixed 避免被切掉，並增加動畫感 */
         .combo-text {
-            position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
-            color: var(--gold); font-size: 24px; font-weight: bold; font-style: italic;
-            text-shadow: 2px 2px 0px #000; pointer-events: none; z-index: 700;
-            animation: comboPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: fixed; top: 40%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--gold); font-size: 48px; font-weight: bold; font-style: italic;
+            text-shadow: 3px 3px 0px #000, 0 0 20px rgba(255,216,107,0.5);
+            pointer-events: none; z-index: 2000;
+            animation: comboPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
-        @keyframes comboPop { 0% { transform: translateX(-50%) scale(0.5); opacity: 0; } 100% { transform: translateX(-50%) scale(1); opacity: 1; } }
+        @keyframes comboPop { 
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; } 
+            80% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+            100% { transform: translate(-50%, -60%) scale(1); opacity: 0; }
+        }
 
-        .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9); z-index: 2000; display: none; align-items: center; justify-content: center; flex-direction: column; }
+        .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9); z-index: 3000; display: none; align-items: center; justify-content: center; flex-direction: column; }
     </style>
 </head>
 
@@ -128,8 +134,8 @@
     <div class="main-layout">
         <div id="game-board">
             <canvas id="line-canvas"></canvas>
-            <div id="combo-container"></div>
         </div>
+        <div id="combo-container"></div>
     </div>
 
     <div id="settle-screen" class="modal">
@@ -155,10 +161,9 @@
         let isMuted = false, currentBgmIdx = 1, isGravityEnabled = false;
         const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
 
-        // 新增：連擊相關變數
         let comboCount = 0;
         let lastMatchTime = 0;
-        const COMBO_TIMEOUT = 2000; // 2秒內要連擊
+        const COMBO_TIMEOUT = 2000; 
 
         function playSound(id) { if (!isMuted) { const s = document.getElementById(id); if (s) { s.currentTime = 0; s.play().catch(()=>{}); } } }
         function toggleMute() { isMuted = !isMuted; document.getElementById('soundIcon').textContent = isMuted ? '🔇' : '🔊'; }
@@ -198,7 +203,7 @@
         function initMap() {
             const layers = parseInt(document.getElementById('layerSelect').value);
             score = 0; tilesLeft = ROWS * COLS * layers;
-            comboCount = 0; // 重置連擊
+            comboCount = 0; 
             updateUI();
             let pool = [];
             for (let i = 0; i < (tilesLeft / 2); i++) {
@@ -283,11 +288,18 @@
                 if (hasMove) break;
             }
             if (!hasMove) {
-                alert("目前無可消除，自動重新洗牌");
+                showShuffleNotice();
                 shuffleBoard();
             }
         }
-
+        function showShuffleNotice() {
+            const container = document.getElementById('notice-container');
+            const div = document.createElement('div');
+            div.className = 'shuffle-notice';
+            div.innerText = "無解，自動洗牌...";
+            container.appendChild(div);
+            setTimeout(() => { if(div) div.remove(); }, 1200);
+        }
         function shuffleBoard() {
             let pool = [];
             const layers = parseInt(document.getElementById('layerSelect').value);
@@ -325,7 +337,6 @@
             const path = (p1.char === boardData[l][r][c].char) ? getPath(p1.r, p1.c, r, c) : null;
 
             if (path) {
-                // 連擊邏輯判定
                 const now = Date.now();
                 if (now - lastMatchTime < COMBO_TIMEOUT) {
                     comboCount++;
@@ -338,7 +349,6 @@
                 el1.classList.add('eliminating'); el.classList.add('eliminating');
                 drawConnectLine(path);
 
-                // 計算得分：基礎分 * 連擊加成 (每連擊一次 +10%)
                 let baseBonus = boardData[l][r][c].style === 'heart-gold' ? 50 : (boardData[l][r][c].style === 'heart-purple' ? 20 : 10);
                 let comboMult = 1 + (comboCount - 1) * 0.1;
                 let finalBonus = Math.floor(baseBonus * comboMult);
@@ -366,7 +376,6 @@
             }
         }
 
-        // 新增：顯示連擊 UI
         function showComboUI(count) {
             const container = document.getElementById('combo-container');
             container.innerHTML = "";
