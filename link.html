@@ -12,7 +12,6 @@
     margin: 0; padding: 0; background: var(--bg); color: #fff;
     font-family: "Microsoft JhengHei", Arial; height: 100dvh; width: 100vw; overflow: hidden;
     display: flex; 
-    /* 增加手機安全區域縮排 */
     padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left);
   }
 
@@ -36,17 +35,13 @@
 
   .game-section { flex: 3; position: relative; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; }
   
-  /* 優化：限制格子的最大高度，避免手機橫屏時下方圖案溢出 */
   .game-grid { 
     display: grid; 
-    /* 保持 8 欄 */
     grid-template-columns: repeat(8, 1fr); 
-    /* 強制平分 6 列的高度，扣除頂部導航後的剩餘高度 */
     grid-template-rows: repeat(6, 1fr); 
     gap: 4px; 
     padding: 10px; 
     width: 100%; 
-    /* 關鍵：高度不能超過螢幕扣除頂欄後的空間 */
     height: calc(100dvh - 60px - env(safe-area-inset-bottom));
     max-width: 95vw;
     margin: 0 auto;
@@ -60,13 +55,11 @@
   }
 
   .tile {
-    /* 取消固定的比例，讓它跟隨 grid 縮放 */
     background: var(--card); border: 1px solid #5c0a0a;
     border-radius: 6px; display: flex; align-items: center; justify-content: center;
-    /* 字體大小改用 vh，隨高度縮放，避免字太大撐破格子 */
     font-size: clamp(12px, 8vh, 24px); 
     position: relative; transition: 0.2s;
-    overflow: hidden; /* 防止內容溢出 */
+    overflow: hidden;
   }
   .tile.selected { border-color: var(--gold); background: #4a0404; transform: scale(1.1); z-index: 20; box-shadow: 0 0 15px var(--gold); }
   .tile.hidden { visibility: hidden; pointer-events: none; }
@@ -89,16 +82,35 @@
   .btn-action {
     width: 100%; padding: 12px; border-radius: 30px; border: 2px solid var(--gold);
     background: linear-gradient(#ff4757, #b91c1c); color: #fff; font-weight: 900; font-size: 18px;
+    cursor: pointer;
   }
 
   .leaderboard { width: 100%; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px; border: 1px solid #555; }
   .rank-item { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 2px; }
+
+  /* 結算畫面 Modal */
+  .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9); z-index: 3000; display: none; align-items: center; justify-content: center; flex-direction: column; }
+  .modal-content { background:#1a1a1a; border:2px solid var(--gold); padding:30px; border-radius:20px; text-align:center; min-width: 280px; }
 
   @media (orientation: portrait) { .portrait-tip { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background: #1a0505; z-index: 999; display: flex; flex-direction: column; justify-content: center; align-items: center; } }
   @media (orientation: landscape) { .portrait-tip { display: none; } }
 
   .float-msg { position: absolute; font-weight: bold; animation: floatUp 0.8s forwards; z-index: 100; font-size: 18px; pointer-events: none; }
   @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-60px); } }
+
+  .combo-text {
+    position: fixed; top: 40%; left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--gold); font-size: 48px; font-weight: bold; font-style: italic;
+    text-shadow: 3px 3px 0px #000, 0 0 20px rgba(255,216,107,0.5);
+    pointer-events: none; z-index: 2000;
+    animation: comboPop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+  @keyframes comboPop { 
+    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; } 
+    50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+    100% { transform: translate(-50%, -60%) scale(1); opacity: 0; }
+  }
 </style>
 </head>
 <body onmousemove="updateMist(event)" ontouchmove="updateMist(event)">
@@ -111,7 +123,7 @@
 <div class="topbar">
   <div class="sound-btn" onclick="toggleMute()" id="muteBtn">🔊</div>
   <div class="sound-btn" onclick="cycleBGM()" id="bgmBtn">🎵 音樂 1</div>
-  <div class="balance-box">💰 <span id="balanceText">0</span></div>
+  <div class="balance-box">💎 <span id="balanceText">0</span></div>
   <marquee id="bonusInfo" style="flex:1; color:var(--gold); font-size: 12px;">龍會加秒數，牛跟虎錢比較多，豬會額外消一對</marquee>
   <a href="index.html" style="text-decoration:none;">
     <button style="background:none; border:1px solid #777; color:#ccc; border-radius:5px; padding:5px 12px; font-size:14px; font-weight:bold;">🏠 回大廳</button>
@@ -122,6 +134,7 @@
   <div class="game-section" id="gameWrapper">
     <div class="mist-overlay" id="mist"></div>
     <div class="game-grid" id="gameGrid"></div>
+    <div id="combo-container"></div>
   </div>
 
   <div class="control-section">
@@ -142,6 +155,14 @@
   </div>
 </div>
 
+<div id="settle-screen" class="modal">
+  <div class="modal-content">
+      <h1 style="color:var(--gold); margin-bottom: 10px;">🎉 結束!</h1>
+      <p id="reward-text" style="color:#fff; line-height: 1.6; margin-bottom: 20px; text-align: left; padding: 0 20px; white-space: pre-wrap;"></p>
+      <button class="btn-action" onclick="closeSettle()" style="width:auto; padding:10px 40px;">確認</button>
+  </div>
+</div>
+
 <audio id="bgm1" src="background-music-434612.mp3" loop></audio>
 <audio id="bgm2" src="soft-background-music-427252.mp3" loop></audio>
 <audio id="bgm3" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" loop></audio>
@@ -149,6 +170,7 @@
 <audio id="sndSpecial" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"></audio>
 <audio id="sndExplode" src="https://assets.mixkit.co/active_storage/sfx/1494/1494-preview.mp3"></audio>
 <audio id="sndShake" src="https://assets.mixkit.co/active_storage/sfx/1103/1103-preview.mp3"></audio>
+<audio id="sndWin" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="auto"></audio>
 
 <script>
 let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
@@ -159,6 +181,11 @@ const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
 const ROWS = 6, COLS = 8;
 const icons = ['🐭', '🐰', '🐍', '🐴', '🐑', '🐒', '🐔', '🐶', '🐲', '🐷', '🐮', '🐯'];
 let boardData = [], currentMultiplier = 1.0;
+let tilesLeft = 0; 
+
+let comboCount = 0;
+let lastMatchTime = 0;
+const COMBO_TIMEOUT = 2000; 
 
 function updateBonusInfo() {
     let mult = 1.0;
@@ -173,7 +200,6 @@ function updateBonusInfo() {
 function moveMistTo(x, y) {
     if (!document.getElementById('mistToggle').checked) return;
     const mist = document.getElementById('mist');
-    // 這裡微調 y 軸偏移，確保亮區就在手指或點擊位置的正中心
     mist.style.setProperty('--x', x + 'px');
     mist.style.setProperty('--y', y + 'px');
 }
@@ -188,9 +214,19 @@ function updateMist(e) {
 }
 
 function startGame() {
-    if (balance < 500) { alert("金額不足！"); return; }
-    balance -= 500; currentGameProfit = 0; updateUI(); updateBonusInfo();
-    timeLeft = 60; document.getElementById('timeLeft').textContent = timeLeft;
+    if (balance < 500) { alert("餘額不足！"); return; }
+    
+    clearInterval(timer);
+    selected = null;
+    balance -= 500; 
+    currentGameProfit = 0; 
+    tilesLeft = ROWS * COLS;
+    comboCount = 0; 
+    updateUI(); 
+    updateBonusInfo();
+    
+    timeLeft = 60; 
+    document.getElementById('timeLeft').textContent = timeLeft;
     document.getElementById('startBtn').disabled = true;
     
     document.getElementById('mist').style.display = document.getElementById('mistToggle').checked ? 'block' : 'none';
@@ -198,7 +234,6 @@ function startGame() {
     else document.getElementById('gameGrid').classList.remove('blinking');
 
     createBoard();
-    clearInterval(timer);
     timer = setInterval(() => {
         timeLeft--;
         document.getElementById('timeLeft').textContent = timeLeft;
@@ -210,15 +245,34 @@ function startGame() {
 
 function endGame() {
     clearInterval(timer);
-    alert(`遊戲結束！本局獲利：$${currentGameProfit}`);
+    playSound('sndWin');
+
+    let isNewRecord = false;
+    // 使用當前得分(currentGameProfit)判斷紀錄
     if (currentGameProfit > highScore) {
         highScore = currentGameProfit;
         localStorage.setItem('connect_high_score', highScore);
+        isNewRecord = true;
     }
+    
+    // 構造結算文字
+    let msg = `本局得分：${Math.floor(currentGameProfit)}${isNewRecord ? " (新紀錄!🔥)" : ""}\n`;
+    msg += `最高紀錄：${Math.floor(highScore)}\n`;
+    msg += `-------------------\n`;
+    msg += `當前倍率：x${currentMultiplier.toFixed(1)}\n`;
+    msg += `結算獲得：+${Math.floor(currentGameProfit)} 💎`;
+
+    document.getElementById('reward-text').innerText = msg;
+    document.getElementById('settle-screen').style.display = 'flex';
+    
     document.getElementById('startBtn').disabled = false;
     document.getElementById('mist').style.display = 'none';
     document.getElementById('gameGrid').classList.remove('blinking');
     updateUI();
+}
+
+function closeSettle() {
+    document.getElementById('settle-screen').style.display = 'none';
 }
 
 function createBoard() {
@@ -240,7 +294,6 @@ function createBoard() {
         div.id = `tile-${i}`;
         div.innerHTML = tile.icon;
         div.onclick = (e) => {
-            // 對焦亮區到點擊的格子中心位置
             const rect = div.getBoundingClientRect();
             const wrapperRect = document.getElementById('gameWrapper').getBoundingClientRect();
             moveMistTo(rect.left + rect.width/2 - wrapperRect.left, rect.top + rect.height/2 - wrapperRect.top);
@@ -271,6 +324,18 @@ function eliminate(i1, i2) {
     document.getElementById(`tile-${i1}`).classList.add('hidden');
     document.getElementById(`tile-${i2}`).classList.add('hidden');
     
+    tilesLeft -= 2; 
+
+    const now = Date.now();
+    if (now - lastMatchTime < COMBO_TIMEOUT) {
+        comboCount++;
+    } else {
+        comboCount = 1;
+    }
+    lastMatchTime = now;
+
+    if (comboCount > 1) showComboUI(comboCount);
+
     const mist = document.getElementById('mist');
     mist.style.opacity = "0.3"; 
     setTimeout(() => { mist.style.opacity = "1"; }, 1500);
@@ -281,22 +346,65 @@ function eliminate(i1, i2) {
     else if (icon === '🐮') { baseBonus = 300; special = true; }
     else if (icon === '🐯') { baseBonus = 150; special = true; }
     else if (icon === '🐷') { playSound('sndExplode'); autoExplode(); baseBonus = 50; special = true; }
+    
     if (special) playSound('sndSpecial'); else playSound('sndNormal');
 
-    let finalBonus = Math.floor(baseBonus * currentMultiplier);
+    let comboMult = 1 + (comboCount - 1) * 0.1;
+    let finalBonus = Math.floor(baseBonus * currentMultiplier * comboMult);
+    
     balance += finalBonus; currentGameProfit += finalBonus;
     updateUI();
     showFloat(`+$${finalBonus}`, "#ffd86b");
     
     [i1, i2].forEach(idx => {
-        [idx-1, idx+1, idx-COLS, idx+COLS].forEach(n => {
+        const neighbors = [idx-1, idx+1, idx-COLS, idx+COLS];
+        neighbors.forEach(n => {
             if (boardData[n] && boardData[n].isLocked) {
                 boardData[n].isLocked = false;
                 document.getElementById(`tile-${n}`).classList.remove('locked');
             }
         });
     });
-    selected.el.classList.remove('selected'); selected = null;
+    
+    if(selected) selected.el.classList.remove('selected');
+    selected = null;
+
+    if (tilesLeft <= 0) {
+        setTimeout(endGame, 500);
+    }
+}
+
+function showComboUI(count) {
+    const container = document.getElementById('combo-container');
+    container.innerHTML = "";
+    const div = document.createElement('div');
+    div.className = 'combo-text';
+    div.innerText = `${count} COMBO!`;
+    container.appendChild(div);
+    setTimeout(() => { if(div) div.remove(); }, 800);
+}
+
+function autoExplode() {
+    let available = boardData.filter(b => !b.isHidden);
+    if (available.length < 2) return;
+    
+    let pair = null;
+    for(let i=0; i<available.length; i++) {
+        for(let j=i+1; j<available.length; j++) {
+            if(available[i].icon === available[j].icon) {
+                pair = [available[i].id, available[j].id];
+                break;
+            }
+        }
+        if(pair) break;
+    }
+    
+    if(pair) {
+        setTimeout(() => {
+            showFloat("小豬衝撞！", "#ff9ff3");
+            eliminate(pair[0], pair[1]);
+        }, 300);
+    }
 }
 
 function triggerShake() {
@@ -322,12 +430,15 @@ function shuffleRemaining() {
 }
 
 function shuffleGrid() { if (timeLeft > 0) shuffleRemaining(); }
+
 function updateUI() {
     document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString();
     document.getElementById('highScoreText').textContent = '$' + Math.floor(highScore).toLocaleString();
     localStorage.setItem('sicbo_balance', balance);
 }
+
 function playSound(id) { if (!isMuted) { const s = document.getElementById(id); if (s) { s.currentTime = 0; s.play().catch(()=>{}); } } }
+
 function showFloat(txt, color) {
     const f = document.createElement('div');
     f.className = 'float-msg'; f.style.color = color;
@@ -343,9 +454,13 @@ function cycleBGM() {
     document.getElementById('bgmBtn').textContent = currentBgmIdx === 0 ? '🎵 音樂：關' : '🎵 音樂 ' + currentBgmIdx;
     if (!isMuted) playBGM();
 }
+
 function stopAllBGM() { bgmList.forEach(id => { if (id) { const a = document.getElementById(id); a.pause(); a.currentTime = 0; } }); }
+
 function playBGM() { if (currentBgmIdx !== 0 && !isMuted) { const bgm = document.getElementById(bgmList[currentBgmIdx]); if (bgm) { bgm.volume = 0.2; bgm.play().catch(()=>{}); } } }
+
 function toggleMute() { isMuted = !isMuted; document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊'; if (isMuted) stopAllBGM(); else playBGM(); }
+
 function unlockAudio() { const audios = document.querySelectorAll('audio'); audios.forEach(a => { a.muted = true; a.play().then(()=>{a.pause(); a.muted=false;}); }); isAudioUnlocked = true; }
 
 window.onload = updateUI;
