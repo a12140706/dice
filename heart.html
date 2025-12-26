@@ -115,15 +115,8 @@
         }
 
         @keyframes pulse {
-
-            0%,
-            100% {
-                transform: scale(1);
-            }
-
-            50% {
-                transform: scale(1.05);
-            }
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
         }
 
         #bonusOverlay {
@@ -152,32 +145,14 @@
             position: relative;
         }
 
-        .shake {
-            animation: shakeAnim 0.4s;
-        }
+        .shake { animation: shakeAnim 0.4s; }
 
         @keyframes shakeAnim {
-
-            0%,
-            100% {
-                transform: translate(0, 0);
-            }
-
-            20% {
-                transform: translate(-5px, 5px);
-            }
-
-            40% {
-                transform: translate(5px, -5px);
-            }
-
-            60% {
-                transform: translate(-5px, -5px);
-            }
-
-            80% {
-                transform: translate(5px, 5px);
-            }
+            0%, 100% { transform: translate(0, 0); }
+            20% { transform: translate(-5px, 5px); }
+            40% { transform: translate(5px, -5px); }
+            60% { transform: translate(-5px, -5px); }
+            80% { transform: translate(5px, 5px); }
         }
 
         .grid {
@@ -193,7 +168,6 @@
             transition: all 0.5s ease;
         }
 
-        /* 遮罩調淡變紫 */
         .row-mask {
             position: absolute;
             left: 4px;
@@ -256,65 +230,20 @@
         }
 
         @keyframes winImpact {
-            0% {
-                background-color: #000;
-                transform: scale(1);
-            }
-
-            100% {
-                background-color: #b8860b;
-                transform: scale(0.9);
-            }
+            0% { background-color: #000; transform: scale(1); }
+            100% { background-color: #b8860b; transform: scale(0.9); }
         }
 
-        .decor-tile {
-            opacity: 0.35;
-            filter: grayscale(0.5);
-        }
-
-        .heart-tile {
-            background: #000;
-        }
-
-        .heart-icon {
-            font-size: 45px;
-            line-height: 1;
-            transition: all 0.3s;
-            display: inline-block;
-            /* 確保濾鏡效果正確顯示 */
-        }
-
-        /* 紅愛心：基礎色，不旋轉色相 */
-        .heart-red .heart-icon {
-            color: #ff1744;
-            filter: drop-shadow(0 0 8px #ff1744);
-        }
-
-        /* 紫愛心：透過色相旋轉，讓紅心變深紫 */
-        .heart-purple .heart-icon {
-            color: #ff1744;
-            /* 保持底色一致 */
-            filter: hue-rotate(270deg) brightness(1.2) drop-shadow(0 0 10px #e040fb);
-        }
-
-        .heart-gold .heart-icon {
-            color: #ff1744;
-            /* 強化金色濾鏡與外發光 */
-            filter: hue-rotate(50deg) brightness(2) contrast(1.5) drop-shadow(0 0 20px #ffeb3b);
-            animation: gold-pulse 1s infinite alternate;
-            /* 縮短時間讓它跳動更快 */
-        }
+        .decor-tile { opacity: 0.35; filter: grayscale(0.5); }
+        .heart-tile { background: #000; }
+        .heart-icon { font-size: 45px; line-height: 1; transition: all 0.3s; display: inline-block; }
+        .heart-red .heart-icon { color: #ff1744; filter: drop-shadow(0 0 8px #ff1744); }
+        .heart-purple .heart-icon { color: #ff1744; filter: hue-rotate(270deg) brightness(1.2) drop-shadow(0 0 10px #e040fb); }
+        .heart-gold .heart-icon { color: #ff1744; filter: hue-rotate(50deg) brightness(2) contrast(1.5) drop-shadow(0 0 20px #ffeb3b); animation: gold-pulse 1s infinite alternate; }
 
         @keyframes gold-pulse {
-            0% {
-                transform: scale(1);
-                filter: hue-rotate(50deg) brightness(1.8) drop-shadow(0 0 10px #ffeb3b);
-            }
-
-            100% {
-                transform: scale(1.25);
-                filter: hue-rotate(50deg) brightness(2.5) drop-shadow(0 0 30px #fff700);
-            }
+            0% { transform: scale(1); filter: hue-rotate(50deg) brightness(1.8) drop-shadow(0 0 10px #ffeb3b); }
+            100% { transform: scale(1.25); filter: hue-rotate(50deg) brightness(2.5) drop-shadow(0 0 30px #fff700); }
         }
 
         .heart-val {
@@ -331,89 +260,44 @@
             transform: translateY(-50%);
         }
 
-        .bottom-panel {
-            background: #000;
-            padding: 12px;
-            width: 100%;
-        }
-
+        .bottom-panel { background: #000; padding: 12px; width: 100%; }
+        
+        /* 調整顯示區域以容納未胡局數 */
+        .display-group { display: flex; gap: 8px; margin-bottom: 10px; }
         .win-display {
-            background: #1a0033;
-            color: var(--gold);
-            text-align: center;
-            padding: 8px;
-            border-radius: 8px;
-            font-size: 20px;
-            margin-bottom: 10px;
-            border: 1px solid #4a148c;
-            font-weight: bold;
+            flex: 2; background: #1a0033; color: var(--gold); text-align: center;
+            padding: 8px; border-radius: 8px; font-size: 20px; border: 1px solid #4a148c; font-weight: bold;
         }
+        .miss-display {
+            flex: 1; background: #222; border: 1px solid #444; border-radius: 8px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: #aaa; font-size: 9px;
+        }
+        .miss-display span { color: #fff; font-size: 16px; font-weight: bold; }
 
-        .control-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 8px;
-        }
+        .control-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 
         .spin-btn {
-            flex: 1.5;
-            height: 55px;
-            background: linear-gradient(#ba68c8, #7b1fa2);
-            border: none;
-            border-radius: 12px;
-            color: #fff;
-            font-size: 22px;
-            font-weight: bold;
+            flex: 1.5; height: 55px; background: linear-gradient(#ba68c8, #7b1fa2);
+            border: none; border-radius: 12px; color: #fff; font-size: 22px; font-weight: bold;
             box-shadow: 0 4px 0 #4a148c;
         }
+        .spin-btn:disabled { filter: grayscale(1); opacity: 0.6; }
 
-        .spin-btn:disabled {
-            filter: grayscale(1);
-            opacity: 0.6;
-        }
-
-        .auto-btn {
-            flex: 1;
-            height: 55px;
-            background: #455a64;
-            border: none;
-            border-radius: 12px;
-            color: #fff;
-            font-weight: bold;
-        }
-
-        .auto-btn.active {
-            background: #c2185b;
-            box-shadow: 0 0 15px #c2185b;
-        }
+        .auto-btn { flex: 1; height: 55px; background: #455a64; border: none; border-radius: 12px; color: #fff; font-weight: bold; }
+        .auto-btn.active { background: #c2185b; box-shadow: 0 0 15px #c2185b; }
 
         .bet-box {
-            flex: 1.2;
-            background: #111;
-            border-radius: 12px;
-            border: 1px solid #444;
-            height: 55px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            text-align: center;
+            flex: 1.2; background: #111; border-radius: 12px; border: 1px solid #444;
+            height: 55px; display: flex; flex-direction: column; justify-content: center; text-align: center;
         }
 
         #bigWinResult {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0);
-            z-index: 3000;
-            background: rgba(0, 0, 0, 0.95);
-            border: 3px solid var(--gold);
-            padding: 30px;
-            border-radius: 20px;
-            text-align: center;
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
+            z-index: 3000; background: rgba(0, 0, 0, 0.95); border: 3px solid var(--gold);
+            padding: 30px; border-radius: 20px; text-align: center;
             transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            pointer-events: none;
-            box-shadow: 0 0 50px rgba(255, 216, 107, 0.4);
+            pointer-events: none; box-shadow: 0 0 50px rgba(255, 216, 107, 0.4);
         }
     </style>
 </head>
@@ -424,12 +308,10 @@
     <div class="topbar">
         <div class="audio-ctrl" onclick="toggleMute()" id="muteBtn">🔊</div>
         <div class="audio-ctrl" onclick="cycleBGM()" id="bgmBtn">🎵 音樂1</div>
-        <div class="balance-box">💰 <span id="balanceText">0</span></div>
+        <div class="balance-box">💎 <span id="balanceText">0</span></div>
         <marquee style="flex:1; color:var(--gold); font-size: 11px;">有問題找阿記</marquee>
         <a href="index.html" style="text-decoration:none;">
-            <button
-                style="background:none; border:1px solid #777; color:#ccc; border-radius:5px; padding:5px 12px; font-size:14px; font-weight:bold;">🏠
-                回大廳</button>
+            <button style="background:none; border:1px solid #777; color:#ccc; border-radius:5px; padding:5px 12px; font-size:14px; font-weight:bold;">🏠 回大廳</button>
         </a>
     </div>
 
@@ -441,14 +323,20 @@
     </div>
 
     <div class="bottom-panel">
-        <div class="win-display">WIN: <span id="winText">0</span></div>
+        <div class="display-group">
+            <div class="win-display">WIN: <span id="winText">0</span></div>
+            <div class="miss-display">
+                <div>未開:</div>
+                <span id="missCountText">0</span>
+            </div>
+        </div>
         <div class="control-row">
             <div class="bet-box">
                 <div style="font-size: 10px; color: #888;">BET</div>
                 <div style="display:flex; align-items:center; justify-content:space-around;">
-                    <span onclick="changeBet(-1)" style="color:var(--gold); font-size:24px;">-</span>
+                    <span onclick="changeBet(-1)" style="color:var(--gold); font-size:24px; padding:0 10px;">-</span>
                     <span id="betText" style="font-weight:bold; font-size:18px;">1000</span>
-                    <span onclick="changeBet(1)" style="color:var(--gold); font-size:24px;">+</span>
+                    <span onclick="changeBet(1)" style="color:var(--gold); font-size:24px; padding:0 10px;">+</span>
                 </div>
             </div>
             <button class="spin-btn" id="spinBtn" onclick="handleSpin()">SPIN</button>
@@ -458,8 +346,7 @@
 
     <div id="bigWinResult">
         <div style="color: var(--gold); font-size: 20px; font-weight: bold; margin-bottom: 10px;">TOTAL WIN</div>
-        <div id="resultAmount"
-            style="color: #fff; font-size: 40px; font-weight: 900; text-shadow: 0 0 10px var(--gold);">0</div>
+        <div id="resultAmount" style="color: #fff; font-size: 40px; font-weight: 900; text-shadow: 0 0 10px var(--gold);">0</div>
     </div>
 
     <audio id="bgm1" src="background-music-434612.mp3" loop preload="auto"></audio>
@@ -470,6 +357,7 @@
 
     <script>
         let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
+        let missCount = parseInt(localStorage.getItem('heart_miss_count')) || 0; // 新增未胡局數紀錄
         let rows = 4, cols = 5;
         let isSpinning = false, isAuto = false, isSpecialMode = false;
         let betOptions = [500, 1000, 3000, 5000, 10000, 50000], betIdx = 1;
@@ -589,20 +477,12 @@
 
         function getHeartMultiplier(r) {
             if (isSpecialMode) {
-                // 第 0 行 (最頂行)：40 ~ 100 倍 (必定金色)
                 if (r === 0) return Math.floor(Math.random() * 61) + 40;
-
-                // 第 1 行：20 ~ 50 倍 (紫色或金色)
                 if (r === 1) return Math.floor(Math.random() * 31) + 20;
-
-                // 第 2-3 行：5 ~ 25 倍 (通常為紫色)
                 if (r === 2 || r === 3) return Math.floor(Math.random() * 21) + 5;
-
-                // 基礎行 (第 4-7 行)：1 ~ 10 倍 (通常為紅色)
                 return Math.floor(Math.random() * 10) + 1;
             }
-            // 普通模式愛心倍數 (2~5倍)
-            return Math.floor(Math.random() * 4) + 2;
+            return Math.floor(Math.random() * 4) + 1;
         }
 
         async function handleSpin() {
@@ -612,6 +492,7 @@
             if (balance < betOptions[betIdx]) { alert("餘額不足"); isAuto = false; updateUI(); return; }
 
             balance -= betOptions[betIdx];
+            missCount++; // 每次普通旋轉，未胡局數+1
             isSpinning = true;
             document.getElementById('winText').innerText = "0";
             document.getElementById('spinBtn').disabled = true;
@@ -673,6 +554,8 @@
         }
 
         async function triggerSpecialMode() {
+            missCount = 0; // 進入特殊模式，局數歸零
+            updateUI();
             const wrapper = document.getElementById('mainWrapper');
             wrapper.classList.add('shake');
             if (!isMuted) {
@@ -724,9 +607,7 @@
 
             for (let r = 0; r < 8; r++) {
                 for (let c = 0; c < 5; c++) {
-                    // 鎖定行也會跑動畫，並有機會出愛心
                     if (board[r][c].type === '❤️') continue;
-
                     const strip = document.getElementById(`strip-${r}-${c}`);
                     strip.innerHTML = '';
                     for (let i = 0; i < 8; i++) {
@@ -735,27 +616,21 @@
                         temp.innerText = symbols[Math.floor(Math.random() * symbols.length)];
                         strip.appendChild(temp);
                     }
-
                     const delay = Math.random() * 250;
                     const duration = 600 + Math.random() * 300;
-
                     const p = new Promise(resolve => {
                         setTimeout(() => {
                             strip.style.transition = `transform ${duration}ms cubic-bezier(0.45, 0.05, 0.55, 0.95)`;
                             strip.style.transform = `translateY(-${8 * tileSize}px)`;
-
                             setTimeout(() => {
-                                // 階梯式出現率判定
-                                let chance = 0.05; // 基礎層 5%
-                                if (r === 2 || r === 3) chance = 0.02;  // 中層 2%
+                                let chance = 0.05; 
+                                if (r === 2 || r === 3) chance = 0.02;  
                                 if (r === 0 || r === 1) chance = 0.005;
-
                                 if (Math.random() < chance) {
                                     board[r][c] = { type: '❤️', val: getHeartMultiplier(r) };
                                 } else {
                                     board[r][c] = { type: symbols[Math.floor(Math.random() * symbols.length)], val: 0 };
                                 }
-
                                 renderTile(r, c);
                                 strip.style.transition = 'none';
                                 strip.style.transform = 'translateY(0)';
@@ -825,7 +700,9 @@
         function updateUI() {
             document.getElementById('balanceText').innerText = Math.floor(balance).toLocaleString();
             document.getElementById('betText').innerText = betOptions[betIdx];
+            document.getElementById('missCountText').innerText = missCount;
             localStorage.setItem('sicbo_balance', balance);
+            localStorage.setItem('heart_miss_count', missCount);
         }
 
         function changeBet(dir) { if (isSpinning) return; betIdx = Math.max(0, Math.min(betOptions.length - 1, betIdx + dir)); updateUI(); }
