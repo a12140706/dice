@@ -68,6 +68,22 @@
   .history-sidebar { width: 140px; background: rgba(0,0,0,0.4); border-radius: 8px; display: flex; flex-direction: column; padding: 5px; overflow: hidden; }
   #historyList { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
   .hist-item { display: flex; align-items: center; justify-content: space-between; padding: 4px 2px; font-size: 11px; border-bottom: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; }
+  
+  /* 未開圍骰顯示樣式 */
+  .miss-box {
+    margin-top: 5px;
+    background: #000;
+    border: 1px solid #444;
+    border-radius: 5px;
+    padding: 5px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .miss-box div:first-child { font-size: 10px; color: #aaa; }
+  .miss-box #missCountText { font-size: 18px; font-weight: bold; color: #ff4757; }
+  .miss-flash { animation: flashRed 0.5s 3; }
+  @keyframes flashRed { 50% { color: #fff; transform: scale(1.2); } }
+
   .full-hist-btn { background: var(--gold); border: none; color: #000; font-weight: bold; font-size: 12px; padding: 8px; border-radius: 5px; margin-top: 5px; cursor: pointer; }
 
   #fullHistoryOverlay { background: rgba(0,0,0,0.98); flex-direction: column; padding: 20px; }
@@ -119,16 +135,6 @@
 </div>
 <div id="winAmountEffect"></div>
 
-<div id="depositModal" class="modal">
-  <div class="modal-content">
-    <div style="font-size:24px; color:var(--gold); margin-bottom:20px; font-weight:bold;">💸刷阿記的卡儲值</div>
-    <button class="deposit-btn" style="background:#3b82f6; color:#fff;" onclick="handleDeposit(1000)">儲值 1,000</button>
-    <button class="deposit-btn" style="background:#a855f7; color:#fff;" onclick="handleDeposit(5000)">儲值 5,000</button>
-    <button class="deposit-btn" style="background:#f59e0b; color:#fff;" onclick="handleDeposit(10000)">儲值 10,000</button>
-    <button class="deposit-btn" style="background:#444; color:#ccc;" onclick="closeModal('depositModal')">算了</button>
-  </div>
-</div>
-
 <div id="fullHistoryOverlay" class="modal">
   <div style="color:var(--gold); font-size:24px; margin-bottom:15px; font-weight:bold;">完整紀錄</div>
   <div id="fullHistoryList"></div>
@@ -138,7 +144,7 @@
 <div class="topbar">
   <div class="sound-toggle" onclick="toggleMute()" id="soundIcon">🔊</div>
   <div class="sound-toggle" onclick="cycleBGM()" id="bgmBtn">🎵 音樂 1</div>
-  <div class="balance-box">💰 <span id="balanceText">0</span></div>
+  <div class="balance-box">💎 <span id="balanceText">0</span></div>
   <marquee style="flex:1; color:var(--gold);">轉橫的玩，有問題找阿記</marquee>
   <a href="index.html" style="text-decoration:none;">
   <button style="background:none; border:1px solid #777; color:#ccc; border-radius:5px; padding:5px 12px; font-size:14px;">🏠 回大廳</button>
@@ -149,6 +155,10 @@
   <div class="history-sidebar">
     <div style="text-align:center; color:var(--gold); font-size:12px; font-weight:bold; padding-bottom:5px; border-bottom:1px solid #444;">開骰紀錄</div>
     <div id="historyList"></div>
+    <div class="miss-box">
+        <div>未開圍骰局數</div>
+        <div id="missCountText">0</div>
+    </div>
     <button class="full-hist-btn" onclick="openModal('fullHistoryOverlay')">完整紀錄 ▽</button>
   </div>
   <div class="table-container">
@@ -177,10 +187,10 @@
     <div id="totalBetText">0</div>
   </div>
   <div class="chip-area">
-    <div class="chip-btn" style="background:#3b82f6;" onclick="selectChip(10, this)">10</div>
-    <div class="chip-btn active" style="background:#a855f7;" onclick="selectChip(50, this)">50</div>
-    <div class="chip-btn" style="background:#ef4444;" onclick="selectChip(100, this)">100</div>
-    <div class="chip-btn" style="background:var(--green);" onclick="selectChip(600, this)">600</div>
+    <div class="chip-btn" style="background:#3b82f6;" onclick="selectChip(100, this)">100</div>
+    <div class="chip-btn active" style="background:#a855f7;" onclick="selectChip(600, this)">600</div>
+    <div class="chip-btn" style="background:#ef4444;" onclick="selectChip(1000, this)">1000</div>
+    <div class="chip-btn" style="background:var(--green);" onclick="selectChip(6000, this)">6000</div>
   </div>
   <div class="btn-area-row">
     <button class="btn-ui" id="btnAuto" onclick="toggleAuto()">自動玩</button>
@@ -190,18 +200,19 @@
 </div>
 
 <script>
-// --- 核心變數 (不改動名稱以確保紀錄讀取) ---
+// --- 核心變數 ---
 let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
 let historyData = JSON.parse(localStorage.getItem('sicbo_history')) || [];
-let currentChip = 5, totalBet = 0, betData = {}, lastRoundBets = {}, isAutoPlaying = false;
+let missCount = parseInt(localStorage.getItem('sicbo_triple_miss')) || 0; // 新增未胡局數紀錄
+let currentChip = 50, totalBet = 0, betData = {}, lastRoundBets = {}, isAutoPlaying = false;
 let isMuted = false; 
 let currentBgmIdx = 1; 
 const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
 let timeLeft = 20; 
-const BET_LIMIT = 600; const DICE_CHARS = ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
+const BET_LIMIT = 6000; const DICE_CHARS = ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
 const SUM_ODDS = { 4:69, 17:69, 5:34, 16:34, 6:20, 15:20, 7:13, 14:13, 8:9, 13:9, 9:7.4, 10:6.8, 11:6.8, 12:7.4 };
 
-// --- 聲音邏輯 (優化手機解鎖) ---
+// --- 聲音邏輯 ---
 function playSound(id) { 
   if (!isMuted) { 
     const s = document.getElementById(id); 
@@ -231,21 +242,17 @@ function cycleBGM() {
     }
 }
 
-// 徹底修正爆音問題的解鎖補丁
 document.addEventListener('click', function unlock() {
     const audios = document.querySelectorAll('audio');
     audios.forEach(a => { 
-        // 暫時靜音解鎖，防止 pause() 失敗時聲音噴出
         const oldMuted = a.muted;
         a.muted = true; 
         a.play().then(() => { 
             a.pause(); 
             a.currentTime = 0;
-            a.muted = oldMuted; // 恢復狀態
+            a.muted = oldMuted;
         }).catch(() => {}); 
     });
-    
-    // 延遲一點點再啟動第一首，避開指令堆疊
     setTimeout(() => {
         if(currentBgmIdx === 1) {
             const firstBgm = document.getElementById('bgm1');
@@ -256,22 +263,23 @@ document.addEventListener('click', function unlock() {
             }
         }
     }, 150);
-
     document.removeEventListener('click', unlock);
 }, { once: true });
 
-// --- 遊戲與儲存邏輯 (保持原有結構) ---
-function handleDeposit(amt) { balance += amt; playSound('sndCash'); updateUI(); saveData(); closeModal('depositModal'); }
+// --- 遊戲與儲存邏輯 ---
+function handleDeposit(amt) { balance += amt; playSound('sndCash'); updateUI(); saveData(); }
 function saveData() { 
     if(historyData.length > 500) historyData = historyData.slice(0, 500);
     localStorage.setItem('sicbo_balance', balance); 
     localStorage.setItem('sicbo_history', JSON.stringify(historyData)); 
+    localStorage.setItem('sicbo_triple_miss', missCount); // 儲存未開圍骰紀錄
 }
 function openModal(id) { document.getElementById(id).style.display = 'flex'; if(id==='fullHistoryOverlay') renderFullHistory(); }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
 function initTable() {
   const sRow = document.getElementById('sumRow'), gRow = document.getElementById('singleRow');
+  sRow.innerHTML = ''; gRow.innerHTML = '';
   for(let i=4; i<=17; i++) sRow.innerHTML += `<div class="bet-cell" onclick="placeBet('sum_${i}')">${i}<div class="odds-label">1:${SUM_ODDS[i]}</div><div id="chip-sum_${i}"></div></div>`;
   for(let i=1; i<=6; i++) gRow.innerHTML += `<div class="bet-cell" onclick="placeBet('single_${i}')">${i}<div class="odds-label">1:1</div><div id="chip-single_${i}"></div></div>`;
   updateUI(); renderHistory();
@@ -281,7 +289,7 @@ function selectChip(val, el) { currentChip = val; document.querySelectorAll('.ch
 
 function placeBet(key) {
   if (timeLeft <= 3) return;
-  if (balance < currentChip) { openModal('depositModal'); return; }
+  if (balance < currentChip) { alert("餘額不足"); return; }
   let cur = betData[key] || 0; 
   if (cur + currentChip > BET_LIMIT) return;
   betData[key] = cur + currentChip; balance -= currentChip; totalBet += currentChip;
@@ -299,6 +307,7 @@ function renderChip(key) {
 function updateUI() {
   document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString();
   document.getElementById('totalBetText').textContent = totalBet.toLocaleString();
+  document.getElementById('missCountText').textContent = missCount;
 }
 
 function showWinEffect(amount, isTriple) {
@@ -314,6 +323,16 @@ function simulateRound() {
   playSound('sndDice');
   let d = [Math.floor(Math.random()*6)+1, Math.floor(Math.random()*6)+1, Math.floor(Math.random()*6)+1];
   const sum = d[0]+d[1]+d[2], isTriple = (d[0]===d[1] && d[1]===d[2]);
+  
+  // 未開局數邏輯
+  if (isTriple) {
+      missCount = 0;
+      document.getElementById('missCountText').classList.add('miss-flash');
+      setTimeout(() => document.getElementById('missCountText').classList.remove('miss-flash'), 2000);
+  } else {
+      missCount++;
+  }
+
   const center = document.getElementById('centerDisplay');
   document.getElementById('bigDiceIcons').textContent = `${DICE_CHARS[d[0]]} ${DICE_CHARS[d[1]]} ${DICE_CHARS[d[2]]}`;
   document.getElementById('bigResultText').textContent = `${sum} 點 - ${isTriple ? "圍骰" : (sum >= 11 ? "大" : "小")}`;
@@ -370,17 +389,6 @@ setInterval(() => {
 }, 1000);
 
 initTable();
-document.addEventListener('click', function(e) {
-    let target = e.target.closest('a') || e.target.closest('button');
-    // 如果是首頁按鈕或任何連結
-    if (target && (target.tagName === 'A' || target.getAttribute('onclick')?.includes('location.href'))) {
-        let href = target.href || target.getAttribute('onclick').match(/'([^']+)'/)[1];
-        if (href && href !== '#' && !href.startsWith('javascript')) {
-            e.preventDefault();
-            window.location.href = href;
-        }
-    }
-}, false);
 </script>
 </body>
 </html>
