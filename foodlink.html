@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport"
         content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover" />
-    <title>甜點連連看 - 完整功能版</title>
+    <title>連連看</title>
     <style>
         :root {
             --table-green: #0a5c32;
@@ -91,17 +91,26 @@
         .floating-score { position: absolute; font-weight: bold; font-size: 24px; pointer-events: none; z-index: 600; animation: floatUp 0.7s forwards; text-shadow: 0 2px 4px #000; }
         @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-60px); opacity: 0; } }
 
+        /* 新增：連擊文字樣式 */
+        .combo-text {
+            position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
+            color: var(--gold); font-size: 24px; font-weight: bold; font-style: italic;
+            text-shadow: 2px 2px 0px #000; pointer-events: none; z-index: 700;
+            animation: comboPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes comboPop { 0% { transform: translateX(-50%) scale(0.5); opacity: 0; } 100% { transform: translateX(-50%) scale(1); opacity: 1; } }
+
         .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9); z-index: 2000; display: none; align-items: center; justify-content: center; flex-direction: column; }
     </style>
 </head>
 
 <body>
-    <div class="portrait-tip">請橫置手機</div>
+    <div class="portrait-tip">請橫著玩</div>
     
     <div class="topbar">
         <a href="index.html" style="text-decoration:none;">
-    <button style="background:none; border:1px solid #777; color:#ccc; border-radius:5px; padding:5px 12px; font-size:14px; font-weight:bold;">🏠 回大廳</button>
-  </a>
+            <button style="background:none; border:1px solid #777; color:#ccc; border-radius:5px; padding:5px 12px; font-size:14px; font-weight:bold;">🏠 回大廳</button>
+        </a>
         <div class="btn-tool" onclick="toggleMute()" id="soundIcon">🔊</div>
         <div class="btn-tool" onclick="cycleBGM()" id="bgmBtn">🎵 音樂 1</div>
         <select id="layerSelect" onchange="initMap()">
@@ -111,13 +120,16 @@
         </select>
         <div class="btn-tool btn-gravity" onclick="toggleGravityMode()" id="gravBtn">🌌 重力: 關</div>
         <div class="info-box">🏆 最高紀錄<br><span id="highScoreText" style="color:var(--gold)">0</span></div>
-        <div class="info-box">💰 金幣<br><span id="balanceText">0</span></div>
+        <div class="info-box">💎 <br><span id="balanceText">0</span></div>
         <div style="flex:1;"></div>
         <button class="btn-tool" onclick="initMap()" style="background:var(--gold); color:#000; font-weight:bold;">重新開始</button>
     </div>
 
     <div class="main-layout">
-        <div id="game-board"><canvas id="line-canvas"></canvas></div>
+        <div id="game-board">
+            <canvas id="line-canvas"></canvas>
+            <div id="combo-container"></div>
+        </div>
     </div>
 
     <div id="settle-screen" class="modal">
@@ -143,6 +155,11 @@
         let isMuted = false, currentBgmIdx = 1, isGravityEnabled = false;
         const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
 
+        // 新增：連擊相關變數
+        let comboCount = 0;
+        let lastMatchTime = 0;
+        const COMBO_TIMEOUT = 2000; // 2秒內要連擊
+
         function playSound(id) { if (!isMuted) { const s = document.getElementById(id); if (s) { s.currentTime = 0; s.play().catch(()=>{}); } } }
         function toggleMute() { isMuted = !isMuted; document.getElementById('soundIcon').textContent = isMuted ? '🔇' : '🔊'; }
         
@@ -157,7 +174,6 @@
             }
         }
 
-        // 連線失敗音效 (模擬嗶聲)
         function playFailSound() {
             if (isMuted) return;
             try {
@@ -182,6 +198,7 @@
         function initMap() {
             const layers = parseInt(document.getElementById('layerSelect').value);
             score = 0; tilesLeft = ROWS * COLS * layers;
+            comboCount = 0; // 重置連擊
             updateUI();
             let pool = [];
             for (let i = 0; i < (tilesLeft / 2); i++) {
@@ -196,11 +213,17 @@
                 for (let r = 0; r < ROWS; r++) {
                     boardData[l][r] = [];
                     for (let c = 0; c < COLS; c++) { 
-                        boardData[l][r][c] = { ...pool.pop(), cleared: false, id: `t-${l}-${r}-${c}` }; 
+                        let item = pool.pop();
+                        if (l > 0 && boardData[l-1][r][c].char === item.char) {
+                            pool.unshift(item);
+                            item = pool.pop();
+                        }
+                        boardData[l][r][c] = { ...item, cleared: false, id: `t-${l}-${r}-${c}` }; 
                     }
                 }
             }
             renderBoard(true);
+            setTimeout(checkDeadlock, 1000);
         }
 
         function renderBoard(fullRedraw = false) {
@@ -234,6 +257,63 @@
             }
         }
 
+        function checkDeadlock() {
+            if (tilesLeft === 0) return;
+            const layers = parseInt(document.getElementById('layerSelect').value);
+            let available = [];
+            for (let l = 0; l < layers; l++) {
+                for (let r = 0; r < ROWS; r++) {
+                    for (let c = 0; c < COLS; c++) {
+                        if (boardData[l][r][c].cleared) continue;
+                        let isCovered = false;
+                        for (let ul = l + 1; ul < layers; ul++) { if (!boardData[ul][r][c].cleared) { isCovered = true; break; } }
+                        if (!isCovered) available.push({ l, r, c, char: boardData[l][r][c].char });
+                    }
+                }
+            }
+            let hasMove = false;
+            for (let i = 0; i < available.length; i++) {
+                for (let j = i + 1; j < available.length; j++) {
+                    if (available[i].char === available[j].char) {
+                        if (getPath(available[i].r, available[i].c, available[j].r, available[j].c)) {
+                            hasMove = true; break;
+                        }
+                    }
+                }
+                if (hasMove) break;
+            }
+            if (!hasMove) {
+                alert("目前無可消除，自動重新洗牌");
+                shuffleBoard();
+            }
+        }
+
+        function shuffleBoard() {
+            let pool = [];
+            const layers = parseInt(document.getElementById('layerSelect').value);
+            for (let l = 0; l < layers; l++) {
+                for (let r = 0; r < ROWS; r++) {
+                    for (let c = 0; c < COLS; c++) {
+                        if (!boardData[l][r][c].cleared) pool.push({ char: boardData[l][r][c].char, style: boardData[l][r][c].style });
+                    }
+                }
+            }
+            pool.sort(() => Math.random() - 0.5);
+            for (let l = 0; l < layers; l++) {
+                for (let r = 0; r < ROWS; r++) {
+                    for (let c = 0; c < COLS; c++) {
+                        if (!boardData[l][r][c].cleared) {
+                            const item = pool.pop();
+                            boardData[l][r][c].char = item.char;
+                            boardData[l][r][c].style = item.style;
+                        }
+                    }
+                }
+            }
+            renderBoard(true);
+            setTimeout(checkDeadlock, 1000);
+        }
+
         function handleSelect(l, r, c, el) {
             if (firstSelect && firstSelect.id === el.id) { el.classList.remove('selected'); firstSelect = null; return; }
             if (!firstSelect) {
@@ -245,21 +325,56 @@
             const path = (p1.char === boardData[l][r][c].char) ? getPath(p1.r, p1.c, r, c) : null;
 
             if (path) {
+                // 連擊邏輯判定
+                const now = Date.now();
+                if (now - lastMatchTime < COMBO_TIMEOUT) {
+                    comboCount++;
+                } else {
+                    comboCount = 1;
+                }
+                lastMatchTime = now;
+
                 const el1 = document.getElementById(p1.id);
                 el1.classList.add('eliminating'); el.classList.add('eliminating');
                 drawConnectLine(path);
-                let bonus = boardData[l][r][c].style === 'heart-gold' ? 50 : (boardData[l][r][c].style === 'heart-purple' ? 20 : 10);
-                showFloatingScore(p1.r, p1.c, bonus); showFloatingScore(r, c, bonus);
+
+                // 計算得分：基礎分 * 連擊加成 (每連擊一次 +10%)
+                let baseBonus = boardData[l][r][c].style === 'heart-gold' ? 50 : (boardData[l][r][c].style === 'heart-purple' ? 20 : 10);
+                let comboMult = 1 + (comboCount - 1) * 0.1;
+                let finalBonus = Math.floor(baseBonus * comboMult);
+
+                showFloatingScore(p1.r, p1.c, finalBonus); 
+                showFloatingScore(r, c, finalBonus);
+                if (comboCount > 1) showComboUI(comboCount);
+
                 boardData[p1.l][p1.r][p1.c].cleared = true; boardData[l][r][c].cleared = true;
-                score += bonus; tilesLeft -= 2;
+                score += (finalBonus * 2); 
+                tilesLeft -= 2;
                 playSound('sndChip'); firstSelect = null;
-                setTimeout(() => { if (isGravityEnabled) applyGravityEffect(); renderBoard(); if (tilesLeft === 0) showSettle(); }, 250);
+                
+                setTimeout(() => { 
+                    if (isGravityEnabled) applyGravityEffect(); 
+                    renderBoard(); 
+                    if (tilesLeft === 0) showSettle(); 
+                    else checkDeadlock();
+                }, 250);
             } else {
-                playFailSound(); // 失敗音效在此觸發
+                playFailSound();
                 document.getElementById(p1.id)?.classList.remove('selected');
                 el.classList.add('selected');
                 firstSelect = { l, r, c, id: el.id, char: boardData[l][r][c].char };
             }
+        }
+
+        // 新增：顯示連擊 UI
+        function showComboUI(count) {
+            const container = document.getElementById('combo-container');
+            container.innerHTML = "";
+            const div = document.createElement('div');
+            div.className = 'combo-text';
+            div.innerText = `${count} COMBO!`;
+            container.appendChild(div);
+            setTimeout(() => { if(div) div.remove(); }, 800);
         }
 
         function getPath(r1, c1, r2, c2) {
@@ -335,7 +450,7 @@
             msg += `-------------------\n`;
             msg += `層數倍率：x${layerMult}\n`;
             if(isGravityEnabled) msg += `重力倍率：x1.5\n`;
-            msg += `結算金幣：+${finalReward} 💰`;
+            msg += `結算獲得：+${finalReward} 💎`;
 
             document.getElementById('reward-text').innerText = msg;
             document.getElementById('settle-screen').style.display = 'flex';
