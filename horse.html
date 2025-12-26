@@ -45,10 +45,24 @@
   .horse {
     position: absolute; left: 10px; font-size: 40px; transition: left 0.1s linear;
     z-index: 2; display: flex; justify-content: center; align-items: center;
+    border-radius: 50%;
   }
   .horse-body { transform: scaleX(-1); }
 
+  /* 下注馬匹高亮 */
+  .horse.my-horse {
+    filter: drop-shadow(0 0 10px var(--gold)) drop-shadow(0 0 20px #f1c40f);
+    z-index: 100;
+  }
+  .horse.my-horse::before {
+    content: '★'; position: absolute; top: -25px; color: var(--gold); font-size: 18px;
+    animation: starRotate 1s infinite linear;
+  }
+  @keyframes starRotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
   .horse.fatigued { filter: drop-shadow(0 0 5px red); animation: blink 0.3s infinite; }
+  .horse.my-horse.fatigued { filter: drop-shadow(0 0 10px var(--gold)) drop-shadow(0 0 5px red); }
+
   @keyframes blink { 50% { opacity: 0.6; } }
   
   .status-pop {
@@ -85,10 +99,11 @@
   .chip {
     width: 45px; height: 45px; border-radius: 50%; border: 2px dashed #fff;
     display: flex; align-items: center; justify-content: center;
-    font-size: 14px; font-weight: bold; background: #444; color: #fff; transition: 0.2s;
+    font-size: 13px; font-weight: bold; background: #444; color: #fff; transition: 0.2s;
+    cursor: pointer;
   }
   .chip.active { transform: scale(1.15); border-style: solid; border-color: var(--gold); background: #856404; box-shadow: 0 0 10px var(--gold); }
-  .chip-100 { background: #2980b9; }
+  .chip-allin { background: #e67e22; border-color: #f39c12; } 
   .chip-500 { background: #8e44ad; }
   .chip-1000 { background: #c0392b; }
   .chip-5000 { background: #2bc049; }
@@ -145,7 +160,7 @@
 <div class="topbar">
   <div class="sound-btn" onclick="toggleMute()" id="muteBtn">🔊</div>
   <div class="sound-btn" onclick="cycleBGM()" id="bgmBtn">🎵 音樂 1</div>
-  <div class="balance-box">💰 <span id="balanceText">0</span></div>
+  <div class="balance-box">💎 <span id="balanceText">0</span></div>
   <marquee style="flex:1; color:var(--gold); font-size: 12px;">有問題找阿記</marquee>
   <a href="index.html" style="text-decoration:none;">
     <button style="background:none; border:1px solid #777; color:#ccc; border-radius:5px; padding:5px 12px; font-size:14px; font-weight:bold;">🏠 回大廳</button>
@@ -167,10 +182,10 @@
 
 <div class="control-section">
   <div class="chip-area">
-    <div class="chip chip-100 active" id="chip100" onclick="setBet(1000)">1K</div>
     <div class="chip chip-500" id="chip500" onclick="setBet(5000)">5K</div>
     <div class="chip chip-1000" id="chip1000" onclick="setBet(10000)">10K</div>
     <div class="chip chip-5000" id="chip5000" onclick="setBet(50000)">50K</div>
+    <div class="chip chip-allin active" id="chipAllIn" onclick="setBet('allin')">梭哈</div>
   </div>
   <div class="bet-grid" id="betGrid"></div>
   <div class="action-area">
@@ -187,7 +202,7 @@
 <script>
 let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
 let selectedHorse = null;
-let currentBet = 100;
+let currentBet = 'allin'; 
 let isRacing = false;
 let isMuted = false;
 let horseStats = []; 
@@ -277,9 +292,14 @@ document.addEventListener('touchstart', unlockAudio);
 function setBet(amt) {
   if (isRacing) return;
   currentBet = amt;
+  
   document.querySelectorAll('.chip').forEach(c => {
-    let val = parseInt(c.innerText.replace('K','000'));
-    c.classList.toggle('active', val === amt);
+    if (amt === 'allin') {
+        c.classList.toggle('active', c.id === 'chipAllIn');
+    } else {
+        let val = parseInt(c.innerText.replace('K','000'));
+        c.classList.toggle('active', val === amt);
+    }
   });
 }
 
@@ -292,17 +312,17 @@ function refreshOdds() {
       <button class="bet-btn ${selectedHorse === i ? 'active' : ''}" onclick="selectHorse(${i})">
         ${i} 號
         <span>賠率 1:${s.odds}</span>
-        <small>速${s.speed} 爆⚡${s.burst} 耐🍖${s.stamina}</small>
+        <small>速💨${s.speed} 爆⚡${s.burst} 耐🍖${s.stamina}</small>
       </button>
     `;
   }
 }
 
 function generateNewOdds() {
-  let totalFieldScore = 0;
-  let scores = [];
+  let totalFieldPower = 0;
+  let rawScores = [];
   
-  // 1. 定義命運模板 (保持不變)
+  // 速度與爆發模板 (固定強弱分佈)
   let templates = [
     {min: 4, max: 5}, {min: 3, max: 5}, {min: 2, max: 4}, 
     {min: 2, max: 4}, {min: 1, max: 3}, {min: 1, max: 2}
@@ -313,40 +333,40 @@ function generateNewOdds() {
     let t = templates[i-1];
     let speed = Math.floor(Math.random() * (t.max - t.min + 1)) + t.min;
     let burst = Math.floor(Math.random() * (t.max - t.min + 1)) + t.min;
-    let stamina = Math.floor(Math.random() * (t.max - t.min + 1)) + t.min;
     
-    // 【權重加重計算】：讓 5 分與 1 分的差距從 5 倍變成 20 倍以上
-    let pSpeed = Math.pow(speed, 2);    // 5級=25, 2級=4
-    let pBurst = Math.pow(burst, 2.2);  // 5級≈34.5, 2級≈4.6 (爆發力最值錢)
-    let pStamina = Math.pow(stamina, 1.5); // 5級≈11.2, 2級≈2.8
+    // 耐力隨機 1-5
+    let stamina = Math.floor(Math.random() * 5) + 1; 
 
-    // 最終戰鬥力分數
-    let power = (pSpeed * 2) + (pBurst * 5) + (pStamina * 2);
-    
-    scores.push({ id: i, speed, burst, stamina, power });
-    totalFieldScore += power;
+    // 【修改處】調整權重公式：速度與爆發權重極大化，耐力權重調低
+    // 使用更高次方來拉開強弱馬的實力差距，從而壓低強馬賠率
+    let pSpeed = Math.pow(speed, 3.5);  // 速度重要性增加
+    let pBurst = Math.pow(burst, 3.8);  // 爆發重要性增加
+    let pStamina = Math.pow(stamina, 1.2); // 耐力影響力顯著下調
+
+    let power = pSpeed + pBurst + pStamina;
+    rawScores.push({ id: i, speed, burst, stamina, power });
+    totalFieldPower += power;
   }
 
-  // 2. 根據相對強度分配賠率
-  scores.forEach(s => {
-    let powerShare = s.power / totalFieldScore;
+  rawScores.forEach(s => {
+    let powerShare = s.power / totalFieldPower;
+    // 賠率計算：使用較低的返還率(0.85)來計算基礎賠率
+    let rawOdds = (1 / powerShare) * 0.85; 
     
-    // 賠率公式 (抽水係數 0.88 讓數字更像專業盤口)
-    let rawOdds = (1 / powerShare) * 0.88; 
-
-    // 加入微小隨機波動
-    let noise = (Math.random() * 0.4 - 0.2);
-    let finalOdds = parseFloat((rawOdds + noise).toFixed(1));
-
-    // 3. 賠率邊界限制
-    if (finalOdds < 1.1) finalOdds = 1.1; 
-    
-    // 如果是超級熱門馬 (佔比超過 40%)，確保賠率落在 1.2~1.8
-    if (powerShare > 0.4 && finalOdds > 1.8) {
-        finalOdds = parseFloat((1.2 + Math.random() * 0.6).toFixed(1));
+    // 【修改處】強制壓低熱門馬賠率
+    if (powerShare > 0.3) {
+        // 如果是超級強馬，賠率鎖定在 1.1~1.5 之間
+        rawOdds = 1.1 + (Math.random() * 0.4);
+    } else if (powerShare > 0.2) {
+        // 次熱門馬，賠率鎖定在 1.6~2.5 之間
+        rawOdds = 1.6 + (Math.random() * 0.9);
     }
 
-    // 弱馬賠率天花板
+    // 加入隨機微調
+    let finalOdds = parseFloat(rawOdds.toFixed(1));
+
+    // 邊界檢查
+    if (finalOdds < 1.1) finalOdds = 1.1; 
     if (finalOdds > 99.0) finalOdds = 99.0;
 
     horseStats[s.id] = { 
@@ -380,12 +400,19 @@ function startRace() {
     if (selectedHorse === null) showMsg("請先選擇馬匹");
     return;
   }
-  if (balance < currentBet) { showMsg("餘額不足"); return; }
 
-  balance -= currentBet;
+  let finalBetAmount = (currentBet === 'allin') ? balance : currentBet;
+
+  if (balance <= 0) { showMsg("你已經沒錢了"); return; }
+  if (balance < finalBetAmount) { showMsg("餘額不足"); return; }
+
+  balance -= finalBetAmount;
   updateUI();
   isRacing = true;
   document.getElementById('goBtn').disabled = true;
+
+  const myHorseEl = document.getElementById('h' + selectedHorse);
+  myHorseEl.classList.add('my-horse');
   
   if(!isMuted && isAudioUnlocked) {
       const raceSnd = document.getElementById('sndRace');
@@ -409,36 +436,30 @@ function startRace() {
   const timer = setInterval(() => {
     let finished = false;
     horses.forEach(h => {
-      // 1. 狀態判定（優先判斷是否力竭，不改文字）
       if (h.pos > trackWidth * 0.85 && !h.hasChecked) {
           h.hasChecked = true;
           if (Math.random() < (6 - h.stamina) * 0.12) {
               h.isFatigued = true;
-              spawnStatus(h.el, "力竭!!", "tired"); // 維持妳的文字
+              spawnStatus(h.el, "力竭!!", "tired"); 
               h.el.classList.add('fatigued');
           }
       }
 
-      // 2. 爆發判定（維持妳的次數與機率邏輯）
       let dashBonus = 0;
       if (!h.isFatigued && h.dashCount < h.maxDashes) {
           if (Math.random() < (0.01 + h.burst * 0.008)) {
               h.dashCount++;
-              // 採用妳要的：下限不同、上限一致
               let minStep = 5 + (h.burst * 5); 
               dashBonus = minStep + (Math.random() * (45 - minStep)); 
-              spawnStatus(h.el, h.burst >= 4 ? "衝刺!!" : "加速", "dash"); // 維持妳的文字
+              spawnStatus(h.el, h.burst >= 4 ? "大衝刺!!" : "小加速", "dash"); 
           }
       }
 
-      // 3. 數值計算（維持妳的倍率與公式）
-      let fatigueFactor = h.isFatigued ? 0.3 : 1.0; // 維持妳原本的 0.3
-      let baseSpeedValue = 1.1 + (h.speed * 0.2);
-      
+      let fatigueFactor = h.isFatigued ? 0.3 : 1.0; 
+      let baseSpeedValue = 1.1 + (h.speed * 0.15);
       let baseStep = (baseSpeedValue * fatigueFactor + (Math.random() * 4.0)) * 0.5;
-      let step = baseStep + (dashBonus * 0.22); // 維持妳原本的 0.22
+      let step = baseStep + (dashBonus * 0.22); 
       
-      // 4. 執行移動
       h.pos += step;
       h.el.style.left = h.pos + 'px';
       
@@ -448,24 +469,24 @@ function startRace() {
       if (h.pos >= trackWidth && !finished) {
         finished = true;
         clearInterval(timer);
-        finishRace(h.id);
+        finishRace(h.id, finalBetAmount);
       }
     });
   }, 50);
 }
 
-function finishRace(winnerId) {
+function finishRace(winnerId, betPlaced) {
   setTimeout(() => {
     if (selectedHorse === winnerId) {
-      let winAmt = Math.floor(currentBet * horseStats[winnerId].odds);
+      let winAmt = Math.floor(betPlaced * horseStats[winnerId].odds);
       balance += winAmt;
-      showMsg(`🎊 ${winnerId}號獲勝 🎊<br>贏得 $${winAmt.toLocaleString()}`);
+      showMsg(`🎊 ${winnerId}號獲勝 🎊<br>贏得 $${winAmt.toLocaleString()} 💎`);
       if(!isMuted && isAudioUnlocked) {
           const winSnd = document.getElementById('sndWin');
           winSnd.muted = false; winSnd.play().catch(()=>{});
       }
     } else {
-      showMsg(`${winnerId}號獲勝<br>再接再厲！`);
+      showMsg(`${winnerId}號獲勝<br>`);
     }
     
     setTimeout(() => {
@@ -486,7 +507,7 @@ function horsesReset() {
   for(let i=1; i<=6; i++) {
     const el = document.getElementById('h'+i);
     el.style.left = '10px';
-    el.classList.remove('running', 'fatigued');
+    el.classList.remove('running', 'fatigued', 'my-horse');
   }
 }
 
