@@ -86,11 +86,21 @@
   @keyframes vanish { to { transform: scale(1.4); opacity: 0; } }
 
   .bottom-panel { background: #000; padding: 12px; width: 100%; }
+  
+  /* 更新後的顯示區佈局 */
+  .display-row { display: flex; gap: 10px; margin-bottom: 10px; }
   .win-display { 
-    background: #001a1a; color: var(--gold); text-align: center; 
+    flex: 2; background: #001a1a; color: var(--gold); text-align: center; 
     padding: 8px; border-radius: 8px; font-weight: bold; 
-    border: 1px solid #004d40; font-size: 20px; margin-bottom: 10px;
+    border: 1px solid #004d40; font-size: 20px;
   }
+  .rounds-counter {
+    flex: 1; background: #222; color: #aaa; text-align: center;
+    padding: 8px; border-radius: 8px; border: 1px solid #444;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .rounds-counter span { color: #fff; font-size: 18px; font-weight: bold; }
+
   .control-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 
   .spin-btn { 
@@ -112,10 +122,8 @@
     text-align: center; border: 1px solid #444; height: 55px;
     display: flex; flex-direction: column; justify-content: center;
   }
-  /* 消除時的金色背景 */
-.mj-tile.gold-bg { background: var(--gold) !important; box-shadow: 0 0 15px var(--gold); border: 2px solid #fff; }
+  .mj-tile.gold-bg { background: var(--gold) !important; box-shadow: 0 0 15px var(--gold); border: 2px solid #fff; }
 
-/* 胡啦提示視窗 */
 #huOverlay { 
   position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
   background: rgba(211, 47, 47, 0.9); color: white; padding: 20px 40px;
@@ -131,6 +139,8 @@
 </head>
 <body id="mainBody">
 
+<div id="huOverlay">胡啦！進入免費模式</div>
+
 <div id="multOverlay">
   <div style="color:white; font-size: 18px; margin-bottom: 10px;">本局倍率</div>
   <div class="mult-box" id="rollingMult" style="font-size: 80px; color: var(--gold); font-weight: bold;">?</div>
@@ -139,7 +149,7 @@
 <div class="topbar">
   <div class="audio-ctrl" onclick="toggleMute()" id="muteBtn">🔊</div>
   <div class="audio-ctrl" onclick="cycleBGM()" id="bgmBtn">🎵 音樂1</div>
-  <div class="balance-box" id="balanceBox">💰 <span id="balanceText">0</span></div>
+  <div class="balance-box" id="balanceBox">💎 <span id="balanceText">0</span></div>
   <marquee style="flex:1; color:var(--gold); font-size: 11px;">有問題再說，例如又不會停下</marquee>
   <a href="index.html" style="text-decoration:none;"><button class="audio-ctrl">🏠 回大廳</button></a>
 </div>
@@ -157,7 +167,13 @@
 </div>
 
 <div class="bottom-panel">
-  <div class="win-display">WIN: <span id="sessionWinText">0</span></div>
+  <div class="display-row">
+    <div class="win-display">WIN: <span id="sessionWinText">0</span></div>
+    <div class="rounds-counter">
+        <div style="font-size: 9px;">未開:</div>
+        <span id="roundsSinceFreeText">0</span>
+    </div>
+  </div>
   <div class="control-row">
     <div class="bet-box">
       <div style="font-size: 10px; color: #888;">BET</div>
@@ -178,12 +194,14 @@
 <audio id="sndSpin" src="https://assets.mixkit.co/active_storage/sfx/2014/2014-preview.mp3" preload="auto"></audio>
 <audio id="sndMatch" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="auto"></audio>
 <audio id="sndBell" src="https://assets.mixkit.co/active_storage/sfx/1070/1070-preview.mp3" preload="auto"></audio>
+
 <script>
 let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
+let roundsSinceFree = parseInt(localStorage.getItem('mahjong_rounds_since_free')) || 0; // 新增：未胡局數紀錄
 let isSpinning = false, isAuto = false, combo = 0, winThisSpin = 0;
 let freeSpins = 0, currentMultiplier = 1;
 let currentBetIdx = 2, currentBGM = 1, isMuted = false, hasInteracted = false;
-const betOptions = [500, 1000, 3000, 5000, 10000,50000];
+const betOptions = [500, 1000, 3000, 5000, 10000, 50000];
 const baseIcons = ['🀎','🀚','🀝','🀑','🀔','🀄','🀅','⬜'];
 const tileColor = { '🀎':'mj-red','🀚':'mj-blue','🀝':'mj-blue','🀑':'mj-green','🀔':'mj-green','🀄':'mj-red','🀅':'mj-green','⬜':'mj-blue','胡':'tile-hu','元寶':'tile-wild' };
 let board = [];
@@ -225,35 +243,33 @@ function updateUI() {
   document.getElementById('sessionWinText').textContent = Math.floor(winThisSpin).toLocaleString();
   document.getElementById('freeSpinsLeft').textContent = freeSpins;
   document.getElementById('currentMult').textContent = `X${currentMultiplier}`;
+  document.getElementById('roundsSinceFreeText').textContent = roundsSinceFree; // 更新未胡局數
+  
   for (let i=1; i<=10; i++) {
     const s = document.getElementById(`step-${i}`);
     if(s) s.classList.toggle('active', combo >= i);
   }
   document.getElementById('mainBody').classList.toggle('free-game-active', freeSpins > 0 || document.getElementById('mainBody').classList.contains('in-free'));
   document.getElementById('spinBtn').disabled = isSpinning;
+  
   localStorage.setItem('sicbo_balance', balance);
+  localStorage.setItem('mahjong_rounds_since_free', roundsSinceFree); // 存入未胡局數
 }
 
-// ⭐ 阿記，這裡修好了：傳入當前是否在免費模式
 function getRandomTile(r, c) {
     const isFree = freeSpins > 0 || document.getElementById('mainBody').classList.contains('in-free');
     const rand = Math.random();
     
-    // 1. 特殊符號 (固定機率，不計入 4 個限制)
     if (rand < 0.04) return '元寶'; 
     if (!isFree && rand > 0.985) return '胡';
 
-    // 2. 定義候選牌
     const wildCandidates = ['⬜', '🀄', '🀅'];
     const junkTiles = baseIcons.filter(icon => !wildCandidates.includes(icon));
 
-    // 3. 計算機率 (使用你調好的 0.55 和 0.8)
     let wildChance = 0.55; 
     wildChance *= Math.pow(0.8, combo); 
     if (c !== undefined && c < 2) wildChance *= 0.4;
 
-    // --- 新增：計數邏輯 ---
-    // 數一下目前版面上各個圖案的數量
     let counts = {};
     board.forEach(row => {
         row.forEach(icon => {
@@ -263,18 +279,13 @@ function getRandomTile(r, c) {
 
     let pick;
     if (Math.random() < wildChance) {
-        // 嘗試抽特色牌
         pick = wildCandidates[Math.floor(Math.random() * wildCandidates.length)];
     } else {
-        // 嘗試抽雜牌
         pick = junkTiles[Math.floor(Math.random() * junkTiles.length)];
     }
 
-    // 關鍵：如果抽中的牌已經超過 4 個，就隨機換一張
-    // 如果這張牌已經 >= 4，我們就從所有牌中選一張數量最少的換給它
     if (counts[pick] >= 4) {
         let allPossible = [...wildCandidates, ...junkTiles];
-        // 找出目前版面上數量最少的牌
         pick = allPossible.reduce((a, b) => (counts[a] || 0) < (counts[b] || 0) ? a : b);
     }
 
@@ -305,6 +316,7 @@ async function startSpin() {
   } else {
     if(balance < betOptions[currentBetIdx]) { isSpinning=false; isAuto=false; alert("餘額不足"); return; }
     balance -= betOptions[currentBetIdx];
+    roundsSinceFree++; // 普通模式：局數 +1
     currentMultiplier = 1;
   }
   
@@ -316,7 +328,7 @@ async function startSpin() {
       const t = document.getElementById(`tile-${r}-${c}`);
       t.style.opacity = '0';
       t.classList.remove('tile-drop', 'eliminating');
-      board[r][c] = getRandomTile(r, c); // 裡面已經會判斷模式了
+      board[r][c] = getRandomTile(r, c); 
       
       setTimeout(() => {
         drawTile(r, c);
@@ -392,31 +404,26 @@ async function checkMatches() {
     let win = toEliminate.size * basePrice * currentMultiplier;
     winThisSpin += win; balance += win; updateUI();
 
-    // 1. 先把背景變金色
     toEliminate.forEach(pos => {
       const [r, c] = pos.split(',').map(Number);
       const el = document.getElementById(`tile-${r}-${c}`);
-      el.classList.add('gold-bg'); // 只加金色
+      el.classList.add('gold-bg'); 
     });
 
-    // 2. 稍微停 150 毫秒，讓眼睛看到金色
     await new Promise(r => setTimeout(r, 150));
 
-    // 3. 再開始跑消除動畫 (放大並變透明)
     toEliminate.forEach(pos => {
       const [r, c] = pos.split(',').map(Number);
       const el = document.getElementById(`tile-${r}-${c}`);
       el.classList.add('eliminating'); 
     });
 
-    // 4. 原本的等待動畫結束時間 (原本是 300，維持不變)
     await new Promise(r => setTimeout(r, 300));
     
     toEliminate.forEach(pos => {
       const [r, c] = pos.split(',').map(Number);
       board[r][c] = getRandomTile(r, c);
       const el = document.getElementById(`tile-${r}-${c}`);
-      // 記得移除 gold-bg 才能讓新下來的麻將變回白色
       el.classList.remove('eliminating', 'tile-drop', 'gold-bg'); 
       void el.offsetWidth; 
       drawTile(r, c);
@@ -424,17 +431,14 @@ async function checkMatches() {
     });
     setTimeout(checkMatches, 500);
   } else {
-    // 沒有連線了，結算本局
     let huCount = 0;
     board.forEach(row => row.forEach(icon => { if(icon === '胡') huCount++; }));
     
-    // ⭐ 功能補回：進入免費模式的流暢邏輯
     if (huCount >= 3 && freeSpins === 0 && !document.getElementById('mainBody').classList.contains('in-free')) {
       
-      // 1. 播放鈴鐺音效 (記得 HTML 要補上 sndBell)
+      roundsSinceFree = 0; // 重大時刻：歸零
       if(!isMuted && document.getElementById('sndBell')) document.getElementById('sndBell').play();
       
-      // 2. 顯示胡啦提示 (記得 HTML 要補上 huOverlay)
       const huEl = document.getElementById('huOverlay');
       if (huEl) huEl.style.display = 'block';
       
@@ -442,44 +446,28 @@ async function checkMatches() {
       isSpinning = false; 
       updateUI();
       
-      // 3. 1秒後自動隱藏提示，且根據「自動玩」開關決定是否開轉
       setTimeout(() => {
         if (huEl) huEl.style.display = 'none';
-        if (isAuto) {
-          startSpin();
-        }
+        if (isAuto) { startSpin(); }
       }, 1000);
 
     } else {
       isSpinning = false; 
-      
-      // 如果免費遊戲次數用完了，且目前在免費模式背景中
       if (freeSpins === 0 && document.getElementById('mainBody').classList.contains('in-free')) {
           document.getElementById('mainBody').classList.remove('in-free');
-          currentMultiplier = 1; // 倍率重置
+          currentMultiplier = 1; 
       }
-
       updateUI();
-      
-      if (isAuto) {
-        setTimeout(startSpin, 1000);
-      }
+      if (isAuto) { setTimeout(startSpin, 1000); }
     }
   }
 }
 
 function changeBet(dir) {
   if (!isSpinning && freeSpins === 0) {
-    // 取得新的索引位置
     let nextIdx = currentBetIdx + dir;
-    
-    // 限制範圍：如果小於 0 就等於 0，如果大於最大索引就停在最大
-    if (nextIdx < 0) {
-      nextIdx = 0;
-    } else if (nextIdx >= betOptions.length) {
-      nextIdx = betOptions.length - 1;
-    }
-    
+    if (nextIdx < 0) nextIdx = 0;
+    else if (nextIdx >= betOptions.length) nextIdx = betOptions.length - 1;
     currentBetIdx = nextIdx;
     updateUI();
   }
