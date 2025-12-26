@@ -28,7 +28,7 @@
 
   /* UI 框架 */
   .top-bar {
-    width: 100%; height: 50px; background: linear-gradient(#4a0404, #2a0202);
+    width: 100%; height: 60px; background: linear-gradient(#4a0404, #2a0202);
     display: flex; justify-content: space-between; align-items: center; padding: 0 15px; border-bottom: 2px solid #5c0a0a;
   }
   .sound-controls { display: flex; gap: 8px; }
@@ -36,7 +36,15 @@
     background: rgba(255,255,255,0.1); border: 1px solid var(--btn-gold);
     color: #fff; padding: 4px 8px; border-radius: 8px; font-size: 12px; cursor: pointer;
   }
-  .balance-display { background: rgba(0,0,0,0.4); border: 1px solid var(--btn-gold); border-radius: 10px; padding: 5px 12px; font-weight: bold; color: var(--btn-gold); font-size: 16px; }
+  
+  .stats-group { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .balance-display { background: rgba(0,0,0,0.4); border: 1px solid var(--btn-gold); border-radius: 8px; padding: 3px 10px; font-weight: bold; color: var(--btn-gold); font-size: 16px; }
+  
+  /* 未開局數顯示樣式 */
+  .miss-display { font-size: 10px; color: #aaa; background: rgba(0,0,0,0.6); padding: 2px 8px; border-radius: 4px; border: 1px solid #444; }
+  .miss-display span { color: #ff4757; font-weight: bold; font-size: 12px; margin-left: 4px; }
+  .miss-flash { animation: flashRed 0.5s 3; }
+  @keyframes flashRed { 50% { color: #fff; transform: scale(1.1); } }
 
   .game-area { display: flex; flex-direction: column; justify-content: center; align-items: center; flex: 1; width: var(--game-width); position: relative; }
   .gem-grid {
@@ -46,7 +54,6 @@
   }
   .grid-cell { background: #2b1f0d; display: flex; justify-content: center; align-items: center; font-size: clamp(20px, 5vw, 40px); border-radius: 3px; position: relative; }
   
-  /* 動畫優化：使用 will-change 提高效能 */
   .gem { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; font-size: inherit; will-change: transform, opacity; }
   .gem.dropping { transform: translateY(-100%); transition: none; }
   .gem.dropped { transform: translateY(0); transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
@@ -74,13 +81,14 @@
     <button class="sound-btn" onclick="toggleMute()" id="muteBtn">🔊</button>
     <button class="sound-btn" onclick="cycleBGM()" id="bgmBtn">🎵 音樂 1</button>
   </div>
-  <div class="balance-display">💰 <span id="balanceText">----</span></div>
+  <div class="stats-group">
+    <div class="balance-display">💎 <span id="balanceText">----</span></div>
+  </div>
   <a href="index.html" style="text-decoration:none;"><button class="sound-btn">🏠 回大廳</button></a>
 </div>
 
 <div class="game-area">
-  <div class="gem-grid" id="gemGrid">
-    </div>
+  <div class="gem-grid" id="gemGrid"></div>
   <div class="message-box" id="messageBox"></div>
 </div>
 
@@ -93,23 +101,26 @@
   <button id="autoBtn" class="auto-btn" onclick="toggleAuto()">自動玩</button>
   <button class="spin-btn" id="spinBtn" onclick="startSpin()">拉吧</button>
   <div class="win-display">WIN: <span id="winAmount">0</span></div>
+  <div class="miss-display">未開：<span id="missCountText">0</span> 局</div>
 </div>
 
 <audio id="sndSpin" src="https://assets.mixkit.co/active_storage/sfx/2045/2045-preview.mp3" preload="none"></audio>
 <audio id="sndWin" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="none"></audio>
 <audio id="sndExplode" src="https://assets.mixkit.co/active_storage/sfx/1461/1461-preview.mp3" preload="none"></audio>
-<audio id="sndSuperWin" src="https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3" preload="none"></audio>
 <audio id="bgm1" src="background-music-434612.mp3" loop preload="none"></audio>
 <audio id="bgm2" src="soft-background-music-427252.mp3" loop preload="none"></audio>
 <audio id="bgm3" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" loop preload="none"></audio>
 <audio id="bgmCrazy" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" loop preload="none"></audio>
 
 <script>
-// --- 1. 立即優先執行：恢復餘額 (不等待任何加載) ---
+// --- 核心紀錄讀取 ---
 let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 10000;
-document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString();
+let missCount = parseInt(localStorage.getItem('gem_crazy_miss')) || 0; // 新增局數紀錄
 
-// --- 2. 初始化格網結構 (不等待寶石掉落) ---
+document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString();
+document.getElementById('missCountText').textContent = missCount;
+
+// 初始化格網
 const gridEl = document.getElementById('gemGrid');
 const GRID_SIZE = 5;
 for(let r=0; r<GRID_SIZE; r++) {
@@ -120,7 +131,6 @@ for(let r=0; r<GRID_SIZE; r++) {
     }
 }
 
-// --- 其餘變數 ---
 let currentBet = 50;
 let lastWin = 0;
 let isSpinning = false;
@@ -145,9 +155,9 @@ function updateUI() {
     document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString();
     document.getElementById('winAmount').textContent = Math.floor(lastWin).toLocaleString();
     document.getElementById('betDisplay').textContent = "$" + currentBet;
+    document.getElementById('missCountText').textContent = missCount;
 }
 
-// --- 音樂系統優化 ---
 function stopAllBGM() {
     bgmList.forEach(id => { if(id) { const a = document.getElementById(id); a.pause(); a.currentTime = 0; } });
     const crazy = document.getElementById('bgmCrazy');
@@ -190,11 +200,15 @@ function unlockAudio() {
 document.addEventListener('click', unlockAudio);
 document.addEventListener('touchstart', unlockAudio);
 
-// --- 遊戲邏輯 (維持穩定性) ---
 async function startSpin() {
     if (isSpinning) return;
     if (!isCrazyMode && balance < currentBet) { showMessage("牟吉阿"); if (isAuto) toggleAuto(); return; }
-    if (!isCrazyMode) balance -= currentBet;
+    
+    if (!isCrazyMode) {
+        balance -= currentBet;
+        missCount++; // 一般拉動時局數增加
+    }
+
     isSpinning = true;
     document.getElementById('spinBtn').disabled = true;
     let totalWinInThisTurn = 0;
@@ -207,13 +221,20 @@ async function startSpin() {
         while (stillGoing) {
             let currentBombs = 0;
             grid.forEach(row => row.forEach(cell => { if(cell === '💣') currentBombs++; }));
+            
+            // 觸發瘋狂模式
             if (currentBombs >= 3 && !isCrazyMode) {
                 isCrazyMode = true;
+                missCount = 0; // 進入瘋狂模式局數歸零
+                document.getElementById('missCountText').classList.add('miss-flash');
+                setTimeout(() => document.getElementById('missCountText').classList.remove('miss-flash'), 2000);
+                
                 document.body.style.background = "#4a0404";
                 showMessage("🚨 進入瘋狂模式！ 🚨");
                 stopAllBGM();
                 if (!isMuted && isAudioUnlocked) { const cb = document.getElementById('bgmCrazy'); cb.volume = 0.4; cb.play().catch(()=>{}); }
             }
+
             let matches = findMatches();
             if (matches.length > 0) {
                 let win = calculateWin(matches);
@@ -232,6 +253,7 @@ async function startSpin() {
             }
             stillGoing = false;
         }
+        
         let finalBombs = 0;
         grid.forEach(row => row.forEach(cell => { if(cell === '💣') finalBombs++; }));
         if (isCrazyMode && finalBombs === 0) {
@@ -245,6 +267,7 @@ async function startSpin() {
     } finally {
         isSpinning = false; document.getElementById('spinBtn').disabled = false;
         localStorage.setItem('sicbo_balance', balance);
+        localStorage.setItem('gem_crazy_miss', missCount); // 儲存局數
         updateUI();
         if (isCrazyMode || isAuto) setTimeout(() => { if (!isSpinning) startSpin(); }, 800);
     }
@@ -265,7 +288,6 @@ async function fillGrid(isInitial) {
                 const cell = document.getElementById(`cell-${r}-${c}`);
                 cell.innerHTML = `<div class="gem dropping">${type}</div>`;
                 const gem = cell.firstChild;
-                // 強制回流觸發動畫
                 gem.offsetWidth; 
                 gem.classList.remove('dropping'); gem.classList.add('dropped');
             }
@@ -351,7 +373,6 @@ function showMessage(msg) { const b = document.getElementById('messageBox'); b.i
 function toggleAuto() { isAuto = !isAuto; document.getElementById('autoBtn').classList.toggle('auto-active', isAuto); if(isAuto && !isSpinning) startSpin(); }
 function changeBet(dir) { if (isSpinning) return; currentBetIdx = Math.max(0, Math.min(betOptions.length - 1, currentBetIdx + dir)); updateUI(); }
 
-// --- 3. 最後才掉寶石 (不再等待全部加載) ---
 updateUI();
 fillGrid(true);
 </script>
