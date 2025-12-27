@@ -337,30 +337,48 @@ function manualShuffle() {
     playSound('sndChip');
 }
         function shuffleBoard() {
-            let pool = [];
-            const layers = parseInt(document.getElementById('layerSelect').value);
-            for (let l = 0; l < layers; l++) {
-                for (let r = 0; r < ROWS; r++) {
-                    for (let c = 0; c < COLS; c++) {
-                        if (!boardData[l][r][c].cleared) pool.push({ char: boardData[l][r][c].char, style: boardData[l][r][c].style });
-                    }
+    let pool = [];
+    const layers = parseInt(document.getElementById('layerSelect').value);
+    
+    // 1. 收集所有剩餘方塊的圖案與樣式
+    for (let l = 0; l < layers; l++) {
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                if (!boardData[l][r][c].cleared) {
+                    pool.push({ char: boardData[l][r][c].char, style: boardData[l][r][c].style });
+                    boardData[l][r][c].cleared = true; // 先全部清空標記
                 }
             }
-            pool.sort(() => Math.random() - 0.5);
-            for (let l = 0; l < layers; l++) {
-                for (let r = 0; r < ROWS; r++) {
-                    for (let c = 0; c < COLS; c++) {
-                        if (!boardData[l][r][c].cleared) {
-                            const item = pool.pop();
-                            boardData[l][r][c].char = item.char;
-                            boardData[l][r][c].style = item.style;
-                        }
-                    }
-                }
-            }
-            renderBoard(true);
-            setTimeout(checkDeadlock, 1000);
         }
+    }
+
+    if (pool.length === 0) return;
+    pool.sort(() => Math.random() - 0.5);
+
+    // 2. 收集所有可用的座標 (l, r, c) 並打亂
+    let availableSpots = [];
+    for (let l = 0; l < layers; l++) {
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                availableSpots.push({ l, r, c });
+            }
+        }
+    }
+    availableSpots.sort(() => Math.random() - 0.5);
+
+    // 3. 將方塊重新填入隨機的位置，確保「空間打散」
+    pool.forEach((item, index) => {
+        const spot = availableSpots[index];
+        boardData[spot.l][spot.r][spot.c] = {
+            ...item,
+            cleared: false,
+            id: `t-${spot.l}-${spot.r}-${spot.c}`
+        };
+    });
+
+    renderBoard(true); // 強制重新繪製所有 DOM
+    setTimeout(checkDeadlock, 1000);
+}
 
         function handleSelect(l, r, c, el) {
             if (firstSelect && firstSelect.id === el.id) { el.classList.remove('selected'); firstSelect = null; return; }
