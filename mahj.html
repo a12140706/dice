@@ -706,7 +706,7 @@
       const isFree = freeSpins > 0 || document.getElementById('mainBody').classList.contains('in-free');
 
       // 1. 特殊牌處理 (元寶與胡)
-      if (Math.random() < 0.04) return '元寶';
+      if (Math.random() < 0.05) return '元寶';
       if (!isFree && Math.random() > 0.985) return '胡';
 
       // 2. 取得當前盤面計數與 Wild 名單
@@ -714,22 +714,22 @@
       const wildCandidates = ['⬜', '🀄', '🀅'];
 
       // 3. *** 動態機率控制 ***
-      let wildChance = 0.55;
+      let wildChance = 0.6;
 
-      if (combo >= 10) {
+      if (combo >= 12) {
         // 連擊 10 次以上：極限機率，僅剩 0.5% (千分之五)
         // 這會讓連擊極難延續，但理論上仍有可能
         wildChance = 0.02;
-      } else if (combo >= 7) {
+      } else if (combo >= 8) {
         // 連擊 7-9 次：低機率 (1.5%)
         wildChance = 0.06;
       } else {
         // 正常衰減：使用 0.6 次方，5連擊時約 4.3%
-        wildChance = wildChance * Math.pow(0.75, combo);
+        wildChance = wildChance * Math.pow(0.85, combo);
       }
 
       // 前兩行機率額外減半 (防止最容易觸發連線的位置產出 Wild)
-      if (c !== undefined && c < 2) wildChance *= 0.8;
+      if (c !== undefined && c < 2) wildChance *= 0.9;
 
       // 4. 準備候選清單 (過濾已達 4 張的牌)
       let availableIcons = baseIcons.filter(icon => (currentCounts[icon] || 0) < 4);
@@ -894,7 +894,7 @@
       if (toEliminate.size > 0) {
         combo++;
         if (!isMuted) document.getElementById('sndMatch').play();
-        let win = toEliminate.size * (betOptions[currentBetIdx] / 30) * currentMultiplier;
+        let win = toEliminate.size * (betOptions[currentBetIdx] / 15) * currentMultiplier;
 
         if (document.getElementById('mainBody').classList.contains('in-free')) {
           freeGameTotalWin += win;
