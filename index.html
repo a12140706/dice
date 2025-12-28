@@ -1,482 +1,1183 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
+
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
-<title>阿記三缺一</title>
-<link rel="manifest" href="manifest.json">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="阿記娛樂城">
+  <meta charset="utf-8" />
+  <meta name="viewport"
+    content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover" />
+  <title>阿記三缺一</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="阿記娛樂城">
 
-<meta name="mobile-web-app-capable" content="yes">
-<style>
-  :root { 
-    --gold: #ffd86b; 
-    --dark-red: #4a0404;
-    --card-bg: rgba(255, 255, 255, 0.1);
-    --red: #ff4757;
-  }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  
-  body { 
-    margin: 0; padding: 0;
-    background: radial-gradient(circle at center, #2a0202, #050000);
-    color: #fff; font-family: "Microsoft JhengHei", Arial;
-    height: 100dvh; width: 100vw;
-    display: flex; flex-direction: column;
-    overflow: hidden; 
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-  }
-/* 通用項目樣式 */
-.rank-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 15px;
-  margin-bottom: 10px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: transform 0.2s;
+  <meta name="mobile-web-app-capable" content="yes">
+  <style>
+    :root {
+      --gold: #ffd86b;
+      --dark-red: #4a0404;
+      --card-bg: rgba(255, 255, 255, 0.1);
+      --red: #ff4757;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: radial-gradient(circle at center, #2a0202, #050000);
+      color: #fff;
+      font-family: "Microsoft JhengHei", Arial;
+      height: 100dvh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+#welcomeUserContainer.rank-item {
+    display: inline-block;
+    padding: 5px 15px;
+    margin-top: 5px;
+    border-radius: 20px;
+}
+    /* 通用項目樣式 */
+    .rank-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 15px;
+      margin-bottom: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: transform 0.2s;
+    }
+
+    /* --- 第一名：呼吸燈 + 金屬流光特效 --- */
+    .rank-top1 {
+      background: linear-gradient(110deg, #2a2200 20%, #6b5500 50%, #2a2200 80%);
+      background-size: 200% auto;
+      border: 1px solid #ffd700 !important;
+      animation:
+        shine-gold 3s linear infinite,
+        breathing-glow 2s ease-in-out infinite;
+      /* 呼吸燈關鍵 */
+      transform: scale(1.02);
+      /* 稍微放大顯示尊榮感 */
+    }
+
+    .rank-top1 .rank-name {
+      color: #fff;
+      font-weight: bold;
+      text-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
+    }
+
+    .rank-top1 .rank-num {
+      font-size: 1.4rem;
+    }
+
+    .buy-btn {
+      background: #3b82f6;
+      border: none;
+      color: white;
+      padding: 5px 15px;
+      border-radius: 5px;
+      font-weight: bold;
+    }
+
+    .equip-btn {
+      background: #10b981;
+      border: none;
+      color: white;
+      padding: 5px 15px;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    /* 呼吸燈動畫：陰影與亮度的強弱變化 */
+    @keyframes breathing-glow {
+      0% {
+        box-shadow: 0 0 5px rgba(255, 215, 0, 0.3);
+        filter: brightness(1);
+      }
+
+      50% {
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.7);
+        filter: brightness(1.3);
+        /* 變亮 */
+      }
+
+      100% {
+        box-shadow: 0 0 5px rgba(255, 215, 0, 0.3);
+        filter: brightness(1);
+      }
+    }
+
+    /* 裝備按鈕樣式 */
+    .equip-btn {
+      background: #10b981;
+      border: none;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .buy-btn {
+      background: #3b82f6;
+      border: none;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 12px;
+    }
+/* 稱號基礎樣式 */
+.player-title {
+    font-weight: 900;
+    margin-right: 5px;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
 }
 
-/* --- 第一名：呼吸燈 + 金屬流光特效 --- */
-.rank-top1 {
-  background: linear-gradient(110deg, #2a2200 20%, #6b5500 50%, #2a2200 80%);
-  background-size: 200% auto;
-  border: 1px solid #ffd700 !important;
+/* 稱號等級色彩 */
+.t-green  { color: #2ecc71 !important; } /* 初級 */
+.t-blue   { color: #3498db !important; } /* 中級 */
+.t-purple { color: #9b59b6 !important; } /* 高級 */
+.t-orange { color: #e67e22 !important; } /* 傳奇 */
+.t-red    { color: #ff4757 !important; animation: title-glow 1s infinite alternate; } /* 神話 */
+
+@keyframes title-glow {
+    from { filter: drop-shadow(0 0 1px #ff4757); }
+    to { filter: drop-shadow(0 0 5px #ff4757); }
+}
+.welcome-msg {
+  position: relative;
+  overflow: hidden; /* 確保特效不會超出圓角邊框 */
+  z-index: 1;
+}
+
+/* --- 特效 1：極限獄火 (震動 + 熔岩流) --- */
+.welcome-msg, .rank-item {
+  position: relative !important;
+  overflow: hidden !important; /* 嚴格禁止內容溢出 */
+  contain: paint; /* 這是防止橫向捲軸的最強手段 */
+  z-index: 1;
+}
+
+/* --- 特效 1：獄火焚身 (修正震動，防止橫條) --- */
+.fx-fire {
+  /* 邊框改用漸層色，模擬發熱的金屬 */
+  border: 2px solid transparent !important;
+  background: 
+    linear-gradient(#2a0000, #2a0000) padding-box, /* 內容背景 */
+    linear-gradient(0deg, #ff4757, #ff9f43, #ff4757) border-box !important; /* 邊框火焰流 */
+  background-size: 100% 100%, 100% 300% !important;
+  color: #fff !important;
+  box-shadow: inset 0 0 15px #741b1b, 0 0 15px rgba(255, 71, 87, 0.5) !important;
+  text-shadow: 0 0 8px #ff4757, 0 0 15px #ff7e67 !important;
+  /* border-flow 讓邊框顏色竄動, fire-flicker 讓整體閃爍 */
   animation: 
-    shine-gold 3s linear infinite, 
-    breathing-glow 2s ease-in-out infinite; /* 呼吸燈關鍵 */
-  transform: scale(1.02); /* 稍微放大顯示尊榮感 */
+    fire-flicker 0.2s ease-in-out infinite alternate,
+    border-flow 1.5s linear infinite !important;
 }
 
-.rank-top1 .rank-name {
-  color: #fff;
-  font-weight: bold;
-  text-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
+.fx-fire::before {
+  content: "";
+  position: absolute;
+  bottom: 0; left: 0; width: 100%; height: 200%;
+  /* 模擬向上竄的火苗漸層 */
+  background: linear-gradient(0deg, 
+    transparent 0%, 
+    rgba(255, 69, 0, 0.4) 20%, 
+    rgba(255, 165, 0, 0.2) 50%, 
+    transparent 80%);
+  z-index: -1;
+  animation: fire-rise 1s linear infinite; /* 火苗向上竄動 */
+}
+/* --- 特效 2：雷霆霓虹 (強化霓虹感，取消描邊) --- */
+.fx-neon {
+  border: 2px solid #fff !important;
+  background: rgba(0, 0, 0, 0.9) !important;
+  color: #fff !important;
+  /* 設定初始發光 */
+  box-shadow: 
+    0 0 10px #fff,
+    0 0 20px #00d2ff,
+    0 0 40px #00d2ff !important;
+  /* 這裡的動畫結合了顏色循環與霓虹閃爍 */
+  animation: 
+    neon-flicker 2s infinite,
+    neon-rainbow 4s linear infinite !important;
 }
 
-.rank-top1 .rank-num {
-  font-size: 1.4rem;
+/* --- 特效 3：至尊皇金 (保持簡潔高級感) --- */
+.fx-gold {
+  border: 1px solid #ffd700 !important;
+  background-image: linear-gradient(110deg, #6b5500 0%, #ffd700 50%, #6b5500 100%) !important;
+  background-size: 200% auto !important;
+  color: #fff !important;
+  animation: shine-gold 3s linear infinite !important;
 }
 
-/* 呼吸燈動畫：陰影與亮度的強弱變化 */
-@keyframes breathing-glow {
-  0% {
-    box-shadow: 0 0 5px rgba(255, 215, 0, 0.3);
-    filter: brightness(1);
+/* --- 動畫修正定義 --- */
+@keyframes fire-pulse {
+  from { filter: brightness(1); box-shadow: 0 0 10px #ff4757; }
+  to { filter: brightness(1.5); box-shadow: 0 0 20px #ff4757; }
+}
+@keyframes fire-swirl {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.1); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+@keyframes border-flow {
+  0% { background-position: 0% 0%, 50% 100%; }
+  100% { background-position: 0% 0%, 50% -100%; }
+}
+
+/* 火舌向上升騰 */
+@keyframes fire-rise {
+  0% { transform: translateY(0%); opacity: 0.8; }
+  100% { transform: translateY(-50%); opacity: 0.4; }
+}
+@keyframes fire-flicker {
+  0% { filter: brightness(1); }
+  100% { filter: brightness(1.3); }
+}
+/* 霓虹描邊流動 */
+@keyframes neon-trace {
+  0% { clip-path: inset(0 70% 95% 0); }
+  25% { clip-path: inset(0 0 70% 95%); }
+  50% { clip-path: inset(95% 0 0 70%); }
+  75% { clip-path: inset(70% 95% 0 0); }
+  100% { clip-path: inset(0 70% 95% 0); }
+}
+
+@keyframes neon-rainbow {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+/* 霓虹：原本的閃爍效果 */
+@keyframes neon-flicker {
+  0%, 18%, 22%, 25%, 53%, 57%, 100% {
+    text-shadow: 0 0 10px #fff, 0 0 20px #00d2ff;
+    opacity: 1;
   }
-  50% {
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.7);
-    filter: brightness(1.3); /* 變亮 */
-  }
-  100% {
-    box-shadow: 0 0 5px rgba(255, 215, 0, 0.3);
-    filter: brightness(1);
+  20%, 24%, 55% {
+    text-shadow: none;
+    box-shadow: none;
+    opacity: 0.7;
   }
 }
 
-/* 金屬光澤流動動畫 */
 @keyframes shine-gold {
-  to {
-    background-position: 200% center;
-  }
+  to { background-position: 200% center; }
+}
+@keyframes rotate-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
-/* 第二、三名簡單漸層邊框 */
-.rank-top2 { border-left: 4px solid #c0c0c0; background: rgba(192, 192, 192, 0.1); }
-.rank-top3 { border-left: 4px solid #cd7f32; background: rgba(205, 127, 50, 0.1); }
+@keyframes void-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(0.97); } /* 稍微縮小模擬被吸入 */
+}
+@keyframes breathing-glow {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.4); }
+}
+/* --- 特效 4：絕對零度 (冰藍呼吸 + 結晶閃爍) --- */
+.fx-ice {
+  border: 1px solid #00f2fe !important;
+  background: linear-gradient(135deg, #005f73, #00d4ff) !important;
+  color: #fff !important;
+  text-shadow: 0 0 10px #7ed6ff !important;
+  box-shadow: 0 0 15px rgba(0, 242, 254, 0.5) !important;
+  animation: ice-shimmer 2s ease-in-out infinite alternate !important;
+}
+.fx-ice::before {
+  content: "❄";
+  position: absolute;
+  right: 5px; top: -5px; opacity: 0.3; font-size: 20px;
+  animation: rotate-slow 5s linear infinite;
+}
 
-.rank-info { display: flex; align-items: center; gap: 10px; }
-.rank-num { min-width: 25px; text-align: center; font-weight: bold; }
-.rank-bal { color: #f1c40f; font-weight: bold; }
-  .header {
-    height: 50px; flex-shrink: 0;
-    background: linear-gradient(to bottom, #5c0a0a, #2a0202);
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 15px; border-bottom: 2px solid var(--gold);
-    z-index: 100;
-  }
-  .logo { font-size: 18px; font-weight: 900; color: var(--gold); }
-  .balance-display { background: rgba(0,0,0,0.6); padding: 4px 12px; border-radius: 20px; border: 1px solid var(--gold); font-size: 15px; color: var(--gold); font-weight: bold; cursor: pointer; }
+/* --- 特效 5：深海雷鳴 (深藍背景 + 隨機閃電) --- */
+.fx-thunder {
+  border: 1px solid #4834d4 !important;
+  background: #060b28 !important;
+  color: #fff !important;
+  overflow: hidden;
+}
+.fx-thunder::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: white;
+  opacity: 0;
+  z-index: -1;
+  animation: lightning-strike 2s steps(1) infinite;
+}
 
-  .container {
-    flex: 1; display: flex; flex-direction: column;
-    padding: 10px; width: 100%; max-width: 800px; margin: 0 auto;
-    overflow: hidden;
-  }
+/* --- 特效 6：黑洞湮滅 (暗紫色邊框 + 空間扭曲感) --- */
+.fx-void {
+  border: 2px solid #2f3542 !important;
+  background: black !important;
+  color: #a55eea !important;
+  box-shadow: 0 0 20px #6c5ce7 !important;
+  animation: void-pulse 3s ease-in-out infinite !important;
+}
+.fx-void::before {
+  content: "";
+  position: absolute;
+  top: -50%; left: -50%; width: 200%; height: 200%;
+  background: conic-gradient(from 0deg, transparent, #6c5ce7, transparent);
+  animation: rotate-slow 3s linear infinite;
+  z-index: -1;
+  opacity: 0.4;
+}
 
-  .welcome-msg { font-size: 14px; color: #ccc; text-align: center; margin-bottom: 8px; }
+/* --- 新特效動畫定義 --- */
+@keyframes ice-shimmer {
+  from { filter: saturate(1) brightness(1); box-shadow: 0 0 5px #00f2fe; }
+  to { filter: saturate(1.5) brightness(1.2); box-shadow: 0 0 20px #00f2fe; }
+}
 
-  .game-grid {
-    flex: 1; display: grid;
-    grid-template-columns: repeat(3, 1fr); gap: 10px; 
-    align-content: start; overflow-y: auto; padding-bottom: 10px;
-  }
+@keyframes lightning-strike {
+  0%, 95%, 98% { opacity: 0; }
+  96%, 99% { opacity: 0.4; } /* 模擬雷雨閃電瞬間閃爍 */
+}
 
-  .game-card {
-    background: var(--card-bg); border: 1px solid #444; border-radius: 12px;
-    display: flex; flex-direction: column; text-decoration: none; color: inherit;
-    min-height: 85px; transition: transform 0.1s;
-  }
-  
-  .game-img { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 28px; }
-  .game-info { height: 28px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); border-radius: 0 0 12px 12px; }
-  .game-title { font-size: 12px; color: var(--gold); font-weight: bold; }
+@keyframes void-pulse {
+  0%, 100% { transform: scale(1); filter: blur(0px); }
+  50% { transform: scale(0.98); filter: blur(0.5px); }
+}
 
-  .deposit-area { width: 100%; display: flex; gap: 10px; flex-shrink: 0; padding: 10px 0; }
-  .btn-deposit { flex: 2; padding: 12px; border-radius: 12px; border: 2px solid var(--gold); background: linear-gradient(#ff4757, #b91c1c); color: #fff; font-size: 18px; font-weight: 900; }
-  .btn-rank { flex: 1; padding: 12px; border-radius: 12px; border: 2px solid var(--gold); background: linear-gradient(#f59e0b, #92400e); color: #fff; font-size: 15px; font-weight: 900; }
+@keyframes rotate-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+    /* 第二、三名簡單漸層邊框 */
+    .rank-top2 {
+      border-left: 4px solid #c0c0c0;
+      background: rgba(192, 192, 192, 0.1);
+    }
 
-  .footer { text-align: center; padding: 5px 0; font-size: 10px; color: #444; }
+    .rank-top3 {
+      border-left: 4px solid #cd7f32;
+      background: rgba(205, 127, 50, 0.1);
+    }
 
-  /* --- 排行榜側邊欄修正 --- */
-  #rankOverlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.7); display: none; z-index: 2999;
-  }
+    .rank-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
 
-  #rankSidebar {
-    position: fixed; top: 0; right: -100%; /* 初始隱藏在右側 */
-    width: 80%; max-width: 320px; height: 100%;
-    background: #1a0202; border-left: 2px solid var(--gold);
-    z-index: 3000; transition: 0.3s ease; 
-    display: flex; flex-direction: column; padding: 20px;
-  }
-  #rankSidebar.active { right: 0; } /* 啟動時拉回螢幕 */
+    .rank-num {
+      min-width: 25px;
+      text-align: center;
+      font-weight: bold;
+    }
 
-  .rank-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--gold); padding-bottom: 10px; }
-  .rank-list { flex: 1; overflow-y: auto; margin-top: 10px; }
-  .rank-item { display: flex; justify-content: space-between; padding: 12px 5px; border-bottom: 1px solid rgba(255,216,107,0.1); font-size: 14px; }
-  .rank-num { color: var(--gold); font-weight: bold; width: 25px; }
-  .rank-name { flex: 1; margin-left: 5px; }
-  .rank-bal { color: #fff; }
-  .close-rank { font-size: 30px; color: var(--gold); cursor: pointer; }
+    .rank-bal {
+      color: #f1c40f;
+      font-weight: bold;
+    }
 
-  /* 橫向模式調整 */
-  @media (orientation: landscape) {
-    .game-grid { grid-template-columns: repeat(5, 1fr); }
-    .game-card { min-height: 65px; }
-    .game-img { font-size: 22px; }
-  }
+    .header {
+      height: 50px;
+      flex-shrink: 0;
+      background: linear-gradient(to bottom, #5c0a0a, #2a0202);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 15px;
+      border-bottom: 2px solid var(--gold);
+      z-index: 100;
+    }
 
-  .modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 2000; }
-  .modal-content { background: #1a1a1a; border: 2px solid var(--gold); padding: 20px; border-radius: 20px; width: 85%; max-width: 320px; text-align: center; }
-  .modal-btn { display: block; width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: none; font-size: 16px; font-weight: bold; color: #fff; }
-</style>
+    .logo {
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--gold);
+    }
+
+    .balance-display {
+      background: rgba(0, 0, 0, 0.6);
+      padding: 4px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--gold);
+      font-size: 15px;
+      color: var(--gold);
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    .welcome-msg {
+      font-size: 14px;
+      color: #ccc;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .game-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      align-content: start;
+      overflow-y: auto;
+      padding-bottom: 10px;
+    }
+
+    .game-card {
+      background: var(--card-bg);
+      border: 1px solid #444;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      text-decoration: none;
+      color: inherit;
+      min-height: 85px;
+      transition: transform 0.1s;
+    }
+
+    .game-img {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+    }
+
+    .game-info {
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 0 0 12px 12px;
+    }
+
+    .game-title {
+      font-size: 12px;
+      color: var(--gold);
+      font-weight: bold;
+    }
+
+    .deposit-area {
+      width: 100%;
+      display: flex;
+      gap: 10px;
+      flex-shrink: 0;
+      padding: 10px 0;
+    }
+
+    .btn-deposit {
+      flex: 2;
+      padding: 12px;
+      border-radius: 12px;
+      border: 2px solid var(--gold);
+      background: linear-gradient(#ff4757, #b91c1c);
+      color: #fff;
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .btn-rank {
+      flex: 1;
+      padding: 12px;
+      border-radius: 12px;
+      border: 2px solid var(--gold);
+      background: linear-gradient(#f59e0b, #92400e);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 900;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 5px 0;
+      font-size: 10px;
+      color: #444;
+    }
+
+    /* --- 排行榜側邊欄修正 --- */
+    #rankOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      z-index: 2999;
+    }
+
+    #rankSidebar {
+      position: fixed;
+      top: 0;
+      right: -100%;
+      /* 初始隱藏在右側 */
+      max-width: 80%;
+      height: 100%;
+      background: #1a0202;
+      border-left: 2px solid var(--gold);
+      z-index: 3000;
+      transition: 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+    }
+
+    #rankSidebar.active {
+      right: 0;
+    }
+
+    /* 啟動時拉回螢幕 */
+
+    .rank-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--gold);
+      padding-bottom: 10px;
+    }
+
+    .rank-list {
+      flex: 1;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
+
+    .rank-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 5px;
+      border-bottom: 1px solid rgba(255, 216, 107, 0.1);
+      font-size: 14px;
+    }
+
+    .rank-num {
+      color: var(--gold);
+      font-weight: bold;
+      width: 25px;
+    }
+
+    .rank-name {
+      flex: 1;
+      margin-left: 5px;
+    }
+
+    .rank-bal {
+      color: #fff;
+    }
+
+    .close-rank {
+      font-size: 30px;
+      color: var(--gold);
+      cursor: pointer;
+    }
+
+    /* 橫向模式調整 */
+    @media (orientation: landscape) {
+      .game-grid {
+        grid-template-columns: repeat(5, 1fr);
+      }
+
+      .game-card {
+        min-height: 65px;
+      }
+
+      .game-img {
+        font-size: 22px;
+      }
+    }
+
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+
+    .modal-content {
+      background: #1a1a1a;
+      border: 2px solid var(--gold);
+      padding: 20px;
+      border-radius: 20px;
+      width: 85%;
+      max-width: 320px;
+      text-align: center;
+    }
+
+    .modal-btn {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border-radius: 10px;
+      border: none;
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+    }
+  </style>
 </head>
+
 <body>
 
-<div class="header">
-  <div class="logo">阿記三缺一</div>
-  <div class="balance-display" onclick="toggleRank()">💎 <span id="mainBalance">0</span></div>
-</div>
-<div>
-<marquee style="flex:1; color:var(--gold);">線上測試版</marquee>
+  <div class="header">
+    <div class="logo">阿記三缺一</div>
+    <div style="color:var(--gold); font-size:13px; cursor:pointer; text-decoration:underline;" onclick="openShop()">🏪商城
+    </div>
+    <div class="balance-display" onclick="toggleRank()">💎 <span id="mainBalance">0</span></div>
+  </div>
+  <div>
+    <marquee style="flex:1; color:var(--gold);">線上測試版</marquee>
+  </div>
+
+  <div class="container">
+    <div class="welcome-msg" id="welcomeUser">名稱</div>
+
+<div class="welcome-msg">
+    <span id="welcomeUserContainer">選擇遊戲</span>
 </div>
 
-<div class="container">
-  <div class="welcome-msg" id="welcomeUser">選擇遊戲</div>
-  
-  <div class="game-grid">
-    <a href="sicbo.html" class="game-card">
-      <div class="game-img" style="background: linear-gradient(45deg, #0a5c32, #084325);">🎲</div>
-      <div class="game-info">
-        <div class="game-title">骰寶</div>
-      </div>
-    </a>
+    <div class="game-grid">
+      <a href="sicbo.html" class="game-card">
+        <div class="game-img" style="background: linear-gradient(45deg, #0a5c32, #084325);">🎲</div>
+        <div class="game-info">
+          <div class="game-title">骰寶</div>
+        </div>
+      </a>
 
-    <a href="slot.html" class="game-card">
-      <div class="game-img" style="background: linear-gradient(45deg, #4a0404, #2a0202);">🎰</div>
-      <div class="game-info">
-        <div class="game-title">777拉霸機</div>
-      </div>
-    </a>
-    <a href="horse.html" class="game-card">
-      <div class="game-img" style="background: linear-gradient(45deg, #1e3a8a, #1e1b4b);">🐎</div>
-      <div class="game-info">
-        <div class="game-title">賽馬場</div>
-      </div>
-    </a>
-     <a href="gemslot.html" class="game-card">
-      <div class="game-img" style="background: linear-gradient(45deg, #5b8a1e, #d1f51e);">💎</div>
-      <div class="game-info">
-        <div class="game-title">寶石礦坑</div>
-      </div>
-    </a>
-    <a href="link.html" class="game-card">
-      <div class="game-img" style="background: linear-gradient(45deg, #0f3fc4, #12e7f6);">🐲</div>
-      <div class="game-info">
-        <div class="game-title">消消樂</div>
-      </div>
-    </a>
-    <a href="mahj.html" class="game-card">
-      <div class="game-img" style="background: linear-gradient(45deg, #e833a2, #d26019);">🀄</div>
-      <div class="game-info">
-        <div class="game-title">麻將消消樂</div>
-      </div>
-    </a>
+      <a href="slot.html" class="game-card">
+        <div class="game-img" style="background: linear-gradient(45deg, #4a0404, #2a0202);">🎰</div>
+        <div class="game-info">
+          <div class="game-title">777拉霸機</div>
+        </div>
+      </a>
+      <a href="horse.html" class="game-card">
+        <div class="game-img" style="background: linear-gradient(45deg, #1e3a8a, #1e1b4b);">🐎</div>
+        <div class="game-info">
+          <div class="game-title">賽馬場</div>
+        </div>
+      </a>
+      <a href="gemslot.html" class="game-card">
+        <div class="game-img" style="background: linear-gradient(45deg, #5b8a1e, #d1f51e);">💎</div>
+        <div class="game-info">
+          <div class="game-title">寶石礦坑</div>
+        </div>
+      </a>
+      <a href="link.html" class="game-card">
+        <div class="game-img" style="background: linear-gradient(45deg, #0f3fc4, #12e7f6);">🐲</div>
+        <div class="game-info">
+          <div class="game-title">消消樂</div>
+        </div>
+      </a>
+      <a href="mahj.html" class="game-card">
+        <div class="game-img" style="background: linear-gradient(45deg, #e833a2, #d26019);">🀄</div>
+        <div class="game-info">
+          <div class="game-title">麻將消消樂</div>
+        </div>
+      </a>
       <a href="heart.html" class="game-card">
-      <div class="game-img" style="background: linear-gradient(45deg, #fcb1df, #f5ac7f);">❤️</div>
-      <div class="game-info">
-        <div class="game-title">愛心</div>
+        <div class="game-img" style="background: linear-gradient(45deg, #fcb1df, #f5ac7f);">❤️</div>
+        <div class="game-info">
+          <div class="game-title">愛心</div>
+        </div>
+      </a>
+      <a href="foodlink.html" class="game-card">
+        <div class="game-img" style="background: linear-gradient(45deg, #f1c1c1, #56f19e);">🍰</div>
+        <div class="game-info">
+          <div class="game-title">連連看</div>
+        </div>
+      </a>
+      <a href="#" class="game-card">
+        <div class="game-img" style="background: linear-gradient(45deg, #312222, #bad7c7);">🧧</div>
+        <div class="game-info">
+          <div class="game-title">(暫無)未完成刮刮樂</div>
+        </div>
+      </a>
+    </div>
+
+    <div class="deposit-area">
+      <button class="btn-deposit" onclick="openModal()">💸 謀吉阿</button>
+      <button class="btn-rank" onclick="toggleRank()">🏆 排行</button>
+    </div>
+  </div>
+
+  <div class="footer">
+    &copy; 阿記娛樂城
+  </div>
+
+  <div id="rankOverlay" onclick="toggleRank()"></div>
+  <div id="rankSidebar">
+    <div class="rank-header">
+      <h2 style="color:var(--gold); margin:0;">💎排行榜</h2>
+      <span class="close-rank" onclick="toggleRank()">&times;</span>
+    </div>
+    <div class="rank-list" id="rankList">
+      <p style="text-align:center; color:#888;">載入中...</p>
+    </div>
+  </div>
+
+  <div id="depositModal" class="modal">
+    <div class="modal-content">
+      <h2 style="color:var(--gold); margin-bottom:15px; font-size: 22px;">刷阿記的卡</h2>
+      <button class="modal-btn" style="background:#3b82f6;" onclick="handleDeposit(10000)">儲值 10,000</button>
+      <button class="modal-btn" style="background:#a855f7;" onclick="handleDeposit(50000)">儲值 50,000</button>
+      <button class="modal-btn" style="background:#f59e0b;" onclick="handleDeposit(100000)">儲值 100,000</button>
+      <button class="modal-btn" style="background:#444; color:#ccc;" onclick="closeModal()">算了</button>
+    </div>
+  </div>
+  <div id="shopModal" class="modal">
+    <div class="modal-content" style="max-width: 380px; padding: 15px;">
+      <h2 style="color:var(--gold); margin-bottom:10px;">遊戲商城</h2>
+
+      <div style="display:flex; gap:5px; margin-bottom:15px;">
+        <button class="modal-btn" id="tabTitle" style="margin:0; background:var(--red);"
+          onclick="switchShop('title')">稱號</button>
+        <button class="modal-btn" id="tabEffect" style="margin:0; background:#444;"
+          onclick="switchShop('effect')">特效</button>
       </div>
-    </a>
-    <a href="foodlink.html" class="game-card">
-      <div class="game-img" style="background: linear-gradient(45deg, #f1c1c1, #56f19e);">🍰</div>
-      <div class="game-info">
-        <div class="game-title">連連看</div>
+
+      <div id="shopList" style="max-height: 300px; overflow-y: auto;">
       </div>
-    </a>
-    <a href="#" class="game-card">
-      <div class="game-img" style="background: linear-gradient(45deg, #312222, #bad7c7);">🧧</div>
-      <div class="game-info">
-        <div class="game-title">(暫無)未完成刮刮樂</div>
-      </div>
-    </a>
+
+      <button class="modal-btn" style="background:#222; margin-top:10px; border:1px solid #444;"
+        onclick="closeShop()">離開商城</button>
+    </div>
   </div>
 
-  <div class="deposit-area">
-    <button class="btn-deposit" onclick="openModal()">💸 謀吉阿</button>
-    <button class="btn-rank" onclick="toggleRank()">🏆 排行</button>
+  <div id="nameModal" class="modal">
+    <div class="modal-content">
+      <h2 style="color:var(--gold);">請輸入遊戲暱稱</h2>
+      <p style="color:#ccc; font-size:14px;">用於排行榜顯示</p>
+      <input type="text" id="nicknameInput" placeholder="最多8個字" maxlength="8">
+      <button class="modal-btn" style="background:var(--red);" onclick="saveNewPlayer()">進入遊戲</button>
+    </div>
   </div>
-</div>
 
-<div class="footer">
-  &copy; 阿記娛樂城
-</div>
+  <audio id="sndCash" src="https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3" preload="auto"></audio>
 
-<div id="rankOverlay" onclick="toggleRank()"></div>
-<div id="rankSidebar">
-  <div class="rank-header">
-    <h2 style="color:var(--gold); margin:0;">💎排行榜</h2>
-    <span class="close-rank" onclick="toggleRank()">&times;</span>
-  </div>
-  <div class="rank-list" id="rankList">
-    <p style="text-align:center; color:#888;">載入中...</p>
-  </div>
-</div>
+  <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore-compat.js"></script>
 
-<div id="depositModal" class="modal">
-  <div class="modal-content">
-    <h2 style="color:var(--gold); margin-bottom:15px; font-size: 22px;">刷阿記的卡</h2>
-    <button class="modal-btn" style="background:#3b82f6;" onclick="handleDeposit(10000)">儲值 10,000</button>
-    <button class="modal-btn" style="background:#a855f7;" onclick="handleDeposit(50000)">儲值 50,000</button>
-    <button class="modal-btn" style="background:#f59e0b;" onclick="handleDeposit(100000)">儲值 100,000</button>
-    <button class="modal-btn" style="background:#444; color:#ccc;" onclick="closeModal()">算了</button>
-  </div>
-</div>
+  <script>
+    const _k = ["AIzaSyDSRfVA", "uWCWCUd1NJop", "J6wHvsqsAM4UzJA"];
 
-<div id="nameModal" class="modal">
-  <div class="modal-content">
-    <h2 style="color:var(--gold);">請輸入遊戲暱稱</h2>
-    <p style="color:#ccc; font-size:14px;">用於排行榜顯示</p>
-    <input type="text" id="nicknameInput" placeholder="最多8個字" maxlength="8">
-    <button class="modal-btn" style="background:var(--red);" onclick="saveNewPlayer()">進入遊戲</button>
-  </div>
-</div>
+    const firebaseConfig = {
+      apiKey: _k.join(''),
+      authDomain: "game-80d68.firebaseapp.com",
+      projectId: "game-80d68",
+      storageBucket: "game-80d68.firebasestorage.app",
+      messagingSenderId: "636332967920",
+      appId: "1:636332967920:web:29e5600daf4db0ab613f35",
+      measurementId: "G-MJZ4PGEHSQ"
+    };
 
-<audio id="sndCash" src="https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3" preload="auto"></audio>
-
-<script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore-compat.js"></script>
-
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyDSRfVAuWCWCUd1NJopJ6wHvsqsAM4UzJA",
-    authDomain: "game-80d68.firebaseapp.com",
-    projectId: "game-80d68",
-    storageBucket: "game-80d68.firebasestorage.app",
-    messagingSenderId: "636332967920",
-    appId: "1:636332967920:web:29e5600daf4db0ab613f35",
-    measurementId: "G-MJZ4PGEHSQ"
-  };
-
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-const db = firebase.firestore();
-
-  function updateMainBalance() {
-    const balance = localStorage.getItem('sicbo_balance') || '5000';
-    document.getElementById('mainBalance').textContent = Math.floor(parseFloat(balance)).toLocaleString();
-  }
-
-  function openModal() { document.getElementById('depositModal').style.display = 'flex'; }
-  function closeModal() { document.getElementById('depositModal').style.display = 'none'; }
-
-  async function handleDeposit(amt) {
-    let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
-    balance += amt;
-    localStorage.setItem('sicbo_balance', balance); 
-    const playerId = localStorage.getItem('player_id');
-    if (playerId) {
-      await db.collection("users").doc(playerId).update({ balance: balance });
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
     }
-    document.getElementById('sndCash').play().catch(()=>{});
-    updateMainBalance();
-    alert("阿記幫你刷了 " + amt.toLocaleString());
-    closeModal();
-  }
+    const db = firebase.firestore();
 
-  // 排行榜顯示切換
-  async function toggleRank() {
-    const sidebar = document.getElementById('rankSidebar');
-    const overlay = document.getElementById('rankOverlay');
-    
-    if (sidebar.classList.contains('active')) {
-      sidebar.classList.remove('active');
-      overlay.style.display = 'none';
-    } else {
-      sidebar.classList.add('active');
-      overlay.style.display = 'block';
-      loadRanking(); // 開啟時抓取最新排名
+    function updateMainBalance() {
+      const balance = localStorage.getItem('sicbo_balance') || '5000';
+      document.getElementById('mainBalance').textContent = Math.floor(parseFloat(balance)).toLocaleString();
     }
-  }
 
-  // 從 Firebase 抓取前 10 名
-async function loadRanking() {
-  const rankList = document.getElementById('rankList');
-  try {
-    const snapshot = await db.collection("users").orderBy("balance", "desc").limit(10).get();
-    let html = '';
-    let i = 1;
+    function openModal() { document.getElementById('depositModal').style.display = 'flex'; }
+    function closeModal() { document.getElementById('depositModal').style.display = 'none'; }
 
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      let specialClass = "";
-      let medal = i;
-
-      if (i === 1) {
-        specialClass = "rank-top1";
-        medal = "🏆";
-      } else if (i === 2) {
-        specialClass = "rank-top2";
-        medal = "🥈";
-      } else if (i === 3) {
-        specialClass = "rank-top3";
-        medal = "🥉";
+    async function handleDeposit(amt) {
+      let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
+      balance += amt;
+      localStorage.setItem('sicbo_balance', balance);
+      const playerId = localStorage.getItem('player_id');
+      if (playerId) {
+        await db.collection("users").doc(playerId).update({ balance: balance });
       }
+      document.getElementById('sndCash').play().catch(() => { });
+      updateMainBalance();
+      alert("阿記幫你刷了 " + amt.toLocaleString());
+      closeModal();
+    }
+    // 商品定義
+    const SHOP_DATA = {
+      title: [
+        { id: 't_new', name: '🌱 初出茅廬', price: 50000 },
+        { id: 't_hunter', name: '🏹 賭場獵人', price: 200000 },
+        { id: 't_rich', name: '💰 土豪', price: 1000000 },
+        { id: 't_lady', name: '👗 千金大小姐', price: 5000000 },
+        { id: 't_sir', name: '🎩 豪門大少爺', price: 5000000 },
+        { id: 't_king', name: '👑 梟雄', price: 10000000 },
+        { id: 't_legend', name: '🐉 賭城傳奇', price: 50000000 },
+        { id: 't_god', name: '🎲 富可敵國', price: 100000000 },
+        { id: 't_world', name: '🪐 賭神', price: 500000000 }
+      ],
+      effect: [
+        { id: 'e_gold', name: '✨ 黃金呼吸', price: 8000000, class: 'fx-gold' },
+        { id: 'e_fire', name: '🔥 地獄火', price: 200000000, class: 'fx-fire' },
+        { id: 'e_neon', name: '🌈 彩虹極光', price: 500000000, class: 'fx-neon' },
+        { id: 'e_ice', name: '❄️ 絕對零度', price: 1000000, class: 'fx-ice' },
+        { id: 'e_thunder', name: '⚡ 電閃雷鳴', price: 2000000, class: 'fx-thunder' },
+        { id: 'e_void', name: '🌀 湮滅黑洞', price: 5000000, class: 'fx-void' }
+      ]
+    };
 
-      html += `
-        <div class="rank-item ${specialClass}">
-          <div class="rank-info">
-            <span class="rank-num">${medal}</span>
-            <span class="rank-name">${data.name || '無名氏'}</span>
+    let currentShopTab = 'title';
+
+    function switchShop(tab) {
+      currentShopTab = tab;
+      document.getElementById('tabTitle').style.background = tab === 'title' ? 'var(--red)' : '#444';
+      document.getElementById('tabEffect').style.background = tab === 'effect' ? 'var(--red)' : '#444';
+      renderShop();
+    }
+
+   function renderShop() {
+      const shopList = document.getElementById('shopList');
+      const myItems = JSON.parse(localStorage.getItem('my_assets') || '{}');
+      const currentEquipped = JSON.parse(localStorage.getItem('equipped_assets') || '{"title":"","effect":""}');
+      const now = Date.now();
+
+      let html = '';
+      SHOP_DATA[currentShopTab].forEach(item => {
+        const expiry = myItems[item.id] || 0;
+        const isOwned = now < expiry;
+        const isEquipped = (currentShopTab === 'title' ? currentEquipped.title : currentEquipped.effect) === item.id;
+
+        // 判斷是否為特效分頁，如果是，就加上對應的特效 Class 進行預覽
+        const previewClass = (currentShopTab === 'effect' && item.class) ? item.class : "";
+        const previewStyle = (currentShopTab === 'effect') ? 
+          "padding: 10px; border-radius: 15px; margin-bottom: 5px; text-align: center; font-weight: bold; position: relative; overflow: hidden; contain: paint;" : "";
+
+        html += `
+        <div style="border:1px solid #444; padding:12px; margin-bottom:12px; border-radius:15px; background:rgba(0,0,0,0.5); transition: 0.3s;">
+          <div class="${previewClass}" style="${previewStyle}">
+            <div style="color:var(--gold); font-weight:bold; font-size: 16px;">${item.name}</div>
+            ${currentShopTab === 'effect' ? '<div style="font-size:10px; opacity:0.8;"></div>' : ''}
           </div>
-          <span class="rank-bal">💎${Math.floor(data.balance).toLocaleString()}</span>
+          
+          <div style="display:flex; justify-content:space-between; align-items:center; mt-2">
+            <div style="text-align:left;">
+              <div style="color:#aaa; font-size:11px; margin-top:5px;">
+                ${isOwned ? '⏳ 剩餘: ' + Math.ceil((expiry - now) / (1000 * 60 * 60 * 24)) + '天' : '💰 價格: 💎 ' + item.price.toLocaleString()}
+              </div>
+            </div>
+            <div>
+              ${isOwned ?
+                `<button class="equip-btn" onclick="equipAsset('${currentShopTab}', '${item.id}')">${isEquipped ? '✅ 使用中' : '裝備'}</button>` :
+                `<button class="buy-btn" onclick="buyAsset('${currentShopTab}', '${item.id}', ${item.price})">🛒 購買</button>`
+              }
+            </div>
+          </div>
         </div>
       `;
-      i++;
-    });
-    rankList.innerHTML = html || '<p style="text-align:center; color:#888;">尚無排名數據</p>';
-  } catch (e) {
-    rankList.innerHTML = '<p style="text-align:center; color:red;">載入失敗</p>';
-  }
-}
-
-  async function checkUserStatus() {
-    let playerId = localStorage.getItem('player_id');
-    
-    // --- 關鍵修正：如果沒有 ID，代表是新玩家，直接彈出視窗 ---
-    if (!playerId || playerId === "null") {
-      document.getElementById('nameModal').style.display = 'flex';
-      updateMainBalance();
-      return; 
+      });
+      shopList.innerHTML = html;
     }
 
-    try {
+    // 購買與裝備邏輯
+    async function buyAsset(type, id, price) {
+      let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
+      if (balance < price) return alert("錢不夠！不借錢喔！");
+      if (!confirm("確定購買 7 天使用權嗎？")) return;
+
+      balance -= price;
+      const expiry = Date.now() + (7 * 24 * 60 * 60 * 1000);
+
+      // 更新本地
+      let myAssets = JSON.parse(localStorage.getItem('my_assets') || '{}');
+      myAssets[id] = expiry;
+      localStorage.setItem('my_assets', JSON.stringify(myAssets));
+      localStorage.setItem('sicbo_balance', balance);
+
+      // 同步 Firebase
+      const playerId = localStorage.getItem('player_id');
+      if (playerId) {
+        await db.collection("users").doc(playerId).update({
+          balance: balance,
+          assets: myAssets
+        });
+      }
+
+      updateMainBalance();
+      renderShop();
+      alert("購買成功！");
+    }
+
+    async function equipAsset(type, id) {
+      let equipped = JSON.parse(localStorage.getItem('equipped_assets') || '{"title":"","effect":""}');
+      equipped[type] = id;
+      localStorage.setItem('equipped_assets', JSON.stringify(equipped));
+
+      // 同步到排行榜與顯示
+      const playerId = localStorage.getItem('player_id');
+      if (playerId) {
+        // 這裡我們把稱號與特效的 class 存入 Firebase
+        const titleObj = SHOP_DATA.title.find(t => t.id === equipped.title);
+        const effectObj = SHOP_DATA.effect.find(e => e.id === equipped.effect);
+
+        const updateData = {
+          equipped_title: titleObj ? titleObj.name : "",
+          equipped_fx: effectObj ? effectObj.class : ""
+        };
+
+        await db.collection("users").doc(playerId).update(updateData);
+      }
+
+      renderShop();
+      loadRanking();
+      alert("裝備成功！");
+      checkUserStatus();
+    }
+    // 排行榜顯示切換
+    async function toggleRank() {
+      const sidebar = document.getElementById('rankSidebar');
+      const overlay = document.getElementById('rankOverlay');
+
+      if (sidebar.classList.contains('active')) {
+        sidebar.classList.remove('active');
+        overlay.style.display = 'none';
+      } else {
+        sidebar.classList.add('active');
+        overlay.style.display = 'block';
+        loadRanking(); // 開啟時抓取最新排名
+      }
+    }
+
+    // 從 Firebase 抓取前 10 名
+    async function loadRanking() {
+      const rankList = document.getElementById('rankList');
+      try {
+        const snapshot = await db.collection("users").orderBy("balance", "desc").limit(10).get();
+        let html = '';
+        let i = 1;
+
+        // 修改 loadRanking 內部的 HTML 生成部分
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const fxClass = data.equipped_fx || "";
+          const titleText = data.equipped_title || "";
+          
+          let titleColorClass = "t-blue"; // 預設藍色
+          if (titleText.includes("賭神") || titleText.includes("富可敵國")) titleColorClass = "t-red";
+          else if (titleText.includes("梟雄") || titleText.includes("傳奇")) titleColorClass = "t-orange";
+          else if (titleText.includes("土豪") || titleText.includes("千金") || titleText.includes("少爺")) titleColorClass = "t-purple";
+
+          const titleHTML = titleText ? `<span class="player-title ${titleColorClass}">【${titleText}】</span>` : "";
+
+          html += `
+            <div class="rank-item ${fxClass}">
+              <div class="rank-info">
+                <span class="rank-num">${i === 1 ? '🏆' : i}</span>
+                <span class="rank-name">${titleHTML}${data.name || '無名氏'}</span>
+              </div>
+              <span class="rank-bal">💎${Math.floor(data.balance).toLocaleString()}</span>
+            </div>
+          `;
+          i++;
+        });
+        rankList.innerHTML = html || '<p style="text-align:center; color:#888;">尚無排名數據</p>';
+      } catch (e) {
+        rankList.innerHTML = '<p style="text-align:center; color:red;">載入失敗</p>';
+      }
+    }
+
+    async function checkUserStatus() {
+      let playerId = localStorage.getItem('player_id');
+
+      if (!playerId || playerId === "null") {
+        document.getElementById('nameModal').style.display = 'flex';
+        updateMainBalance();
+        return;
+      }
+
+      try {
         const doc = await db.collection("users").doc(playerId).get();
         if (doc.exists) {
-            const cloudData = doc.data();
-            const localBal = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
-            const cloudBal = cloudData.balance;
+          const cloudData = doc.data();
+          const localBal = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
+          const cloudBal = cloudData.balance;
 
-            localStorage.setItem('player_name', cloudData.name);
+          localStorage.setItem('player_name', cloudData.name);
 
-            if (cloudBal !== undefined && cloudBal > localBal) {
-                localStorage.setItem('sicbo_balance', cloudBal);
-            } 
-            else if (cloudBal !== undefined && localBal > cloudBal) {
-                await db.collection("users").doc(playerId).update({ balance: localBal });
-            }
+          if (cloudBal !== undefined && cloudBal > localBal) {
+            localStorage.setItem('sicbo_balance', cloudBal);
+          }
+          else if (cloudBal !== undefined && localBal > cloudBal) {
+            await db.collection("users").doc(playerId).update({ balance: localBal });
+          }
 
-            document.getElementById('welcomeUser').textContent = `歡迎回來，${cloudData.name}`;
-            updateMainBalance();
+          // --- 商城特效與稱號顯示邏輯 ---
+          // --- 商城特效與稱號顯示邏輯 (拆分版顯示) ---
+          const welcomeEl = document.getElementById('welcomeUser');
+          const fxClass = cloudData.equipped_fx || ""; 
+          const titleText = cloudData.equipped_title || ""; 
+          const userName = cloudData.name || "無名氏";
+          
+          welcomeEl.innerHTML = ""; // 先清空
+
+          if (titleText) {
+            const titleSpan = document.createElement('span');
+            titleSpan.textContent = `【${titleText}】`;
+            titleSpan.className = "player-title";
+            
+            // 根據文字內容自動上色 (你可以依需求增加更多判斷)
+            if (titleText.includes("賭神") || titleText.includes("富可敵國")) titleSpan.classList.add("t-red");
+            else if (titleText.includes("梟雄") || titleText.includes("傳奇")) titleSpan.classList.add("t-orange");
+            else if (titleText.includes("土豪") || titleText.includes("千金") || titleText.includes("少爺")) titleSpan.classList.add("t-purple");
+            else titleSpan.classList.add("t-blue");
+            
+            welcomeEl.appendChild(titleSpan);
+          }
+
+          const nameSpan = document.createElement('span');
+          nameSpan.textContent = userName;
+          welcomeEl.appendChild(nameSpan);
+
+          // 後續 Class 處理維持原樣
+          welcomeEl.className = "welcome-msg"; 
+          if (fxClass) {
+            welcomeEl.classList.add(fxClass); 
+            welcomeEl.style.display = "inline-block";
+            welcomeEl.style.padding = "8px 25px";
+            welcomeEl.style.borderRadius = "25px";
+            welcomeEl.style.position = "relative";
+            welcomeEl.style.contain = "paint";
+            welcomeEl.style.zIndex = "1";
+            welcomeEl.style.color = "#fff";
+          }
+
+          updateMainBalance();
         } else {
-            // 如果有 ID 但雲端查無資料，也視為新玩家
-            document.getElementById('nameModal').style.display = 'flex';
+          document.getElementById('nameModal').style.display = 'flex';
         }
-    } catch (e) {
-      console.error("Firebase 連線失敗", e);
-      const localName = localStorage.getItem('player_name');
-      if (localName) {
-        document.getElementById('welcomeUser').textContent = `歡迎回來(離線)，${localName}`;
-      } else {
-        // 離線狀態且本地也沒存過名字，一定要彈出視窗
-        document.getElementById('nameModal').style.display = 'flex';
+      } catch (e) {
+        console.error("Firebase 連線失敗", e);
+        const localName = localStorage.getItem('player_name');
+        if (localName) {
+          document.getElementById('welcomeUser').textContent = `歡迎回來(離線)，${localName}`;
+        } else {
+          document.getElementById('nameModal').style.display = 'flex';
+        }
+        updateMainBalance();
+      }
+    }
+    // --- 商城功能 ---
+    function openShop() { document.getElementById('shopModal').style.display = 'flex'; }
+    function closeShop() { document.getElementById('shopModal').style.display = 'none'; }
+
+    async function buyTitle(titleName, price) {
+      let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
+      if (balance < price) return alert("錢不夠啦");
+      if (!confirm(`確定要花費 💎 ${price.toLocaleString()} 購買「${titleName}」嗎？`)) return;
+
+      balance -= price;
+      localStorage.setItem('sicbo_balance', balance);
+
+      const playerId = localStorage.getItem('player_id');
+      if (playerId) {
+        try {
+          // 關鍵修改：只更新 equipped_title，不改動 name 欄位
+          await db.collection("users").doc(playerId).update({
+            balance: balance,
+            equipped_title: titleName 
+          });
+          alert("購買成功！稱號已更新。");
+        } catch (e) {
+          console.error("商城更新失敗", e);
+        }
       }
       updateMainBalance();
+      closeShop();
+      checkUserStatus(); // 立即重新整理顯示
+      loadRanking();
     }
-  }
+    // --- 關鍵修復：儲存暱稱 ---
+    async function saveNewPlayer() {
+      const nameInput = document.getElementById('nicknameInput');
+      const name = nameInput.value.trim();
+      if (!name) return alert("請輸入名字！");
 
-  // --- 關鍵修復：儲存暱稱 ---
-  async function saveNewPlayer() {
-    const nameInput = document.getElementById('nicknameInput');
-    const name = nameInput.value.trim();
-    if (!name) return alert("請輸入名字！");
+      // 1. 強制重新獲取一次 ID，如果沒有就地生成
+      let playerId = localStorage.getItem('player_id');
+      if (!playerId || playerId === "" || playerId === "null") {
+        playerId = 'u' + Date.now() + Math.floor(Math.random() * 1000);
+        localStorage.setItem('player_id', playerId);
+      }
 
-    // 1. 強制重新獲取一次 ID，如果沒有就地生成
-    let playerId = localStorage.getItem('player_id');
-    if (!playerId || playerId === "" || playerId === "null") {
-      playerId = 'u' + Date.now() + Math.floor(Math.random() * 1000);
-      localStorage.setItem('player_id', playerId);
+      const localBal = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
+
+      try {
+        // 2. 先存本地，確保 UI 能先動
+        localStorage.setItem('player_name', name);
+        localStorage.setItem('sicbo_balance', localBal);
+
+        // 3. 執行 Firebase 寫入 (此時 playerId 絕對有值)
+        await db.collection("users").doc(playerId).set({
+          name: name,
+          balance: localBal,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        document.getElementById('nameModal').style.display = 'none';
+        document.getElementById('welcomeUser').textContent = `歡迎，${name}`;
+        updateMainBalance();
+      } catch (e) {
+        console.error("儲存失敗:", e);
+        // 萬一 Firebase 真的還是失敗，至少要讓玩家關掉視窗進入遊戲
+        document.getElementById('nameModal').style.display = 'none';
+        document.getElementById('welcomeUser').textContent = `歡迎(本地)，${name}`;
+        updateMainBalance();
+      }
     }
 
-    const localBal = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
-
-    try {
-      // 2. 先存本地，確保 UI 能先動
-      localStorage.setItem('player_name', name);
-      localStorage.setItem('sicbo_balance', localBal);
-
-      // 3. 執行 Firebase 寫入 (此時 playerId 絕對有值)
-      await db.collection("users").doc(playerId).set({
-        name: name,
-        balance: localBal,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-
-      document.getElementById('nameModal').style.display = 'none';
-      document.getElementById('welcomeUser').textContent = `歡迎，${name}`;
+    window.onload = function () {
       updateMainBalance();
-    } catch (e) {
-      console.error("儲存失敗:", e);
-      // 萬一 Firebase 真的還是失敗，至少要讓玩家關掉視窗進入遊戲
-      document.getElementById('nameModal').style.display = 'none';
-      document.getElementById('welcomeUser').textContent = `歡迎(本地)，${name}`;
-      updateMainBalance();
-    }
-  }
+      checkUserStatus();
+    };
 
-  window.onload = function() {
-    updateMainBalance();
-    checkUserStatus();
-  };
-
-  document.addEventListener('click', function(e) {
-    let target = e.target.closest('a');
-    if (target && target.href && target.getAttribute('href') !== '#') {
+    document.addEventListener('click', function (e) {
+      let target = e.target.closest('a');
+      if (target && target.href && target.getAttribute('href') !== '#') {
         e.preventDefault();
         window.location.href = target.href;
-    }
-  }, false);
+      }
+    }, false);
 
-  window.addEventListener('storage', (e) => {
-    if (e.key === 'sicbo_balance') updateMainBalance();
-  });
-</script>
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'sicbo_balance') updateMainBalance();
+    });
+  </script>
 </body>
+
 </html>
