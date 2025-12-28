@@ -742,7 +742,7 @@ const db = firebase.firestore();
     const finalScore = Math.floor(score * layerMult * gravMult);
     
     // 2. 實際獲得的餘額：分數再乘以 15
-    const finalReward = finalScore * 15;
+    const finalReward = finalScore * 5;
 
     balance += finalReward;
     localStorage.setItem('sicbo_balance', balance);
