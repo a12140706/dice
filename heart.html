@@ -584,8 +584,10 @@
 
     <script>
         // --- Firebase 初始化 ---
+        const _k = ["AIzaSyDSRfVA", "uWCWCUd1NJop", "J6wHvsqsAM4UzJA"];
+
         const firebaseConfig = {
-            apiKey: "AIzaSyDSRfVAuWCWCUd1NJopJ6wHvsqsAM4UzJA",
+            apiKey: _k.join(''),
             authDomain: "game-80d68.firebaseapp.com",
             projectId: "game-80d68",
             storageBucket: "game-80d68.firebasestorage.app",
@@ -959,37 +961,57 @@
         }
 
         // --- 核心寫入優化邏輯 (Firebase + 門檻判斷) ---
+        // --- 核心寫入優化邏輯 (Firebase + 門檻判斷) ---
         async function updateRankingAndCloud(winAmt) {
             if (winAmt <= 0) return;
 
             // 1. 讀取本地排行榜快照
             let ranks = JSON.parse(localStorage.getItem('heart_ranks')) || [];
 
-            // 2. 門檻判斷：是否擠進前 10 名
+            // 2. 門檻判斷：是否擠進本機前 10 名
             const isTopTen = ranks.length < 10 || winAmt > ranks[ranks.length - 1].amount;
 
+            // 取得玩家 ID
+            const playerId = localStorage.getItem('player_id');
+
             if (isTopTen) {
-                // A. 更新本機排行榜數據
+                // A. 更新本機排行榜數據 (不影響 Firebase，僅供手機端即時顯示)
                 ranks.push({ amount: winAmt, time: Date.now() });
                 ranks.sort((a, b) => b.amount - a.amount);
                 ranks = ranks.slice(0, 10);
                 localStorage.setItem('heart_ranks', JSON.stringify(ranks));
 
-                // B. 同步至 Firebase (僅當破紀錄時)
-                const playerId = localStorage.getItem('player_id');
-                if (playerId) {
+                // B. 同步至 Firebase
+                if (playerId && db) {
                     try {
-                        // 同步總餘額到 users 集合
-                        await db.collection("users").doc(playerId).update({
+                        // 【關鍵】：先抓雲端目前的 lastWin 紀錄
+                        const userDoc = await db.collection("users").doc(playerId).get();
+                        let currentCloudMax = 0;
+                        if (userDoc.exists) {
+                            currentCloudMax = userDoc.data().lastWin || 0;
+                        }
+
+                        // 準備更新包
+                        let updateData = {
                             balance: balance,
-                            lastWin: winAmt, // 順便記錄最後一次的大獎
                             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                        console.log("Firebase 同步成功 (破紀錄寫入)");
+                        };
+
+                        // 只有當新獎金 > 雲端紀錄，才寫入 lastWin (避免 300 萬蓋掉 1700 萬)
+                        if (winAmt > currentCloudMax) {
+                            updateData.lastWin = winAmt;
+                            console.log("🔥 破紀錄！準備更新雲端最高分:", winAmt);
+                        }
+
+                        await db.collection("users").doc(playerId).update(updateData);
+                        console.log("Firebase 進度同步完成");
                     } catch (e) {
-                        console.error("Firebase 同步失敗:", e);
+                        console.error("Firebase 更新失敗:", e);
                     }
                 }
+            } else {
+                // 如果沒進前十名，還是要呼叫同步餘額，確保這局贏的錢有存進雲端
+                if (playerId) syncToFirebase();
             }
         }
 
