@@ -616,21 +616,26 @@
 
     // --- 排行榜監聽 (雲端版本) ---
     function listenRank() {
-      // 監聽 mahjong_wins 集合，按贏得金額降序排列，取前 10 名
-      db.collection("mahjong_wins").orderBy("win", "desc").limit(10).onSnapshot(snap => {
-        let html = '';
-        let first = true;
-        snap.forEach(doc => {
-          const d = doc.data();
-          // 更新頂部跑馬燈的最大獎名字
-          if (first) {
-            document.getElementById('topWinnerName').innerText = `${d.name} $${Math.floor(d.win).toLocaleString()}`;
-            first = false;
-          }
-          html += `<div class="rank-item"><span class="rank-name">${d.name}</span><span class="rank-win">$${Math.floor(d.win).toLocaleString()}</span></div>`;
+      // 監聽 mahjong_wins 集合，只取贏分大於 0 的，按贏得金額降序排列，取前 10 名
+      db.collection("mahjong_wins")
+        .where("win", ">", 0) // 確保只顯示有贏錢的
+        .orderBy("win", "desc")
+        .limit(10)
+        .onSnapshot(snap => {
+          let html = '';
+          let first = true;
+          snap.forEach(doc => {
+            const d = doc.data();
+            if (first) {
+              document.getElementById('topWinnerName').innerText = `${d.name} $${Math.floor(d.win).toLocaleString()}`;
+              first = false;
+            }
+            html += `<div class="rank-item"><span class="rank-name">${d.name}</span><span class="rank-win">$${Math.floor(d.win).toLocaleString()}</span></div>`;
+          });
+          document.getElementById('rankList').innerHTML = html || '<div style="padding:20px; color:#666;">等待傳奇...</div>';
+        }, err => {
+          console.error("監聽排行榜失敗，可能需要建立 Firestore 索引:", err);
         });
-        document.getElementById('rankList').innerHTML = html || '<div style="padding:20px; color:#666;">等待傳奇...</div>';
-      });
     }
 
     function openRank() { document.getElementById('rankModal').style.display = 'flex'; }
@@ -724,7 +729,7 @@
       }
 
       // 前兩行機率額外減半 (防止最容易觸發連線的位置產出 Wild)
-      if (c !== undefined && c < 2) wildChance *= 0.5;
+      if (c !== undefined && c < 2) wildChance *= 0.8;
 
       // 4. 準備候選清單 (過濾已達 4 張的牌)
       let availableIcons = baseIcons.filter(icon => (currentCounts[icon] || 0) < 4);
@@ -817,24 +822,44 @@
     }
 
     async function finalizeFreeGame() {
-      // 結算畫面顯示
+      // ... 前面顯示結算畫面的邏輯保持不變 ...
       const overlay = document.getElementById('settlementOverlay');
       document.getElementById('totalSettlementAmt').textContent = Math.floor(freeGameTotalWin).toLocaleString();
       overlay.style.display = 'flex';
 
-      // 加回餘額
       balance += freeGameTotalWin;
 
-      // 排行榜上傳邏輯
+      // --- 【修改重點：排行榜只存個人最高】 ---
       if (freeGameTotalWin > 0) {
-        try {
-          await db.collection("mahjong_wins").add({
-            name: localStorage.getItem('player_name') || '匿名大亨',
-            win: freeGameTotalWin,
-            time: firebase.firestore.FieldValue.serverTimestamp()
-          });
-        } catch (e) { console.warn("排行榜紀錄上傳失敗"); }
+        const playerId = localStorage.getItem('player_id');
+        if (playerId && db) {
+          try {
+            const winRef = db.collection("mahjong_wins").doc(playerId);
+            const doc = await winRef.get();
+            
+            let shouldUpdate = true;
+            if (doc.exists) {
+              const oldWin = doc.data().win || 0;
+              // 只有當這局贏的比雲端舊紀錄多，才更新
+              if (freeGameTotalWin <= oldWin) {
+                shouldUpdate = false;
+              }
+            }
+
+            if (shouldUpdate) {
+              await winRef.set({
+                name: localStorage.getItem('player_name') || '匿名大亨',
+                win: freeGameTotalWin,
+                time: firebase.firestore.FieldValue.serverTimestamp()
+              }, { merge: true });
+              console.log("🏆 恭喜破紀錄，排行榜已更新！");
+            }
+          } catch (e) { 
+            console.warn("排行榜紀錄更新失敗", e); 
+          }
+        }
       }
+      // ---------------------------------------
 
       await new Promise(r => setTimeout(r, 3000));
       overlay.style.display = 'none';
