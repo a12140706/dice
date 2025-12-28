@@ -38,12 +38,14 @@
       overflow: hidden;
       padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     }
-#welcomeUserContainer.rank-item {
-    display: inline-block;
-    padding: 5px 15px;
-    margin-top: 5px;
-    border-radius: 20px;
-}
+
+    #welcomeUserContainer.rank-item {
+      display: inline-block;
+      padding: 5px 15px;
+      margin-top: 5px;
+      border-radius: 20px;
+    }
+
     /* 通用項目樣式 */
     .rank-item {
       display: flex;
@@ -140,231 +142,406 @@
       cursor: pointer;
       font-size: 12px;
     }
-/* 稱號基礎樣式 */
-.player-title {
-    font-weight: 900;
-    margin-right: 5px;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-}
 
-/* 稱號等級色彩 */
-.t-green  { color: #2ecc71 !important; } /* 初級 */
-.t-blue   { color: #3498db !important; } /* 中級 */
-.t-purple { color: #9b59b6 !important; } /* 高級 */
-.t-orange { color: #e67e22 !important; } /* 傳奇 */
-.t-red    { color: #ff4757 !important; animation: title-glow 1s infinite alternate; } /* 神話 */
+    /* 稱號基礎樣式 */
+    .player-title {
+      font-weight: 900;
+      margin-right: 5px;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    }
 
-@keyframes title-glow {
-    from { filter: drop-shadow(0 0 1px #ff4757); }
-    to { filter: drop-shadow(0 0 5px #ff4757); }
-}
-.welcome-msg {
-  position: relative;
-  overflow: hidden; /* 確保特效不會超出圓角邊框 */
-  z-index: 1;
-}
+    /* 稱號等級色彩 */
+    .t-green {
+      color: #2ecc71 !important;
+    }
 
-/* --- 特效 1：極限獄火 (震動 + 熔岩流) --- */
-.welcome-msg, .rank-item {
-  position: relative !important;
-  overflow: hidden !important; /* 嚴格禁止內容溢出 */
-  contain: paint; /* 這是防止橫向捲軸的最強手段 */
-  z-index: 1;
-}
+    /* 初級 */
+    .t-blue {
+      color: #3498db !important;
+    }
 
-/* --- 特效 1：獄火焚身 (修正震動，防止橫條) --- */
-.fx-fire {
-  /* 邊框改用漸層色，模擬發熱的金屬 */
-  border: 2px solid transparent !important;
-  background: 
-    linear-gradient(#2a0000, #2a0000) padding-box, /* 內容背景 */
-    linear-gradient(0deg, #ff4757, #ff9f43, #ff4757) border-box !important; /* 邊框火焰流 */
-  background-size: 100% 100%, 100% 300% !important;
-  color: #fff !important;
-  box-shadow: inset 0 0 15px #741b1b, 0 0 15px rgba(255, 71, 87, 0.5) !important;
-  text-shadow: 0 0 8px #ff4757, 0 0 15px #ff7e67 !important;
-  /* border-flow 讓邊框顏色竄動, fire-flicker 讓整體閃爍 */
-  animation: 
-    fire-flicker 0.2s ease-in-out infinite alternate,
-    border-flow 1.5s linear infinite !important;
-}
+    /* 中級 */
+    .t-purple {
+      color: #9b59b6 !important;
+    }
 
-.fx-fire::before {
-  content: "";
-  position: absolute;
-  bottom: 0; left: 0; width: 100%; height: 200%;
-  /* 模擬向上竄的火苗漸層 */
-  background: linear-gradient(0deg, 
-    transparent 0%, 
-    rgba(255, 69, 0, 0.4) 20%, 
-    rgba(255, 165, 0, 0.2) 50%, 
-    transparent 80%);
-  z-index: -1;
-  animation: fire-rise 1s linear infinite; /* 火苗向上竄動 */
-}
-/* --- 特效 2：雷霆霓虹 (強化霓虹感，取消描邊) --- */
-.fx-neon {
-  border: 2px solid #fff !important;
-  background: rgba(0, 0, 0, 0.9) !important;
-  color: #fff !important;
-  /* 設定初始發光 */
-  box-shadow: 
-    0 0 10px #fff,
-    0 0 20px #00d2ff,
-    0 0 40px #00d2ff !important;
-  /* 這裡的動畫結合了顏色循環與霓虹閃爍 */
-  animation: 
-    neon-flicker 2s infinite,
-    neon-rainbow 4s linear infinite !important;
-}
+    /* 高級 */
+    .t-orange {
+      color: #e67e22 !important;
+    }
 
-/* --- 特效 3：至尊皇金 (保持簡潔高級感) --- */
-.fx-gold {
-  border: 1px solid #ffd700 !important;
-  background-image: linear-gradient(110deg, #6b5500 0%, #ffd700 50%, #6b5500 100%) !important;
-  background-size: 200% auto !important;
-  color: #fff !important;
-  animation: shine-gold 3s linear infinite !important;
-}
+    /* 傳奇 */
+    .t-red {
+      color: #ff4757 !important;
+      animation: title-glow 1s infinite alternate;
+    }
 
-/* --- 動畫修正定義 --- */
-@keyframes fire-pulse {
-  from { filter: brightness(1); box-shadow: 0 0 10px #ff4757; }
-  to { filter: brightness(1.5); box-shadow: 0 0 20px #ff4757; }
-}
-@keyframes fire-swirl {
-  0% { transform: rotate(0deg) scale(1); }
-  50% { transform: rotate(180deg) scale(1.1); }
-  100% { transform: rotate(360deg) scale(1); }
-}
-@keyframes border-flow {
-  0% { background-position: 0% 0%, 50% 100%; }
-  100% { background-position: 0% 0%, 50% -100%; }
-}
+    /* 神話 */
 
-/* 火舌向上升騰 */
-@keyframes fire-rise {
-  0% { transform: translateY(0%); opacity: 0.8; }
-  100% { transform: translateY(-50%); opacity: 0.4; }
-}
-@keyframes fire-flicker {
-  0% { filter: brightness(1); }
-  100% { filter: brightness(1.3); }
-}
-/* 霓虹描邊流動 */
-@keyframes neon-trace {
-  0% { clip-path: inset(0 70% 95% 0); }
-  25% { clip-path: inset(0 0 70% 95%); }
-  50% { clip-path: inset(95% 0 0 70%); }
-  75% { clip-path: inset(70% 95% 0 0); }
-  100% { clip-path: inset(0 70% 95% 0); }
-}
+    @keyframes title-glow {
+      from {
+        filter: drop-shadow(0 0 1px #ff4757);
+      }
 
-@keyframes neon-rainbow {
-  0% { filter: hue-rotate(0deg); }
-  100% { filter: hue-rotate(360deg); }
-}
+      to {
+        filter: drop-shadow(0 0 5px #ff4757);
+      }
+    }
 
-/* 霓虹：原本的閃爍效果 */
-@keyframes neon-flicker {
-  0%, 18%, 22%, 25%, 53%, 57%, 100% {
-    text-shadow: 0 0 10px #fff, 0 0 20px #00d2ff;
-    opacity: 1;
-  }
-  20%, 24%, 55% {
-    text-shadow: none;
-    box-shadow: none;
-    opacity: 0.7;
-  }
-}
+    .welcome-msg {
+      position: relative;
+      overflow: hidden;
+      /* 確保特效不會超出圓角邊框 */
+      z-index: 1;
+    }
 
-@keyframes shine-gold {
-  to { background-position: 200% center; }
-}
-@keyframes rotate-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
+    /* --- 特效 1：極限獄火 (震動 + 熔岩流) --- */
+    .welcome-msg,
+    .rank-item {
+      position: relative !important;
+      overflow: hidden !important;
+      /* 嚴格禁止內容溢出 */
+      contain: paint;
+      /* 這是防止橫向捲軸的最強手段 */
+      z-index: 1;
+    }
 
-@keyframes void-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(0.97); } /* 稍微縮小模擬被吸入 */
-}
-@keyframes breathing-glow {
-  0%, 100% { filter: brightness(1); }
-  50% { filter: brightness(1.4); }
-}
-/* --- 特效 4：絕對零度 (冰藍呼吸 + 結晶閃爍) --- */
-.fx-ice {
-  border: 1px solid #00f2fe !important;
-  background: linear-gradient(135deg, #005f73, #00d4ff) !important;
-  color: #fff !important;
-  text-shadow: 0 0 10px #7ed6ff !important;
-  box-shadow: 0 0 15px rgba(0, 242, 254, 0.5) !important;
-  animation: ice-shimmer 2s ease-in-out infinite alternate !important;
-}
-.fx-ice::before {
-  content: "❄";
-  position: absolute;
-  right: 5px; top: -5px; opacity: 0.3; font-size: 20px;
-  animation: rotate-slow 5s linear infinite;
-}
+    /* --- 特效 1：獄火焚身 (修正震動，防止橫條) --- */
+    .fx-fire {
+      /* 邊框改用漸層色，模擬發熱的金屬 */
+      border: 2px solid transparent !important;
+      background:
+        linear-gradient(#2a0000, #2a0000) padding-box,
+        /* 內容背景 */
+        linear-gradient(0deg, #ff4757, #ff9f43, #ff4757) border-box !important;
+      /* 邊框火焰流 */
+      background-size: 100% 100%, 100% 300% !important;
+      color: #fff !important;
+      box-shadow: inset 0 0 15px #741b1b, 0 0 15px rgba(255, 71, 87, 0.5) !important;
+      text-shadow: 0 0 8px #ff4757, 0 0 15px #ff7e67 !important;
+      /* border-flow 讓邊框顏色竄動, fire-flicker 讓整體閃爍 */
+      animation:
+        fire-flicker 0.2s ease-in-out infinite alternate,
+        border-flow 1.5s linear infinite !important;
+    }
 
-/* --- 特效 5：深海雷鳴 (深藍背景 + 隨機閃電) --- */
-.fx-thunder {
-  border: 1px solid #4834d4 !important;
-  background: #060b28 !important;
-  color: #fff !important;
-  overflow: hidden;
-}
-.fx-thunder::after {
-  content: "";
-  position: absolute;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background: white;
-  opacity: 0;
-  z-index: -1;
-  animation: lightning-strike 2s steps(1) infinite;
-}
+    .fx-fire::before {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 200%;
+      /* 模擬向上竄的火苗漸層 */
+      background: linear-gradient(0deg,
+          transparent 0%,
+          rgba(255, 69, 0, 0.4) 20%,
+          rgba(255, 165, 0, 0.2) 50%,
+          transparent 80%);
+      z-index: -1;
+      animation: fire-rise 1s linear infinite;
+      /* 火苗向上竄動 */
+    }
 
-/* --- 特效 6：黑洞湮滅 (暗紫色邊框 + 空間扭曲感) --- */
-.fx-void {
-  border: 2px solid #2f3542 !important;
-  background: black !important;
-  color: #a55eea !important;
-  box-shadow: 0 0 20px #6c5ce7 !important;
-  animation: void-pulse 3s ease-in-out infinite !important;
-}
-.fx-void::before {
-  content: "";
-  position: absolute;
-  top: -50%; left: -50%; width: 200%; height: 200%;
-  background: conic-gradient(from 0deg, transparent, #6c5ce7, transparent);
-  animation: rotate-slow 3s linear infinite;
-  z-index: -1;
-  opacity: 0.4;
-}
+    /* --- 特效 2：雷霆霓虹 (強化霓虹感，取消描邊) --- */
+    .fx-neon {
+      border: 2px solid #fff !important;
+      background: rgba(0, 0, 0, 0.9) !important;
+      color: #fff !important;
+      /* 設定初始發光 */
+      box-shadow:
+        0 0 10px #fff,
+        0 0 20px #00d2ff,
+        0 0 40px #00d2ff !important;
+      /* 這裡的動畫結合了顏色循環與霓虹閃爍 */
+      animation:
+        neon-flicker 2s infinite,
+        neon-rainbow 4s linear infinite !important;
+    }
 
-/* --- 新特效動畫定義 --- */
-@keyframes ice-shimmer {
-  from { filter: saturate(1) brightness(1); box-shadow: 0 0 5px #00f2fe; }
-  to { filter: saturate(1.5) brightness(1.2); box-shadow: 0 0 20px #00f2fe; }
-}
+    /* --- 特效 3：至尊皇金 (保持簡潔高級感) --- */
+    .fx-gold {
+      border: 1px solid #ffd700 !important;
+      background-image: linear-gradient(110deg, #6b5500 0%, #ffd700 50%, #6b5500 100%) !important;
+      background-size: 200% auto !important;
+      color: #fff !important;
+      animation: shine-gold 3s linear infinite !important;
+    }
 
-@keyframes lightning-strike {
-  0%, 95%, 98% { opacity: 0; }
-  96%, 99% { opacity: 0.4; } /* 模擬雷雨閃電瞬間閃爍 */
-}
+    /* --- 動畫修正定義 --- */
+    @keyframes fire-pulse {
+      from {
+        filter: brightness(1);
+        box-shadow: 0 0 10px #ff4757;
+      }
 
-@keyframes void-pulse {
-  0%, 100% { transform: scale(1); filter: blur(0px); }
-  50% { transform: scale(0.98); filter: blur(0.5px); }
-}
+      to {
+        filter: brightness(1.5);
+        box-shadow: 0 0 20px #ff4757;
+      }
+    }
 
-@keyframes rotate-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
+    @keyframes fire-swirl {
+      0% {
+        transform: rotate(0deg) scale(1);
+      }
+
+      50% {
+        transform: rotate(180deg) scale(1.1);
+      }
+
+      100% {
+        transform: rotate(360deg) scale(1);
+      }
+    }
+
+    @keyframes border-flow {
+      0% {
+        background-position: 0% 0%, 50% 100%;
+      }
+
+      100% {
+        background-position: 0% 0%, 50% -100%;
+      }
+    }
+
+    /* 火舌向上升騰 */
+    @keyframes fire-rise {
+      0% {
+        transform: translateY(0%);
+        opacity: 0.8;
+      }
+
+      100% {
+        transform: translateY(-50%);
+        opacity: 0.4;
+      }
+    }
+
+    @keyframes fire-flicker {
+      0% {
+        filter: brightness(1);
+      }
+
+      100% {
+        filter: brightness(1.3);
+      }
+    }
+
+    /* 霓虹描邊流動 */
+    @keyframes neon-trace {
+      0% {
+        clip-path: inset(0 70% 95% 0);
+      }
+
+      25% {
+        clip-path: inset(0 0 70% 95%);
+      }
+
+      50% {
+        clip-path: inset(95% 0 0 70%);
+      }
+
+      75% {
+        clip-path: inset(70% 95% 0 0);
+      }
+
+      100% {
+        clip-path: inset(0 70% 95% 0);
+      }
+    }
+
+    @keyframes neon-rainbow {
+      0% {
+        filter: hue-rotate(0deg);
+      }
+
+      100% {
+        filter: hue-rotate(360deg);
+      }
+    }
+
+    /* 霓虹：原本的閃爍效果 */
+    @keyframes neon-flicker {
+
+      0%,
+      18%,
+      22%,
+      25%,
+      53%,
+      57%,
+      100% {
+        text-shadow: 0 0 10px #fff, 0 0 20px #00d2ff;
+        opacity: 1;
+      }
+
+      20%,
+      24%,
+      55% {
+        text-shadow: none;
+        box-shadow: none;
+        opacity: 0.7;
+      }
+    }
+
+    @keyframes shine-gold {
+      to {
+        background-position: 200% center;
+      }
+    }
+
+    @keyframes rotate-slow {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes void-pulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(0.97);
+      }
+
+      /* 稍微縮小模擬被吸入 */
+    }
+
+    @keyframes breathing-glow {
+
+      0%,
+      100% {
+        filter: brightness(1);
+      }
+
+      50% {
+        filter: brightness(1.4);
+      }
+    }
+
+    /* --- 特效 4：絕對零度 (冰藍呼吸 + 結晶閃爍) --- */
+    .fx-ice {
+      border: 1px solid #00f2fe !important;
+      background: linear-gradient(135deg, #005f73, #00d4ff) !important;
+      color: #fff !important;
+      text-shadow: 0 0 10px #7ed6ff !important;
+      box-shadow: 0 0 15px rgba(0, 242, 254, 0.5) !important;
+      animation: ice-shimmer 2s ease-in-out infinite alternate !important;
+    }
+
+    .fx-ice::before {
+      content: "❄";
+      position: absolute;
+      right: 5px;
+      top: -5px;
+      opacity: 0.3;
+      font-size: 20px;
+      animation: rotate-slow 5s linear infinite;
+    }
+
+    /* --- 特效 5：深海雷鳴 (深藍背景 + 隨機閃電) --- */
+    .fx-thunder {
+      border: 1px solid #4834d4 !important;
+      background: #060b28 !important;
+      color: #fff !important;
+      overflow: hidden;
+    }
+
+    .fx-thunder::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: white;
+      opacity: 0;
+      z-index: -1;
+      animation: lightning-strike 2s steps(1) infinite;
+    }
+
+    /* --- 特效 6：黑洞湮滅 (暗紫色邊框 + 空間扭曲感) --- */
+    .fx-void {
+      border: 2px solid #2f3542 !important;
+      background: black !important;
+      color: #a55eea !important;
+      box-shadow: 0 0 20px #6c5ce7 !important;
+      animation: void-pulse 3s ease-in-out infinite !important;
+    }
+
+    .fx-void::before {
+      content: "";
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: conic-gradient(from 0deg, transparent, #6c5ce7, transparent);
+      animation: rotate-slow 3s linear infinite;
+      z-index: -1;
+      opacity: 0.4;
+    }
+
+    /* --- 新特效動畫定義 --- */
+    @keyframes ice-shimmer {
+      from {
+        filter: saturate(1) brightness(1);
+        box-shadow: 0 0 5px #00f2fe;
+      }
+
+      to {
+        filter: saturate(1.5) brightness(1.2);
+        box-shadow: 0 0 20px #00f2fe;
+      }
+    }
+
+    @keyframes lightning-strike {
+
+      0%,
+      95%,
+      98% {
+        opacity: 0;
+      }
+
+      96%,
+      99% {
+        opacity: 0.4;
+      }
+
+      /* 模擬雷雨閃電瞬間閃爍 */
+    }
+
+    @keyframes void-pulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+        filter: blur(0px);
+      }
+
+      50% {
+        transform: scale(0.98);
+        filter: blur(0.5px);
+      }
+    }
+
+    @keyframes rotate-slow {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
     /* 第二、三名簡單漸層邊框 */
     .rank-top2 {
       border-left: 4px solid #c0c0c0;
@@ -599,6 +776,8 @@
       cursor: pointer;
     }
 
+    
+
     /* 橫向模式調整 */
     @media (orientation: landscape) {
       .game-grid {
@@ -648,6 +827,7 @@
       font-weight: bold;
       color: #fff;
     }
+    
   </style>
 </head>
 
@@ -666,9 +846,9 @@
   <div class="container">
     <div class="welcome-msg" id="welcomeUser">名稱</div>
 
-<div class="welcome-msg">
-    <span id="welcomeUserContainer">選擇遊戲</span>
-</div>
+    <div class="welcome-msg">
+      <span id="welcomeUserContainer">選擇遊戲</span>
+    </div>
 
     <div class="game-grid">
       <a href="sicbo.html" class="game-card">
@@ -844,12 +1024,12 @@
         { id: 't_world', name: '🪐 賭神', price: 500000000 }
       ],
       effect: [
-        { id: 'e_gold', name: '✨ 黃金呼吸', price: 8000000, class: 'fx-gold' },
-        { id: 'e_fire', name: '🔥 地獄火', price: 200000000, class: 'fx-fire' },
-        { id: 'e_neon', name: '🌈 彩虹極光', price: 500000000, class: 'fx-neon' },
+        {  id: 'e_thunder', name: '⚡ 電閃雷鳴', price: 2000000, class: 'fx-thunder'},
+        { id: 'e_void', name: '🌀 湮滅黑洞', price: 5000000, class: 'fx-void' },
+        { id: 'e_gold', name: '✨ 黃金呼吸', price: 8000000, class: 'fx-gold'  },
         { id: 'e_ice', name: '❄️ 絕對零度', price: 10000000, class: 'fx-ice' },
-        { id: 'e_thunder', name: '⚡ 電閃雷鳴', price: 2000000, class: 'fx-thunder' },
-        { id: 'e_void', name: '🌀 湮滅黑洞', price: 5000000, class: 'fx-void' }
+        { id: 'e_fire', name: '🔥 地獄火', price: 200000000, class: 'fx-fire'},
+        { id: 'e_neon', name: '🌈 彩虹極光', price: 500000000, class: 'fx-neon' }
       ]
     };
 
@@ -862,7 +1042,7 @@
       renderShop();
     }
 
-   function renderShop() {
+    function renderShop() {
       const shopList = document.getElementById('shopList');
       const myItems = JSON.parse(localStorage.getItem('my_assets') || '{}');
       const currentEquipped = JSON.parse(localStorage.getItem('equipped_assets') || '{"title":"","effect":""}');
@@ -876,7 +1056,7 @@
 
         // 判斷是否為特效分頁，如果是，就加上對應的特效 Class 進行預覽
         const previewClass = (currentShopTab === 'effect' && item.class) ? item.class : "";
-        const previewStyle = (currentShopTab === 'effect') ? 
+        const previewStyle = (currentShopTab === 'effect') ?
           "padding: 10px; border-radius: 15px; margin-bottom: 5px; text-align: center; font-weight: bold; position: relative; overflow: hidden; contain: paint;" : "";
 
         html += `
@@ -894,9 +1074,9 @@
             </div>
             <div>
               ${isOwned ?
-                `<button class="equip-btn" onclick="equipAsset('${currentShopTab}', '${item.id}')">${isEquipped ? '✅ 使用中' : '裝備'}</button>` :
-                `<button class="buy-btn" onclick="buyAsset('${currentShopTab}', '${item.id}', ${item.price})">🛒 購買</button>`
-              }
+            `<button class="equip-btn" onclick="equipAsset('${currentShopTab}', '${item.id}')">${isEquipped ? '✅ 使用中' : '裝備'}</button>` :
+            `<button class="buy-btn" onclick="buyAsset('${currentShopTab}', '${item.id}', ${item.price})">🛒 購買</button>`
+          }
             </div>
           </div>
         </div>
@@ -987,7 +1167,7 @@
           const data = doc.data();
           const fxClass = data.equipped_fx || "";
           const titleText = data.equipped_title || "";
-          
+
           let titleColorClass = "t-blue"; // 預設藍色
           if (titleText.includes("賭神") || titleText.includes("富可敵國")) titleColorClass = "t-red";
           else if (titleText.includes("梟雄") || titleText.includes("傳奇")) titleColorClass = "t-orange";
@@ -1040,23 +1220,23 @@
           // --- 商城特效與稱號顯示邏輯 ---
           // --- 商城特效與稱號顯示邏輯 (拆分版顯示) ---
           const welcomeEl = document.getElementById('welcomeUser');
-          const fxClass = cloudData.equipped_fx || ""; 
-          const titleText = cloudData.equipped_title || ""; 
+          const fxClass = cloudData.equipped_fx || "";
+          const titleText = cloudData.equipped_title || "";
           const userName = cloudData.name || "無名氏";
-          
+
           welcomeEl.innerHTML = ""; // 先清空
 
           if (titleText) {
             const titleSpan = document.createElement('span');
             titleSpan.textContent = `【${titleText}】`;
             titleSpan.className = "player-title";
-            
+
             // 根據文字內容自動上色 (你可以依需求增加更多判斷)
             if (titleText.includes("賭神") || titleText.includes("富可敵國")) titleSpan.classList.add("t-red");
             else if (titleText.includes("梟雄") || titleText.includes("傳奇")) titleSpan.classList.add("t-orange");
             else if (titleText.includes("土豪") || titleText.includes("千金") || titleText.includes("少爺")) titleSpan.classList.add("t-purple");
             else titleSpan.classList.add("t-blue");
-            
+
             welcomeEl.appendChild(titleSpan);
           }
 
@@ -1065,9 +1245,9 @@
           welcomeEl.appendChild(nameSpan);
 
           // 後續 Class 處理維持原樣
-          welcomeEl.className = "welcome-msg"; 
+          welcomeEl.className = "welcome-msg";
           if (fxClass) {
-            welcomeEl.classList.add(fxClass); 
+            welcomeEl.classList.add(fxClass);
             welcomeEl.style.display = "inline-block";
             welcomeEl.style.padding = "8px 25px";
             welcomeEl.style.borderRadius = "25px";
@@ -1110,7 +1290,7 @@
           // 關鍵修改：只更新 equipped_title，不改動 name 欄位
           await db.collection("users").doc(playerId).update({
             balance: balance,
-            equipped_title: titleName 
+            equipped_title: titleName
           });
           alert("購買成功！稱號已更新。");
         } catch (e) {
