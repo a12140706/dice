@@ -26,7 +26,20 @@
     padding: 4px 10px; color: var(--gold); font-weight: bold; font-size: 14px; 
   }
 
-  .audio-ctrl { font-size: 11px; background: #004d40; border: 1px solid #b2dfdb; padding: 4px 8px; border-radius: 12px; }
+  .audio-ctrl { font-size: 11px; background: #004d40; border: 1px solid #b2dfdb; padding: 4px 8px; border-radius: 12px; cursor: pointer; }
+
+  /* 排行榜按鈕區：置中於頂部 */
+  .rank-header-area {
+    width: 100%; display: flex; justify-content: center; padding: 5px 0; background: rgba(0,0,0,0.2);
+  }
+
+  .rank-btn-horizontal {
+    background: linear-gradient(#b91c1c, #7f1d1d); border: 1px solid var(--gold);
+    border-radius: 20px; padding: 4px 20px; display: flex; align-items: center; gap: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.5); cursor: pointer;
+  }
+  .rank-btn-horizontal span { font-size: 12px; color: #fff; font-weight: bold; }
+  #topWinnerName { font-size: 14px; color: var(--gold); font-weight: bold; text-shadow: 0 0 5px rgba(255,216,107,0.5); }
 
   .free-game-bar { 
     height: 40px; background: linear-gradient(90deg, #ff8f00, #ff6f00); 
@@ -65,72 +78,43 @@
   
   .step-mj { font-size: 22px !important; color: #fff; } 
   .step.active { background: var(--gold); color: #000; box-shadow: 0 0 10px var(--gold); transform: scale(1.1); }
-  .step.active.step-mj { color: #000; }
 
   .mj-tile { 
     background: #fff; border-radius: 8px; color: #000; 
     font-size: 8vw; display: flex; align-items: center; justify-content: center; 
     font-weight: bold; box-shadow: 0 4px 0 #999; position: relative;
-    opacity: 1;
-    will-change: transform, opacity;
   }
   @media (min-width: 450px) { .mj-tile { font-size: 36px; } }
 
-  .tile-drop { animation: dropIn 0.45s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards; }
-  @keyframes dropIn { 
-    0% { transform: translateY(-300px); opacity: 0; } 
-    100% { transform: translateY(0); opacity: 1; } 
-  }
-  @keyframes popIn { 0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; } 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
-  .eliminating { animation: vanish 0.3s forwards; z-index: 10; }
-  @keyframes vanish { to { transform: scale(1.4); opacity: 0; } }
+  .tile-drop { animation: dropIn 0.45s forwards; }
+  @keyframes dropIn { 0% { transform: translateY(-300px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
 
   .bottom-panel { background: #000; padding: 12px; width: 100%; }
-  
-  /* 更新後的顯示區佈局 */
   .display-row { display: flex; gap: 10px; margin-bottom: 10px; }
-  .win-display { 
-    flex: 2; background: #001a1a; color: var(--gold); text-align: center; 
-    padding: 8px; border-radius: 8px; font-weight: bold; 
-    border: 1px solid #004d40; font-size: 20px;
-  }
-  .rounds-counter {
-    flex: 1; background: #222; color: #aaa; text-align: center;
-    padding: 8px; border-radius: 8px; border: 1px solid #444;
-    display: flex; flex-direction: column; justify-content: center;
-  }
+  .win-display { flex: 2; background: #001a1a; color: var(--gold); text-align: center; padding: 8px; border-radius: 8px; font-weight: bold; border: 1px solid #004d40; font-size: 20px; }
+  .win-display.accumulating { background: #3e2723; border: 1px solid var(--gold); animation: pulse 1s infinite; }
+  @keyframes pulse { 50% { box-shadow: inset 0 0 10px var(--gold); } }
+
+  .rounds-counter { flex: 1; background: #222; color: #aaa; text-align: center; padding: 8px; border-radius: 8px; border: 1px solid #444; display: flex; flex-direction: column; justify-content: center; }
   .rounds-counter span { color: #fff; font-size: 18px; font-weight: bold; }
 
   .control-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-
-  .spin-btn { 
-    flex: 1.5; height: 55px; background: linear-gradient(#4db6ac, #00796b); 
-    border: none; border-radius: 12px; color: #fff; font-size: 22px; font-weight: bold;
-    box-shadow: 0 4px 0 #004d40;
-  }
-  .spin-btn:active { transform: translateY(2px); box-shadow: none; }
+  .spin-btn { flex: 1.5; height: 55px; background: linear-gradient(#4db6ac, #00796b); border: none; border-radius: 12px; color: #fff; font-size: 22px; font-weight: bold; box-shadow: 0 4px 0 #004d40; }
   .spin-btn:disabled { opacity: 0.5; }
-
-  .auto-btn { 
-    flex: 1; height: 55px; background: #455a64; border: none; 
-    border-radius: 12px; color: #fff; font-weight: bold; font-size: 16px;
-  }
+  .auto-btn { flex: 1; height: 55px; background: #455a64; border: none; border-radius: 12px; color: #fff; font-weight: bold; font-size: 16px; }
   .auto-btn.active { background: #c2185b; box-shadow: 0 0 15px #c2185b; }
+  .bet-box { flex: 1.2; background: #111; border-radius: 12px; padding: 5px; text-align: center; border: 1px solid #444; height: 55px; display: flex; flex-direction: column; justify-content: center; }
 
-  .bet-box { 
-    flex: 1.2; background: #111; border-radius: 12px; padding: 5px; 
-    text-align: center; border: 1px solid #444; height: 55px;
-    display: flex; flex-direction: column; justify-content: center;
-  }
-  .mj-tile.gold-bg { background: var(--gold) !important; box-shadow: 0 0 15px var(--gold); border: 2px solid #fff; }
+  .modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 5000; }
+  .rank-list { width: 85%; max-height: 60%; overflow-y: auto; background: #1a1a1a; border-radius: 10px; border: 1px solid #333; }
+  .rank-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #222; font-size: 14px; }
+  .rank-name { color: var(--gold); }
+  .rank-win { color: #2ecc71; font-weight: bold; }
 
-#huOverlay { 
-  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-  background: rgba(211, 47, 47, 0.9); color: white; padding: 20px 40px;
-  border-radius: 20px; border: 4px solid var(--gold); font-size: 40px; font-weight: bold;
-  z-index: 3000; display: none; white-space: nowrap; box-shadow: 0 0 30px rgba(0,0,0,0.5);
-  pointer-events: none; animation: popIn 0.3s cubic-bezier(0.17, 0.89, 0.32, 1.49);
-}
+  #huOverlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(211, 47, 47, 0.9); color: white; padding: 20px 40px; border-radius: 20px; border: 4px solid var(--gold); font-size: 40px; font-weight: bold; z-index: 3000; display: none; }
+  .eliminating { animation: vanish 0.3s forwards; z-index: 10; }
+  @keyframes vanish { to { transform: scale(1.4); opacity: 0; } }
+  .mj-tile.gold-bg { background: var(--gold) !important; box-shadow: 0 0 15px var(--gold); }
   #multOverlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; }
   .mj-red { color: var(--m-red); }
   .mj-blue { color: var(--m-blue); }
@@ -141,22 +125,41 @@
 
 <div id="huOverlay">胡啦！進入免費模式</div>
 
+<div id="rankModal" class="modal">
+    <div style="color:var(--gold); font-size:20px; margin-bottom:15px; font-weight:bold;">🏆開獎最高紀錄榜</div>
+    <div class="rank-list" id="rankList"></div>
+    <button class="audio-ctrl" style="margin-top:20px; padding:10px 30px; font-size:16px;" onclick="closeRank()">返回遊戲</button>
+</div>
+
+<div id="settlementOverlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 4000; text-align: center; color: var(--gold);">
+    <div style="font-size: 24px; color: white;">免費模式結束</div>
+    <div style="font-size: 18px; margin-top: 10px;">累積獎金</div>
+    <div id="totalSettlementAmt" style="font-size: 60px; font-weight: bold;">0</div>
+</div>
+
 <div id="multOverlay">
   <div style="color:white; font-size: 18px; margin-bottom: 10px;">本局倍率</div>
-  <div class="mult-box" id="rollingMult" style="font-size: 80px; color: var(--gold); font-weight: bold;">?</div>
+  <div id="rollingMult" style="font-size: 80px; color: var(--gold); font-weight: bold;">?</div>
 </div>
 
 <div class="topbar">
   <div class="audio-ctrl" onclick="toggleMute()" id="muteBtn">🔊</div>
   <div class="audio-ctrl" onclick="cycleBGM()" id="bgmBtn">🎵 音樂1</div>
-  <div class="balance-box" id="balanceBox">💎 <span id="balanceText">0</span></div>
-  <marquee style="flex:1; color:var(--gold); font-size: 11px;">有問題再說，例如又不會停下</marquee>
+  <div class="balance-box">💎 <span id="balanceText">0</span></div>
+  <marquee style="flex:1; color:var(--gold); font-size: 11px;">麻將消消樂</marquee>
   <a href="index.html" style="text-decoration:none;"><button class="audio-ctrl">🏠 回大廳</button></a>
 </div>
 
-<div class="free-game-bar" id="freeSpinsLeftBar">
+<div class="rank-header-area">
+    <div class="rank-btn-horizontal" onclick="openRank()">
+        <span>🏆 最大獎:</span>
+        <div id="topWinnerName">讀取中...</div>
+    </div>
+</div>
+
+<div class="free-game-bar">
   <span>FREE: <span id="freeSpinsLeft">0</span></span>
-  <span class="multiplier-tag" id="currentMult">X1</span>
+  <span id="currentMult">X1</span>
 </div>
 
 <div class="main-container">
@@ -168,7 +171,7 @@
 
 <div class="bottom-panel">
   <div class="display-row">
-    <div class="win-display">WIN: <span id="sessionWinText">0</span></div>
+    <div class="win-display" id="winDisplay">WIN: <span id="sessionWinText">0</span></div>
     <div class="rounds-counter">
         <div style="font-size: 9px;">未開:</div>
         <span id="roundsSinceFreeText">0</span>
@@ -178,9 +181,9 @@
     <div class="bet-box">
       <div style="font-size: 10px; color: #888;">BET</div>
       <div style="display:flex; align-items:center; justify-content:space-around;">
-        <span onclick="changeBet(-1)" style="color:var(--gold); font-size:24px; padding: 0 10px;">-</span>
+        <span onclick="changeBet(-1)" style="color:var(--gold); font-size:24px; cursor:pointer;">-</span>
         <span id="betText" style="font-weight:bold; font-size: 18px;">3000</span>
-        <span onclick="changeBet(1)" style="color:var(--gold); font-size:24px; padding: 0 10px;">+</span>
+        <span onclick="changeBet(1)" style="color:var(--gold); font-size:24px; cursor:pointer;">+</span>
       </div>
     </div>
     <button class="spin-btn" id="spinBtn" onclick="handleFirstClick(); startSpin();">SPIN</button>
@@ -195,17 +198,121 @@
 <audio id="sndMatch" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="auto"></audio>
 <audio id="sndBell" src="https://assets.mixkit.co/active_storage/sfx/1070/1070-preview.mp3" preload="auto"></audio>
 
+<script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore-compat.js"></script>
+
 <script>
+// --- Firebase 初始化 ---
+const firebaseConfig = {
+  apiKey: "AIzaSyDSRfVAuWCWCUd1NJopJ6wHvsqsAM4UzJA",
+  authDomain: "game-80d68.firebaseapp.com",
+  projectId: "game-80d68",
+  storageBucket: "game-80d68.firebasestorage.app",
+  messagingSenderId: "636332967920",
+  appId: "1:636332967920:web:29e5600daf4db0ab613f35",
+  measurementId: "G-MJZ4PGEHSQ"
+};
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.firestore();
+
+// --- 核心變數 ---
 let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
-let roundsSinceFree = parseInt(localStorage.getItem('mahjong_rounds_since_free')) || 0; // 新增：未胡局數紀錄
+let roundsSinceFree = parseInt(localStorage.getItem('mahjong_rounds_since_free')) || 0; 
 let isSpinning = false, isAuto = false, combo = 0, winThisSpin = 0;
-let freeSpins = 0, currentMultiplier = 1;
+let freeSpins = 0, currentMultiplier = 1, freeGameTotalWin = 0; 
 let currentBetIdx = 2, currentBGM = 1, isMuted = false, hasInteracted = false;
 const betOptions = [500, 1000, 3000, 5000, 10000, 50000];
 const baseIcons = ['🀎','🀚','🀝','🀑','🀔','🀄','🀅','⬜'];
 const tileColor = { '🀎':'mj-red','🀚':'mj-blue','🀝':'mj-blue','🀑':'mj-green','🀔':'mj-green','🀄':'mj-red','🀅':'mj-green','⬜':'mj-blue','胡':'tile-hu','元寶':'tile-wild' };
 let board = [];
 
+// --- 數據同步邏輯 ---
+async function saveData() {
+    localStorage.setItem('sicbo_balance', balance);
+    localStorage.setItem('mahjong_rounds_since_free', roundsSinceFree);
+    
+    const playerId = localStorage.getItem('player_id');
+    if (playerId && db) {
+        try {
+            await db.collection("users").doc(playerId).update({ 
+                balance: balance,
+                lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } catch (e) { console.warn("同步延遲"); }
+    }
+}
+
+async function syncAndRedirect(url) {
+    await saveData();
+    window.location.href = url;
+}
+
+window.onload = async () => {
+    createPillar(); 
+    initGrid();
+    
+    const localBal = localStorage.getItem('sicbo_balance');
+    if (localBal !== null) balance = parseFloat(localBal);
+
+    const playerId = localStorage.getItem('player_id');
+    if (playerId && db) {
+        try {
+            const doc = await db.collection("users").doc(playerId).get();
+            if (doc.exists) {
+                const cloudBal = doc.data().balance;
+                if (cloudBal !== undefined && cloudBal > balance) {
+                    balance = cloudBal;
+                    localStorage.setItem('sicbo_balance', balance);
+                } else if (cloudBal !== undefined && balance > cloudBal) {
+                    saveData();
+                }
+            }
+        } catch (e) { console.log("離線模式"); }
+    }
+
+    updateUI(); 
+    listenRank(); // 啟動雲端監聽
+
+    document.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', (e) => {
+            const href = link.getAttribute('href');
+            if (href && href !== '#' && !href.startsWith('javascript')) {
+                e.preventDefault();
+                syncAndRedirect(href);
+            }
+        });
+    });
+};
+
+window.addEventListener('pagehide', () => {
+    saveData();
+});
+
+// --- 排行榜監聽 (雲端版本) ---
+function listenRank() {
+    // 監聽 mahjong_wins 集合，按贏得金額降序排列，取前 10 名
+    db.collection("mahjong_wins").orderBy("win", "desc").limit(10).onSnapshot(snap => {
+        let html = '';
+        let first = true;
+        snap.forEach(doc => {
+            const d = doc.data();
+            // 更新頂部跑馬燈的最大獎名字
+            if(first) { 
+                document.getElementById('topWinnerName').innerText = `${d.name} $${Math.floor(d.win).toLocaleString()}`; 
+                first = false; 
+            }
+            html += `<div class="rank-item"><span class="rank-name">${d.name}</span><span class="rank-win">$${Math.floor(d.win).toLocaleString()}</span></div>`;
+        });
+        document.getElementById('rankList').innerHTML = html || '<div style="padding:20px; color:#666;">等待傳奇...</div>';
+    });
+}
+
+function openRank() { document.getElementById('rankModal').style.display = 'flex'; }
+function closeRank() { document.getElementById('rankModal').style.display = 'none'; }
+
+// --- 遊戲邏輯 ---
 function initGrid() {
     const gridEl = document.getElementById('grid');
     gridEl.innerHTML = '';
@@ -213,11 +320,8 @@ function initGrid() {
         board[r] = [];
         for (let c = 0; c < 4; c++) {
             board[r][c] = getRandomTile(r, c);
-            const t = document.createElement('div');
-            t.id = `tile-${r}-${c}`;
-            t.className = 'mj-tile';
-            gridEl.appendChild(t);
-            drawTile(r, c);
+            const t = document.createElement('div'); t.id = `tile-${r}-${c}`; t.className = 'mj-tile';
+            gridEl.appendChild(t); drawTile(r, c);
         }
     }
 }
@@ -226,9 +330,7 @@ function createPillar() {
   const p = document.getElementById('pillar');
   p.innerHTML = '';
   for (let i = 1; i <= 10; i++) {
-    const s = document.createElement('div');
-    s.id = `step-${i}`;
-    s.className = 'step';
+    const s = document.createElement('div'); s.id = `step-${i}`; s.className = 'step';
     if (i === 2) { s.innerHTML = '⬜'; s.classList.add('step-mj'); } 
     else if (i === 5) { s.innerHTML = '🀄'; s.classList.add('step-mj'); } 
     else if (i === 10) { s.innerHTML = '🀅'; s.classList.add('step-mj'); } 
@@ -239,106 +341,266 @@ function createPillar() {
 
 function updateUI() {
   document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString();
-  document.getElementById('betText').textContent = betOptions[currentBetIdx];
-  document.getElementById('sessionWinText').textContent = Math.floor(winThisSpin).toLocaleString();
+  document.getElementById('betText').textContent = betOptions[currentBetIdx].toLocaleString();
+  const winDisplay = document.getElementById('winDisplay');
+  if (freeSpins > 0 || document.getElementById('mainBody').classList.contains('in-free')) {
+      document.getElementById('sessionWinText').textContent = Math.floor(freeGameTotalWin).toLocaleString();
+      winDisplay.classList.add('accumulating');
+  } else {
+      document.getElementById('sessionWinText').textContent = Math.floor(winThisSpin).toLocaleString();
+      winDisplay.classList.remove('accumulating');
+  }
   document.getElementById('freeSpinsLeft').textContent = freeSpins;
   document.getElementById('currentMult').textContent = `X${currentMultiplier}`;
-  document.getElementById('roundsSinceFreeText').textContent = roundsSinceFree; // 更新未胡局數
-  
+  document.getElementById('roundsSinceFreeText').textContent = roundsSinceFree; 
   for (let i=1; i<=10; i++) {
     const s = document.getElementById(`step-${i}`);
     if(s) s.classList.toggle('active', combo >= i);
   }
   document.getElementById('mainBody').classList.toggle('free-game-active', freeSpins > 0 || document.getElementById('mainBody').classList.contains('in-free'));
   document.getElementById('spinBtn').disabled = isSpinning;
-  
-  localStorage.setItem('sicbo_balance', balance);
-  localStorage.setItem('mahjong_rounds_since_free', roundsSinceFree); // 存入未胡局數
 }
 
+function countTiles() {
+    let counts = {};
+    for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+            let icon = board[r] ? board[r][c] : null;
+            if (icon) {
+                counts[icon] = (counts[icon] || 0) + 1;
+            }
+        }
+    }
+    return counts;
+}
 function getRandomTile(r, c) {
     const isFree = freeSpins > 0 || document.getElementById('mainBody').classList.contains('in-free');
-    const rand = Math.random();
     
-    if (rand < 0.04) return '元寶'; 
-    if (!isFree && rand > 0.985) return '胡';
+    // 1. 特殊牌處理 (元寶與胡)
+    if (Math.random() < 0.04) return '元寶'; 
+    if (!isFree && Math.random() > 0.985) return '胡';
 
+    // 2. 取得當前盤面計數與 Wild 名單
+    const currentCounts = countTiles(); 
     const wildCandidates = ['⬜', '🀄', '🀅'];
-    const junkTiles = baseIcons.filter(icon => !wildCandidates.includes(icon));
 
-    let wildChance = 0.55; 
-    wildChance *= Math.pow(0.8, combo); 
-    if (c !== undefined && c < 2) wildChance *= 0.4;
+    // 3. *** 動態機率控制 ***
+    let wildChance = 0.55;
 
-    let counts = {};
-    board.forEach(row => {
-        row.forEach(icon => {
-            counts[icon] = (counts[icon] || 0) + 1;
-        });
-    });
-
-    let pick;
-    if (Math.random() < wildChance) {
-        pick = wildCandidates[Math.floor(Math.random() * wildCandidates.length)];
+    if (combo >= 10) {
+        // 連擊 10 次以上：極限機率，僅剩 0.5% (千分之五)
+        // 這會讓連擊極難延續，但理論上仍有可能
+        wildChance = 0.02; 
+    } else if (combo >= 7) {
+        // 連擊 7-9 次：低機率 (1.5%)
+        wildChance = 0.06;
     } else {
-        pick = junkTiles[Math.floor(Math.random() * junkTiles.length)];
+        // 正常衰減：使用 0.6 次方，5連擊時約 4.3%
+        wildChance = wildChance * Math.pow(0.75, combo);
     }
 
-    if (counts[pick] >= 4) {
-        let allPossible = [...wildCandidates, ...junkTiles];
-        pick = allPossible.reduce((a, b) => (counts[a] || 0) < (counts[b] || 0) ? a : b);
+    // 前兩行機率額外減半 (防止最容易觸發連線的位置產出 Wild)
+    if (c !== undefined && c < 2) wildChance *= 0.5;
+
+    // 4. 準備候選清單 (過濾已達 4 張的牌)
+    let availableIcons = baseIcons.filter(icon => (currentCounts[icon] || 0) < 4);
+    if (availableIcons.length === 0) availableIcons = baseIcons;
+
+    // 定義純雜牌 (不含白板、中、發)
+    const pureJunkTiles = availableIcons.filter(icon => !wildCandidates.includes(icon));
+
+    // 5. 決定最終產出的牌
+    if (Math.random() < wildChance) {
+        // 幸運抽中 Wild
+        let availableWilds = wildCandidates.filter(w => availableIcons.includes(w));
+        if (availableWilds.length > 0) {
+            return availableWilds[Math.floor(Math.random() * availableWilds.length)];
+        }
     }
 
-    return pick;
+    // 未抽中機率：強制從普通雜牌中抽取，確保不會「意外」掉落 Wild
+    if (pureJunkTiles.length > 0) {
+        return pureJunkTiles[Math.floor(Math.random() * pureJunkTiles.length)];
+    }
+
+    // 保底：若普通牌也滿了，才隨便給一張
+    return availableIcons[Math.floor(Math.random() * availableIcons.length)];
 }
 
 function handleFirstClick() { if (!hasInteracted) { hasInteracted = true; playBGM(); } }
 function playBGM() {
   const b1=document.getElementById('bgm1'), b2=document.getElementById('bgm2'), bf=document.getElementById('bgmFree');
-  [b1, b2, bf].forEach(b => b.pause());
+  [b1, b2, bf].forEach(b => { if(b) b.pause(); });
   if (isMuted) return;
   const isFree = freeSpins > 0 || document.getElementById('mainBody').classList.contains('free-game-active');
-  if (isFree) { bf.play().catch(()=>{}); } 
-  else { (currentBGM===1?b1:b2).play().catch(()=>{}); }
+  if (isFree) { if(bf) bf.play().catch(()=>{}); } 
+  else { const track = (currentBGM===1?b1:b2); if(track) track.play().catch(()=>{}); }
 }
 
 async function startSpin() {
-  if (isSpinning) return;
-  isSpinning = true; combo = 0; winThisSpin = 0; updateUI();
-  
-  if (freeSpins > 0) {
-    freeSpins--;
-    document.getElementById('mainBody').classList.add('in-free');
-    await runMultiplierDraw();
-  } else if (!freeSpins && document.getElementById('mainBody').classList.contains('in-free')) {
-    document.getElementById('mainBody').classList.remove('in-free');
-    currentMultiplier = 1;
-  } else {
-    if(balance < betOptions[currentBetIdx]) { isSpinning=false; isAuto=false; alert("餘額不足"); return; }
-    balance -= betOptions[currentBetIdx];
-    roundsSinceFree++; // 普通模式：局數 +1
-    currentMultiplier = 1;
-  }
-  
-  playBGM();
-  if(!isMuted) document.getElementById('sndSpin').play();
+    if (isSpinning) return;
+    isSpinning = true; 
+    combo = 0; 
+    winThisSpin = 0; 
+    updateUI();
 
-  for (let r=0; r<4; r++) {
-    for (let c=0; c<4; c++) {
-      const t = document.getElementById(`tile-${r}-${c}`);
-      t.style.opacity = '0';
-      t.classList.remove('tile-drop', 'eliminating');
-      board[r][c] = getRandomTile(r, c); 
-      
-      setTimeout(() => {
-        drawTile(r, c);
-        t.classList.add('tile-drop');
-      }, (3 - r) * 60 + (c * 30)); 
+    // 判斷是否要進入結算流程
+    if (freeSpins === 0 && document.getElementById('mainBody').classList.contains('in-free')) {
+        await finalizeFreeGame(); 
+        return; // 重要：結算完後由 finalizeFreeGame 決定下一步，這裡直接 return
     }
-  }
 
-  await new Promise(r => setTimeout(r, 700));
-  checkMatches();
+    // 正常扣款或進入免費遊戲抽倍數
+    if (freeSpins > 0) {
+        freeSpins--; 
+        document.getElementById('mainBody').classList.add('in-free');
+        await runMultiplierDraw();
+    } else {
+        // 普通模式扣款
+        if(balance < betOptions[currentBetIdx]) { 
+            isSpinning = false; 
+            isAuto = false; 
+            updateUI();
+            alert("餘額不足"); 
+            return; 
+        }
+        balance -= betOptions[currentBetIdx]; 
+        roundsSinceFree++; 
+        currentMultiplier = 1; 
+        freeGameTotalWin = 0;
+        saveData();
+    }
+
+    if(!isMuted) document.getElementById('sndSpin').play();
+
+    // 跑盤面動畫
+    for (let r=0; r<4; r++) {
+        for (let c=0; c<4; c++) {
+            const t = document.getElementById(`tile-${r}-${c}`);
+            t.style.opacity = '0'; 
+            t.classList.remove('tile-drop', 'eliminating', 'gold-bg');
+            board[r][c] = getRandomTile(r, c); 
+            setTimeout(() => { 
+                drawTile(r, c); 
+                t.classList.add('tile-drop'); 
+                t.style.opacity = '1'; 
+            }, (3 - r) * 60 + (c * 30)); 
+        }
+    }
+    
+    await new Promise(r => setTimeout(r, 700));
+    checkMatches();
+}
+
+async function finalizeFreeGame() {
+    // 結算畫面顯示
+    const overlay = document.getElementById('settlementOverlay');
+    document.getElementById('totalSettlementAmt').textContent = Math.floor(freeGameTotalWin).toLocaleString();
+    overlay.style.display = 'flex';
+    
+    // 加回餘額
+    balance += freeGameTotalWin;
+    
+    // 排行榜上傳邏輯
+    if (freeGameTotalWin > 0) {
+        try {
+            await db.collection("mahjong_wins").add({
+                name: localStorage.getItem('player_name') || '匿名大亨',
+                win: freeGameTotalWin,
+                time: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } catch (e) { console.warn("排行榜紀錄上傳失敗"); }
+    }
+
+    await new Promise(r => setTimeout(r, 3000));
+    overlay.style.display = 'none';
+    
+    // 清除免費遊戲狀態
+    document.getElementById('mainBody').classList.remove('in-free');
+    currentMultiplier = 1; 
+    freeGameTotalWin = 0; 
+    isSpinning = false; // 在這裡才釋放鎖定
+    saveData();
+    updateUI();
+
+    // 如果是自動模式，重新開始
+    if (isAuto) setTimeout(startSpin, 500);
+}
+
+async function checkMatches() {
+    let toEliminate = new Set();
+    baseIcons.forEach(target => {
+        let matchedInCols = [];
+        for (let c = 0; c < 4; c++) {
+            let colMatches = [];
+            for (let r = 0; r < 4; r++) { 
+                if (board[r][c] === target || isWild(board[r][c])) colMatches.push({r, c}); 
+            }
+            if (colMatches.length > 0) matchedInCols.push(colMatches); else break;
+        }
+        if (matchedInCols.length >= 3) matchedInCols.forEach(col => col.forEach(pos => toEliminate.add(`${pos.r},${pos.c}`)));
+    });
+
+    if (toEliminate.size > 0) {
+        combo++; 
+        if(!isMuted) document.getElementById('sndMatch').play();
+        let win = toEliminate.size * (betOptions[currentBetIdx] / 30) * currentMultiplier;
+        
+        if (document.getElementById('mainBody').classList.contains('in-free')) {
+            freeGameTotalWin += win;
+        } else {
+            winThisSpin += win; 
+            balance += win;
+        }
+        updateUI();
+
+        // 消除動畫
+        toEliminate.forEach(pos => { document.getElementById(`tile-${pos.split(',')[0]}-${pos.split(',')[1]}`).classList.add('gold-bg'); });
+        await new Promise(r => setTimeout(r, 150));
+        toEliminate.forEach(pos => { document.getElementById(`tile-${pos.split(',')[0]}-${pos.split(',')[1]}`).classList.add('eliminating'); });
+        await new Promise(r => setTimeout(r, 300));
+        
+        toEliminate.forEach(pos => {
+            const [r, c] = pos.split(',').map(Number); 
+            const el = document.getElementById(`tile-${r}-${c}`);
+            el.classList.remove('eliminating', 'tile-drop', 'gold-bg'); 
+            board[r][c] = getRandomTile(r, c); 
+            drawTile(r, c); 
+            el.classList.add('tile-drop');
+        });
+        setTimeout(checkMatches, 500);
+    } else {
+        // 沒有更多匹配了
+        let huCount = 0; 
+        board.forEach(row => row.forEach(icon => { if(icon === '胡') huCount++; }));
+
+        if (huCount >= 3 && freeSpins === 0 && !document.getElementById('mainBody').classList.contains('in-free')) {
+            // 觸發免費遊戲
+            roundsSinceFree = 0; 
+            if(!isMuted && document.getElementById('sndBell')) document.getElementById('sndBell').play();
+            document.getElementById('huOverlay').style.display = 'block';
+            freeSpins = 10; 
+            isSpinning = false; // 暫時釋放，讓 startSpin 能被下一動觸發
+            updateUI();
+            saveData();
+            setTimeout(() => { 
+                document.getElementById('huOverlay').style.display = 'none'; 
+                startSpin(); // 自動開始第一轉
+            }, 1000);
+        } else {
+            // 免費遊戲進行中或普通模式結束
+            isSpinning = false; 
+            updateUI();
+            saveData();
+            
+            if (isAuto || (freeSpins > 0)) {
+                setTimeout(startSpin, 1000);
+            } else if (document.getElementById('mainBody').classList.contains('in-free') && freeSpins === 0) {
+                // 這是最後一轉結束，下一動會進入結算
+                setTimeout(startSpin, 500);
+            }
+        }
+    }
 }
 
 async function runMultiplierDraw() {
@@ -351,8 +613,7 @@ async function runMultiplierDraw() {
     const timer = setInterval(() => {
       rollingText.textContent = `X${Math.floor(Math.random() * 15) + 2}`;
       if (Date.now() - startTime > 1000) {
-        clearInterval(timer);
-        currentMultiplier = finalMult;
+        clearInterval(timer); currentMultiplier = finalMult;
         rollingText.textContent = `X${finalMult}`;
         setTimeout(() => { overlay.style.display = 'none'; resolve(); }, 500);
       }
@@ -369,118 +630,22 @@ function isWild(icon) {
 }
 
 function drawTile(r, c) {
-  const el = document.getElementById(`tile-${r}-${c}`);
-  if(!el) return;
-  const icon = board[r][c];
-  el.className = `mj-tile ${tileColor[icon] || ''}`; 
+  const el = document.getElementById(`tile-${r}-${c}`); if(!el) return;
+  const icon = board[r][c]; el.className = `mj-tile ${tileColor[icon] || ''}`; 
   el.innerHTML = icon === '元寶' ? '💰' : icon;
   if (isWild(icon) && icon !== '胡') {
     el.innerHTML += '<div style="position:absolute;top:0;right:0;background:gold;color:#000;font-size:8px;padding:1px 2px;border-radius:0 0 0 4px;">WILD</div>';
   }
 }
 
-async function checkMatches() {
-  let toEliminate = new Set();
-  baseIcons.forEach(target => {
-    let matchedInCols = [];
-    for (let c = 0; c < 4; c++) {
-      let colMatches = [];
-      for (let r = 0; r < 4; r++) {
-        if (board[r][c] === target || isWild(board[r][c])) colMatches.push({r, c});
-      }
-      if (colMatches.length > 0) matchedInCols.push(colMatches);
-      else break;
-    }
-    if (matchedInCols.length >= 3) {
-      matchedInCols.forEach(col => col.forEach(pos => toEliminate.add(`${pos.r},${pos.c}`)));
-    }
-  });
-
-  if (toEliminate.size > 0) {
-    combo++;
-    if(!isMuted) document.getElementById('sndMatch').play();
-    
-    let basePrice = betOptions[currentBetIdx] / 50; 
-    let win = toEliminate.size * basePrice * currentMultiplier;
-    winThisSpin += win; balance += win; updateUI();
-
-    toEliminate.forEach(pos => {
-      const [r, c] = pos.split(',').map(Number);
-      const el = document.getElementById(`tile-${r}-${c}`);
-      el.classList.add('gold-bg'); 
-    });
-
-    await new Promise(r => setTimeout(r, 150));
-
-    toEliminate.forEach(pos => {
-      const [r, c] = pos.split(',').map(Number);
-      const el = document.getElementById(`tile-${r}-${c}`);
-      el.classList.add('eliminating'); 
-    });
-
-    await new Promise(r => setTimeout(r, 300));
-    
-    toEliminate.forEach(pos => {
-      const [r, c] = pos.split(',').map(Number);
-      board[r][c] = getRandomTile(r, c);
-      const el = document.getElementById(`tile-${r}-${c}`);
-      el.classList.remove('eliminating', 'tile-drop', 'gold-bg'); 
-      void el.offsetWidth; 
-      drawTile(r, c);
-      el.classList.add('tile-drop');
-    });
-    setTimeout(checkMatches, 500);
-  } else {
-    let huCount = 0;
-    board.forEach(row => row.forEach(icon => { if(icon === '胡') huCount++; }));
-    
-    if (huCount >= 3 && freeSpins === 0 && !document.getElementById('mainBody').classList.contains('in-free')) {
-      
-      roundsSinceFree = 0; // 重大時刻：歸零
-      if(!isMuted && document.getElementById('sndBell')) document.getElementById('sndBell').play();
-      
-      const huEl = document.getElementById('huOverlay');
-      if (huEl) huEl.style.display = 'block';
-      
-      freeSpins = 10; 
-      isSpinning = false; 
-      updateUI();
-      
-      setTimeout(() => {
-        if (huEl) huEl.style.display = 'none';
-        if (isAuto) { startSpin(); }
-      }, 1000);
-
-    } else {
-      isSpinning = false; 
-      if (freeSpins === 0 && document.getElementById('mainBody').classList.contains('in-free')) {
-          document.getElementById('mainBody').classList.remove('in-free');
-          currentMultiplier = 1; 
-      }
-      updateUI();
-      if (isAuto) { setTimeout(startSpin, 1000); }
-    }
-  }
-}
-
 function changeBet(dir) {
   if (!isSpinning && freeSpins === 0) {
-    let nextIdx = currentBetIdx + dir;
-    if (nextIdx < 0) nextIdx = 0;
-    else if (nextIdx >= betOptions.length) nextIdx = betOptions.length - 1;
-    currentBetIdx = nextIdx;
-    updateUI();
+    currentBetIdx = Math.max(0, Math.min(betOptions.length - 1, currentBetIdx + dir)); updateUI();
   }
 }
-function toggleAuto() { isAuto=!isAuto; document.getElementById('autoBtn').classList.toggle('active', isAuto); if(isAuto && !isSpinning) startSpin(); }
-function cycleBGM() { currentBGM=currentBGM===1?2:1; document.getElementById('bgmBtn').textContent=`🎵 音樂 ${currentBGM}`; if(hasInteracted) playBGM(); }
-function toggleMute() { isMuted=!isMuted; document.getElementById('muteBtn').textContent=isMuted?'🔇':'🔊'; playBGM(); }
-
-window.onload = () => { 
-    createPillar(); 
-    initGrid(); 
-    updateUI(); 
-};
+function toggleAuto() { isAuto = !isAuto; document.getElementById('autoBtn').classList.toggle('active', isAuto); if (isAuto && !isSpinning) startSpin(); }
+function cycleBGM() { currentBGM = currentBGM === 1 ? 2 : 1; document.getElementById('bgmBtn').textContent = `🎵 音樂 ${currentBGM}`; if(hasInteracted) playBGM(); }
+function toggleMute() { isMuted = !isMuted; document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊'; playBGM(); }
 </script>
 </body>
 </html>

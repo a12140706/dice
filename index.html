@@ -23,125 +23,99 @@
     margin: 0; padding: 0;
     background: radial-gradient(circle at center, #2a0202, #050000);
     color: #fff; font-family: "Microsoft JhengHei", Arial;
-    /* 強制高度等於視窗高度，嚴禁捲動 */
     height: 100dvh; width: 100vw;
     display: flex; flex-direction: column;
     overflow: hidden; 
-    padding-top: env(safe-area-inset-top); /* 自動閃開瀏海 */
-    padding-left: env(safe-area-inset-left); /* 閃開橫放時的側邊（如果有） */
-    padding-right: env(safe-area-inset-right);
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
-.header-or-logo {
-    margin-top: 10px; /* 給瀏海下方留一點呼吸空間，不要貼太死 */
-}
-  /* 頂部導覽列 */
+
   .header {
-    height: 12%; max-height: 70px; min-height: 50px;
+    height: 50px; flex-shrink: 0;
     background: linear-gradient(to bottom, #5c0a0a, #2a0202);
     display: flex; align-items: center; justify-content: space-between;
-    padding: 0 20px; border-bottom: 2px solid var(--gold);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.5); flex-shrink: 0;
+    padding: 0 15px; border-bottom: 2px solid var(--gold);
+    z-index: 100;
   }
-  
-  /* 修正處：使用 clamp 代替不存在的 max-font-size */
-  /* 語法：clamp(最小, 隨螢幕變動值, 最大) */
-  .logo { 
-    font-size: clamp(18px, 5dvw, 24px); 
-    font-weight: 900; color: var(--gold); text-shadow: 2px 2px 4px #000; 
-  }
+  .logo { font-size: 18px; font-weight: 900; color: var(--gold); }
+  .balance-display { background: rgba(0,0,0,0.6); padding: 4px 12px; border-radius: 20px; border: 1px solid var(--gold); font-size: 15px; color: var(--gold); font-weight: bold; cursor: pointer; }
 
-  .balance-display { 
-    background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px;
-    border: 1px solid var(--gold); font-size: 18px; color: var(--gold); font-weight: bold;
-  }
-
-  /* 遊戲容器 */
   .container {
-    flex: 1; 
-    display: flex; flex-direction: column;
-    justify-content: space-evenly; 
-    align-items: center;
-    padding: 10px; width: 100%; max-width: 1000px; margin: 0 auto;
+    flex: 1; display: flex; flex-direction: column;
+    padding: 10px; width: 100%; max-width: 800px; margin: 0 auto;
+    overflow: hidden;
   }
 
-  .welcome-msg { font-size: 16px; color: #ccc; flex-shrink: 0; }
+  .welcome-msg { font-size: 14px; color: #ccc; text-align: center; margin-bottom: 8px; }
 
-  /* 遊戲網格 */
- .game-grid {
-    display: grid;
-    /* minmax(80px, 1fr) 確保按鈕寬度不會小於 80px，裝不下就自動換行 */
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); 
-    gap: 10px; 
-    width: 100%;
-    /* 移除 max-height，讓它根據內容自然向下延伸 */
-    margin-bottom: 20px;
+  .game-grid {
+    flex: 1; display: grid;
+    grid-template-columns: repeat(3, 1fr); gap: 10px; 
+    align-content: start; overflow-y: auto; padding-bottom: 10px;
   }
 
   .game-card {
-    background: var(--card-bg); border: 2px solid #444; border-radius: 12px;
-    overflow: hidden; cursor: pointer; transition: transform 0.2s;
+    background: var(--card-bg); border: 1px solid #444; border-radius: 12px;
     display: flex; flex-direction: column; text-decoration: none; color: inherit;
-    /* 保持正方形比例，這樣換行後也會很整齊 */
-    aspect-ratio: 1 / 1; 
+    min-height: 85px; transition: transform 0.1s;
   }
-  .game-card:active { transform: scale(0.95); border-color: var(--gold); }
   
-  /* 修正處：圖標大小也改用 clamp */
-  .game-img { 
-    flex: 1; display: flex; align-items: center; justify-content: center;
-    font-size: clamp(30px, 10dvw, 60px); 
-    border-bottom: 1px solid #444;
+  .game-img { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+  .game-info { height: 28px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); border-radius: 0 0 12px 12px; }
+  .game-title { font-size: 12px; color: var(--gold); font-weight: bold; }
+
+  .deposit-area { width: 100%; display: flex; gap: 10px; flex-shrink: 0; padding: 10px 0; }
+  .btn-deposit { flex: 2; padding: 12px; border-radius: 12px; border: 2px solid var(--gold); background: linear-gradient(#ff4757, #b91c1c); color: #fff; font-size: 18px; font-weight: 900; }
+  .btn-rank { flex: 1; padding: 12px; border-radius: 12px; border: 2px solid var(--gold); background: linear-gradient(#f59e0b, #92400e); color: #fff; font-size: 15px; font-weight: 900; }
+
+  .footer { text-align: center; padding: 5px 0; font-size: 10px; color: #444; }
+
+  /* --- 排行榜側邊欄修正 --- */
+  #rankOverlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7); display: none; z-index: 2999;
   }
 
-  .game-info { padding: 5px; text-align: center; flex-shrink: 0; }
-  .game-title { font-size: 16px; font-weight: bold; color: var(--gold); }
-  .game-desc { font-size: 12px; color: #aaa; display: block; }
+  #rankSidebar {
+    position: fixed; top: 0; right: -100%; /* 初始隱藏在右側 */
+    width: 80%; max-width: 320px; height: 100%;
+    background: #1a0202; border-left: 2px solid var(--gold);
+    z-index: 3000; transition: 0.3s ease; 
+    display: flex; flex-direction: column; padding: 20px;
+  }
+  #rankSidebar.active { right: 0; } /* 啟動時拉回螢幕 */
 
-  /* 儲值按鈕區域 */
-  .deposit-area {
-    width: 100%; max-width: 400px; flex-shrink: 0;
-  }
-  .btn-deposit {
-    width: 100%; padding: 12px; border-radius: 50px; border: 2px solid var(--gold);
-    background: linear-gradient(#ff4757, #b91c1c); color: #fff;
-    font-size: 20px; font-weight: 900; cursor: pointer;
-    box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+  .rank-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--gold); padding-bottom: 10px; }
+  .rank-list { flex: 1; overflow-y: auto; margin-top: 10px; }
+  .rank-item { display: flex; justify-content: space-between; padding: 12px 5px; border-bottom: 1px solid rgba(255,216,107,0.1); font-size: 14px; }
+  .rank-num { color: var(--gold); font-weight: bold; width: 25px; }
+  .rank-name { flex: 1; margin-left: 5px; }
+  .rank-bal { color: #fff; }
+  .close-rank { font-size: 30px; color: var(--gold); cursor: pointer; }
+
+  /* 橫向模式調整 */
+  @media (orientation: landscape) {
+    .game-grid { grid-template-columns: repeat(5, 1fr); }
+    .game-card { min-height: 65px; }
+    .game-img { font-size: 22px; }
   }
 
-  .footer { 
-    text-align: center; padding-bottom: env(safe-area-inset-bottom); 
-    font-size: 10px; color: #555; flex-shrink: 0;
-  }
-
-  /* 彈窗邏輯維持不變 */
-  .modal {
-    position: fixed; top:0; left:0; width:100%; height:100%;
-    background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 1000;
-  }
-  .modal-content {
-    background: #1a1a1a; border: 2px solid var(--gold); padding: 25px; border-radius: 20px;
-    width: 85%; max-width: 320px; text-align: center;
-  }
-  .modal-btn {
-    display: block; width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px;
-    border: none; font-size: 18px; font-weight: bold; cursor: pointer; color: #fff;
-  }
+  .modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 2000; }
+  .modal-content { background: #1a1a1a; border: 2px solid var(--gold); padding: 20px; border-radius: 20px; width: 85%; max-width: 320px; text-align: center; }
+  .modal-btn { display: block; width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: none; font-size: 16px; font-weight: bold; color: #fff; }
 </style>
 </head>
 <body>
 
 <div class="header">
   <div class="logo">阿記三缺一</div>
-  <div class="balance-display">💎 <span id="mainBalance">0</span></div>
+  <div class="balance-display" onclick="toggleRank()">💎 <span id="mainBalance">0</span></div>
 </div>
 <div>
-<marquee style="flex:1; color:var(--gold);">連連看、消消樂修復了BUG，新增combo與最高分機制</marquee>
-<marquee style="flex:1; color:var(--gold);">賽馬場賠率與馬匹能力值調整，略微提高黑馬勝率，新增梭哈功能</marquee>
-<marquee style="flex:1; color:var(--gold);">有特殊模式的遊戲跟骰寶加上了未開局數</marquee>
+<marquee style="flex:1; color:var(--gold);">線上測試版</marquee>
 </div>
 
 <div class="container">
-  <div class="welcome-msg">選擇遊戲</div>
+  <div class="welcome-msg" id="welcomeUser">選擇遊戲</div>
   
   <div class="game-grid">
     <a href="sicbo.html" class="game-card">
@@ -193,22 +167,33 @@
         <div class="game-title">連連看</div>
       </div>
     </a>
-    <a href="gua.html" class="game-card">
+    <a href="#" class="game-card">
       <div class="game-img" style="background: linear-gradient(45deg, #312222, #bad7c7);">🧧</div>
       <div class="game-info">
-        <div class="game-title">未完成刮刮樂</div>
+        <div class="game-title">(暫無)未完成刮刮樂</div>
       </div>
     </a>
   </div>
 
   <div class="deposit-area">
     <button class="btn-deposit" onclick="openModal()">💸 謀吉阿</button>
-
+    <button class="btn-rank" onclick="toggleRank()">🏆 排行</button>
   </div>
 </div>
 
 <div class="footer">
   &copy; 阿記娛樂城
+</div>
+
+<div id="rankOverlay" onclick="toggleRank()"></div>
+<div id="rankSidebar">
+  <div class="rank-header">
+    <h2 style="color:var(--gold); margin:0;">💎排行榜</h2>
+    <span class="close-rank" onclick="toggleRank()">&times;</span>
+  </div>
+  <div class="rank-list" id="rankList">
+    <p style="text-align:center; color:#888;">載入中...</p>
+  </div>
 </div>
 
 <div id="depositModal" class="modal">
@@ -221,11 +206,37 @@
   </div>
 </div>
 
+<div id="nameModal" class="modal">
+  <div class="modal-content">
+    <h2 style="color:var(--gold);">請輸入遊戲暱稱</h2>
+    <p style="color:#ccc; font-size:14px;">用於排行榜顯示</p>
+    <input type="text" id="nicknameInput" placeholder="最多8個字" maxlength="8">
+    <button class="modal-btn" style="background:var(--red);" onclick="saveNewPlayer()">進入遊戲</button>
+  </div>
+</div>
+
 <audio id="sndCash" src="https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3" preload="auto"></audio>
 
+<script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore-compat.js"></script>
+
 <script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDSRfVAuWCWCUd1NJopJ6wHvsqsAM4UzJA",
+    authDomain: "game-80d68.firebaseapp.com",
+    projectId: "game-80d68",
+    storageBucket: "game-80d68.firebasestorage.app",
+    messagingSenderId: "636332967920",
+    appId: "1:636332967920:web:29e5600daf4db0ab613f35",
+    measurementId: "G-MJZ4PGEHSQ"
+  };
+
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.firestore();
+
   function updateMainBalance() {
-    // 確保使用正確的 Key
     const balance = localStorage.getItem('sicbo_balance') || '5000';
     document.getElementById('mainBalance').textContent = Math.floor(parseFloat(balance)).toLocaleString();
   }
@@ -233,24 +244,156 @@
   function openModal() { document.getElementById('depositModal').style.display = 'flex'; }
   function closeModal() { document.getElementById('depositModal').style.display = 'none'; }
 
-  function handleDeposit(amt) {
+  async function handleDeposit(amt) {
     let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
     balance += amt;
-    localStorage.setItem('sicbo_balance', balance); // 更新餘額
+    localStorage.setItem('sicbo_balance', balance); 
+    const playerId = localStorage.getItem('player_id');
+    if (playerId) {
+      await db.collection("users").doc(playerId).update({ balance: balance });
+    }
     document.getElementById('sndCash').play().catch(()=>{});
     updateMainBalance();
     alert("阿記幫你刷了 " + amt.toLocaleString());
     closeModal();
   }
 
-  window.onload = updateMainBalance;
+  // 排行榜顯示切換
+  async function toggleRank() {
+    const sidebar = document.getElementById('rankSidebar');
+    const overlay = document.getElementById('rankOverlay');
+    
+    if (sidebar.classList.contains('active')) {
+      sidebar.classList.remove('active');
+      overlay.style.display = 'none';
+    } else {
+      sidebar.classList.add('active');
+      overlay.style.display = 'block';
+      loadRanking(); // 開啟時抓取最新排名
+    }
+  }
+
+  // 從 Firebase 抓取前 10 名
+  async function loadRanking() {
+    const rankList = document.getElementById('rankList');
+    try {
+      const snapshot = await db.collection("users").orderBy("balance", "desc").limit(10).get();
+      let html = '';
+      let i = 1;
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        html += `
+          <div class="rank-item">
+            <span class="rank-num">${i}</span>
+            <span class="rank-name">${data.name || '無名氏'}</span>
+            <span class="rank-bal">$${Math.floor(data.balance).toLocaleString()}</span>
+          </div>
+        `;
+        i++;
+      });
+      rankList.innerHTML = html || '<p style="text-align:center; color:#888;">尚無排名數據</p>';
+    } catch (e) {
+      rankList.innerHTML = '<p style="text-align:center; color:red;">載入失敗</p>';
+    }
+  }
+
+  async function checkUserStatus() {
+    let playerId = localStorage.getItem('player_id');
+    
+    // --- 關鍵修正：如果沒有 ID，代表是新玩家，直接彈出視窗 ---
+    if (!playerId || playerId === "null") {
+      document.getElementById('nameModal').style.display = 'flex';
+      updateMainBalance();
+      return; 
+    }
+
+    try {
+        const doc = await db.collection("users").doc(playerId).get();
+        if (doc.exists) {
+            const cloudData = doc.data();
+            const localBal = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
+            const cloudBal = cloudData.balance;
+
+            localStorage.setItem('player_name', cloudData.name);
+
+            if (cloudBal !== undefined && cloudBal > localBal) {
+                localStorage.setItem('sicbo_balance', cloudBal);
+            } 
+            else if (cloudBal !== undefined && localBal > cloudBal) {
+                await db.collection("users").doc(playerId).update({ balance: localBal });
+            }
+
+            document.getElementById('welcomeUser').textContent = `歡迎回來，${cloudData.name}`;
+            updateMainBalance();
+        } else {
+            // 如果有 ID 但雲端查無資料，也視為新玩家
+            document.getElementById('nameModal').style.display = 'flex';
+        }
+    } catch (e) {
+      console.error("Firebase 連線失敗", e);
+      const localName = localStorage.getItem('player_name');
+      if (localName) {
+        document.getElementById('welcomeUser').textContent = `歡迎回來(離線)，${localName}`;
+      } else {
+        // 離線狀態且本地也沒存過名字，一定要彈出視窗
+        document.getElementById('nameModal').style.display = 'flex';
+      }
+      updateMainBalance();
+    }
+  }
+
+  // --- 關鍵修復：儲存暱稱 ---
+  async function saveNewPlayer() {
+    const nameInput = document.getElementById('nicknameInput');
+    const name = nameInput.value.trim();
+    if (!name) return alert("請輸入名字！");
+
+    // 1. 強制重新獲取一次 ID，如果沒有就地生成
+    let playerId = localStorage.getItem('player_id');
+    if (!playerId || playerId === "" || playerId === "null") {
+      playerId = 'u' + Date.now() + Math.floor(Math.random() * 1000);
+      localStorage.setItem('player_id', playerId);
+    }
+
+    const localBal = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
+
+    try {
+      // 2. 先存本地，確保 UI 能先動
+      localStorage.setItem('player_name', name);
+      localStorage.setItem('sicbo_balance', localBal);
+
+      // 3. 執行 Firebase 寫入 (此時 playerId 絕對有值)
+      await db.collection("users").doc(playerId).set({
+        name: name,
+        balance: localBal,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      document.getElementById('nameModal').style.display = 'none';
+      document.getElementById('welcomeUser').textContent = `歡迎，${name}`;
+      updateMainBalance();
+    } catch (e) {
+      console.error("儲存失敗:", e);
+      // 萬一 Firebase 真的還是失敗，至少要讓玩家關掉視窗進入遊戲
+      document.getElementById('nameModal').style.display = 'none';
+      document.getElementById('welcomeUser').textContent = `歡迎(本地)，${name}`;
+      updateMainBalance();
+    }
+  }
+
+  window.onload = function() {
+    updateMainBalance();
+    checkUserStatus();
+  };
+
   document.addEventListener('click', function(e) {
     let target = e.target.closest('a');
     if (target && target.href && target.getAttribute('href') !== '#') {
         e.preventDefault();
         window.location.href = target.href;
     }
-}, false);
+  }, false);
+
   window.addEventListener('storage', (e) => {
     if (e.key === 'sicbo_balance') updateMainBalance();
   });

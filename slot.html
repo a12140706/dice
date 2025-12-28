@@ -93,8 +93,25 @@
 <audio id="bgm2" src="soft-background-music-427252.mp3" loop preload="auto"></audio>
 <audio id="bgm3" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" loop preload="auto"></audio>
 <audio id="sndSuperWin" src="https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3" preload="auto"></audio>
-
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 <script>
+// --- Firebase 初始化 ---
+const firebaseConfig = {
+  apiKey: "AIzaSyDSRfVAuWCWCUd1NJopJ6wHvsqsAM4UzJA",
+  authDomain: "game-80d68.firebaseapp.com",
+  projectId: "game-80d68",
+  storageBucket: "game-80d68.firebasestorage.app",
+  messagingSenderId: "636332967920",
+  appId: "1:636332967920:web:29e5600daf4db0ab613f35",
+  measurementId: "G-MJZ4PGEHSQ"
+};
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.firestore();
+
+// --- 核心變數 ---
 let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
 const betOptions = [100, 500, 1000, 5000, 10000];
 let currentBetIdx = 2;
@@ -104,7 +121,72 @@ let currentBgmIdx = 1;
 const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
 const PAYLINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 4, 8], [2, 4, 6]];
 
-// 初始化捲軸內容
+// --- 數據存取邏輯 (本地優先，手動同步雲端) ---
+async function saveData(syncToCloud = false) {
+    // 永遠更新本地紀錄
+    localStorage.setItem('sicbo_balance', balance);
+    
+    // 只有特定時刻 (如回大廳) 才上傳雲端，避免頻繁寫入
+    const playerId = localStorage.getItem('player_id');
+    if (syncToCloud && playerId && db) {
+        try {
+            await db.collection("users").doc(playerId).update({ 
+                balance: balance,
+                lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            console.log("雲端同步成功");
+        } catch (e) { 
+            console.warn("雲端同步暫緩"); 
+        }
+    }
+}
+
+// --- 初始化與同步邏輯 ---
+window.onload = async () => {
+    initReels();
+
+    // 1. 讀取本地餘額
+    const localBal = localStorage.getItem('sicbo_balance');
+    if (localBal !== null) balance = parseFloat(localBal);
+
+    // 2. 比對雲端餘額 (取多者)
+    const playerId = localStorage.getItem('player_id');
+    if (playerId && db) {
+        try {
+            const doc = await db.collection("users").doc(playerId).get();
+            if (doc.exists) {
+                const cloudBal = doc.data().balance;
+                if (cloudBal !== undefined && cloudBal > balance) {
+                    balance = cloudBal;
+                    localStorage.setItem('sicbo_balance', balance);
+                } else if (cloudBal !== undefined && balance > cloudBal) {
+                    // 如果本地比較多，異步幫雲端更新一下
+                    saveData(true);
+                }
+            }
+        } catch (e) { console.log("離線模式運作中"); }
+    }
+    updateUI();
+
+    // 3. 攔截所有連結，點擊跳轉前強制同步雲端
+    document.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', async (e) => {
+            const href = link.getAttribute('href');
+            if (href && href !== '#' && !href.startsWith('javascript')) {
+                e.preventDefault();
+                await saveData(true); // 強制雲端同步
+                window.location.href = href;
+            }
+        });
+    });
+};
+
+// 處理滑掉/關閉分頁 (最後一次本地備份)
+window.addEventListener('pagehide', () => {
+    localStorage.setItem('sicbo_balance', balance);
+});
+
+// --- 遊戲初始化 ---
 function initReels() {
   for(let i=0; i<9; i++) {
     const strip = document.getElementById('s'+i);
@@ -116,14 +198,12 @@ function initReels() {
   }
 }
 
-// ================= 背景音樂系統修正 =================
-
+// --- 背景音樂與音效控制 ---
 function stopAllBGM() {
     bgmList.forEach(id => { 
         if(id) { 
             const a = document.getElementById(id); 
-            a.pause(); 
-            a.currentTime = 0; 
+            if(a) { a.pause(); a.currentTime = 0; }
         } 
     });
 }
@@ -138,10 +218,7 @@ function cycleBGM() {
         btn.textContent = '🎵 音樂 ' + currentBgmIdx;
         if (!isMuted) {
             const bgm = document.getElementById(bgmList[currentBgmIdx]);
-            if(bgm) {
-                bgm.volume = 0.3;
-                bgm.play().catch(()=>{});
-            }
+            if(bgm) { bgm.volume = 0.3; bgm.play().catch(()=>{}); }
         }
     }
 }
@@ -149,28 +226,19 @@ function cycleBGM() {
 function toggleMute() {
     isMuted = !isMuted;
     document.getElementById('soundIcon').textContent = isMuted ? '🔇' : '🔊';
-    if (isMuted) {
-        stopAllBGM();
-    } else {
-        if (currentBgmIdx !== 0) {
-            const bgm = document.getElementById(bgmList[currentBgmIdx]);
-            if(bgm) bgm.play().catch(()=>{});
-        }
+    if (isMuted) stopAllBGM();
+    else if (currentBgmIdx !== 0) {
+        const bgm = document.getElementById(bgmList[currentBgmIdx]);
+        if(bgm) bgm.play().catch(()=>{});
     }
 }
 
-// 核心解鎖：移植骰寶方案，點擊畫面解鎖所有音訊
 function unlockAudio() {
     const audios = document.querySelectorAll('audio');
     audios.forEach(a => {
         a.muted = true;
-        a.play().then(() => {
-            a.pause();
-            a.currentTime = 0;
-            a.muted = false;
-        }).catch(() => {});
+        a.play().then(() => { a.pause(); a.currentTime = 0; a.muted = false; }).catch(() => {});
     });
-
     setTimeout(() => {
         if (!isMuted && currentBgmIdx !== 0) {
             const bgm = document.getElementById(bgmList[currentBgmIdx]);
@@ -183,8 +251,7 @@ function unlockAudio() {
 document.addEventListener('click', unlockAudio);
 document.addEventListener('touchstart', unlockAudio);
 
-// ================= 遊戲核心邏輯 =================
-
+// --- 遊戲邏輯 ---
 function updateUI() {
   document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString();
   document.getElementById('betDisplay').textContent = "$" + betOptions[currentBetIdx];
@@ -204,9 +271,18 @@ function toggleAuto() {
 
 function spin() {
   const cost = betOptions[currentBetIdx];
-  if (balance < cost) { alert("謀吉阿"); isAuto = false; document.getElementById('autoBtn').classList.remove('auto-active'); return; }
+  if (balance < cost) { 
+    alert("謀吉阿"); 
+    isAuto = false; 
+    document.getElementById('autoBtn').classList.remove('auto-active'); 
+    return; 
+  }
   
-  isSpinning = true; balance -= cost; updateUI();
+  isSpinning = true; 
+  balance -= cost; 
+  updateUI();
+  saveData(); // 平常轉動只存本地
+
   document.getElementById('spinBtn').disabled = true;
   document.querySelectorAll('.cell').forEach(c => c.classList.remove('win-glow'));
   document.getElementById('winText').style.display = 'none';
@@ -287,12 +363,9 @@ function finalize(results) {
   isSpinning = false;
   document.getElementById('spinBtn').disabled = false;
   updateUI();
-  localStorage.setItem('sicbo_balance', balance);
+  saveData(); // 中獎加錢只存本地
   if (isAuto) setTimeout(spin, 1500);
 }
-
-initReels();
-updateUI();
 </script>
 </body>
 </html>

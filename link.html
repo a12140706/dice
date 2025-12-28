@@ -124,6 +124,16 @@
   <div class="sound-btn" onclick="toggleMute()" id="muteBtn">🔊</div>
   <div class="sound-btn" onclick="cycleBGM()" id="bgmBtn">🎵 音樂 1</div>
   <div class="balance-box">💎 <span id="balanceText">0</span></div>
+  <button onclick="showRank()" style="padding:5px 10px; background:#f1c40f; border:none; border-radius:5px; font-weight:bold;">🏆 排行榜</button>
+
+<div id="rankOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:1000; justify-content:center; align-items:center;">
+    <div style="background:#222; width:85%; max-width:400px; border-radius:15px; border:2px solid #f1c40f; padding:20px;">
+        <h2 style="color:#f1c40f; text-align:center; margin-bottom:15px;">連連看排行榜</h2>
+        <div id="rankList" style="max-height:300px; overflow-y:auto; margin-bottom:15px;">
+            </div>
+        <button onclick="document.getElementById('rankOverlay').style.display='none'" style="width:100%; padding:10px; background:#444; color:#fff; border:none; border-radius:8px;">關閉</button>
+    </div>
+</div>
   <marquee id="bonusInfo" style="flex:1; color:var(--gold); font-size: 12px;">龍會加秒數，牛跟虎錢比較多，豬會額外消一對</marquee>
   <a href="index.html" style="text-decoration:none;">
     <button style="background:none; border:1px solid #777; color:#ccc; border-radius:5px; padding:5px 12px; font-size:14px; font-weight:bold;">🏠 回大廳</button>
@@ -145,11 +155,11 @@
     <div class="mode-switch"><label>🌪️ 地震 (+0.8倍)</label><input type="checkbox" id="shakeToggle" onchange="updateBonusInfo()"></div>
     <div class="mode-switch"><label>⏳ 閃爍 (+1.2倍)</label><input type="checkbox" id="blinkToggle" onchange="updateBonusInfo()"></div>
 
-    <button class="btn-action" id="startBtn" onclick="startGame()">開一局 $500</button>
+    <button class="btn-action" id="startBtn" onclick="startGame()">新開一局 $500</button>
     <button class="btn-action" style="background: #444; border-color: #777; font-size:14px; margin-top:5px;" onclick="shuffleGrid()">🔄 隨機洗牌</button>
 
     <div class="leaderboard">
-        <div style="color:var(--gold); font-size:12px; text-align:center;">🏆 最高紀錄</div>
+        <div style="color:var(--gold); font-size:12px; text-align:center;">🏆個人紀錄</div>
         <div class="rank-item" style="color:#0f0"><span>單局</span><span id="highScoreText">$0</span></div>
     </div>
   </div>
@@ -172,7 +182,28 @@
 <audio id="sndShake" src="https://assets.mixkit.co/active_storage/sfx/1103/1103-preview.mp3"></audio>
 <audio id="sndWin" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="auto"></audio>
 
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
 <script>
+// --- Firebase 初始化 ---
+const firebaseConfig = {
+  apiKey: "AIzaSyDSRfVAuWCWCUd1NJopJ6wHvsqsAM4UzJA",
+  authDomain: "game-80d68.firebaseapp.com",
+  projectId: "game-80d68",
+  storageBucket: "game-80d68.firebasestorage.app",
+  messagingSenderId: "636332967920",
+  appId: "1:636332967920:web:29e5600daf4db0ab613f35",
+  measurementId: "G-MJZ4PGEHSQ"
+};
+
+// 避免重複初始化
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.firestore();
+
+// --- 核心變數 ---
 let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
 let highScore = parseFloat(localStorage.getItem('connect_high_score')) || 0;
 let currentGameProfit = 0, timeLeft = 0, timer = null, selected = null;
@@ -182,10 +213,168 @@ const ROWS = 6, COLS = 8;
 const icons = ['🐭', '🐰', '🐍', '🐴', '🐑', '🐒', '🐔', '🐶', '🐲', '🐷', '🐮', '🐯'];
 let boardData = [], currentMultiplier = 1.0;
 let tilesLeft = 0; 
-
 let comboCount = 0;
 let lastMatchTime = 0;
 const COMBO_TIMEOUT = 2000; 
+
+// 修改後的數據存取邏輯
+async function saveData(syncToCloud = false) {
+    // 1. 永遠先存本地 (修正鍵名為 link_high_score 以保持一致)
+    localStorage.setItem('sicbo_balance', balance);
+    localStorage.setItem('connect_high_score', highScore); // 確保這裡的名稱與你遊戲讀取時一致
+
+    const playerId = localStorage.getItem('player_id');
+    if (!playerId || !db) return;
+
+    // 2. 如果是點擊「回大廳」，強制同步 Balance 與 Score
+    if (syncToCloud === true) {
+        try {
+            await db.collection("users").doc(playerId).update({ 
+                balance: balance,
+                connect_high_score: highScore, // 此時的 highScore 已經是含倍率的分數
+                lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            console.log("返回大廳：餘額與紀錄已完整同步");
+            return;
+        } catch (e) { console.warn("同步失敗", e); }
+    }
+
+    // 3. 遊戲結束時自動判斷 (只有破紀錄且夠強才存雲端)
+    try {
+        const rankSnap = await db.collection("users")
+            .orderBy("connect_high_score", "desc")
+            .limit(10)
+            .get();
+
+        let top10Threshold = 0;
+        if (rankSnap.size >= 10) {
+            top10Threshold = rankSnap.docs[rankSnap.docs.length - 1].data().connect_high_score || 0;
+        }
+
+        // 如果目前分數超過前十名門檻，就更新雲端排行榜
+        if (highScore > top10Threshold || rankSnap.size < 10) {
+            await db.collection("users").doc(playerId).update({ 
+                connect_high_score: highScore,
+                balance: balance, // 既然都要連雲端了，順便把錢也更新
+                lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            console.log("恭喜上榜！已同步雲端紀錄");
+        } else {
+            // 平時沒破十強，只單獨更新錢，確保財產不丟失
+            await db.collection("users").doc(playerId).update({ balance: balance });
+            console.log("未達前十名門檻，僅同步餘額");
+        }
+    } catch (e) {
+        console.error("排行榜檢查失敗", e);
+    }
+}
+// --- 顯示排行榜 ---
+async function showRank() {
+    const overlay = document.getElementById('rankOverlay');
+    const list = document.getElementById('rankList');
+    
+    // 顯示讀取中
+    list.innerHTML = '<div style="text-align:center; color:#888;">載入中...</div>';
+    overlay.style.display = 'flex';
+
+    try {
+        // 從 users 集合中，依照 link_score 由大到小排序，取前 20 名
+        const snapshot = await db.collection("users")
+            .where("connect_high_score", ">", 0) // 只抓有分數的人
+            .orderBy("connect_high_score", "desc")
+            .limit(20)
+            .get();
+
+        list.innerHTML = '';
+        if (snapshot.empty) {
+            list.innerHTML = '<div style="text-align:center; color:#888;">暫無紀錄</div>';
+            return;
+        }
+
+        let rank = 1;
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const row = document.createElement('div');
+            row.style = "display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #333;";
+            
+            // 前三名給不同顏色
+            let rankColor = "#fff";
+            if (rank === 1) rankColor = "#ffd700"; // 金
+            else if (rank === 2) rankColor = "#c0c0c0"; // 銀
+            else if (rank === 3) rankColor = "#cd7f32"; // 銅
+
+            row.innerHTML = `
+                <span style="color:${rankColor}">No.${rank} ${data.player_name || '玩家'}</span>
+                <span style="color:#f1c40f; font-weight:bold;">$${Math.floor(data.connect_high_score).toLocaleString()}</span>
+            `;
+            list.appendChild(row);
+            rank++;
+        });
+    } catch (error) {
+        console.error("讀取排行榜失敗:", error);
+        list.innerHTML = '<div style="text-align:center; color:#ff4757;">讀取失敗</div>';
+    }
+}
+// --- 初始化 (取兩者之最) ---
+window.onload = async () => {
+    // 1. 先讀取本地
+    const localBal = localStorage.getItem('sicbo_balance');
+    if (localBal !== null) balance = parseFloat(localBal);
+    
+    const localHigh = localStorage.getItem('connect_high_score');
+    if (localHigh !== null) highScore = parseFloat(localHigh);
+
+    // 2. 抓雲端比對
+    const playerId = localStorage.getItem('player_id');
+    if (playerId && db) {
+        try {
+            const doc = await db.collection("users").doc(playerId).get();
+            if (doc.exists) {
+                const data = doc.data();
+                const cloudBal = data.balance;
+                const cloudHigh = data.connect_high_score;
+
+                // 餘額比對
+                if (cloudBal !== undefined && cloudBal > balance) {
+                    balance = cloudBal;
+                } else if (cloudBal !== undefined && balance > cloudBal) {
+                    saveData(true); 
+                }
+
+                // 最高分比對
+                if (cloudHigh !== undefined && cloudHigh > highScore) {
+                    highScore = cloudHigh;
+                }
+            }
+        } catch (e) { console.log("離線模式"); }
+    }
+    
+    // 3. 攔截回首頁連結
+    document.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', async (e) => {
+            const href = link.getAttribute('href');
+            if (href && href !== '#' && !href.startsWith('javascript')) {
+                e.preventDefault();
+                await saveData(true); // 離開時強制同步一次
+                window.location.href = href;
+            }
+        });
+    });
+
+    updateUI();
+};
+
+// 處理網頁滑掉
+window.addEventListener('pagehide', () => {
+    localStorage.setItem('sicbo_balance', balance);
+});
+
+// --- 遊戲邏輯與 UI 更新 ---
+
+function updateUI() {
+    document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString();
+    document.getElementById('highScoreText').textContent = '$' + Math.floor(highScore).toLocaleString();
+}
 
 function updateBonusInfo() {
     let mult = 1.0;
@@ -223,6 +412,7 @@ function startGame() {
     tilesLeft = ROWS * COLS;
     comboCount = 0; 
     updateUI(); 
+    saveData(); // 下注後存本地
     updateBonusInfo();
     
     timeLeft = 60; 
@@ -247,20 +437,34 @@ function endGame() {
     clearInterval(timer);
     playSound('sndWin');
 
+    // 1. 計算含倍率的最終分數
+    // 如果您的 currentGameProfit 已經是乘過倍率後的結果，則直接使用；
+    // 如果不是，則在這邊計算：let finalScore = currentGameProfit * currentMultiplier;
+    // 這裡假設我們要將「當前收益」與「倍率」結合後作為排行榜分數
+    const finalScore = Math.floor(currentGameProfit * currentMultiplier);
+
     let isNewRecord = false;
-    // 使用當前得分(currentGameProfit)判斷紀錄
-    if (currentGameProfit > highScore) {
-        highScore = currentGameProfit;
-        localStorage.setItem('connect_high_score', highScore);
+    // 判斷是否突破含倍率的最高紀錄
+    if (finalScore > highScore) {
+        highScore = finalScore;
         isNewRecord = true;
     }
     
-    // 構造結算文字
-    let msg = `本局得分：${Math.floor(currentGameProfit)}${isNewRecord ? " (新紀錄!🔥)" : ""}\n`;
+    // 2. 鑽石獎勵（餘額）
+    // 根據您上一封郵件的需求，餘額通常與分數掛鉤，
+    // 若要維持 1:1 則使用 finalScore；若要像連連看一樣 *15，則在此處修改
+    const finalReward = finalScore * 10; 
+
+    // 這裡需要更新餘額變數並存檔 (假設變數名為 balance)
+    if (typeof balance !== 'undefined') {
+        balance += finalReward;
+    }
+
+    let msg = `本局得分：${finalScore}${isNewRecord ? " (新紀錄!🔥)" : ""}\n`;
     msg += `最高紀錄：${Math.floor(highScore)}\n`;
     msg += `-------------------\n`;
     msg += `當前倍率：x${currentMultiplier.toFixed(1)}\n`;
-    msg += `結算獲得：+${Math.floor(currentGameProfit)} 💎`;
+    msg += `結算獲得：+${finalReward} 💎`;
 
     document.getElementById('reward-text').innerText = msg;
     document.getElementById('settle-screen').style.display = 'flex';
@@ -268,7 +472,9 @@ function endGame() {
     document.getElementById('startBtn').disabled = false;
     document.getElementById('mist').style.display = 'none';
     document.getElementById('gameGrid').classList.remove('blinking');
+    
     updateUI();
+    saveData(); // 這裡會儲存更新後的 balance 與 highScore 到 localStorage
 }
 
 function closeSettle() {
@@ -354,6 +560,7 @@ function eliminate(i1, i2) {
     
     balance += finalBonus; currentGameProfit += finalBonus;
     updateUI();
+    saveData(); // 中獎後存本地
     showFloat(`+$${finalBonus}`, "#ffd86b");
     
     [i1, i2].forEach(idx => {
@@ -431,12 +638,6 @@ function shuffleRemaining() {
 
 function shuffleGrid() { if (timeLeft > 0) shuffleRemaining(); }
 
-function updateUI() {
-    document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString();
-    document.getElementById('highScoreText').textContent = '$' + Math.floor(highScore).toLocaleString();
-    localStorage.setItem('sicbo_balance', balance);
-}
-
 function playSound(id) { if (!isMuted) { const s = document.getElementById(id); if (s) { s.currentTime = 0; s.play().catch(()=>{}); } } }
 
 function showFloat(txt, color) {
@@ -462,8 +663,6 @@ function playBGM() { if (currentBgmIdx !== 0 && !isMuted) { const bgm = document
 function toggleMute() { isMuted = !isMuted; document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊'; if (isMuted) stopAllBGM(); else playBGM(); }
 
 function unlockAudio() { const audios = document.querySelectorAll('audio'); audios.forEach(a => { a.muted = true; a.play().then(()=>{a.pause(); a.muted=false;}); }); isAudioUnlocked = true; }
-
-window.onload = updateUI;
 </script>
 </body>
 </html>

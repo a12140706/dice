@@ -41,7 +41,7 @@
     font-size: 14px;
     white-space: nowrap;
   }
-@media (orientation: portrait) {
+  @media (orientation: portrait) {
     .portrait-tip {
       position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
       background: #1a0505; z-index: 999; display: flex; flex-direction: column;
@@ -61,34 +61,44 @@
   @keyframes floatUp { 0% { opacity: 0; transform: translate(-50%, 20%); } 30% { opacity: 1; transform: translate(-50%, -55%); } 70% { opacity: 1; transform: translate(-50%, -60%); } 100% { opacity: 0; transform: translate(-50%, -100%); } }
 
   .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 4000; display: none; align-items: center; justify-content: center; }
-  .modal-content { background: #1a1a1a; border: 2px solid var(--gold); padding: 30px; border-radius: 20px; text-align: center; width: 340px; }
-  .deposit-btn { display: block; width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: none; font-size: 18px; font-weight: bold; cursor: pointer; }
-
+  
+  /* 側邊欄優化 */
   .main-layout { display: flex; flex: 1; padding: 5px; padding-left: calc(5px + env(safe-area-inset-left)); padding-right: calc(5px + env(safe-area-inset-right)); gap: 5px; overflow: hidden; }
   .history-sidebar { width: 140px; background: rgba(0,0,0,0.4); border-radius: 8px; display: flex; flex-direction: column; padding: 5px; overflow: hidden; }
-  #historyList { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
-  .hist-item { display: flex; align-items: center; justify-content: space-between; padding: 4px 2px; font-size: 11px; border-bottom: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; }
+  #historyList { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+  .hist-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 2px; font-size: 11px; border-bottom: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; }
   
-  /* 未開圍骰顯示樣式 */
-  .miss-box {
-    margin-top: 5px;
-    background: #000;
-    border: 1px solid #444;
-    border-radius: 5px;
-    padding: 5px;
-    text-align: center;
-    flex-shrink: 0;
-  }
+  .miss-box { margin-top: 5px; background: #000; border: 1px solid #444; border-radius: 5px; padding: 5px; text-align: center; flex-shrink: 0; }
   .miss-box div:first-child { font-size: 10px; color: #aaa; }
   .miss-box #missCountText { font-size: 18px; font-weight: bold; color: #ff4757; }
-  .miss-flash { animation: flashRed 0.5s 3; }
-  @keyframes flashRed { 50% { color: #fff; transform: scale(1.2); } }
+
+  /* 圍骰得主按鈕樣式 */
+  .triple-winner-btn {
+    margin-top: 5px;
+    background: linear-gradient(to bottom, #ff4757, #b91c1c);
+    border: 1px solid var(--gold);
+    border-radius: 5px;
+    padding: 4px;
+    cursor: pointer;
+    text-align: center;
+    flex-shrink: 0;
+    min-height: 45px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .triple-winner-btn span { font-size: 9px; color: #fff; display: block; }
+  #latestWinnerInfo { font-size: 11px; color: var(--gold); font-weight: bold; }
+
+  /* 英雄榜彈窗紀錄 */
+  .rank-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #333; font-size: 14px; }
+  .rank-name { color: var(--gold); }
+  .rank-amt { color: var(--green); font-weight: bold; }
 
   .full-hist-btn { background: var(--gold); border: none; color: #000; font-weight: bold; font-size: 12px; padding: 8px; border-radius: 5px; margin-top: 5px; cursor: pointer; }
 
-  #fullHistoryOverlay { background: rgba(0,0,0,0.98); flex-direction: column; padding: 20px; }
-  #fullHistoryList { width: 100%; height: 75vh; display: flex; flex-flow: column wrap; align-content: flex-start; gap: 3px; overflow-x: auto; }
-  .full-hist-item { width: 105px; background: rgba(255,255,255,0.05); padding: 4px 6px; border-radius: 4px; display: flex; justify-content: space-between; font-size: 10px; }
+  #fullHistoryOverlay, #tripleRankOverlay { background: rgba(0,0,0,0.95); flex-direction: column; padding: 20px; }
+  #fullHistoryList, #tripleRankList { width: 100%; max-width: 400px; max-height: 70vh; overflow-y: auto; background: #222; border-radius: 10px; }
 
   .sum-big { color: var(--gold); } 
   .sum-small { color: #5cc9ff; } 
@@ -118,6 +128,19 @@
   <div style="font-size: 50px;">🔄</div>
   <p style="margin-top: 20px;">橫著玩</p>
 </div>
+
+<div id="tripleRankOverlay" class="modal">
+  <div style="color:var(--gold); font-size:20px; margin-bottom:15px; font-weight:bold;">🏆最近10次圍骰得主</div>
+  <div id="tripleRankList"></div>
+  <button class="btn-ui" style="background:var(--gold); margin-top:20px; width:150px; height: 50px; flex: none;" onclick="closeModal('tripleRankOverlay')">返回</button>
+</div>
+
+<div id="fullHistoryOverlay" class="modal">
+  <div style="color:var(--gold); font-size:24px; margin-bottom:15px; font-weight:bold;">完整開骰紀錄</div>
+  <div id="fullHistoryList"></div>
+  <button class="btn-ui" style="background:var(--gold); margin-top:20px; width:150px; height: 50px; flex: none;" onclick="closeModal('fullHistoryOverlay')">關閉</button>
+</div>
+
 <audio id="sndChip" src="https://assets.mixkit.co/active_storage/sfx/3005/3005-preview.mp3" preload="auto"></audio>
 <audio id="sndDice" src="https://assets.mixkit.co/active_storage/sfx/2045/2045-preview.mp3" preload="auto"></audio>
 <audio id="sndWin" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="auto"></audio>
@@ -135,32 +158,34 @@
 </div>
 <div id="winAmountEffect"></div>
 
-<div id="fullHistoryOverlay" class="modal">
-  <div style="color:var(--gold); font-size:24px; margin-bottom:15px; font-weight:bold;">完整紀錄</div>
-  <div id="fullHistoryList"></div>
-  <button class="btn-ui" style="background:var(--gold); margin-top:20px; width:150px; height: 50px; flex: none;" onclick="closeModal('fullHistoryOverlay')">關閉</button>
-</div>
-
 <div class="topbar">
   <div class="sound-toggle" onclick="toggleMute()" id="soundIcon">🔊</div>
   <div class="sound-toggle" onclick="cycleBGM()" id="bgmBtn">🎵 音樂 1</div>
   <div class="balance-box">💎 <span id="balanceText">0</span></div>
-  <marquee style="flex:1; color:var(--gold);">轉橫的玩，有問題找阿記</marquee>
+  <div class="triple-winner-btn" onclick="showRank()">
+        <span>🏆 最新圍骰得主</span>
+        <div id="latestWinnerInfo">等待中...</div>
+    </div>
+  <marquee style="flex:1; color:var(--gold);">轉橫的玩</marquee>
   <a href="index.html" style="text-decoration:none;">
-  <button style="background:none; border:1px solid #777; color:#ccc; border-radius:5px; padding:5px 12px; font-size:14px;">🏠 回大廳</button>
-</a>
+    <button style="background:none; border:1px solid #777; color:#ccc; border-radius:5px; padding:5px 12px; font-size:14px;">🏠 回大廳</button>
+  </a>
 </div>
 
 <div class="main-layout">
   <div class="history-sidebar">
     <div style="text-align:center; color:var(--gold); font-size:12px; font-weight:bold; padding-bottom:5px; border-bottom:1px solid #444;">開骰紀錄</div>
     <div id="historyList"></div>
+    
+    
+
     <div class="miss-box">
-        <div>未開圍骰局數</div>
+        <div>未開局數</div>
         <div id="missCountText">0</div>
     </div>
-    <button class="full-hist-btn" onclick="openModal('fullHistoryOverlay')">完整紀錄 ▽</button>
+    <button class="full-hist-btn" onclick="openModal('fullHistoryOverlay')">完整紀錄</button>
   </div>
+  
   <div class="table-container">
     <div class="betting-table">
       <div class="bet-row">
@@ -199,124 +224,184 @@
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore-compat.js"></script>
+
 <script>
+// --- Firebase 初始化 ---
+const firebaseConfig = {
+  apiKey: "AIzaSyDSRfVAuWCWCUd1NJopJ6wHvsqsAM4UzJA",
+  authDomain: "game-80d68.firebaseapp.com",
+  projectId: "game-80d68",
+  storageBucket: "game-80d68.firebasestorage.app",
+  messagingSenderId: "636332967920",
+  appId: "1:636332967920:web:29e5600daf4db0ab613f35",
+  measurementId: "G-MJZ4PGEHSQ"
+};
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.firestore();
+
 // --- 核心變數 ---
 let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
 let historyData = JSON.parse(localStorage.getItem('sicbo_history')) || [];
-let missCount = parseInt(localStorage.getItem('sicbo_triple_miss')) || 0; // 新增未胡局數紀錄
-let currentChip = 50, totalBet = 0, betData = {}, lastRoundBets = {}, isAutoPlaying = false;
-let isMuted = false; 
-let currentBgmIdx = 1; 
+let missCount = parseInt(localStorage.getItem('sicbo_triple_miss')) || 0; 
+let currentChip = 600, totalBet = 0, betData = {}, lastRoundBets = {}, isAutoPlaying = false;
+let isMuted = false, currentBgmIdx = 1, timeLeft = 20; 
 const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
-let timeLeft = 20; 
-const BET_LIMIT = 6000; const DICE_CHARS = ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
+const BET_LIMIT = 6000;
+const DICE_CHARS = ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
 const SUM_ODDS = { 4:69, 17:69, 5:34, 16:34, 6:20, 15:20, 7:13, 14:13, 8:9, 13:9, 9:7.4, 10:6.8, 11:6.8, 12:7.4 };
 
 // --- 聲音邏輯 ---
-function playSound(id) { 
-  if (!isMuted) { 
-    const s = document.getElementById(id); 
-    if(s) { s.volume = 1.0; s.currentTime = 0; s.play().catch(()=>{}); } 
-  } 
-}
-
-function toggleMute() { 
-    isMuted = !isMuted; 
-    document.getElementById('soundIcon').textContent = isMuted ? '🔇' : '🔊'; 
-}
-
+function playSound(id) { if (!isMuted) { const s = document.getElementById(id); if(s) { s.volume = 1.0; s.currentTime = 0; s.play().catch(()=>{}); } } }
+function toggleMute() { isMuted = !isMuted; document.getElementById('soundIcon').textContent = isMuted ? '🔇' : '🔊'; }
 function cycleBGM() {
     bgmList.forEach(id => { if(id){ const a=document.getElementById(id); a.pause(); a.muted=true; a.currentTime=0; } });
     currentBgmIdx = (currentBgmIdx + 1) % 4;
     const btn = document.getElementById('bgmBtn');
-    if (currentBgmIdx === 0) {
-        btn.textContent = '🚫 音樂關';
-    } else {
+    if (currentBgmIdx === 0) btn.textContent = '🚫 音樂關';
+    else {
         const bgm = document.getElementById(bgmList[currentBgmIdx]);
-        if(bgm) {
-            bgm.muted = false;
-            bgm.volume = 0.3;
-            bgm.play().catch(()=>{});
-            btn.textContent = '🎵 音樂 ' + currentBgmIdx;
-        }
+        if(bgm) { bgm.muted = false; bgm.volume = 0.3; bgm.play().catch(()=>{}); btn.textContent = '🎵 音樂 ' + currentBgmIdx; }
     }
 }
 
-document.addEventListener('click', function unlock() {
-    const audios = document.querySelectorAll('audio');
-    audios.forEach(a => { 
-        const oldMuted = a.muted;
-        a.muted = true; 
-        a.play().then(() => { 
-            a.pause(); 
-            a.currentTime = 0;
-            a.muted = oldMuted;
-        }).catch(() => {}); 
-    });
-    setTimeout(() => {
-        if(currentBgmIdx === 1) {
-            const firstBgm = document.getElementById('bgm1');
-            if(firstBgm){ 
-                firstBgm.muted = false;
-                firstBgm.volume = 0.3; 
-                firstBgm.play().catch(()=>{}); 
-            }
-        }
-    }, 150);
-    document.removeEventListener('click', unlock);
-}, { once: true });
-
-// --- 遊戲與儲存邏輯 ---
-function handleDeposit(amt) { balance += amt; playSound('sndCash'); updateUI(); saveData(); }
-function saveData() { 
-    if(historyData.length > 500) historyData = historyData.slice(0, 500);
+// --- 數據存取 ---
+async function saveData() { 
     localStorage.setItem('sicbo_balance', balance); 
-    localStorage.setItem('sicbo_history', JSON.stringify(historyData)); 
-    localStorage.setItem('sicbo_triple_miss', missCount); // 儲存未開圍骰紀錄
+    localStorage.setItem('sicbo_history', JSON.stringify(historyData.slice(0,500))); 
+    localStorage.setItem('sicbo_triple_miss', missCount); 
+    
+    const playerId = localStorage.getItem('player_id');
+    if (playerId && db) {
+        try {
+            await db.collection("users").doc(playerId).update({ 
+                balance: balance,
+                lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } catch (e) { console.warn("雲端同步暫緩（可能是網路波動）"); }
+    }
 }
+
 function openModal(id) { document.getElementById(id).style.display = 'flex'; if(id==='fullHistoryOverlay') renderFullHistory(); }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
+// --- 初始化 ---
 function initTable() {
   const sRow = document.getElementById('sumRow'), gRow = document.getElementById('singleRow');
   sRow.innerHTML = ''; gRow.innerHTML = '';
   for(let i=4; i<=17; i++) sRow.innerHTML += `<div class="bet-cell" onclick="placeBet('sum_${i}')">${i}<div class="odds-label">1:${SUM_ODDS[i]}</div><div id="chip-sum_${i}"></div></div>`;
   for(let i=1; i<=6; i++) gRow.innerHTML += `<div class="bet-cell" onclick="placeBet('single_${i}')">${i}<div class="odds-label">1:1</div><div id="chip-single_${i}"></div></div>`;
-  updateUI(); renderHistory();
+  updateUI(); renderHistory(); loadTripleWinners();
 }
 
+// --- 監聽圍骰榜 (改為讀取最近 1 筆顯示在側邊) ---
+function loadTripleWinners() {
+    db.collection("sicbo_wins").orderBy("time", "desc").limit(1).onSnapshot(snapshot => {
+        const info = document.getElementById('latestWinnerInfo');
+        if (!snapshot.empty) {
+            const latest = snapshot.docs[0].data();
+            info.innerHTML = `${latest.name} <br> 贏 $${Math.floor(latest.win).toLocaleString()}`;
+        } else {
+            info.innerText = "等待...";
+        }
+    });
+}
+
+// --- 顯示最近 10 次圍骰獲獎排行榜 ---
+async function showRank() {
+    const modal = document.getElementById('tripleRankOverlay');
+    const list = document.getElementById('tripleRankList');
+    list.innerHTML = '<div style="text-align:center; padding:20px; color:#888;">載入中...</div>';
+    modal.style.display = 'flex';
+
+    try {
+        const snapshot = await db.collection("sicbo_wins").orderBy("time", "desc").limit(10).get();
+        list.innerHTML = '';
+        if (snapshot.empty) {
+            list.innerHTML = '<div style="text-align:center; padding:20px; color:#888;">暫無紀錄</div>';
+            return;
+        }
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const row = document.createElement('div');
+            row.className = 'rank-item';
+            row.innerHTML = `
+                <span class="rank-name">${data.name} (${data.dice})</span>
+                <span class="rank-amt">+$${Math.floor(data.win).toLocaleString()}</span>
+            `;
+            list.appendChild(row);
+        });
+    } catch (error) {
+        list.innerHTML = '<div style="text-align:center; padding:20px; color:#ff4757;">讀取失敗</div>';
+    }
+}
+
+// --- 遊戲邏輯 ---
 function selectChip(val, el) { currentChip = val; document.querySelectorAll('.chip-btn').forEach(b => b.classList.remove('active')); el.classList.add('active'); playSound('sndTick'); }
-
 function placeBet(key) {
+  // 1. 時間限制判斷
   if (timeLeft <= 3) return;
-  if (balance < currentChip) { alert("餘額不足"); return; }
-  let cur = betData[key] || 0; 
-  if (cur + currentChip > BET_LIMIT) return;
-  betData[key] = cur + currentChip; balance -= currentChip; totalBet += currentChip;
-  playSound('sndChip'); updateUI(); renderChip(key);
+
+  // 2. 餘額判斷
+  if (balance < currentChip) {
+    alert("餘額不足！");
+    return;
+  }
+
+  // 3. 【新增】單項下注上限判斷 (BET_LIMIT)
+  let currentPosBet = (betData[key] || 0);
+  if (currentPosBet + currentChip > BET_LIMIT) {
+    return;
+  }
+
+  // 4. 【新增】總下注額限制 (可選，若您需要限制整場總額，可加此段)
+  // if (totalBet + currentChip > 20000) { 
+  //   alert("總下注額已達上限"); 
+  //   return; 
+  // }
+
+  // 執行下注
+  betData[key] = currentPosBet + currentChip; 
+  balance -= currentChip; 
+  totalBet += currentChip;
+  
+  playSound('sndChip'); 
+  updateUI(); 
+  renderChip(key);
 }
 
+// ... 其餘函式保持不變 ...
+
+// 修改 repeatBets 也要考慮限制 (避免自動投注時爆額度)
+function repeatBets() {
+  for (let k in lastRoundBets) {
+    let amtToBet = lastRoundBets[k];
+    let currentInPos = (betData[k] || 0);
+    
+    // 計算該位置還能塞多少籌碼
+    let canBetAmt = Math.min(amtToBet, BET_LIMIT - currentInPos);
+    let clicks = Math.floor(canBetAmt / currentChip);
+    
+    for(let i=0; i<clicks; i++) {
+      if (balance >= currentChip) {
+        placeBet(k);
+      }
+    }
+  }
+}
 function renderChip(key) {
   const container = document.getElementById('chip-' + key);
-  if(!container) return;
   let chip = container.querySelector('.chip-on-cell') || document.createElement('div');
   chip.className = 'chip-on-cell'; chip.textContent = betData[key];
   container.appendChild(chip);
 }
-
 function updateUI() {
   document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString();
   document.getElementById('totalBetText').textContent = totalBet.toLocaleString();
   document.getElementById('missCountText').textContent = missCount;
-}
-
-function showWinEffect(amount, isTriple) {
-  if (amount <= 0) return;
-  const effect = document.getElementById('winAmountEffect');
-  effect.textContent = `+${amount.toLocaleString()}`;
-  if (isTriple) effect.classList.add('triple-win-scale');
-  else effect.classList.remove('triple-win-scale');
-  setTimeout(() => { effect.style.display = 'block'; setTimeout(() => { effect.style.display = 'none'; }, 2000); }, 1200);
 }
 
 function simulateRound() {
@@ -324,23 +409,16 @@ function simulateRound() {
   let d = [Math.floor(Math.random()*6)+1, Math.floor(Math.random()*6)+1, Math.floor(Math.random()*6)+1];
   const sum = d[0]+d[1]+d[2], isTriple = (d[0]===d[1] && d[1]===d[2]);
   
-  // 未開局數邏輯
-  if (isTriple) {
-      missCount = 0;
-      document.getElementById('missCountText').classList.add('miss-flash');
-      setTimeout(() => document.getElementById('missCountText').classList.remove('miss-flash'), 2000);
-  } else {
-      missCount++;
-  }
+  missCount = isTriple ? 0 : missCount + 1;
 
   const center = document.getElementById('centerDisplay');
   document.getElementById('bigDiceIcons').textContent = `${DICE_CHARS[d[0]]} ${DICE_CHARS[d[1]]} ${DICE_CHARS[d[2]]}`;
   document.getElementById('bigResultText').textContent = `${sum} 點 - ${isTriple ? "圍骰" : (sum >= 11 ? "大" : "小")}`;
   center.style.display = 'block'; 
   setTimeout(() => center.classList.add('show'), 50);
-  if (isTriple) { playSound('sndTriple'); }
+  if (isTriple) playSound('sndTriple');
 
-  let winTotal = 0;
+  let winTotal = 0, tripleWinAmt = 0;
   for (let key in betData) {
     let amt = betData[key], won = 0;
     if (!isTriple) { 
@@ -348,17 +426,31 @@ function simulateRound() {
         if (key === 'big' && sum >= 11) won = amt * 1; 
     }
     if (key === `sum_${sum}`) won = amt * SUM_ODDS[sum];
-    if (key === 'anyTriple' && isTriple) won = amt * 34;
-    if (key === `triple_${d[0]}` && isTriple) won = amt * 210;
+    if (key === 'anyTriple' && isTriple) { won = amt * 34; tripleWinAmt += (amt + won); }
+    if (key === `triple_${d[0]}` && isTriple) { won = amt * 210; tripleWinAmt += (amt + won); }
     if (key === `single_${d[0]}`) won += amt * 1;
     if (key === `single_${d[1]}`) won += amt * 1;
     if (key === `single_${d[2]}`) won += amt * 1;
     if (won > 0) winTotal += (amt + won);
   }
 
+  // 僅在開出圍骰且有人獲獎時存入紀錄
+  if (isTriple && tripleWinAmt > 0) {
+      db.collection("sicbo_wins").add({
+          name: localStorage.getItem('player_name') || '幸運兒',
+          win: tripleWinAmt, dice: `${d[0]}${d[1]}${d[2]}`, time: firebase.firestore.FieldValue.serverTimestamp()
+      });
+  }
+
   balance += winTotal;
-  if (winTotal > 0 && !isTriple) { setTimeout(() => { playSound('sndWin'); }, 1200); }
-  if (winTotal > 0) showWinEffect(winTotal, isTriple); 
+  if (winTotal > 0) {
+      setTimeout(() => { if(!isTriple) playSound('sndWin'); }, 1200);
+      const effect = document.getElementById('winAmountEffect');
+      effect.textContent = `+${winTotal.toLocaleString()}`;
+      isTriple ? effect.classList.add('triple-win-scale') : effect.classList.remove('triple-win-scale');
+      setTimeout(() => { effect.style.display = 'block'; setTimeout(() => effect.style.display = 'none', 2000); }, 1200);
+  }
+  
   historyData.unshift({ dice: d.join(' '), sum, type: isTriple ? 'triple' : (sum >= 11 ? 'big' : 'small') });
   
   setTimeout(() => {
@@ -370,16 +462,10 @@ function simulateRound() {
   }, 4500);
 }
 
-function repeatBets() {
-  for (let k in lastRoundBets) {
-    let clicks = Math.floor(lastRoundBets[k] / currentChip);
-    for(let i=0; i<clicks; i++) placeBet(k);
-  }
-}
 function clearBets() { balance += totalBet; totalBet = 0; betData = {}; document.querySelectorAll('.chip-on-cell').forEach(c => c.remove()); updateUI(); }
 function toggleAuto() { isAutoPlaying = !isAutoPlaying; document.getElementById('btnAuto').classList.toggle('btn-auto-active', isAutoPlaying); if (isAutoPlaying && timeLeft > 3) repeatBets(); }
-function renderHistory() { document.getElementById('historyList').innerHTML = historyData.map(h => `<div class="hist-item"><span>${h.dice}</span><span class="sum-${h.type}">${h.sum}</span></div>`).join(''); }
-function renderFullHistory() { document.getElementById('fullHistoryList').innerHTML = historyData.slice(0, 300).map(h => `<div class="full-hist-item"><span>${h.dice}</span><span class="sum-${h.type}">${h.sum}</span></div>`).join(''); }
+function renderHistory() { document.getElementById('historyList').innerHTML = historyData.slice(0, 10).map(h => `<div class="hist-item"><span>${h.dice}</span><span class="sum-${h.type}">${h.sum}</span></div>`).join(''); }
+function renderFullHistory() { document.getElementById('fullHistoryList').innerHTML = historyData.slice(0, 300).map(h => `<div class="rank-item"><span>${h.dice}</span><span class="sum-${h.type}">${h.sum}</span></div>`).join(''); }
 
 setInterval(() => { 
   timeLeft--; 
@@ -388,7 +474,44 @@ setInterval(() => {
   document.getElementById('timer').textContent = timeLeft; 
 }, 1000);
 
-initTable();
+window.onload = async () => {
+    const playerId = localStorage.getItem('player_id');
+    const localBal = localStorage.getItem('sicbo_balance');
+    if (localBal !== null) { balance = parseFloat(localBal); }
+
+    if (playerId && db) {
+        try {
+            const doc = await db.collection("users").doc(playerId).get();
+            if (doc.exists) {
+                const cloudBal = doc.data().balance;
+                if (cloudBal !== undefined && cloudBal > balance) {
+                    balance = cloudBal;
+                    localStorage.setItem('sicbo_balance', balance);
+                } 
+                else if (cloudBal !== undefined && balance > cloudBal) {
+                    saveData(); 
+                }
+            }
+        } catch (e) { console.log("離線模式"); }
+    }
+    initTable();
+    updateUI();
+
+    document.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', async (e) => {
+            const href = link.getAttribute('href');
+            if (href && href !== '#' && !href.startsWith('javascript')) {
+                e.preventDefault();
+                await saveData();
+                window.location.href = href;
+            }
+        });
+    });
+};
+
+window.addEventListener('pagehide', () => {
+    localStorage.setItem('sicbo_balance', balance);
+});
 </script>
 </body>
 </html>
