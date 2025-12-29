@@ -121,6 +121,266 @@
   .btn-area-row { display: flex; gap: 6px; height: 85px; flex-shrink: 0; width: 380px; }
   .btn-ui { flex: 1; height: 100%; border-radius: 10px; font-weight: 900; border: none; background: #eee; font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #000; }
   .btn-auto-active { background: var(--gold) !important; box-shadow: 0 0 12px var(--gold); }
+  .rank-list {
+      width: 70%;
+      max-height: 60%;
+      overflow-y: auto;
+      border-radius: 10px;
+      border: 1px solid #333;
+    }
+
+    .rank-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px;
+      border-bottom: 1px solid #222;
+      font-size: 14px;
+    }
+
+    .rank-name {
+      color: var(--gold);
+    }
+
+    .rank-win {
+      color: #2ecc71;
+      font-weight: bold;
+    }
+
+    .t-green {
+      color: #2ecc71 !important;
+    }
+
+    .t-blue {
+      color: #3498db !important;
+    }
+
+    .t-purple {
+      color: #9b59b6 !important;
+    }
+
+    .t-orange {
+      color: #e67e22 !important;
+    }
+
+    .t-red {
+      color: #ff4757 !important;
+      animation: title-glow 1s infinite alternate;
+    }
+
+    @keyframes title-glow {
+      from {
+        filter: drop-shadow(0 0 1px #ff4757);
+      }
+
+      to {
+        filter: drop-shadow(0 0 5px #ff4757);
+      }
+    }
+
+    /* --- 2. 排行榜項目特效核心 (確保在遊戲 Sidebar 內生效) --- */
+    .rank-item {
+      position: relative !important;
+      overflow: hidden !important;
+      contain: paint;
+      /* 防止特效溢出造成手機橫向滾動 */
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 15px;
+      margin-bottom: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* [特效：極限獄火] */
+    .fx-fire {
+      border: 2px solid transparent !important;
+      background: linear-gradient(#2a0000, #2a0000) padding-box,
+        linear-gradient(0deg, #ff4757, #ff9f43, #ff4757) border-box !important;
+      background-size: 100% 100%, 100% 300% !important;
+      color: #fff !important;
+      box-shadow: inset 0 0 15px #741b1b, 0 0 15px rgba(255, 71, 87, 0.5) !important;
+      text-shadow: 0 0 8px #ff4757 !important;
+      animation: fire-flicker 0.2s ease-in-out infinite alternate, border-flow 1.5s linear infinite !important;
+    }
+
+    .fx-fire::before {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 200%;
+      background: linear-gradient(0deg, transparent 0%, rgba(255, 69, 0, 0.4) 20%, transparent 80%);
+      z-index: -1;
+      animation: fire-rise 1s linear infinite;
+    }
+
+    /* [特效：雷霆霓虹] */
+    .fx-neon {
+      border: 2px solid #fff !important;
+      background: rgba(0, 0, 0, 0.9) !important;
+      box-shadow: 0 0 10px #fff, 0 0 20px #00d2ff !important;
+      animation: neon-flicker 2s infinite, neon-rainbow 4s linear infinite !important;
+    }
+
+    /* [特效：至尊皇金] */
+    .fx-gold {
+      border: 1px solid #ffd700 !important;
+      background-image: linear-gradient(110deg, #6b5500 0%, #ffd700 50%, #6b5500 100%) !important;
+      background-size: 200% auto !important;
+      animation: shine-gold 3s linear infinite !important;
+    }
+
+    /* [特效：絕對零度] */
+    .fx-ice {
+      border: 1px solid #00f2fe !important;
+      background: linear-gradient(135deg, #005f73, #00d4ff) !important;
+      text-shadow: 0 0 10px #7ed6ff !important;
+      animation: ice-shimmer 2s ease-in-out infinite alternate !important;
+    }
+
+    /* [特效：黑洞湮滅] */
+    .fx-void {
+      border: 2px solid #2f3542 !important;
+      background: black !important;
+      color: #a55eea !important;
+      box-shadow: 0 0 20px #6c5ce7 !important;
+      animation: void-pulse 3s ease-in-out infinite !important;
+    }
+
+    /* --- 特效：深海雷鳴 (修正版) --- */
+    .fx-thunder {
+      border: 1px solid #4834d4 !important;
+      background: #060b28 !important;
+      color: #fff !important;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .fx-thunder::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: white;
+      opacity: 0;
+      z-index: -1;
+      animation: lightning-strike 2s steps(1) infinite;
+    }
+
+    @keyframes lightning-strike {
+
+      0%,
+      95%,
+      98% {
+        opacity: 0;
+      }
+
+      96%,
+      99% {
+        opacity: 0.4;
+      }
+
+      /* 模擬閃電瞬間亮起 */
+    }
+
+    /* --- 3. 所有關鍵動畫定義 (合併首頁所有 Keyframes) --- */
+    @keyframes border-flow {
+      0% {
+        background-position: 0% 0%, 50% 100%;
+      }
+
+      100% {
+        background-position: 0% 0%, 50% -100%;
+      }
+    }
+
+    @keyframes fire-rise {
+      0% {
+        transform: translateY(0%);
+        opacity: 0.8;
+      }
+
+      100% {
+        transform: translateY(-50%);
+        opacity: 0.4;
+      }
+    }
+
+    @keyframes fire-flicker {
+      0% {
+        filter: brightness(1);
+      }
+
+      100% {
+        filter: brightness(1.3);
+      }
+    }
+
+    @keyframes neon-rainbow {
+      0% {
+        filter: hue-rotate(0deg);
+      }
+
+      100% {
+        filter: hue-rotate(360deg);
+      }
+    }
+
+    @keyframes neon-flicker {
+
+      0%,
+      18%,
+      22%,
+      25%,
+      53%,
+      57%,
+      100% {
+        opacity: 1;
+      }
+
+      20%,
+      24%,
+      55% {
+        opacity: 0.7;
+      }
+    }
+
+    @keyframes shine-gold {
+      to {
+        background-position: 200% center;
+      }
+    }
+
+    @keyframes ice-shimmer {
+      from {
+        filter: brightness(1);
+        box-shadow: 0 0 5px #00f2fe;
+      }
+
+      to {
+        filter: brightness(1.2);
+        box-shadow: 0 0 20px #00f2fe;
+      }
+    }
+
+    @keyframes void-pulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(0.98);
+      }
+    }
 </style>
 </head>
 <body>
@@ -318,23 +578,64 @@ async function showRank() {
     modal.style.display = 'flex';
 
     try {
+        // 1. 先抓取使用者對照表 (稱號與特效)
+        const userDocs = await db.collection("users").get();
+        let userSettings = {};
+        userDocs.forEach(u => {
+            const userData = u.data();
+            userSettings[userData.name] = {
+                fx: userData.equipped_fx || "",
+                title: userData.equipped_title || ""
+            };
+        });
+
+        // 2. 抓取骰寶紀錄
         const snapshot = await db.collection("sicbo_wins").orderBy("time", "desc").limit(10).get();
         list.innerHTML = '';
+
         if (snapshot.empty) {
             list.innerHTML = '<div style="text-align:center; padding:20px; color:#888;">暫無紀錄</div>';
             return;
         }
+
         snapshot.forEach(doc => {
             const data = doc.data();
+            const userName = data.name || '無名氏';
+            
+            // 3. 取得該玩家的特效與稱號
+            const playerSetting = userSettings[userName] || { fx: "", title: "" };
+            const fxClass = playerSetting.fx;
+            const titleText = playerSetting.title;
+
+            // 4. 稱號顏色判定
+            let titleColorClass = "t-blue";
+            if (titleText.includes("賭神") || titleText.includes("富可敵國") || titleText.includes("紅")) titleColorClass = "t-red";
+            else if (titleText.includes("梟雄") || titleText.includes("傳奇") || titleText.includes("橙")) titleColorClass = "t-orange";
+            else if (titleText.includes("土豪") || titleText.includes("紫")) titleColorClass = "t-purple";
+            else if (titleText.includes("綠")) titleColorClass = "t-green";
+
+            const titleHTML = titleText ? `<span class="player-title ${titleColorClass}" style="font-size:10px; display:block;">【${titleText}】</span>` : "";
+
             const row = document.createElement('div');
-            row.className = 'rank-item';
+            // 注入特效 Class
+            row.className = `rank-item ${fxClass}`;
+            
+            // 5. 設定樣式 (包含 min-width 確保不擠壓)
+            row.style.cssText = "margin-bottom:10px; padding:12px; border-radius:10px; background:rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center; min-width:max-content; width:100%;";
+            
             row.innerHTML = `
-                <span class="rank-name">${data.name} (${data.dice})</span>
-                <span class="rank-amt">+$${Math.floor(data.win).toLocaleString()}</span>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <div style="display:flex; flex-direction:column; line-height:1.2;">
+                        ${titleHTML}
+                        <span class="rank-name" style="color:#fff; font-size:13px; white-space:nowrap;">${userName} (${data.dice})</span>
+                    </div>
+                </div>
+                <span class="rank-amt" style="color:#ffd700; font-weight:bold; margin-left:15px;">+$${Math.floor(data.win).toLocaleString()}</span>
             `;
             list.appendChild(row);
         });
     } catch (error) {
+        console.error("Rank Error:", error);
         list.innerHTML = '<div style="text-align:center; padding:20px; color:#ff4757;">讀取失敗</div>';
     }
 }
