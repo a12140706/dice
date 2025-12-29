@@ -930,6 +930,10 @@
       <button class="modal-btn" style="background:var(--red);" onclick="saveNewPlayer()">進入遊戲</button>
     </div>
   </div>
+  <div id="toast-msg"
+    style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:rgba(0,0,0,0.8); color:white; padding:15px 30px; border-radius:30px; z-index:9999; font-size:16px; white-space:nowrap; border:1px solid #ffd700; box-shadow: 0 0 15px rgba(0,0,0,0.5);">
+    ✅ 儲值成功
+  </div>
 
   <audio id="sndCash" src="https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3" preload="auto"></audio>
 
@@ -978,14 +982,14 @@
           const userData = doc.data();
           // 如果雲端存的日期跟今天一樣，就擋住
           //if (userData.lastDepositDate === today) {
-           // alert("今天已經刷過囉，明天再來");
-            //closeModal();
-           // return;
+          // alert("今天已經刷過囉，明天再來");
+          //closeModal();
+          // return;
           //}
         }
 
         // 3. 執行儲值邏輯
-        let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
+        balance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
         balance += amt;
 
         // 4. 同步更新本地與雲端 (存入今天日期)
@@ -998,7 +1002,9 @@
         // 5. UI 回饋
         document.getElementById('sndCash').play().catch(() => { });
         updateMainBalance();
-
+        const toast = document.getElementById('toast-msg');
+        toast.style.display = 'block';
+        setTimeout(() => { toast.style.display = 'none'; }, 1500);
       } catch (e) {
         console.error("儲值失敗:", e);
         alert("連線不穩定，請稍後再試");
