@@ -61,26 +61,27 @@
         }
 
         .topbar {
-    /* 1. 背景顏色會從最頂部開始填滿 */
-    background: linear-gradient(#4a0404, #2a0202);
-    
-    /* 2. 增加總高度，原本是 50px，我們改為 65px 確保空間充足 */
-    height: calc(70px + env(safe-area-inset-top)); 
-    
-    /* 3. 使用 padding-top 避開瀏海，並增加一點額外的安全距離 (如 10px) */
-    padding-top: calc(env(safe-area-inset-top) + 10px);
-    
-    display: flex;
-    align-items: center; /* 讓內容在剩餘的空間垂直置中 */
-    justify-content: flex-start;
-    gap: 6px;
-    padding-left: 10px;
-    padding-right: 10px;
-    border-bottom: 2px solid #5c0a0a;
-    z-index: 1000;
-    box-sizing: border-box; 
-    width: 100%;
-}
+            /* 1. 背景顏色會從最頂部開始填滿 */
+            background: linear-gradient(#4a0404, #2a0202);
+
+            /* 2. 增加總高度，原本是 50px，我們改為 65px 確保空間充足 */
+            height: calc(45px + env(safe-area-inset-top));
+
+            /* 3. 使用 padding-top 避開瀏海，並增加一點額外的安全距離 (如 10px) */
+            padding-top: calc(env(safe-area-inset-top) + 10px);
+
+            display: flex;
+            align-items: center;
+            /* 讓內容在剩餘的空間垂直置中 */
+            justify-content: flex-start;
+            gap: 6px;
+            padding-left: 10px;
+            padding-right: 10px;
+            border-bottom: 2px solid #5c0a0a;
+            z-index: 1000;
+            box-sizing: border-box;
+            width: 100%;
+        }
 
         .balance-box {
             background: rgba(0, 0, 0, 0.5);
@@ -592,16 +593,16 @@
         <div id="resultAmount"
             style="color: #fff; font-size: 40px; font-weight: 900; text-shadow: 0 0 10px var(--gold);">0</div>
     </div>
-<div id="rankOverlay" onclick="toggleRank()"></div>
-        <div id="rankSidebar">
-            <div class="rank-header">
-                <h2 style="color:var(--gold); margin:0; font-size: 20px;">💎排行榜</h2>
-                <span class="close-rank" onclick="toggleRank()">&times;</span>
-            </div>
-            <div class="rank-list" id="rankList">
-                <p style="text-align:center; color:#888;">載入中...</p>
-            </div>
+    <div id="rankOverlay" onclick="toggleRank()"></div>
+    <div id="rankSidebar">
+        <div class="rank-header">
+            <h2 style="color:var(--gold); margin:0; font-size: 20px;">💎排行榜</h2>
+            <span class="close-rank" onclick="toggleRank()">&times;</span>
         </div>
+        <div class="rank-list" id="rankList">
+            <p style="text-align:center; color:#888;">載入中...</p>
+        </div>
+    </div>
 
     <audio id="bgm1" src="background-music-434612.mp3" loop preload="auto"></audio>
     <audio id="bgm2" src="soft-background-music-427252.mp3" loop preload="auto"></audio>
