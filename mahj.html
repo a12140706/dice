@@ -694,11 +694,13 @@
       background: var(--gold) !important;
       box-shadow: 0 0 15px var(--gold);
     }
- #rankSidebar {
+
+    #rankSidebar {
       position: fixed;
       top: 0;
       right: -100%;
-      /* 初始隱藏在右側 */
+      width: fit-content;
+      min-width: 70vw;
       max-width: 95%;
       height: 100%;
       background: #1a0202;
@@ -713,6 +715,7 @@
     #rankSidebar.active {
       right: 0;
     }
+
     #multOverlay {
       position: absolute;
       top: 0;
@@ -745,7 +748,7 @@
 
   <div id="huOverlay">胡啦！進入免費模式</div>
 
-  
+
 
   <div id="settlementOverlay"
     style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 4000; text-align: center; color: var(--gold);">
@@ -1089,7 +1092,7 @@
       } else if (combo >= 16) {
         // [設定點C] 瓶頸期機率：16連擊後有感降低至 5%
         wildChance = 0.03;
-       } else if (combo >= 12) {
+      } else if (combo >= 12) {
         // [設定點C] 瓶頸期機率：16連擊後有感降低至 5%
         wildChance = 0.05;
       } else {
