@@ -61,17 +61,26 @@
         }
 
         .topbar {
-            padding-top: calc(45px + env(safe-area-inset-top) * 0.4);
-            height: calc(45px + (env(safe-area-inset-top) * 0.4));
-            background: linear-gradient(#4a0404, #2a0202);
-            display: flex;
-            align-items: center;
-            padding-left: 10px;
-            padding-right: 10px;
-            gap: 6px;
-            border-bottom: 2px solid #5c0a0a;
-            z-index: 1000;
-        }
+    /* 1. 背景顏色會從最頂部開始填滿 */
+    background: linear-gradient(#4a0404, #2a0202);
+    
+    /* 2. 增加總高度，原本是 50px，我們改為 65px 確保空間充足 */
+    height: calc(70px + env(safe-area-inset-top)); 
+    
+    /* 3. 使用 padding-top 避開瀏海，並增加一點額外的安全距離 (如 10px) */
+    padding-top: calc(env(safe-area-inset-top) + 10px);
+    
+    display: flex;
+    align-items: center; /* 讓內容在剩餘的空間垂直置中 */
+    justify-content: flex-start;
+    gap: 6px;
+    padding-left: 10px;
+    padding-right: 10px;
+    border-bottom: 2px solid #5c0a0a;
+    z-index: 1000;
+    box-sizing: border-box; 
+    width: 100%;
+}
 
         .balance-box {
             background: rgba(0, 0, 0, 0.5);
@@ -445,64 +454,77 @@
             box-shadow: 0 0 50px rgba(255, 216, 107, 0.4);
         }
 
-        .rank-modal {
+        #rankOverlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            z-index: 5000;
+            background: rgba(0, 0, 0, 0.7);
             display: none;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            padding-top: calc(env(safe-area-inset-top) + 20px);
+            z-index: 2999;
         }
 
-        .rank-content {
-            width: 100%;
-            max-width: 400px;
-            background: #2e0d4d;
-            border: 2px solid var(--gold);
-            border-radius: 15px;
-            overflow: hidden;
+        #rankSidebar {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            /* 初始隱藏在右側 */
+            width: 300px;
+            /* 側邊欄寬度 */
+            max-width: 95%;
+            height: 100%;
+            background: #1a0202;
+            border-left: 2px solid var(--gold);
+            z-index: 3000;
+            transition: 0.3s ease;
             display: flex;
             flex-direction: column;
+            padding: 20px;
+            padding-top: calc(env(safe-area-inset-top) + 20px);
+            /* 避開瀏海 */
         }
 
+        #rankSidebar.active {
+            right: 0;
+            /* 啟動時拉回螢幕 */
+        }
+
+        /* 啟動時拉回螢幕 */
+
         .rank-header {
-            background: linear-gradient(#4a0404, #2a0202);
-            padding: 15px;
-            text-align: center;
-            color: var(--gold);
-            font-size: 20px;
-            font-weight: bold;
-            border-bottom: 2px solid #5c0a0a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--gold);
+            padding-bottom: 10px;
+            flex-shrink: 0;
         }
 
         .rank-list {
-            padding: 10px;
-            max-height: 60dvh;
+            flex: 1;
             overflow-y: auto;
+            margin-top: 10px;
+            -webkit-overflow-scrolling: touch;
         }
 
-        .rank-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px;
-            border-bottom: 1px solid rgba(255, 216, 107, 0.2);
-            font-size: 16px;
-        }
-
-        .rank-item:last-child {
-            border-bottom: none;
-        }
 
         .rank-no {
             color: var(--gold);
             font-weight: bold;
             width: 30px;
+        }
+
+        .rank-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.2s;
         }
 
         .rank-val {
@@ -512,13 +534,10 @@
         }
 
         .close-rank {
-            margin-top: 20px;
-            padding: 12px 40px;
-            background: #7b1fa2;
-            border: none;
-            border-radius: 25px;
-            color: #fff;
-            font-weight: bold;
+            font-size: 30px;
+            color: var(--gold);
+            cursor: pointer;
+            line-height: 1;
         }
     </style>
 </head>
@@ -530,9 +549,7 @@
         <div class="audio-ctrl" onclick="toggleMute()" id="muteBtn">🔊</div>
         <div class="audio-ctrl" onclick="cycleBGM()" id="bgmBtn">🎵 音樂1</div>
         <div class="balance-box">💎 <span id="balanceText">0</span></div>
-        <button onclick="toggleRank()"
-            style="background:#ccac00; border:none; border-radius:12px; padding:3px 8px; color:#000; font-size:11px; font-weight:bold;">🏆
-            排行榜</button>
+        <div class="audio-ctrl" onclick="toggleRank()" style="background:#b8860b; border-color:var(--gold);">🏆排行榜</div>
         <marquee style="flex:1; color:var(--gold); font-size: 12px;">有問題找阿記</marquee>
         <a href="index.html" style="text-decoration:none;">
             <button
@@ -575,14 +592,16 @@
         <div id="resultAmount"
             style="color: #fff; font-size: 40px; font-weight: 900; text-shadow: 0 0 10px var(--gold);">0</div>
     </div>
-
-    <div id="rankModal" class="rank-modal">
-        <div class="rank-content">
-            <div class="rank-header">🏆排行榜</div>
-            <div id="rankList" class="rank-list"></div>
+<div id="rankOverlay" onclick="toggleRank()"></div>
+        <div id="rankSidebar">
+            <div class="rank-header">
+                <h2 style="color:var(--gold); margin:0; font-size: 20px;">💎排行榜</h2>
+                <span class="close-rank" onclick="toggleRank()">&times;</span>
+            </div>
+            <div class="rank-list" id="rankList">
+                <p style="text-align:center; color:#888;">載入中...</p>
+            </div>
         </div>
-        <button class="close-rank" onclick="closeRank()">關閉</button>
-    </div>
 
     <audio id="bgm1" src="background-music-434612.mp3" loop preload="auto"></audio>
     <audio id="bgm2" src="soft-background-music-427252.mp3" loop preload="auto"></audio>
@@ -1015,18 +1034,30 @@
             }
         }
 
-        // 切換側邊欄
         function toggleRank() {
             const sidebar = document.getElementById('rankSidebar');
             const overlay = document.getElementById('rankOverlay');
-            if (sidebar.style.right === '0px') {
-                sidebar.style.right = '-300px';
+
+            if (!sidebar || !overlay) return;
+
+            if (sidebar.classList.contains('active')) {
+                // 關閉
+                sidebar.classList.remove('active');
                 overlay.style.display = 'none';
             } else {
-                sidebar.style.right = '0px';
+                // 開啟
+                sidebar.classList.add('active');
                 overlay.style.display = 'block';
-                listenRank();
+
+                // 觸發你的 Firebase 監聽功能
+                if (typeof listenRank === 'function') {
+                    listenRank();
+                }
             }
+        }
+
+        function closeRank() {
+            toggleRank();
         }
 
         function listenRank() {
@@ -1083,9 +1114,6 @@
                 });
         }
 
-        function closeRank() {
-            document.getElementById('rankModal').style.display = 'none';
-        }
 
         function updateUI() {
             document.getElementById('balanceText').innerText = Math.floor(balance).toLocaleString();
