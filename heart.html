@@ -60,15 +60,16 @@
         }
 
         .topbar {
-            height: 45px;
+            padding-top: calc(45px + env(safe-area-inset-top) * 0.4);
+            height: calc(45px + (env(safe-area-inset-top) * 0.4));
             background: linear-gradient(#4a0404, #2a0202);
             display: flex;
             align-items: center;
-            padding: 0 10px;
-            gap: 8px;
-            border-bottom: 1px solid #5c0a0a;
-            z-index: 100;
-            width: 100%;
+            padding-left: 10px;
+            padding-right: 10px;
+            gap: 6px;
+            border-bottom: 2px solid #5c0a0a;
+            z-index: 1000;
         }
 
         .balance-box {
@@ -1003,7 +1004,7 @@
             }
         }
 
-        // 切換側邊欄
+       // 切換側邊欄
         function toggleRank() {
             const sidebar = document.getElementById('rankSidebar');
             const overlay = document.getElementById('rankOverlay');
@@ -1013,7 +1014,7 @@
             } else {
                 sidebar.style.right = '0px';
                 overlay.style.display = 'block';
-                listenRank();
+                listenRank(); 
             }
         }
 
