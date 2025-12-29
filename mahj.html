@@ -745,12 +745,7 @@
 
   <div id="huOverlay">胡啦！進入免費模式</div>
 
-  <div id="rankModal" class="modal">
-    <div style="color:var(--gold); font-size:20px; margin-bottom:15px; font-weight:bold;">🏆開獎最高紀錄榜</div>
-    <div class="rank-list" id="rankList"></div>
-    <button class="audio-ctrl" style="margin-top:20px; padding:10px 30px; font-size:16px;"
-      onclick="closeRank()">返回遊戲</button>
-  </div>
+  
 
   <div id="settlementOverlay"
     style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 4000; text-align: center; color: var(--gold);">
@@ -1086,22 +1081,25 @@
       const wildCandidates = ['⬜', '🀄', '🀅'];
 
       // --- [機率調整區] 2. Wild 掉落核心邏輯 ---
-      let wildChance = 0.75; // [設定點A] 基礎 Wild 掉落率 (起始機率)
+      let wildChance = 0.7; // [設定點A] 基礎 Wild 掉落率 (起始機率)
 
       if (combo >= 20) {
         // [設定點B] 強制斷線門檻：達到此連擊數後 Wild 機率歸 0
         wildChance = 0.01;
       } else if (combo >= 16) {
         // [設定點C] 瓶頸期機率：16連擊後有感降低至 5%
+        wildChance = 0.03;
+       } else if (combo >= 12) {
+        // [設定點C] 瓶頸期機率：16連擊後有感降低至 5%
         wildChance = 0.05;
       } else {
         // [設定點D] 衰減係數：使用 0.96 讓連擊極其平滑 (原版為 0.85)
         // 數值愈接近 1 愈容易達成高連擊
-        wildChance = wildChance * Math.pow(0.9, combo);
+        wildChance = wildChance * Math.pow(0.8, combo);
       }
 
       // [設定點E] 手機端起手優化：前兩行機率修正 (0.98 代表幾乎不壓制)
-      if (c !== undefined && c < 2) wildChance *= 0.9;
+      if (c !== undefined && c < 2) wildChance *= 0.7;
 
       // 3. 準備候選清單
       let availableIcons = baseIcons.filter(icon => (currentCounts[icon] || 0) < 4);
@@ -1264,7 +1262,7 @@
       if (toEliminate.size > 0) {
         combo++;
         if (!isMuted) document.getElementById('sndMatch').play();
-        let win = toEliminate.size * (betOptions[currentBetIdx] / 15) * currentMultiplier;
+        let win = toEliminate.size * (betOptions[currentBetIdx] / 20) * currentMultiplier;
 
         if (document.getElementById('mainBody').classList.contains('in-free')) {
           freeGameTotalWin += win;
