@@ -692,6 +692,7 @@
       display: flex;
       flex-direction: column;
       padding: 20px;
+      padding-top: calc(env(safe-area-inset-top) + 20px);
     }
 
     #rankSidebar.active {
@@ -976,11 +977,11 @@
         if (doc.exists) {
           const userData = doc.data();
           // 如果雲端存的日期跟今天一樣，就擋住
-          if (userData.lastDepositDate === today) {
-            alert("阿記說：今天已經刷過囉，明天再來吧！");
-            closeModal();
-            return;
-          }
+          //if (userData.lastDepositDate === today) {
+           // alert("今天已經刷過囉，明天再來");
+            //closeModal();
+           // return;
+          //}
         }
 
         // 3. 執行儲值邏輯
@@ -997,8 +998,6 @@
         // 5. UI 回饋
         document.getElementById('sndCash').play().catch(() => { });
         updateMainBalance();
-        alert("阿記幫你刷了 " + amt.toLocaleString());
-        closeModal();
 
       } catch (e) {
         console.error("儲值失敗:", e);
