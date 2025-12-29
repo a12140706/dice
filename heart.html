@@ -579,7 +579,7 @@
                 <div style="font-size: 10px; color: #888;">BET</div>
                 <div style="display:flex; align-items:center; justify-content:space-around;">
                     <span onclick="changeBet(-1)" style="color:var(--gold); font-size:24px; padding:0 10px;">-</span>
-                    <span id="betText" style="font-weight:bold; font-size:18px;">1000</span>
+                    <span id="betText" style="font-weight:bold; font-size:18px;">100000</span>
                     <span onclick="changeBet(1)" style="color:var(--gold); font-size:24px; padding:0 10px;">+</span>
                 </div>
             </div>
@@ -635,7 +635,7 @@
         let missCount = parseInt(localStorage.getItem('heart_miss_count')) || 0;
         let rows = 4, cols = 5;
         let isSpinning = false, isAuto = false, isSpecialMode = false;
-        let betOptions = [500, 1000, 3000, 5000, 10000, 50000], betIdx = 1;
+        let betOptions = [500, 1000, 3000, 5000, 10000, 50000,100000], betIdx = 6;
 
         const SYMBOL_VALUES = { '👑': 3, '💎': 2, '🪙': 1, '💍': 1, '🔮': 0.5, '✨': 0.2 };
         let symbols = Object.keys(SYMBOL_VALUES);

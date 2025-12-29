@@ -657,7 +657,7 @@
         <div style="font-size: 10px; color: #888;">BET</div>
         <div style="display:flex; align-items:center; justify-content:space-around;">
           <span onclick="changeBet(-1)" style="color:var(--gold); font-size:24px; cursor:pointer;">-</span>
-          <span id="betText" style="font-weight:bold; font-size: 18px;">3000</span>
+          <span id="betText" style="font-weight:bold; font-size: 18px;">100000</span>
           <span onclick="changeBet(1)" style="color:var(--gold); font-size:24px; cursor:pointer;">+</span>
         </div>
       </div>
@@ -701,8 +701,8 @@
     let roundsSinceFree = parseInt(localStorage.getItem('mahjong_rounds_since_free')) || 0;
     let isSpinning = false, isAuto = false, combo = 0, winThisSpin = 0;
     let freeSpins = 0, currentMultiplier = 1, freeGameTotalWin = 0;
-    let currentBetIdx = 2, currentBGM = 1, isMuted = false, hasInteracted = false;
-    const betOptions = [500, 1000, 3000, 5000, 10000, 50000];
+    let currentBetIdx = 6, currentBGM = 1, isMuted = false, hasInteracted = false;
+    const betOptions = [500, 1000, 3000, 5000, 10000, 50000, 100000];
     const baseIcons = ['🀎', '🀚', '🀝', '🀑', '🀔', '🀄', '🀅', '⬜'];
     const tileColor = { '🀎': 'mj-red', '🀚': 'mj-blue', '🀝': 'mj-blue', '🀑': 'mj-green', '🀔': 'mj-green', '🀄': 'mj-red', '🀅': 'mj-green', '⬜': 'mj-blue', '胡': 'tile-hu', '元寶': 'tile-wild' };
     let board = [];
