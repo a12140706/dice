@@ -53,10 +53,11 @@
             color: #fff;
             font-family: Arial;
             height: 100dvh;
+            /* 確保使用動態視窗高度 */
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            padding: 0 0 env(safe-area-inset-bottom) 0;
+            /* 移除原本這裡的 padding-bottom，改到面板裡處理 */
         }
 
         .topbar {
@@ -96,9 +97,12 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
+            /* 平時居中 */
             align-items: center;
             padding: 10px;
             position: relative;
+            overflow: hidden;
+            /* 防止 8 行高時把底部按鈕推走 */
         }
 
         #spinsLeftLabel {
@@ -326,8 +330,14 @@
 
         .bottom-panel {
             background: #000;
-            padding: 12px;
+            padding: 12px 12px calc(12px + env(safe-area-inset-bottom)) 12px;
+            /* 自動適應瀏海/底條 */
             width: 100%;
+            position: relative;
+            /* 確保它在 flex 佈局的最底層 */
+            z-index: 100;
+            border-top: 1px solid #333;
+            /* 增加一條細線區隔感 */
         }
 
         .display-group {
@@ -372,6 +382,7 @@
             align-items: center;
             justify-content: space-between;
             gap: 8px;
+            width: 100%;
         }
 
         .spin-btn {
@@ -1004,7 +1015,7 @@
             }
         }
 
-       // 切換側邊欄
+        // 切換側邊欄
         function toggleRank() {
             const sidebar = document.getElementById('rankSidebar');
             const overlay = document.getElementById('rankOverlay');
@@ -1014,7 +1025,7 @@
             } else {
                 sidebar.style.right = '0px';
                 overlay.style.display = 'block';
-                listenRank(); 
+                listenRank();
             }
         }
 
