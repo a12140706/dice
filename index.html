@@ -1302,19 +1302,19 @@
       let results = [];
       let updates = { balance: balance, lastLottoDate: today };
 
-      if (Math.random() < 0.03) {
+      if (Math.random() < 0.05) {
         balance += 100000000;
         updates.balance = balance;
         localStorage.setItem('sicbo_balance', balance);
-        results.push("💰 1億元現金大獎");
+        results.push("💰 1億元大獎");
       }
 
-      if (Math.random() < 0.01) {
+      if (Math.random() < 0.02) {
         updates[`assets.t_koi`] = now;
         results.push("🏷️ 限定稱號：幸運錦鯉");
       }
 
-      if (Math.random() < 0.005) {
+      if (Math.random() < 0.01) {
         updates[`assets.e_koi`] = now;
         results.push("✨ 絕世特效：錦鯉躍遷");
       }
