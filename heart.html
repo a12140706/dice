@@ -60,16 +60,15 @@
         }
 
         .topbar {
-            padding-top: calc(env(safe-area-inset-top) * 0.4);
-            height: calc(45px + (env(safe-area-inset-top) * 0.4));
+            height: 45px;
             background: linear-gradient(#4a0404, #2a0202);
             display: flex;
             align-items: center;
-            padding-left: 10px;
-            padding-right: 10px;
-            gap: 6px;
-            border-bottom: 2px solid #5c0a0a;
-            z-index: 1000;
+            padding: 0 10px;
+            gap: 8px;
+            border-bottom: 1px solid #5c0a0a;
+            z-index: 100;
+            width: 100%;
         }
 
         .balance-box {
@@ -519,7 +518,7 @@
         <div class="audio-ctrl" onclick="toggleMute()" id="muteBtn">🔊</div>
         <div class="audio-ctrl" onclick="cycleBGM()" id="bgmBtn">🎵 音樂1</div>
         <div class="balance-box">💎 <span id="balanceText">0</span></div>
-        <button onclick="showRank()"
+        <button onclick="toggleRank()"
             style="background:#ccac00; border:none; border-radius:12px; padding:3px 8px; color:#000; font-size:11px; font-weight:bold;">🏆
             排行榜</button>
         <marquee style="flex:1; color:var(--gold); font-size: 12px;">有問題找阿記</marquee>
@@ -567,7 +566,7 @@
 
     <div id="rankModal" class="rank-modal">
         <div class="rank-content">
-            <div class="rank-header">🏆開獎最高紀錄榜</div>
+            <div class="rank-header">🏆排行榜</div>
             <div id="rankList" class="rank-list"></div>
         </div>
         <button class="close-rank" onclick="closeRank()">關閉</button>
@@ -961,112 +960,115 @@
         }
 
         // --- 核心寫入優化邏輯 (Firebase + 門檻判斷) ---
-        // --- 核心寫入優化邏輯 (Firebase + 門檻判斷) ---
         async function updateRankingAndCloud(winAmt) {
             if (winAmt <= 0) return;
 
-            // 1. 讀取本地排行榜快照
             let ranks = JSON.parse(localStorage.getItem('heart_ranks')) || [];
-
-            // 2. 門檻判斷：是否擠進本機前 10 名
             const isTopTen = ranks.length < 10 || winAmt > ranks[ranks.length - 1].amount;
-
-            // 取得玩家 ID
             const playerId = localStorage.getItem('player_id');
 
             if (isTopTen) {
-                // A. 更新本機排行榜數據 (不影響 Firebase，僅供手機端即時顯示)
+                // 本地快照保持不變
                 ranks.push({ amount: winAmt, time: Date.now() });
                 ranks.sort((a, b) => b.amount - a.amount);
                 ranks = ranks.slice(0, 10);
                 localStorage.setItem('heart_ranks', JSON.stringify(ranks));
 
-                // B. 同步至 Firebase
                 if (playerId && db) {
                     try {
-                        // 【關鍵】：先抓雲端目前的 lastWin 紀錄
                         const userDoc = await db.collection("users").doc(playerId).get();
                         let currentCloudMax = 0;
                         if (userDoc.exists) {
-                            currentCloudMax = userDoc.data().lastWin || 0;
+                            // 改用 heartMaxWin 區分遊戲
+                            currentCloudMax = userDoc.data().heartMaxWin || 0;
                         }
 
-                        // 準備更新包
                         let updateData = {
                             balance: balance,
                             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                         };
 
-                        // 只有當新獎金 > 雲端紀錄，才寫入 lastWin (避免 300 萬蓋掉 1700 萬)
                         if (winAmt > currentCloudMax) {
-                            updateData.lastWin = winAmt;
-                            console.log("🔥 破紀錄！準備更新雲端最高分:", winAmt);
+                            updateData.heartMaxWin = winAmt; // 統一欄位名稱
+                            console.log("🔥 愛心消除破紀錄:", winAmt);
                         }
 
                         await db.collection("users").doc(playerId).update(updateData);
-                        console.log("Firebase 進度同步完成");
                     } catch (e) {
                         console.error("Firebase 更新失敗:", e);
                     }
                 }
             } else {
-                // 如果沒進前十名，還是要呼叫同步餘額，確保這局贏的錢有存進雲端
                 if (playerId) syncToFirebase();
             }
         }
 
-        async function showRank() {
-            const modal = document.getElementById('rankModal');
-            const list = document.getElementById('rankList');
-
-            // 顯示讀取狀態
-            list.innerHTML = '<div style="text-align:center; padding:20px; color:#888;">載入全球排行中...</div>';
-            modal.style.display = 'flex';
-
-            try {
-                // 從 "users" 集合中，依照 "lastWin" 欄位由大到小排序，取前 10 名
-                const snapshot = await db.collection("users")
-                    .orderBy("lastWin", "desc")
-                    .limit(10)
-                    .get();
-
-                list.innerHTML = '';
-
-                if (snapshot.empty) {
-                    list.innerHTML = '<div style="text-align:center; padding:20px; color:#888;">暫無紀錄</div>';
-                    return;
-                }
-
-                let index = 1;
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    // 只有當玩家有贏過錢 (lastWin > 0) 才顯示在榜單上
-                    if (data.lastWin && data.lastWin > 0) {
-                        const row = document.createElement('div');
-                        row.className = 'rank-item'; // 套用你原本的 CSS
-                        row.style.display = 'flex';
-                        row.style.justifyContent = 'space-between';
-                        row.style.padding = '10px';
-                        row.style.borderBottom = '1px solid #333';
-
-                        row.innerHTML = `
-                    <span class="rank-no">#${index}</span>
-                    <span class="rank-name" style="color:var(--btn-gold)">${data.name || '匿名'}</span>
-                    <span class="rank-val" style="color:#2ecc71">💎 ${Math.floor(data.lastWin).toLocaleString()}</span>
-                `;
-                        list.appendChild(row);
-                        index++;
-                    }
-                });
-
-                if (index === 1) {
-                    list.innerHTML = '<div style="text-align:center; padding:20px; color:#888;">暫無得獎紀錄</div>';
-                }
-
-            } catch (error) {
-                console.error("排行讀取失敗:", error);
-                list.innerHTML = '<div style="text-align:center; padding:20px; color:#ff4757;">連線失敗</div>';
+        // 切換側邊欄
+        function toggleRank() {
+            const sidebar = document.getElementById('rankSidebar');
+            const overlay = document.getElementById('rankOverlay');
+            if (sidebar.style.right === '0px') {
+                sidebar.style.right = '-300px';
+                overlay.style.display = 'none';
+            } else {
+                sidebar.style.right = '0px';
+                overlay.style.display = 'block';
+                listenRank();
             }
+        }
+
+        function listenRank() {
+            // 監聽 users 集合，按 heartMaxWin 排序
+            db.collection("users")
+                .where("heartMaxWin", ">", 0)
+                .orderBy("heartMaxWin", "desc")
+                .limit(10)
+                .onSnapshot(snap => {
+                    let html = '';
+                    let first = true;
+                    let i = 1;
+
+                    snap.forEach(doc => {
+                        const d = doc.data();
+                        const fxClass = d.equipped_fx || "";
+                        const titleText = d.equipped_title || "";
+                        const userName = d.name || '無名氏';
+                        const recordWin = d.heartMaxWin || 0;
+
+                        // 稱號顏色判定
+                        let titleColorClass = "t-blue";
+                        if (titleText.includes("賭神") || titleText.includes("富可敵國")) titleColorClass = "t-red";
+                        else if (titleText.includes("梟雄") || titleText.includes("傳奇")) titleColorClass = "t-orange";
+                        else if (titleText.includes("土豪") || titleText.includes("千金") || titleText.includes("少爺")) titleColorClass = "t-purple";
+
+                        const titleHTML = titleText ? `<span class="player-title ${titleColorClass}">【${titleText}】</span>` : "";
+
+                        // 更新頂部按鈕的第一名顯示
+                        if (first) {
+                            const topEl = document.getElementById('topWinnerName');
+                            if (topEl) {
+                                topEl.innerHTML = `<span style="color:#fff">${userName}</span> <span style="color:#ffd700">$${Math.floor(recordWin).toLocaleString()}</span>`;
+                            }
+                            first = false;
+                        }
+
+                        html += `
+                            <div class="rank-item ${fxClass}" style="margin-bottom:10px; padding:12px; border-radius:10px; background:rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center;">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <span style="color:#ffd700; font-weight:bold; width:20px;">${i === 1 ? '🏆' : i}</span>
+                                    <div style="display:flex; flex-direction:column;">
+                                        ${titleHTML}
+                                        <span style="color:#fff; font-size:13px;">${userName}</span>
+                                    </div>
+                                </div>
+                                <span style="color:#ffd700; font-weight:bold;">$${Math.floor(recordWin).toLocaleString()}</span>
+                            </div>`;
+                        i++;
+                    });
+
+                    const listEl = document.getElementById('rankList');
+                    if (listEl) listEl.innerHTML = html || '<div style="padding:20px; color:#666; text-align:center;">等待傳奇...</div>';
+                });
         }
 
         function closeRank() {
@@ -1122,6 +1124,7 @@
             initBoardData();
             initGridUI();
             updateUI();
+            listenRank();
         };
 
         // --- 下方原本的跳轉攔截保持不變 ---
