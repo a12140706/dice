@@ -702,8 +702,9 @@
       right: -100%;
       width: fit-content;
       flex-shrink: 0;
-      min-width: 260px;
-      max-width: 95%;
+      width: auto;
+      min-width: 280px;
+      max-width: 95vw;
       height: 100%;
       background: #1a0202;
       border-left: 2px solid var(--gold);
@@ -977,17 +978,21 @@
             }
 
             // 2. 生成側邊欄的清單 HTML
+            // 2. 生成側邊欄的清單 HTML
             html += `
-              <div class="rank-item ${fxClass}" style="margin-bottom:12px; padding:12px; border-radius:10px; background:rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center;">
-                <div style="display:flex; align-items:center; gap:10px;">
-                  <span style="color:#ffd700; font-weight:bold; width:20px;">${i === 1 ? '🏆' : i}</span>
-                  <div style="display:flex; flex-direction:column;">
-                    ${titleHTML}
-                    <span style="color:#fff; font-size:14px;">${userName}</span>
-                  </div>
-                </div>
-                <span style="color:#ffd700; font-weight:bold;">$${Math.floor(recordWin).toLocaleString()}</span>
-              </div>`;
+  <div class="rank-item ${fxClass}" style="margin-bottom:12px; padding:12px; border-radius:10px; background:rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center; min-width:max-content; width:100%;">
+    <div style="display:flex; align-items:center; gap:10px; flex-shrink: 0;">
+      <span style="color:#ffd700; font-weight:bold; width:20px; flex-shrink: 0;">${i === 1 ? '🏆' : i}</span>
+      <div style="display:flex; flex-direction:column; white-space: nowrap;">
+        ${titleHTML}
+        <span style="color:#fff; font-size:14px; white-space: nowrap;">${userName}</span>
+      </div>
+    </div>
+    
+    <span style="color:#ffd700; font-weight:bold; margin-left:15px; flex-shrink: 0; white-space: nowrap;">
+      $${Math.floor(recordWin).toLocaleString()}
+    </span>
+  </div>`;
             i++;
           });
 
@@ -1100,11 +1105,11 @@
       } else {
         // [設定點D] 衰減係數：使用 0.96 讓連擊極其平滑 (原版為 0.85)
         // 數值愈接近 1 愈容易達成高連擊
-        wildChance = wildChance * Math.pow(0.8, combo);
+        wildChance = wildChance * Math.pow(0.85, combo);
       }
 
       // [設定點E] 手機端起手優化：前兩行機率修正 (0.98 代表幾乎不壓制)
-      if (c !== undefined && c < 2) wildChance *= 0.7;
+      if (c !== undefined && c < 2) wildChance *= 0.85;
 
       // 3. 準備候選清單
       let availableIcons = baseIcons.filter(icon => (currentCounts[icon] || 0) < 4);
