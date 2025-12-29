@@ -795,6 +795,144 @@
       font-weight: bold;
       color: #fff;
     }
+
+    /* [超頂級特效：宇宙星辰 · 錦鯉躍遷] */
+    .fx-cosmic-koi {
+      border: 2px solid transparent !important;
+      /* 多層背景：深邃星空 + 動態星流 */
+      background:
+        linear-gradient(#000, #000) padding-box,
+        linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff) border-box !important;
+      background-size: 100% 100%, 300% 100% !important;
+      color: #fff !important;
+      position: relative;
+      z-index: 1;
+      overflow: hidden;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.2), inset 0 0 10px rgba(255, 255, 255, 0.1) !important;
+      animation: cosmic-border 3s linear infinite !important;
+    }
+
+    /* 內層閃爍粒子（模擬錦鯉鱗片光澤） */
+    .fx-cosmic-koi::before {
+      content: "";
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background-image: radial-gradient(circle, #fff 10%, transparent 10%);
+      background-size: 15px 15px;
+      opacity: 0.1;
+      z-index: -1;
+      animation: koi-scales 10s linear infinite;
+    }
+
+    /* 橫向掃過的彩虹極光 */
+    .fx-cosmic-koi::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      z-index: -1;
+      animation: koi-sweep 2s ease-in-out infinite;
+    }
+
+    .player-title.t-koi {
+      color: #fff;
+      text-shadow:
+        0 0 5px #fff,
+        0 0 10px #ff00de,
+        0 0 15px #ff00de;
+      animation: koi-text-glow 1.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes koi-text-glow {
+      from {
+        filter: drop-shadow(0 0 2px #fff);
+      }
+
+      to {
+        filter: drop-shadow(0 0 8px #ff00de);
+      }
+    }
+
+    /* 動畫定義 */
+    @keyframes cosmic-border {
+      0% {
+        background-position: 0% 0%, 0% 50%;
+      }
+
+      100% {
+        background-position: 0% 0%, 300% 50%;
+      }
+    }
+
+    @keyframes koi-scales {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes koi-sweep {
+      0% {
+        left: -100%;
+      }
+
+      100% {
+        left: 200%;
+      }
+    }
+
+    .lotto-box {
+      background: linear-gradient(135deg, #1a1a1a, #2c3e50);
+      border: 3px solid #ffd700;
+      border-radius: 20px;
+      padding: 30px;
+      text-align: center;
+      width: 85%;
+      max-width: 350px;
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+    }
+
+    .lotto-item {
+      margin: 15px 0;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #fff;
+      animation: item-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    @keyframes item-pop {
+      0% {
+        transform: scale(0);
+        opacity: 0;
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .close-btn {
+      margin-top: 20px;
+      padding: 10px 30px;
+      background: var(--gold);
+      border: none;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+    }
   </style>
 </head>
 
@@ -804,6 +942,8 @@
     <div class="logo">阿記三缺一</div>
     <div style="color:var(--gold); font-size:13px; cursor:pointer; text-decoration:underline;" onclick="openShop()">🏪商城
     </div>
+    <div style="color:#ff4757; font-size:13px; cursor:pointer; text-decoration:underline; font-weight:bold;"
+      onclick="playLotto()">📅樂透</div>
     <div class="balance-display" onclick="toggleRank()">💎 <span id="mainBalance">0</span></div>
   </div>
   <div>
@@ -930,6 +1070,14 @@
       <button class="modal-btn" style="background:var(--red);" onclick="saveNewPlayer()">進入遊戲</button>
     </div>
   </div>
+  <div id="lottoModal" class="modal">
+    <div class="lotto-box">
+      <h2>📅 每日開獎結果</h2>
+      <div id="lottoResultArea">
+      </div>
+      <button onclick="closeLottoModal()" class="close-btn">確認收下</button>
+    </div>
+  </div>
   <div id="toast-msg"
     style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:rgba(0,0,0,0.8); color:white; padding:15px 30px; border-radius:30px; z-index:9999; font-size:16px; white-space:nowrap; border:1px solid #ffd700; box-shadow: 0 0 15px rgba(0,0,0,0.5);">
     ✅ 儲值成功
@@ -1021,7 +1169,8 @@
         { id: 't_king', name: '👑 梟雄', price: 10000000 },
         { id: 't_legend', name: '🐉 賭城傳奇', price: 50000000 },
         { id: 't_god', name: '⚖️ 富可敵國', price: 100000000 },
-        { id: 't_world', name: '🪐 賭神', price: 500000000 }
+        { id: 't_world', name: '🪐 賭神', price: 500000000 },
+        { id: 't_koi', name: '🌌 幸運錦鯉', price: 0, lottoOnly: true }
       ],
       effect: [
         { id: 'e_thunder', name: '⚡ 電閃雷鳴', price: 2000000, class: 'fx-thunder' },
@@ -1029,11 +1178,106 @@
         { id: 'e_gold', name: '✨ 黃金呼吸', price: 8000000, class: 'fx-gold' },
         { id: 'e_ice', name: '❄️ 絕對零度', price: 10000000, class: 'fx-ice' },
         { id: 'e_fire', name: '🔥 地獄火', price: 200000000, class: 'fx-fire' },
-        { id: 'e_neon', name: '🌈 彩虹極光', price: 500000000, class: 'fx-neon' }
+        { id: 'e_neon', name: '🌈 彩虹極光', price: 500000000, class: 'fx-neon' },
+        { id: 'e_koi', name: '🌊 錦鯉躍遷', price: 0, class: 'fx-cosmic-koi', lottoOnly: true }
       ]
     };
 
     let currentShopTab = 'title';
+    const LOTTO_CONFIG = {
+      price: 10000,
+      grandPrize: 100000000, // 1億
+      chanceMoney: 0.05,    // 1% 中一億
+      chanceTitle: 0.01,    // 2% 中稱號 "🌌 幸運錦鯉"
+      chanceFx: 0.005,       // 1.5% 中特效 "fx-cosmic-koi"
+    };
+    function showLottoAnimation(results) {
+      const modal = document.getElementById('lottoModal');
+      const area = document.getElementById('lottoResultArea');
+      area.innerHTML = "";
+      modal.style.display = "flex";
+
+      if (results.length === 0) {
+        area.innerHTML = "<div class='lotto-item' style='color:#999;'>😢 全部槓龜，明天加油</div>";
+      } else {
+        results.forEach((text, index) => {
+          setTimeout(() => {
+            const div = document.createElement('div');
+            div.className = 'lotto-item';
+            div.innerHTML = text;
+            area.appendChild(div);
+            // 如果中了超大獎，觸發手機震動 (Vibration API)
+            if (window.navigator.vibrate) window.navigator.vibrate([100, 50, 100]);
+          }, index * 800); // 每個獎項間隔 0.8 秒出現
+        });
+      }
+    }
+
+    function closeLottoModal() {
+      document.getElementById('lottoModal').style.display = "none";
+    }
+    async function playLotto() {
+      const today = new Date().toDateString();
+      const now = Date.now();
+      const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000; // 7天期限
+
+      let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
+      const playerId = localStorage.getItem('player_id');
+
+      if (!playerId) return alert("請先登入遊戲！");
+      if (localStorage.getItem('lastLottoDate') === today) {
+        alert("今日已參與過投注，請明日再試！");
+        return;
+      }
+
+      if (balance < 10000000) {
+        alert("餘額不足 1千萬！");
+        return;
+      }
+
+      if (!confirm("確定要花費 1千萬 參加每日大樂透嗎？")) return;
+
+      balance -= 10000000;
+      localStorage.setItem('lastLottoDate', today);
+      localStorage.setItem('sicbo_balance', balance);
+      updateMainBalance();
+
+      let results = [];
+      let updates = { balance: balance, lastLottoDate: today };
+
+      if (Math.random() < 0.03) {
+        balance += 100000000;
+        updates.balance = balance;
+        localStorage.setItem('sicbo_balance', balance);
+        results.push("💰 1億元現金大獎");
+      }
+
+      if (Math.random() < 0.01) {
+        updates[`assets.t_koi`] = now;
+        results.push("🏷️ 限定稱號：幸運錦鯉");
+      }
+
+      if (Math.random() < 0.005) {
+        updates[`assets.e_koi`] = now;
+        results.push("✨ 絕世特效：錦鯉躍遷");
+      }
+
+      try {
+        await db.collection("users").doc(playerId).update(updates);
+
+        // 更新本地端過期時間為 7 天
+        let myAssets = JSON.parse(localStorage.getItem('my_assets') || '{}');
+        if (updates[`assets.t_koi`]) myAssets['t_koi'] = now + ONE_WEEK_MS;
+        if (updates[`assets.e_koi`]) myAssets['e_koi'] = now + ONE_WEEK_MS;
+        localStorage.setItem('my_assets', JSON.stringify(myAssets));
+
+        showLottoAnimation(results);
+        updateMainBalance();
+        if (results.length > 0) renderShop();
+      } catch (error) {
+        console.error("樂透更新失敗:", error);
+      }
+    }
 
     function switchShop(tab) {
       currentShopTab = tab;
@@ -1053,11 +1297,31 @@
         const expiry = myItems[item.id] || 0;
         const isOwned = now < expiry;
         const isEquipped = (currentShopTab === 'title' ? currentEquipped.title : currentEquipped.effect) === item.id;
+        const isLottoOnly = item.lottoOnly === true; // 判斷是否為樂透限定
 
         // 判斷是否為特效分頁，如果是，就加上對應的特效 Class 進行預覽
         const previewClass = (currentShopTab === 'effect' && item.class) ? item.class : "";
         const previewStyle = (currentShopTab === 'effect') ?
           "padding: 10px; border-radius: 15px; margin-bottom: 5px; text-align: center; font-weight: bold; position: relative; overflow: hidden; contain: paint;" : "";
+
+        // 計算剩餘天數與顯示文字
+        let priceDisplay = '';
+        let actionButton = '';
+
+        if (isOwned) {
+          // 已擁有狀態：判斷是否為永久（設定超過 10000 天即視為永久）
+          const daysLeft = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+          priceDisplay = daysLeft > 10000 ? '⌛ 永久擁有' : `⏳ 剩餘: ${daysLeft} 天`;
+          actionButton = `<button class="equip-btn" onclick="equipAsset('${currentShopTab}', '${item.id}')">${isEquipped ? '✅ 使用中' : '裝備'}</button>`;
+        } else if (isLottoOnly) {
+          // 未擁有且是樂透限定
+          priceDisplay = `<span style="color:var(--gold); font-weight:bold;">🎰 大樂透限定</span>`;
+          actionButton = `<button class="buy-btn" style="background:#555; cursor:not-allowed; opacity:0.7;" disabled>非賣品</button>`;
+        } else {
+          // 一般購買商品
+          priceDisplay = `價格: 💎 ${item.price.toLocaleString()}`;
+          actionButton = `<button class="buy-btn" onclick="buyAsset('${currentShopTab}', '${item.id}', ${item.price})">🛒 購買</button>`;
+        }
 
         html += `
         <div style="border:1px solid #444; padding:12px; margin-bottom:12px; border-radius:15px; background:rgba(0,0,0,0.5); transition: 0.3s;">
@@ -1069,14 +1333,11 @@
           <div style="display:flex; justify-content:space-between; align-items:center; mt-2">
             <div style="text-align:left;">
               <div style="color:#aaa; font-size:11px; margin-top:5px;">
-                ${isOwned ? '⏳ 剩餘: ' + Math.ceil((expiry - now) / (1000 * 60 * 60 * 24)) + '天' : '價格: 💎 ' + item.price.toLocaleString()}
+                ${priceDisplay}
               </div>
             </div>
             <div>
-              ${isOwned ?
-            `<button class="equip-btn" onclick="equipAsset('${currentShopTab}', '${item.id}')">${isEquipped ? '✅ 使用中' : '裝備'}</button>` :
-            `<button class="buy-btn" onclick="buyAsset('${currentShopTab}', '${item.id}', ${item.price})">🛒 購買</button>`
-          }
+              ${actionButton}
             </div>
           </div>
         </div>
@@ -1169,7 +1430,8 @@
           const titleText = data.equipped_title || "";
 
           let titleColorClass = "t-blue"; // 預設藍色
-          if (titleText.includes("賭神") || titleText.includes("富可敵國")) titleColorClass = "t-red";
+          if (titleText.includes("幸運錦鯉")) titleColorClass = "t-koi-color"; // 新增錦鯉色
+          else if (titleText.includes("賭神") || titleText.includes("富可敵國")) titleColorClass = "t-red";
           else if (titleText.includes("梟雄") || titleText.includes("傳奇")) titleColorClass = "t-orange";
           else if (titleText.includes("土豪") || titleText.includes("千金") || titleText.includes("少爺")) titleColorClass = "t-purple";
 
