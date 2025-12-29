@@ -839,20 +839,18 @@
     }
 
     function listenRank() {
-      // 1. 先抓取所有使用者的稱號與特效對照表 (User Map)
       db.collection("users").get().then(userDocs => {
         let userSettings = {};
         userDocs.forEach(u => {
           const userData = u.data();
-          // 將玩家名稱作為 key，存入他的特效和稱號
           userSettings[userData.name] = {
             fx: userData.equipped_fx || "",
             title: userData.equipped_title || ""
           };
         });
 
-        // 2. 監聽賽馬本身的贏錢紀錄
-        db.collection("horse_wins").orderBy("win", "desc").limit(10).onSnapshot(snap => {
+        // 修改這裡：由 win 改為 time，抓取最新的 10 筆
+        db.collection("horse_wins").orderBy("time", "desc").limit(10).onSnapshot(snap => {
           let html = '';
           let first = true;
           let i = 1;
@@ -862,12 +860,10 @@
             const userName = d.name || '無名氏';
             const recordWin = d.win || 0;
 
-            // 3. 從對照表抓取該玩家的設定
             const playerSetting = userSettings[userName] || { fx: "", title: "" };
             const fxClass = playerSetting.fx;
             const titleText = playerSetting.title;
 
-            // 稱號顏色判定 (完全模仿你提供的正常範例邏輯)
             let titleColorClass = "t-blue";
             if (titleText.includes("賭神") || titleText.includes("富可敵國") || titleText.includes("紅")) titleColorClass = "t-red";
             else if (titleText.includes("梟雄") || titleText.includes("傳奇") || titleText.includes("橙")) titleColorClass = "t-orange";
@@ -879,23 +875,23 @@
             if (first) {
               const topEl = document.getElementById('topWinnerName');
               if (topEl) {
+                // 這裡顯示最新的一筆獲獎者
                 topEl.innerHTML = `<span style="color:#fff">${userName}</span> <span style="color:#ffd700">$${Math.floor(recordWin).toLocaleString()}</span>`;
               }
               first = false;
             }
 
-            // 4. 生成 HTML (加入你最在意的 min-width 擴展樣式)
             html += `
-                    <div class="rank-item ${fxClass}" style="margin-bottom:10px; padding:12px; border-radius:10px; background:rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center; min-width:max-content; width:100%;">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span style="color:#ffd700; font-weight:bold; width:20px;">${i === 1 ? '🏆' : i}</span>
-                            <div style="display:flex; flex-direction:column;">
-                                ${titleHTML}
-                                <span style="color:#fff; font-size:13px; white-space:nowrap;">${userName}</span>
-                            </div>
+                <div class="rank-item ${fxClass}" style="margin-bottom:10px; padding:12px; border-radius:10px; background:rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center; min-width:max-content; width:100%;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="color:#ffd700; font-weight:bold; width:20px;">${i === 1 ? '✨' : i}</span>
+                        <div style="display:flex; flex-direction:column;">
+                            ${titleHTML}
+                            <span style="color:#fff; font-size:13px; white-space:nowrap;">${userName}</span>
                         </div>
-                        <span style="color:#ffd700; font-weight:bold; margin-left:15px;">$${Math.floor(recordWin).toLocaleString()}</span>
-                    </div>`;
+                    </div>
+                    <span style="color:#ffd700; font-weight:bold; margin-left:15px;">$${Math.floor(recordWin).toLocaleString()}</span>
+                </div>`;
             i++;
           });
 
@@ -1204,26 +1200,19 @@
           showMsg(`🎊 ${winnerId}號獲勝 🎊<br>贏得 $${winAmt.toLocaleString()}`);
           if (!isMuted && isAudioUnlocked) { document.getElementById('sndWin').muted = false; document.getElementById('sndWin').play().catch(() => { }); }
 
-          // --- 節省額度的英雄榜寫入 ---
-          const rankItems = document.querySelectorAll('.rank-item');
-          let tenthPlaceScore = 0;
-          if (rankItems.length >= 10) {
-            const lastWinText = rankItems[rankItems.length - 1].querySelector('.rank-win').textContent;
-            tenthPlaceScore = parseFloat(lastWinText.replace(/[$,]/g, ''));
-          }
-
-          if (rankItems.length < 10 || winAmt > tenthPlaceScore) {
+          // --- 每次贏錢都寫入紀錄 ---
+          if (winAmt > 0) {
             db.collection("horse_wins").add({
               name: localStorage.getItem('player_name') || '無名騎士',
               win: winAmt,
               time: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            }).catch(e => console.error("紀錄寫入失敗", e));
           }
         } else {
           showMsg(`${winnerId}號獲勝<br>`);
         }
 
-        // 結算後同步一次
+        // 結算後立即同步餘額到雲端
         saveData();
 
         setTimeout(() => {
