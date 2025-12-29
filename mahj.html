@@ -181,11 +181,44 @@
       color: #fff;
     }
 
+   /* 保留你原本的樣式，並增加流光溢出隱藏 */
     .step.active {
       background: var(--gold);
       color: #000;
-      box-shadow: 0 0 10px var(--gold);
+      box-shadow: 0 0 15px var(--gold); /* 稍微加強發光感 */
       transform: scale(1.1);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    /* 新增：流光動畫 (疊加在金色背景上) */
+    .step.active::after {
+      content: "";
+      position: absolute;
+      top: -100%;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.5), transparent);
+      animation: pillarFlow 1.2s infinite;
+    }
+
+    @keyframes pillarFlow {
+      0% { top: -100%; }
+      100% { top: 100%; }
+    }
+
+    /* 新增：解鎖震動 (針對白板、紅中、發財) */
+    /* 當 active 剛加上去時會震動一下，隨後保持 scale(1.1) */
+    .step-mj.active {
+      animation: unlockPulse 0.5s ease-in-out;
+    }
+
+    @keyframes unlockPulse {
+      0% { transform: scale(1.1); }
+      50% { transform: scale(1.4); filter: brightness(1.5); }
+      100% { transform: scale(1.1); }
     }
 
     .mj-tile {
@@ -705,54 +738,48 @@
     function getRandomTile(r, c) {
       const isFree = freeSpins > 0 || document.getElementById('mainBody').classList.contains('in-free');
 
-      // 1. 特殊牌處理 (元寶與胡)
-      if (Math.random() < 0.05) return '元寶';
-      if (!isFree && Math.random() > 0.985) return '胡';
+      // --- [機率調整區] 1. 特殊牌基礎機率 ---
+      if (Math.random() < 0.05) return '元寶'; // 元寶出現率
+      if (!isFree && Math.random() > 0.985) return '胡'; // 非免費遊戲時胡的機率
 
-      // 2. 取得當前盤面計數與 Wild 名單
       const currentCounts = countTiles();
       const wildCandidates = ['⬜', '🀄', '🀅'];
 
-      // 3. *** 動態機率控制 ***
-      let wildChance = 0.6;
+      // --- [機率調整區] 2. Wild 掉落核心邏輯 ---
+      let wildChance = 0.75; // [設定點A] 基礎 Wild 掉落率 (起始機率)
 
-      if (combo >= 12) {
-        // 連擊 10 次以上：極限機率，僅剩 0.5% (千分之五)
-        // 這會讓連擊極難延續，但理論上仍有可能
-        wildChance = 0.02;
-      } else if (combo >= 8) {
-        // 連擊 7-9 次：低機率 (1.5%)
-        wildChance = 0.06;
+      if (combo >= 20) {
+        // [設定點B] 強制斷線門檻：達到此連擊數後 Wild 機率歸 0
+        wildChance = 0.01; 
+      } else if (combo >= 16) {
+        // [設定點C] 瓶頸期機率：16連擊後有感降低至 5%
+        wildChance = 0.05; 
       } else {
-        // 正常衰減：使用 0.6 次方，5連擊時約 4.3%
-        wildChance = wildChance * Math.pow(0.85, combo);
+        // [設定點D] 衰減係數：使用 0.96 讓連擊極其平滑 (原版為 0.85)
+        // 數值愈接近 1 愈容易達成高連擊
+        wildChance = wildChance * Math.pow(0.9, combo);
       }
 
-      // 前兩行機率額外減半 (防止最容易觸發連線的位置產出 Wild)
+      // [設定點E] 手機端起手優化：前兩行機率修正 (0.98 代表幾乎不壓制)
       if (c !== undefined && c < 2) wildChance *= 0.9;
 
-      // 4. 準備候選清單 (過濾已達 4 張的牌)
+      // 3. 準備候選清單
       let availableIcons = baseIcons.filter(icon => (currentCounts[icon] || 0) < 4);
       if (availableIcons.length === 0) availableIcons = baseIcons;
-
-      // 定義純雜牌 (不含白板、中、發)
       const pureJunkTiles = availableIcons.filter(icon => !wildCandidates.includes(icon));
 
-      // 5. 決定最終產出的牌
+      // 4. 最終產出判定
       if (Math.random() < wildChance) {
-        // 幸運抽中 Wild
         let availableWilds = wildCandidates.filter(w => availableIcons.includes(w));
         if (availableWilds.length > 0) {
           return availableWilds[Math.floor(Math.random() * availableWilds.length)];
         }
       }
 
-      // 未抽中機率：強制從普通雜牌中抽取，確保不會「意外」掉落 Wild
       if (pureJunkTiles.length > 0) {
         return pureJunkTiles[Math.floor(Math.random() * pureJunkTiles.length)];
       }
 
-      // 保底：若普通牌也滿了，才隨便給一張
       return availableIcons[Math.floor(Math.random() * availableIcons.length)];
     }
 
