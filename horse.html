@@ -761,7 +761,7 @@
     <div class="chip-area">
       <div class="chip chip-500" id="chip500" onclick="setBet(1000000)">1000K</div>
       <div class="chip chip-1000" id="chip1000" onclick="setBet(5000000)">5000K</div>
-      <div class="chip chip-5000" id="chip5000" onclick="setBet('half')">梭半哈</div>
+      <div class="chip chip-5000" id="chipHalfIn" onclick="setBet('half')">梭半哈</div>
       <div class="chip chip-allin active" id="chipAllIn" onclick="setBet('allin')">梭哈</div>
     </div>
     <div class="bet-grid" id="betGrid"></div>
@@ -1008,6 +1008,7 @@
       } else {
         currentBet = amt;
       }
+      
       document.querySelectorAll('.chip').forEach(c => {
         if (amt === 'allin') c.classList.toggle('active', c.id === 'chipAllIn');
         else if (amt === 'half') c.classList.toggle('active', c.id === 'chipHalfIn');
