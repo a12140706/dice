@@ -68,126 +68,251 @@
       border-radius: 12px;
       cursor: pointer;
     }
-/* --- 1. 稱號與特效基礎 (從首頁移植) --- */
-.player-title {
-    font-weight: 900;
-    margin-right: 5px;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-}
 
-/* 稱號等級色彩 */
-.t-green  { color: #2ecc71 !important; }
-.t-blue   { color: #3498db !important; }
-.t-purple { color: #9b59b6 !important; }
-.t-orange { color: #e67e22 !important; }
-.t-red    { color: #ff4757 !important; animation: title-glow 1s infinite alternate; }
+    /* --- 1. 稱號與特效基礎 (從首頁移植) --- */
+    .player-title {
+      font-weight: 900;
+      margin-right: 5px;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    }
 
-@keyframes title-glow {
-    from { filter: drop-shadow(0 0 1px #ff4757); }
-    to { filter: drop-shadow(0 0 5px #ff4757); }
-}
+    /* 稱號等級色彩 */
+    .t-green {
+      color: #2ecc71 !important;
+    }
 
-/* --- 2. 排行榜項目特效核心 (確保在遊戲 Sidebar 內生效) --- */
-.rank-item {
-    position: relative !important;
-    overflow: hidden !important;
-    contain: paint; /* 防止特效溢出造成手機橫向滾動 */
-    z-index: 1;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 15px;
-    margin-bottom: 8px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
+    .t-blue {
+      color: #3498db !important;
+    }
 
-/* [特效：極限獄火] */
-.fx-fire {
-    border: 2px solid transparent !important;
-    background: linear-gradient(#2a0000, #2a0000) padding-box, 
-                linear-gradient(0deg, #ff4757, #ff9f43, #ff4757) border-box !important;
-    background-size: 100% 100%, 100% 300% !important;
-    color: #fff !important;
-    box-shadow: inset 0 0 15px #741b1b, 0 0 15px rgba(255, 71, 87, 0.5) !important;
-    text-shadow: 0 0 8px #ff4757 !important;
-    animation: fire-flicker 0.2s ease-in-out infinite alternate, border-flow 1.5s linear infinite !important;
-}
-.fx-fire::before {
-    content: ""; position: absolute; bottom: 0; left: 0; width: 100%; height: 200%;
-    background: linear-gradient(0deg, transparent 0%, rgba(255, 69, 0, 0.4) 20%, transparent 80%);
-    z-index: -1; animation: fire-rise 1s linear infinite;
-}
+    .t-purple {
+      color: #9b59b6 !important;
+    }
 
-/* [特效：雷霆霓虹] */
-.fx-neon {
-    border: 2px solid #fff !important;
-    background: rgba(0, 0, 0, 0.9) !important;
-    box-shadow: 0 0 10px #fff, 0 0 20px #00d2ff !important;
-    animation: neon-flicker 2s infinite, neon-rainbow 4s linear infinite !important;
-}
+    .t-orange {
+      color: #e67e22 !important;
+    }
 
-/* [特效：至尊皇金] */
-.fx-gold {
-    border: 1px solid #ffd700 !important;
-    background-image: linear-gradient(110deg, #6b5500 0%, #ffd700 50%, #6b5500 100%) !important;
-    background-size: 200% auto !important;
-    animation: shine-gold 3s linear infinite !important;
-}
+    .t-red {
+      color: #ff4757 !important;
+      animation: title-glow 1s infinite alternate;
+    }
 
-/* [特效：絕對零度] */
-.fx-ice {
-    border: 1px solid #00f2fe !important;
-    background: linear-gradient(135deg, #005f73, #00d4ff) !important;
-    text-shadow: 0 0 10px #7ed6ff !important;
-    animation: ice-shimmer 2s ease-in-out infinite alternate !important;
-}
+    @keyframes title-glow {
+      from {
+        filter: drop-shadow(0 0 1px #ff4757);
+      }
 
-/* [特效：黑洞湮滅] */
-.fx-void {
-    border: 2px solid #2f3542 !important;
-    background: black !important;
-    color: #a55eea !important;
-    box-shadow: 0 0 20px #6c5ce7 !important;
-    animation: void-pulse 3s ease-in-out infinite !important;
-}
-/* --- 特效：深海雷鳴 (修正版) --- */
-.fx-thunder {
-    border: 1px solid #4834d4 !important;
-    background: #060b28 !important;
-    color: #fff !important;
-    position: relative;
-    overflow: hidden;
-    z-index: 1;
-}
+      to {
+        filter: drop-shadow(0 0 5px #ff4757);
+      }
+    }
 
-.fx-thunder::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: white;
-    opacity: 0;
-    z-index: -1;
-    animation: lightning-strike 2s steps(1) infinite;
-}
+    /* --- 2. 排行榜項目特效核心 (確保在遊戲 Sidebar 內生效) --- */
+    .rank-item {
+      position: relative !important;
+      overflow: hidden !important;
+      contain: paint;
+      /* 防止特效溢出造成手機橫向滾動 */
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 15px;
+      margin-bottom: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
 
-@keyframes lightning-strike {
-    0%, 95%, 98% { opacity: 0; }
-    96%, 99% { opacity: 0.4; } /* 模擬閃電瞬間亮起 */
-}
-/* --- 3. 所有關鍵動畫定義 (合併首頁所有 Keyframes) --- */
-@keyframes border-flow { 0% { background-position: 0% 0%, 50% 100%; } 100% { background-position: 0% 0%, 50% -100%; } }
-@keyframes fire-rise { 0% { transform: translateY(0%); opacity: 0.8; } 100% { transform: translateY(-50%); opacity: 0.4; } }
-@keyframes fire-flicker { 0% { filter: brightness(1); } 100% { filter: brightness(1.3); } }
-@keyframes neon-rainbow { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
-@keyframes neon-flicker { 0%, 18%, 22%, 25%, 53%, 57%, 100% { opacity: 1; } 20%, 24%, 55% { opacity: 0.7; } }
-@keyframes shine-gold { to { background-position: 200% center; } }
-@keyframes ice-shimmer { from { filter: brightness(1); box-shadow: 0 0 5px #00f2fe; } to { filter: brightness(1.2); box-shadow: 0 0 20px #00f2fe; } }
-@keyframes void-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(0.98); } }
+    /* [特效：極限獄火] */
+    .fx-fire {
+      border: 2px solid transparent !important;
+      background: linear-gradient(#2a0000, #2a0000) padding-box,
+        linear-gradient(0deg, #ff4757, #ff9f43, #ff4757) border-box !important;
+      background-size: 100% 100%, 100% 300% !important;
+      color: #fff !important;
+      box-shadow: inset 0 0 15px #741b1b, 0 0 15px rgba(255, 71, 87, 0.5) !important;
+      text-shadow: 0 0 8px #ff4757 !important;
+      animation: fire-flicker 0.2s ease-in-out infinite alternate, border-flow 1.5s linear infinite !important;
+    }
+
+    .fx-fire::before {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 200%;
+      background: linear-gradient(0deg, transparent 0%, rgba(255, 69, 0, 0.4) 20%, transparent 80%);
+      z-index: -1;
+      animation: fire-rise 1s linear infinite;
+    }
+
+    /* [特效：雷霆霓虹] */
+    .fx-neon {
+      border: 2px solid #fff !important;
+      background: rgba(0, 0, 0, 0.9) !important;
+      box-shadow: 0 0 10px #fff, 0 0 20px #00d2ff !important;
+      animation: neon-flicker 2s infinite, neon-rainbow 4s linear infinite !important;
+    }
+
+    /* [特效：至尊皇金] */
+    .fx-gold {
+      border: 1px solid #ffd700 !important;
+      background-image: linear-gradient(110deg, #6b5500 0%, #ffd700 50%, #6b5500 100%) !important;
+      background-size: 200% auto !important;
+      animation: shine-gold 3s linear infinite !important;
+    }
+
+    /* [特效：絕對零度] */
+    .fx-ice {
+      border: 1px solid #00f2fe !important;
+      background: linear-gradient(135deg, #005f73, #00d4ff) !important;
+      text-shadow: 0 0 10px #7ed6ff !important;
+      animation: ice-shimmer 2s ease-in-out infinite alternate !important;
+    }
+
+    /* [特效：黑洞湮滅] */
+    .fx-void {
+      border: 2px solid #2f3542 !important;
+      background: black !important;
+      color: #a55eea !important;
+      box-shadow: 0 0 20px #6c5ce7 !important;
+      animation: void-pulse 3s ease-in-out infinite !important;
+    }
+
+    /* --- 特效：深海雷鳴 (修正版) --- */
+    .fx-thunder {
+      border: 1px solid #4834d4 !important;
+      background: #060b28 !important;
+      color: #fff !important;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .fx-thunder::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: white;
+      opacity: 0;
+      z-index: -1;
+      animation: lightning-strike 2s steps(1) infinite;
+    }
+
+    @keyframes lightning-strike {
+
+      0%,
+      95%,
+      98% {
+        opacity: 0;
+      }
+
+      96%,
+      99% {
+        opacity: 0.4;
+      }
+
+      /* 模擬閃電瞬間亮起 */
+    }
+
+    /* --- 3. 所有關鍵動畫定義 (合併首頁所有 Keyframes) --- */
+    @keyframes border-flow {
+      0% {
+        background-position: 0% 0%, 50% 100%;
+      }
+
+      100% {
+        background-position: 0% 0%, 50% -100%;
+      }
+    }
+
+    @keyframes fire-rise {
+      0% {
+        transform: translateY(0%);
+        opacity: 0.8;
+      }
+
+      100% {
+        transform: translateY(-50%);
+        opacity: 0.4;
+      }
+    }
+
+    @keyframes fire-flicker {
+      0% {
+        filter: brightness(1);
+      }
+
+      100% {
+        filter: brightness(1.3);
+      }
+    }
+
+    @keyframes neon-rainbow {
+      0% {
+        filter: hue-rotate(0deg);
+      }
+
+      100% {
+        filter: hue-rotate(360deg);
+      }
+    }
+
+    @keyframes neon-flicker {
+
+      0%,
+      18%,
+      22%,
+      25%,
+      53%,
+      57%,
+      100% {
+        opacity: 1;
+      }
+
+      20%,
+      24%,
+      55% {
+        opacity: 0.7;
+      }
+    }
+
+    @keyframes shine-gold {
+      to {
+        background-position: 200% center;
+      }
+    }
+
+    @keyframes ice-shimmer {
+      from {
+        filter: brightness(1);
+        box-shadow: 0 0 5px #00f2fe;
+      }
+
+      to {
+        filter: brightness(1.2);
+        box-shadow: 0 0 20px #00f2fe;
+      }
+    }
+
+    @keyframes void-pulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(0.98);
+      }
+    }
+
     /* 排行榜按鈕區：置中於頂部 */
     .rank-header-area {
       width: 100%;
@@ -300,11 +425,12 @@
       color: #fff;
     }
 
-   /* 保留你原本的樣式，並增加流光溢出隱藏 */
+    /* 保留你原本的樣式，並增加流光溢出隱藏 */
     .step.active {
       background: var(--gold);
       color: #000;
-      box-shadow: 0 0 15px var(--gold); /* 稍微加強發光感 */
+      box-shadow: 0 0 15px var(--gold);
+      /* 稍微加強發光感 */
       transform: scale(1.1);
       position: relative;
       overflow: hidden;
@@ -319,13 +445,18 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.5), transparent);
+      background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.5), transparent);
       animation: pillarFlow 1.2s infinite;
     }
 
     @keyframes pillarFlow {
-      0% { top: -100%; }
-      100% { top: 100%; }
+      0% {
+        top: -100%;
+      }
+
+      100% {
+        top: 100%;
+      }
     }
 
     /* 新增：解鎖震動 (針對白板、紅中、發財) */
@@ -335,9 +466,18 @@
     }
 
     @keyframes unlockPulse {
-      0% { transform: scale(1.1); }
-      50% { transform: scale(1.4); filter: brightness(1.5); }
-      100% { transform: scale(1.1); }
+      0% {
+        transform: scale(1.1);
+      }
+
+      50% {
+        transform: scale(1.4);
+        filter: brightness(1.5);
+      }
+
+      100% {
+        transform: scale(1.1);
+      }
     }
 
     .mj-tile {
@@ -554,7 +694,25 @@
       background: var(--gold) !important;
       box-shadow: 0 0 15px var(--gold);
     }
+ #rankSidebar {
+      position: fixed;
+      top: 0;
+      right: -100%;
+      /* 初始隱藏在右側 */
+      max-width: 95%;
+      height: 100%;
+      background: #1a0202;
+      border-left: 2px solid var(--gold);
+      z-index: 3000;
+      transition: 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+    }
 
+    #rankSidebar.active {
+      right: 0;
+    }
     #multOverlay {
       position: absolute;
       top: 0;
@@ -615,22 +773,27 @@
   </div>
 
   <div class="rank-header-area">
-  <div class="rank-btn-horizontal" onclick="toggleRank()">
-    <span>🏆排行榜:</span>
-    <div id="topWinnerName">等待幸運兒</div>
+    <div class="rank-btn-horizontal" onclick="toggleRank()">
+      <span>🏆排行榜:</span>
+      <div id="topWinnerName">等待幸運兒</div>
+    </div>
   </div>
-</div>
 
-<div id="rankOverlay" onclick="toggleRank()" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:1000;"></div>
-<div id="rankSidebar" style="position:fixed; top:0; right:-300px; width:280px; height:100%; background:#1a1a1a; z-index:1001; transition:0.3s; padding:20px; overflow-y:auto; box-shadow:-5px 0 15px rgba(0,0,0,0.5);">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid #333; padding-bottom:10px;">
-        <h2 style="color:#ffd700; margin:0; font-size:20px;">🏆排行榜</h2>
-        <button onclick="toggleRank()" style="background:none; border:none; color:#fff; font-size:28px; cursor:pointer;">×</button>
+  <div id="rankOverlay" onclick="toggleRank()"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:1000;">
+  </div>
+  <div id="rankSidebar"
+    style="position:fixed; top:0; right:-300px; width:280px; height:100%; background:#1a1a1a; z-index:1001; transition:0.3s; padding:20px; overflow-y:auto; box-shadow:-5px 0 15px rgba(0,0,0,0.5);">
+    <div
+      style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid #333; padding-bottom:10px;">
+      <h2 style="color:#ffd700; margin:0; font-size:20px;">🏆排行榜</h2>
+      <button onclick="toggleRank()"
+        style="background:none; border:none; color:#fff; font-size:28px; cursor:pointer;">×</button>
     </div>
     <div id="rankList">
-        <p style="text-align:center; color:#888;">載入中...</p>
+      <p style="text-align:center; color:#888;">載入中...</p>
     </div>
-</div>
+  </div>
 
   <div class="free-game-bar">
     <span>FREE: <span id="freeSpinsLeft">0</span></span>
@@ -729,10 +892,10 @@
       }
     }
     async function syncAndRedirect(url) {
-    saveToLocal(); // 先存本地
-    await syncToFirebase(); // 務必等 Firebase 上傳完才跳轉
-    window.location.href = url;
-}
+      saveToLocal(); // 先存本地
+      await syncToFirebase(); // 務必等 Firebase 上傳完才跳轉
+      window.location.href = url;
+    }
     window.onload = async () => {
       createPillar();
       initGrid();
@@ -771,11 +934,11 @@
     };
 
     window.addEventListener('pagehide', () => {
-    saveToLocal();
-    // 這裡使用 navigator.sendBeacon 或同步請求在某些瀏覽器較穩，
-    // 但 Firestore 的 update 通常在 pagehide 也能發出。
-    syncToFirebase(); 
-});
+      saveToLocal();
+      // 這裡使用 navigator.sendBeacon 或同步請求在某些瀏覽器較穩，
+      // 但 Firestore 的 update 通常在 pagehide 也能發出。
+      syncToFirebase();
+    });
 
     // --- 排行榜監聽 (雲端版本) ---
     function listenRank() {
@@ -788,16 +951,16 @@
           let html = '';
           let first = true;
           let i = 1;
-          
+
           snap.forEach(doc => {
             const d = doc.data();
-            const fxClass = d.equipped_fx || ""; 
+            const fxClass = d.equipped_fx || "";
             const titleText = d.equipped_title || "";
             const userName = d.name || '無名氏';
             const recordWin = d.mahjMaxWin || 0;
 
             // --- 稱號顏色判定 (同步首頁) ---
-            let titleColorClass = "t-blue"; 
+            let titleColorClass = "t-blue";
             if (titleText.includes("賭神") || titleText.includes("富可敵國")) titleColorClass = "t-red";
             else if (titleText.includes("梟雄") || titleText.includes("傳奇")) titleColorClass = "t-orange";
             else if (titleText.includes("土豪") || titleText.includes("千金") || titleText.includes("少爺")) titleColorClass = "t-purple";
@@ -827,7 +990,7 @@
               </div>`;
             i++;
           });
-          
+
           const listEl = document.getElementById('rankList');
           if (listEl) {
             listEl.innerHTML = html || '<div style="padding:20px; color:#666; text-align:center;">尚無紀錄</div>';
@@ -927,10 +1090,10 @@
 
       if (combo >= 20) {
         // [設定點B] 強制斷線門檻：達到此連擊數後 Wild 機率歸 0
-        wildChance = 0.01; 
+        wildChance = 0.01;
       } else if (combo >= 16) {
         // [設定點C] 瓶頸期機率：16連擊後有感降低至 5%
-        wildChance = 0.05; 
+        wildChance = 0.05;
       } else {
         // [設定點D] 衰減係數：使用 0.96 讓連擊極其平滑 (原版為 0.85)
         // 數值愈接近 1 愈容易達成高連擊
@@ -1035,26 +1198,34 @@
 
       // --- 【修改重點：排行榜只存個人最高】 ---
       // --- 【優化邏輯：將麻將最高紀錄存入 users 的 mahjMaxWin 欄位】 ---
+      // --- 【優化後的麻將結算邏輯】 ---
       if (freeGameTotalWin > 0) {
         const playerId = localStorage.getItem('player_id');
         if (playerId && db) {
           try {
             const userRef = db.collection("users").doc(playerId);
             const doc = await userRef.get();
-            
-            if (doc.exists) {
-              const currentMax = doc.data().mahjMaxWin || 0;
-              // 只有破紀錄時才更新
-              if (freeGameTotalWin > currentMax) {
-                await userRef.update({
-                  mahjMaxWin: freeGameTotalWin,
-                  mahjMaxTime: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                console.log("🏆 麻將新紀錄！獎金：" + freeGameTotalWin);
-              }
+
+            // 預設雲端紀錄為 0 (處理 undefined 或無欄位情況)
+            let currentMax = 0;
+            if (doc.exists && doc.data().mahjMaxWin !== undefined) {
+              currentMax = doc.data().mahjMaxWin;
             }
-          } catch (e) { 
-            console.warn("更新麻將紀錄失敗", e); 
+
+            // 只有破紀錄時才更新雲端紀錄，並順便帶上餘額
+            if (freeGameTotalWin > currentMax) {
+              await userRef.update({
+                mahjMaxWin: freeGameTotalWin,
+                balance: balance, // 破紀錄時順便存餘額，省一次 syncToFirebase 的請求
+                mahjMaxTime: firebase.firestore.FieldValue.serverTimestamp()
+              });
+              console.log("🏆 麻將新紀錄！獎金：" + freeGameTotalWin);
+            } else {
+              // 沒破紀錄時，只同步餘額
+              await syncToFirebase();
+            }
+          } catch (e) {
+            console.warn("更新麻將紀錄失敗", e);
           }
         }
       }
