@@ -759,9 +759,9 @@
 
   <div class="control-section">
     <div class="chip-area">
-      <div class="chip chip-500" id="chip500" onclick="setBet(500000)">500K</div>
-      <div class="chip chip-1000" id="chip1000" onclick="setBet(1000000)">1000K</div>
-      <div class="chip chip-5000" id="chip5000" onclick="setBet(5000000)">5000K</div>
+      <div class="chip chip-500" id="chip500" onclick="setBet(1000000)">1000K</div>
+      <div class="chip chip-1000" id="chip1000" onclick="setBet(5000000)">5000K</div>
+      <div class="chip chip-5000" id="chip5000" onclick="setBet('half')">梭半哈</div>
       <div class="chip chip-allin active" id="chipAllIn" onclick="setBet('allin')">梭哈</div>
     </div>
     <div class="bet-grid" id="betGrid"></div>
@@ -839,53 +839,53 @@
     }
 
     function listenRank() {
-    // 1. 先抓取所有使用者的稱號與特效對照表 (User Map)
-    db.collection("users").get().then(userDocs => {
+      // 1. 先抓取所有使用者的稱號與特效對照表 (User Map)
+      db.collection("users").get().then(userDocs => {
         let userSettings = {};
         userDocs.forEach(u => {
-            const userData = u.data();
-            // 將玩家名稱作為 key，存入他的特效和稱號
-            userSettings[userData.name] = {
-                fx: userData.equipped_fx || "",
-                title: userData.equipped_title || ""
-            };
+          const userData = u.data();
+          // 將玩家名稱作為 key，存入他的特效和稱號
+          userSettings[userData.name] = {
+            fx: userData.equipped_fx || "",
+            title: userData.equipped_title || ""
+          };
         });
 
         // 2. 監聽賽馬本身的贏錢紀錄
         db.collection("horse_wins").orderBy("win", "desc").limit(10).onSnapshot(snap => {
-            let html = '';
-            let first = true;
-            let i = 1;
+          let html = '';
+          let first = true;
+          let i = 1;
 
-            snap.forEach(doc => {
-                const d = doc.data();
-                const userName = d.name || '無名氏';
-                const recordWin = d.win || 0;
+          snap.forEach(doc => {
+            const d = doc.data();
+            const userName = d.name || '無名氏';
+            const recordWin = d.win || 0;
 
-                // 3. 從對照表抓取該玩家的設定
-                const playerSetting = userSettings[userName] || { fx: "", title: "" };
-                const fxClass = playerSetting.fx;
-                const titleText = playerSetting.title;
+            // 3. 從對照表抓取該玩家的設定
+            const playerSetting = userSettings[userName] || { fx: "", title: "" };
+            const fxClass = playerSetting.fx;
+            const titleText = playerSetting.title;
 
-                // 稱號顏色判定 (完全模仿你提供的正常範例邏輯)
-                let titleColorClass = "t-blue";
-                if (titleText.includes("賭神") || titleText.includes("富可敵國") || titleText.includes("紅")) titleColorClass = "t-red";
-                else if (titleText.includes("梟雄") || titleText.includes("傳奇") || titleText.includes("橙")) titleColorClass = "t-orange";
-                else if (titleText.includes("土豪") || titleText.includes("紫")) titleColorClass = "t-purple";
-                else if (titleText.includes("綠")) titleColorClass = "t-green";
+            // 稱號顏色判定 (完全模仿你提供的正常範例邏輯)
+            let titleColorClass = "t-blue";
+            if (titleText.includes("賭神") || titleText.includes("富可敵國") || titleText.includes("紅")) titleColorClass = "t-red";
+            else if (titleText.includes("梟雄") || titleText.includes("傳奇") || titleText.includes("橙")) titleColorClass = "t-orange";
+            else if (titleText.includes("土豪") || titleText.includes("紫")) titleColorClass = "t-purple";
+            else if (titleText.includes("綠")) titleColorClass = "t-green";
 
-                const titleHTML = titleText ? `<span class="player-title ${titleColorClass}">【${titleText}】</span>` : "";
+            const titleHTML = titleText ? `<span class="player-title ${titleColorClass}">【${titleText}】</span>` : "";
 
-                if (first) {
-                    const topEl = document.getElementById('topWinnerName');
-                    if (topEl) {
-                        topEl.innerHTML = `<span style="color:#fff">${userName}</span> <span style="color:#ffd700">$${Math.floor(recordWin).toLocaleString()}</span>`;
-                    }
-                    first = false;
-                }
+            if (first) {
+              const topEl = document.getElementById('topWinnerName');
+              if (topEl) {
+                topEl.innerHTML = `<span style="color:#fff">${userName}</span> <span style="color:#ffd700">$${Math.floor(recordWin).toLocaleString()}</span>`;
+              }
+              first = false;
+            }
 
-                // 4. 生成 HTML (加入你最在意的 min-width 擴展樣式)
-                html += `
+            // 4. 生成 HTML (加入你最在意的 min-width 擴展樣式)
+            html += `
                     <div class="rank-item ${fxClass}" style="margin-bottom:10px; padding:12px; border-radius:10px; background:rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center; min-width:max-content; width:100%;">
                         <div style="display:flex; align-items:center; gap:8px;">
                             <span style="color:#ffd700; font-weight:bold; width:20px;">${i === 1 ? '🏆' : i}</span>
@@ -896,14 +896,14 @@
                         </div>
                         <span style="color:#ffd700; font-weight:bold; margin-left:15px;">$${Math.floor(recordWin).toLocaleString()}</span>
                     </div>`;
-                i++;
-            });
+            i++;
+          });
 
-            const listEl = document.getElementById('rankList');
-            if (listEl) listEl.innerHTML = html || '<div style="padding:20px; color:#666; text-align:center;">等待傳奇...</div>';
+          const listEl = document.getElementById('rankList');
+          if (listEl) listEl.innerHTML = html || '<div style="padding:20px; color:#666; text-align:center;">等待傳奇...</div>';
         });
-    });
-}
+      });
+    }
 
     function openRank() { document.getElementById('rankModal').style.display = 'flex'; }
     function closeRank() { document.getElementById('rankModal').style.display = 'none'; }
@@ -1003,16 +1003,25 @@
 
     function setBet(amt) {
       if (isRacing) return;
-      currentBet = amt;
+      if (amt === 'half') {
+        currentBet = Math.floor(balance / 2);
+      } else {
+        currentBet = amt;
+      }
       document.querySelectorAll('.chip').forEach(c => {
         if (amt === 'allin') c.classList.toggle('active', c.id === 'chipAllIn');
-        else { let val = parseInt(c.innerText.replace('K', '000')); c.classList.toggle('active', val === amt); }
+        else if (amt === 'half') c.classList.toggle('active', c.id === 'chipHalfIn');
+        else {
+          let val = parseInt(c.innerText.replace('K', '000'));
+          c.classList.toggle('active', val === amt);
+        }
       });
     }
 
     function generateNewOdds() {
-      let totalFieldPower = 0;
+      let totalVisiblePower = 0;
       let rawScores = [];
+      // 保持你原本的強弱分布模板
       let templates = [{ min: 4, max: 5 }, { min: 3, max: 5 }, { min: 2, max: 4 }, { min: 2, max: 4 }, { min: 1, max: 3 }, { min: 1, max: 2 }];
       templates.sort(() => Math.random() - 0.5);
 
@@ -1021,15 +1030,54 @@
         let speed = Math.floor(Math.random() * (t.max - t.min + 1)) + t.min;
         let burst = Math.floor(Math.random() * (t.max - t.min + 1)) + t.min;
         let stamina = Math.floor(Math.random() * 5) + 1;
-        let power = (Math.pow(speed, 3.5) + Math.pow(burst, 3.8) + Math.pow(stamina, 1.5)) * (0.97 + Math.random() * 0.06);
-        rawScores.push({ id: i, speed, burst, stamina, power });
-        totalFieldPower += power;
+
+        // 計算帳面戰力 (用於基準賠率)
+        let visiblePower = (Math.pow(speed, 3.5) + Math.pow(burst, 3.8) + Math.pow(stamina, 1.5));
+
+        // 生成隱藏狀態波動 (0.90 ~ 1.10)
+        let hiddenCondition = 0.90 + (Math.random() * 0.20);
+
+        // 確定視覺化圖示 (不包含誤導機率)
+        let mood = "普⭐通";
+        if (hiddenCondition >= 1.05) mood = "火🔥熱";
+        else if (hiddenCondition <= 0.95) mood = "疲💤累";
+
+        rawScores.push({ id: i, speed, burst, stamina, visiblePower, hiddenCondition, mood });
+        totalVisiblePower += visiblePower;
       }
 
+      // 找出全場最強與第二強，用於計算 Gap
+      let sortedScores = [...rawScores].sort((a, b) => b.visiblePower - a.visiblePower);
+      let top1 = sortedScores[0];
+      let top2 = sortedScores[1];
+
       rawScores.forEach(s => {
-        let rawOdds = (1 / (s.power / totalFieldPower)) * 0.9;
-        let finalOdds = Math.max(1.1, Math.min(99.0, parseFloat(rawOdds.toFixed(1))));
-        horseStats[s.id] = { speed: s.speed, burst: s.burst, stamina: s.stamina, odds: finalOdds.toFixed(1) };
+        let winProb = s.visiblePower / totalVisiblePower;
+        let baseOdds = (1 / winProb) * 0.88;
+
+        // 強馬動態賠率壓制邏輯
+        if (s.id === top1.id) {
+          let gap = top1.visiblePower / top2.visiblePower;
+          if (gap > 2.0) {
+            baseOdds = 1.1 + (Math.random() * 0.15); // 一強獨大：賠率極低
+          } else if (gap > 1.4) {
+            baseOdds = 1.3 + (Math.random() * 0.2);  // 些微優勢
+          } else {
+            baseOdds = Math.max(baseOdds, 1.5);      // 雙雄競爭
+          }
+        }
+
+        let finalOdds = Math.max(1.05, Math.min(99.0, parseFloat(baseOdds.toFixed(1))));
+
+        // 存入 horseStats (包含 condition 與 mood)
+        horseStats[s.id] = {
+          speed: s.speed,
+          burst: s.burst,
+          stamina: s.stamina,
+          odds: finalOdds.toFixed(1),
+          condition: s.hiddenCondition, // 影響 startRace 的速度
+          mood: s.mood // 用於介面顯示
+        };
       });
     }
 
@@ -1038,7 +1086,13 @@
       grid.innerHTML = '';
       for (let i = 1; i <= 6; i++) {
         let s = horseStats[i];
-        grid.innerHTML += `<button class="bet-btn ${selectedHorse === i ? 'active' : ''}" onclick="selectHorse(${i})">${i}號 <span>1:${s.odds}</span><small>💨${s.speed} ⚡${s.burst} 🍖${s.stamina}</small></button>`;
+        grid.innerHTML += `
+  <button class="bet-btn ${selectedHorse === i ? 'active' : ''}" onclick="selectHorse(${i})">
+    <span class="mood-icon">${s.mood}</span> ${i}號 
+    <span>1:${s.odds}</span>
+    <small>💨${s.speed} ⚡${s.burst} 🍖${s.stamina}</small>
+  </button>
+`;
       }
     }
 
@@ -1055,7 +1109,13 @@
         return;
       }
 
-      let finalBetAmount = (currentBet === 'allin') ? balance : currentBet;
+      let finalBetAmount;
+      if (currentBet === 'allin') {
+        finalBetAmount = balance;
+      } else {
+        // 如果是 'half'，在 setBet 時已經算好存入 currentBet 了，或者是固定的 K 數
+        finalBetAmount = currentBet;
+      }
 
       if (balance <= 0) { showMsg("你已經沒錢了"); return; }
       if (balance < finalBetAmount) { showMsg("餘額不足"); return; }
@@ -1084,6 +1144,7 @@
         return {
           id: n, el: el, pos: 10,
           speed: s.speed, burst: s.burst, stamina: s.stamina,
+          condition: s.condition,
           dashCount: 0, maxDashes: s.stamina + 2,
           isFatigued: false, hasChecked: false
         };
@@ -1115,7 +1176,7 @@
           }
 
           let fatigueFactor = h.isFatigued ? 0.3 : 1.0;
-          let baseSpeedValue = 1.1 + (h.speed * 0.15);
+          let baseSpeedValue = (1.1 + (h.speed * 0.15)) * h.condition;
           let baseStep = (baseSpeedValue * fatigueFactor + (Math.random() * 4.0)) * 0.5;
           let step = baseStep + (dashBonus * 0.22);
 
