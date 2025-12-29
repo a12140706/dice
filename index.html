@@ -59,29 +59,6 @@
       transition: transform 0.2s;
     }
 
-    /* --- 第一名：呼吸燈 + 金屬流光特效 --- */
-    .rank-top1 {
-      background: linear-gradient(110deg, #2a2200 20%, #6b5500 50%, #2a2200 80%);
-      background-size: 200% auto;
-      border: 1px solid #ffd700 !important;
-      animation:
-        shine-gold 3s linear infinite,
-        breathing-glow 2s ease-in-out infinite;
-      /* 呼吸燈關鍵 */
-      transform: scale(1.02);
-      /* 稍微放大顯示尊榮感 */
-    }
-
-    .rank-top1 .rank-name {
-      color: #fff;
-      font-weight: bold;
-      text-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
-    }
-
-    .rank-top1 .rank-num {
-      font-size: 1.4rem;
-    }
-
     .buy-btn {
       background: #3b82f6;
       border: none;
@@ -542,16 +519,6 @@
       }
     }
 
-    /* 第二、三名簡單漸層邊框 */
-    .rank-top2 {
-      border-left: 4px solid #c0c0c0;
-      background: rgba(192, 192, 192, 0.1);
-    }
-
-    .rank-top3 {
-      border-left: 4px solid #cd7f32;
-      background: rgba(205, 127, 50, 0.1);
-    }
 
     .rank-info {
       display: flex;
@@ -776,7 +743,7 @@
       cursor: pointer;
     }
 
-    
+
 
     /* 橫向模式調整 */
     @media (orientation: landscape) {
@@ -827,7 +794,6 @@
       font-weight: bold;
       color: #fff;
     }
-    
   </style>
 </head>
 
@@ -931,10 +897,8 @@
 
   <div id="depositModal" class="modal">
     <div class="modal-content">
-      <h2 style="color:var(--gold); margin-bottom:15px; font-size: 22px;">刷阿記的卡</h2>
-      <button class="modal-btn" style="background:#3b82f6;" onclick="handleDeposit(10000)">儲值 10,000</button>
-      <button class="modal-btn" style="background:#a855f7;" onclick="handleDeposit(50000)">儲值 50,000</button>
-      <button class="modal-btn" style="background:#f59e0b;" onclick="handleDeposit(100000)">儲值 100,000</button>
+      <h2 style="color:var(--gold); margin-bottom:15px; font-size: 22px;">刷阿記的卡，阿記的錢有限，一天一次</h2>
+      <button class="modal-btn" style="background:#f59e0b;" onclick="handleDeposit(1000000)">儲值 1,000,000</button>
       <button class="modal-btn" style="background:#444; color:#ccc;" onclick="closeModal()">算了</button>
     </div>
   </div>
@@ -998,17 +962,48 @@
     function closeModal() { document.getElementById('depositModal').style.display = 'none'; }
 
     async function handleDeposit(amt) {
-      let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
-      balance += amt;
-      localStorage.setItem('sicbo_balance', balance);
       const playerId = localStorage.getItem('player_id');
-      if (playerId) {
-        await db.collection("users").doc(playerId).update({ balance: balance });
+      if (!playerId) return alert("請先登入遊戲！");
+
+      // 1. 取得今天日期字串 (格式例如: "2025-12-29")
+      const today = new Date().toISOString().split('T')[0];
+
+      try {
+        // 2. 檢查雲端紀錄
+        const userRef = db.collection("users").doc(playerId);
+        const doc = await userRef.get();
+
+        if (doc.exists) {
+          const userData = doc.data();
+          // 如果雲端存的日期跟今天一樣，就擋住
+          if (userData.lastDepositDate === today) {
+            alert("阿記說：今天已經刷過囉，明天再來吧！");
+            closeModal();
+            return;
+          }
+        }
+
+        // 3. 執行儲值邏輯
+        let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
+        balance += amt;
+
+        // 4. 同步更新本地與雲端 (存入今天日期)
+        localStorage.setItem('sicbo_balance', balance);
+        await userRef.update({
+          balance: balance,
+          lastDepositDate: today // 紀錄今天已領取
+        });
+
+        // 5. UI 回饋
+        document.getElementById('sndCash').play().catch(() => { });
+        updateMainBalance();
+        alert("阿記幫你刷了 " + amt.toLocaleString());
+        closeModal();
+
+      } catch (e) {
+        console.error("儲值失敗:", e);
+        alert("連線不穩定，請稍後再試");
       }
-      document.getElementById('sndCash').play().catch(() => { });
-      updateMainBalance();
-      alert("阿記幫你刷了 " + amt.toLocaleString());
-      closeModal();
     }
     // 商品定義
     const SHOP_DATA = {
@@ -1024,11 +1019,11 @@
         { id: 't_world', name: '🪐 賭神', price: 500000000 }
       ],
       effect: [
-        {  id: 'e_thunder', name: '⚡ 電閃雷鳴', price: 2000000, class: 'fx-thunder'},
+        { id: 'e_thunder', name: '⚡ 電閃雷鳴', price: 2000000, class: 'fx-thunder' },
         { id: 'e_void', name: '🌀 湮滅黑洞', price: 5000000, class: 'fx-void' },
-        { id: 'e_gold', name: '✨ 黃金呼吸', price: 8000000, class: 'fx-gold'  },
+        { id: 'e_gold', name: '✨ 黃金呼吸', price: 8000000, class: 'fx-gold' },
         { id: 'e_ice', name: '❄️ 絕對零度', price: 10000000, class: 'fx-ice' },
-        { id: 'e_fire', name: '🔥 地獄火', price: 200000000, class: 'fx-fire'},
+        { id: 'e_fire', name: '🔥 地獄火', price: 200000000, class: 'fx-fire' },
         { id: 'e_neon', name: '🌈 彩虹極光', price: 500000000, class: 'fx-neon' }
       ]
     };
