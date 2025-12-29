@@ -720,7 +720,8 @@
             top: 0;
             right: -100%;
             width: fit-content;
-            min-width: 70vw;
+            flex-shrink: 0;
+            min-width: 260px;
             height: 100%;
             background: #1a0202;
             border-left: 2px solid var(--gold);
@@ -732,6 +733,7 @@
             padding-top: calc(env(safe-area-inset-top) + 20px);
             /* 避開瀏海 */
         }
+        
 
         #rankSidebar.active {
             right: 0;
@@ -768,6 +770,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 12px 15px;
+            width: 100%;
             margin-bottom: 10px;
             background: rgba(255, 255, 255, 0.05);
             border-radius: 10px;
