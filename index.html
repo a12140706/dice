@@ -796,78 +796,84 @@
       color: #fff;
     }
 
-    /* 絕世特效：錦鯉躍遷 (高級版 + 流光邊框) */
+ /* 絕世特效：錦鯉躍遷 (終極動態版) */
 .fx-cosmic-koi {
     position: relative;
-    /* 1. 保留原本背景 */
-    background: linear-gradient(135.2deg, #10002b 10%, #3c096c 40%, #5a189a 70%, #ff9e00 95%);
-    background-size: 400% 400%;
-    animation: koiFlow 8s ease infinite, koiGlow 3s ease-in-out infinite;
-    
-    /* 2. 文字樣式優化 */
-    color: white !important;
-    text-shadow: 0 0 10px rgba(255, 158, 0, 0.8), 0 0 20px rgba(255, 255, 255, 0.5);
-    
-    /* 3. 調整邊框空間 */
-    padding: 10px; 
+    padding: 12px 20px;
     border-radius: 15px;
-    border: none; /* 移除原本生硬的邊框 */
-    overflow: hidden;
+    color: white !important;
+    font-weight: bold;
+    text-align: center;
+    text-shadow: 0 0 10px rgba(255, 158, 0, 0.8);
+    overflow: hidden; /* 確保流光與粒子不溢出 */
     z-index: 1;
-    contain: paint;
+    border: none;
+    background: #10002b; /* 深色底，防止背景縮放時露底 */
 }
 
-/* --- 新增：流光邊框層 (::before) --- */
+/* 1. 流光邊框旋轉層 (::before) */
 .fx-cosmic-koi::before {
     content: '';
     position: absolute;
     top: -50%; left: -50%;
     width: 200%; height: 200%;
-    /* 這裡使用 conic-gradient 產生旋轉的光線，顏色呼應錦鯉的橘紅與神祕紫 */
     background: conic-gradient(
         transparent, 
         #ff9e00 10%, 
         #ff0054 20%, 
         transparent 30%, 
-        transparent 60%, 
-        #9d4edd 70%, 
-        #ff9e00 80%, 
-        transparent 90%
+        transparent 70%, 
+        #9d4edd 80%, 
+        #ff9e00 90%
     );
-    animation: rotateBorder 4s linear infinite;
-    z-index: -1;
+    animation: koiRotate 4s linear infinite;
+    z-index: -2;
 }
 
-/* 為了讓流光只出現在邊邊，我們需要一個內層遮罩 */
-/* 這裡利用一個內嵌陰影或偽元素來遮住中間，讓 before 的光只漏出邊框部分 */
-.fx-cosmic-koi {
-    /* 利用內陰影做出邊框內縮感，讓中間背景更厚實 */
-    box-shadow: inset 0 0 0 2px rgba(16, 0, 43, 0.9), inset 0 0 15px rgba(255, 158, 0, 0.3);
-}
-
-/* --- 原本：浮動微粒感 (::after) --- */
+/* 2. 背景與粒子組合層 (::after) */
+/* 這一層負責背景漸變、粒子、以及縮放效果 */
 .fx-cosmic-koi::after {
     content: '';
     position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 1px, transparent 1px);
-    background-size: 15px 15px;
-    opacity: 0.5;
-    pointer-events: none;
-    z-index: 0; /* 讓微粒在流光之上，文字之下 */
+    inset: 3px; /* 這裡決定邊框的粗細 (3px) */
+    background: 
+        /* 懸浮粒子圖案 */
+        radial-gradient(circle, rgba(255, 255, 255, 0.3) 1px, transparent 1px),
+        /* 底層漸變背景 */
+        linear-gradient(135deg, #240046 0%, #3c096c 50%, #5a189a 100%);
+    background-size: 20px 20px, 400% 400%; /* 粒子密度與背景尺寸 */
+    border-radius: 12px;
+    z-index: -1;
+    /* 這裡同時執行：粒子飄浮動畫、背景流動、整體縮放 */
+    animation: 
+        koiParticleMove 20s linear infinite, 
+        koiBgFlow 8s ease infinite,
+        koiScaleBreath 3s ease-in-out infinite;
 }
-
+@keyframes koiRotate {
+    100% { transform: rotate(360deg); }
+}
+@keyframes koiParticleMove {
+    0% { background-position: 0px 0px, 0% 50%; }
+    100% { background-position: 100px 100px, 100% 50%; }
+}
 /* 動畫定義 */
 @keyframes rotateBorder {
     100% { transform: rotate(360deg); }
 }
-
+@keyframes koiScaleBreath {
+    0%, 100% { transform: scale(1); opacity: 0.9; }
+    50% { transform: scale(1.05); opacity: 1; }
+}
 @keyframes koiFlow {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
 }
-
+@keyframes koiBgFlow {
+    0%, 100% { background-position: 20px 20px, 0% 50%; }
+    50% { background-position: 20px 20px, 100% 50%; }
+}
 @keyframes koiGlow {
     0%, 100% { box-shadow: inset 0 0 0 2px rgba(16, 0, 43, 0.9), 0 0 10px rgba(255, 158, 0, 0.4); }
     50% { box-shadow: inset 0 0 0 2px rgba(16, 0, 43, 0.9), 0 0 25px rgba(255, 158, 0, 0.7); }
