@@ -65,7 +65,7 @@
             background: linear-gradient(#4a0404, #2a0202);
 
             /* 2. 增加總高度，原本是 50px，我們改為 65px 確保空間充足 */
-            height: calc(45px + env(safe-area-inset-top));
+            height: calc(30px + env(safe-area-inset-top));
 
             /* 3. 使用 padding-top 避開瀏海，並增加一點額外的安全距離 (如 10px) */
             padding-top: calc(env(safe-area-inset-top));
@@ -107,12 +107,13 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-            /* 平時居中 */
+            /* 讓格子在中間 */
             align-items: center;
             padding: 10px;
             position: relative;
+            /* 關鍵：加入 min-height: 0，防止內容（8行格子）把容器撐大 */
+            min-height: 0;
             overflow: hidden;
-            /* 防止 8 行高時把底部按鈕推走 */
         }
 
         #spinsLeftLabel {
@@ -1002,7 +1003,7 @@
                 if (r === 0) return Math.floor(Math.random() * 61) + 40;
                 if (r === 1) return Math.floor(Math.random() * 31) + 20;
                 if (r === 2 || r === 3) return Math.floor(Math.random() * 21) + 5;
-                return Math.floor(Math.random() * 10) + 1;
+                return Math.floor(Math.random() * 5) + 1;
             }
             return Math.floor(Math.random() * 4) + 1;
         }
