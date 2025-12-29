@@ -1095,7 +1095,7 @@
 
       if (combo >= 20) {
         // [設定點B] 強制斷線門檻：達到此連擊數後 Wild 機率歸 0
-        wildChance = 0.01;
+        wildChance = 0.02;
       } else if (combo >= 16) {
         // [設定點C] 瓶頸期機率：16連擊後有感降低至 5%
         wildChance = 0.03;
@@ -1105,7 +1105,7 @@
       } else {
         // [設定點D] 衰減係數：使用 0.96 讓連擊極其平滑 (原版為 0.85)
         // 數值愈接近 1 愈容易達成高連擊
-        wildChance = wildChance * Math.pow(0.85, combo);
+        wildChance = wildChance * Math.pow(0.9, combo);
       }
 
       // [設定點E] 手機端起手優化：前兩行機率修正 (0.98 代表幾乎不壓制)
