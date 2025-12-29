@@ -585,10 +585,12 @@
         .bottom-panel {
             background: #000;
             /* 頂部縮小到 5px，左右 10px，底部直接等於系統安全區 */
-            padding: 5px 10px env(safe-area-inset-bottom) 10px;
+            padding: 5px 10px calc(5px + env(safe-area-inset-bottom)) 10px;
 
             width: 100%;
-            position: relative;
+            position: fixed;
+            bottom: 0;
+            left: 0;
             z-index: 100;
             border-top: 1px solid #333;
             box-sizing: border-box;
@@ -733,7 +735,7 @@
             padding-top: calc(env(safe-area-inset-top) + 20px);
             /* 避開瀏海 */
         }
-        
+
 
         #rankSidebar.active {
             right: 0;
