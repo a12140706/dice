@@ -212,10 +212,10 @@
     <div id="totalBetText">0</div>
   </div>
   <div class="chip-area">
-    <div class="chip-btn" style="background:#3b82f6;" onclick="selectChip(100, this)">100</div>
-    <div class="chip-btn active" style="background:#a855f7;" onclick="selectChip(600, this)">600</div>
-    <div class="chip-btn" style="background:#ef4444;" onclick="selectChip(1000, this)">1000</div>
-    <div class="chip-btn" style="background:var(--green);" onclick="selectChip(6000, this)">6000</div>
+    <div class="chip-btn" style="background:#3b82f6;" onclick="selectChip(1000, this)">1000</div>
+    <div class="chip-btn active" style="background:#a855f7;" onclick="selectChip(6000, this)">6000</div>
+    <div class="chip-btn" style="background:#ef4444;" onclick="selectChip(10000, this)">10000</div>
+    <div class="chip-btn" style="background:var(--green);" onclick="selectChip(60000, this)">60000</div>
   </div>
   <div class="btn-area-row">
     <button class="btn-ui" id="btnAuto" onclick="toggleAuto()">自動玩</button>
@@ -250,7 +250,7 @@ let missCount = parseInt(localStorage.getItem('sicbo_triple_miss')) || 0;
 let currentChip = 600, totalBet = 0, betData = {}, lastRoundBets = {}, isAutoPlaying = false;
 let isMuted = false, currentBgmIdx = 1, timeLeft = 20; 
 const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
-const BET_LIMIT = 6000;
+const BET_LIMIT = 60000;
 const DICE_CHARS = ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
 const SUM_ODDS = { 4:69, 17:69, 5:34, 16:34, 6:20, 15:20, 7:13, 14:13, 8:9, 13:9, 9:7.4, 10:6.8, 11:6.8, 12:7.4 };
 
