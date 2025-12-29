@@ -65,10 +65,10 @@
             background: linear-gradient(#4a0404, #2a0202);
 
             /* 2. 增加總高度，原本是 50px，我們改為 65px 確保空間充足 */
-            height: calc(30px + env(safe-area-inset-top));
+            height: calc(45px + env(safe-area-inset-top));
 
             /* 3. 使用 padding-top 避開瀏海，並增加一點額外的安全距離 (如 10px) */
-            padding-top: calc(env(safe-area-inset-top) + 10px);
+            padding-top: calc(env(safe-area-inset-top));
 
             display: flex;
             align-items: center;
@@ -583,14 +583,19 @@
 
         .bottom-panel {
             background: #000;
-            padding: 12px 12px calc(12px + env(safe-area-inset-bottom)) 12px;
-            /* 自動適應瀏海/底條 */
+            /* 頂部縮小到 5px，左右 10px，底部直接等於系統安全區 */
+            padding: 5px 10px env(safe-area-inset-bottom) 10px;
+
             width: 100%;
             position: relative;
-            /* 確保它在 flex 佈局的最底層 */
             z-index: 100;
             border-top: 1px solid #333;
-            /* 增加一條細線區隔感 */
+            box-sizing: border-box;
+
+            /* 確保面板不會被內容撐開 */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .display-group {
