@@ -1025,53 +1025,56 @@
         }
 
         function listenRank() {
-            db.collection("users")
-                .where("mineMaxWin", ">", 0)
-                .orderBy("mineMaxWin", "desc")
-                .limit(10)
-                .onSnapshot(snap => {
-                    let html = '';
-                    let i = 1;
+    const rankList = document.getElementById('mineRankList');
+    const topBar = document.getElementById('topWinnerName');
+    
+    if (!rankList || !topBar) return;
 
-                    snap.forEach(doc => {
-                        const data = doc.data();
-                        const win = data.mineMaxWin || 0;
+    db.collection("users")
+        .orderBy("mineMaxWin", "desc")
+        .limit(10)
+        .onSnapshot(snap => {
+            let html = '';
+            let i = 1;
 
-                        // --- 核心：提取特效與稱號邏輯 ---
-                        const fxClass = data.equipped_fx || "";
-                        const titleText = data.equipped_title || "";
+            if (snap.empty) {
+                topBar.innerHTML = "🏆 暫無最高紀錄";
+                rankList.innerHTML = '<p style="text-align:center; color:#888;">尚無數據</p>';
+                return;
+            }
 
-                        let titleColorClass = "t-blue"; // 預設藍色
-                        if (titleText.includes("幸運錦鯉")) titleColorClass = "t-koi-color";
-                        else if (titleText.includes("賭神") || titleText.includes("富可敵國")) titleColorClass = "t-red";
-                        else if (titleText.includes("梟雄") || titleText.includes("傳奇")) titleColorClass = "t-orange";
-                        else if (titleText.includes("土豪") || titleText.includes("千金") || titleText.includes("少爺")) titleColorClass = "t-purple";
+            snap.forEach(doc => {
+                const data = doc.data();
+                const win = data.mineMaxWin || 0;
+                if (win <= 0) return;
 
-                        const titleHTML = titleText ? `<span class="player-title ${titleColorClass}">【${titleText}】</span>` : "";
+                const fxClass = data.equipped_fx || "";
+                const titleText = data.equipped_title || "";
+                let titleColorClass = "t-blue";
+                if (titleText.includes("幸運錦鯉")) titleColorClass = "t-koi-color";
+                else if (titleText.includes("賭神") || titleText.includes("富可敵國")) titleColorClass = "t-red";
+                const titleHTML = titleText ? `<span class="player-title ${titleColorClass}">【${titleText}】</span>` : "";
 
-                        // --- 組裝 HTML ---
-                        html += `
-          <div class="rank-item ${fxClass}">
-            <div class="rank-info">
-              <span class="rank-num">${i === 1 ? '🏆' : i}</span>
-              <span class="rank-name">${titleHTML}${data.name || '無名氏'}</span>
-            </div>
-            <span class="rank-bal" style="color:var(--gold)">💰${Math.floor(win).toLocaleString()}</span>
-          </div>
-        `;
+                html += `
+                    <div class="rank-item ${fxClass}">
+                        <div class="rank-info">
+                            <span class="rank-num">${i === 1 ? '🏆' : i}</span>
+                            <span class="rank-name">${titleHTML}${data.name || '無名氏'}</span>
+                        </div>
+                        <span class="rank-bal" style="color:var(--gold)">💰${Math.floor(win).toLocaleString()}</span>
+                    </div>`;
 
-                        // 更新頂部跑馬燈或第一名標示
-                        if (i === 1) {
-                            document.getElementById('topWinnerName').innerHTML = `🏆 最高紀錄：${titleHTML}${data.name} 贏得 $${Math.floor(win).toLocaleString()}`;
-                        }
-
-                        i++;
-                    });
-
-                    const rankList = document.getElementById('mineRankList'); // 確保 ID 正確
-                    if (rankList) rankList.innerHTML = html || '<p style="text-align:center; color:#888;">尚無數據</p>';
-                });
-        }
+                if (i === 1) {
+                    topBar.innerHTML = `🏆 最高紀錄：${titleHTML}${data.name || '無名氏'} 贏得 $${Math.floor(win).toLocaleString()}`;
+                }
+                i++;
+            });
+            rankList.innerHTML = html;
+        }, err => {
+            console.error("排行榜監聽錯誤:", err);
+            topBar.innerHTML = "🏆 掃雷大挑戰"; // 報錯時給予預設文字，不顯示載入中
+        });
+}
 
         function toggleRank() {
             const s = document.getElementById('rankSidebar'), o = document.getElementById('rankOverlay');
@@ -1301,35 +1304,47 @@
             updateNextWinInfo();
         }
 
-        document.getElementById('homeLink').addEventListener('click', async (e) => {
-            e.preventDefault(); await syncToFirebase(); window.location.href = "index.html";
-        });
+    
 
         window.onload = async () => { 
-            // 1. 優先顯示本地餘額，讓玩家第一眼就看到錢
-            updateUI(); 
+            // 1. 第一時間讀取本地，讓玩家進場立刻看到錢，不卡頓
+            const savedBal = localStorage.getItem('sicbo_balance');
+            if (savedBal !== null) {
+                balance = parseFloat(savedBal);
+            }
             
-            // 2. 嘗試從 Firebase 抓取最新資料 (非同步)
+            // 先顯示本地資料，確保畫面不留白
+            updateUI(); 
+            renderGrid();
+            updateNextWinInfo();
+
+            // 2. 核心：聯網校正 (解決滑掉遊戲/換機儲值問題)
             const playerId = localStorage.getItem('player_id');
-            if (playerId) {
+            if (playerId && typeof db !== 'undefined') {
                 try {
-                    const doc = await db.collection("users").doc(playerId).get();
-                    if (doc.exists && doc.data().balance !== undefined) {
-                        balance = doc.data().balance;
-                        updateUI(); // 抓到雲端數據後再次更新介面
+                    const doc =  db.collection("users").doc(playerId).get();
+                    if (doc.exists) {
+                        const cloudBal = doc.data().balance;
+
+                        // 如果雲端的錢比較多 (代表在別台手機玩過)，才更新本地
+                        if (cloudBal !== undefined && cloudBal > balance) {
+                            balance = cloudBal;
+                            localStorage.setItem('sicbo_balance', balance);
+                            updateUI(); // 再次更新 UI 顯示正確金額
+                            console.log("已從雲端同步最新高額餘額");
+                        }
+                        // 如果本地錢比較多 (代表上次滑掉沒同步成功)，主動幫雲端補傳
+                        else if (cloudBal !== undefined && balance > cloudBal) {
+                            syncToFirebase();
+                            console.log("本地進度領先，已自動補傳雲端");
+                        }
                     }
                 } catch (e) {
-                    console.log("Firebase 餘額載入跳過:", e);
+                    console.log("離線模式，使用本地餘額", e);
                 }
             }
 
-            // 3. 渲染格子
-            renderGrid(); 
-            
-            // 4. 初始化倍率顯示 (確保 ID 使用正確)
-            updateNextWinInfo(); 
-
-            // 5. 啟動排行榜監聽
+            // 3. 最後加載排行榜
             listenRank(); 
         };
     </script>
