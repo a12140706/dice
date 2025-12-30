@@ -26,16 +26,23 @@
         }
 
         body {
-            height: 100dvh;
-            width: 100vw;
-            background: #000;
-            color: #fff;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            background: radial-gradient(circle at center, #2a0505 0%, #000 100%);
-            position: relative;
-        }
+    margin: 0;
+    padding: 0;
+    background-color: #000; /* 確保底色是黑的，不漏白 */
+    min-height: 100vh;
+    overflow-x: hidden;
+    overscroll-behavior-y: none;
+}
+
+.bg-stars {
+    position: fixed; /* 改為 fixed 確保捲動時依然覆蓋 */
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%); /* 深色漸層 */
+}
 
         .bg-stars {
             position: absolute;
@@ -102,26 +109,45 @@
         }
 
         .main-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 10px;
-            gap: 10px;
-            overflow-y: auto;
-            z-index: 10;
-        }
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; /* 新增：讓內容垂直置中，填補下方空洞 */
+    padding: 10px;
+    gap: 15px; /* 稍微加大間距，讓手機點擊更舒服 */
+    overflow-y: auto;
+    z-index: 10;
+    width: 100%;
+    box-sizing: border-box;
+}
 
         .top-winner-bar {
-            width: 90%;
-            background: rgba(0, 0, 0, 0.4);
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 12px;
-            color: #aaa;
-            text-align: center;
-            border: 1px solid rgba(255, 216, 107, 0.2);
-        }
+    width: 90%;
+    max-width: 400px;
+    /* 增加上下內距，讓內容物更有呼吸空間，同時增加高度 */
+    padding: 25px 15px; 
+    /* 增加底部外距，強行把後面的遊戲格子往下推 */
+    margin: 15px 0 35px 0; 
+    
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--gold);
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    
+    /* 確保裡面的稱號和特效 z-index 正常 */
+    position: relative; 
+    z-index: 5;
+}
+
+/* 如果你想讓裡面的名字或紀錄大一點，也可以微調 */
+#topWinnerName {
+    display: flex;
+    flex-direction: column; /* 讓稱號、名字、金額垂直排開，更佔空間 */
+    gap: 8px;
+    align-items: center;
+}
 
         .multiplier-step {
             font-size: 14px;
@@ -752,7 +778,7 @@
                 style="background:none; border:1px solid #777; color:#ccc; border-radius:5px; padding:5px 12px; font-size:14px; font-weight:bold;">🏠
                 回大廳</button>
         </a>
-
+</div>
     <div class="main-container">
         <div class="top-winner-bar" id="topWinnerName">載入中...</div>
         <div class="multiplier-step" id="multDisplay">下一格倍率: --</div>
@@ -768,7 +794,7 @@
                 </div>
             </div>
             <div class="input-row">
-                <span>💣 炸彈數量:</span>
+                <span>💣 炸彈數量(影響每次探險倍率):</span>
                 <select id="bombCount" onchange="updateNextWinInfo()">
                     <option value="3" selected>3</option>
                     <option value="5">5</option>
