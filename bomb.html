@@ -180,20 +180,22 @@
         }
 
         .tile {
-            background: #3d0a0a;
-            /* 深紅褐色底 */
-            border-radius: 8px;
-            /* 使用兩層陰影：外層深色厚度，內層淺色高光 */
-            border: 1px solid #5c0a0a;
-            border-bottom: 5px solid #2a0505;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            position: relative;
-        }
+    background: #3d0a0a;
+    border-radius: 8px;
+    border: 1px solid #5c0a0a;
+    border-bottom: 5px solid #2a0505;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    /* 新增以下三行，確保格子絕對是正方形且不變形 */
+    aspect-ratio: 1 / 1; 
+    width: 100%;
+    box-sizing: border-box; 
+}
 
 
         @keyframes gemAppear {
@@ -229,34 +231,34 @@
             /* 保持邊框高度一致防止抖動 */
         }
 
-        /* 安全格：修正動畫確保尺寸穩定 */
         .tile.revealed-coin {
-            background: linear-gradient(135deg, #00d2ff, #3a7bd5);
-            border-bottom: 4px solid #2d5a9e;
-            color: white;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
-            /* 確保翻轉動畫不會改變容器尺寸 */
-            animation: flip 0.3s forwards;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.5rem;
-            cursor: default;
-            /* 揭開後不顯示手指 */
-        }
+    background: linear-gradient(135deg, #00d2ff, #3a7bd5) !important;
+    border: 1.5px solid #fff !important;
+    border-bottom: 4px solid #2d5a9e !important;
+    color: white;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+    animation: flip 0.3s forwards;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+    cursor: default;
+    z-index: 2; /* 確保層級高於一般格子 */
+}
 
-        /* 炸彈格：修正動畫 */
-        .tile.revealed-bomb {
-            background: linear-gradient(135deg, #ff4b2b, #ff416c);
-            border-bottom: 4px solid #b22222;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.5rem;
-            animation: shake 0.4s ease-in-out;
-            /* 移除引發位移的潛在因素 */
-            cursor: default;
-        }
+/* 炸彈格：修正顏色並確保不被覆蓋 */
+.tile.revealed-bomb {
+    background: linear-gradient(135deg, #ff4b2b, #ff416c) !important;
+    border: 1.5px solid #fff !important;
+    border-bottom: 4px solid #b22222 !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+    animation: shake 0.4s ease-in-out;
+    cursor: default;
+    z-index: 2;
+}
 
         /* 修正 flip 動畫，確保 transform 不會殘留縮放以外的偏移 */
         @keyframes flip {
@@ -427,31 +429,22 @@
             color: #a4b0be;
         }
 
-        @keyframes flip {
-            from {
-                transform: rotateY(90deg);
-            }
+       @keyframes flip {
+    from {
+        transform: perspective(400px) rotateY(90deg);
+        opacity: 0;
+    }
+    to {
+        transform: perspective(400px) rotateY(0deg);
+        opacity: 1;
+    }
+}
 
-            to {
-                transform: rotateY(0);
-            }
-        }
-
-        @keyframes shake {
-
-            0%,
-            100% {
-                transform: translateX(0);
-            }
-
-            25% {
-                transform: translateX(-5px);
-            }
-
-            75% {
-                transform: translateX(5px);
-            }
-        }
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-2px); } /* 縮小抖動幅度減少對佈局的影響 */
+    75% { transform: translateX(2px); }
+}
 
         .bet-btn {
             background: #3d0a0a;
