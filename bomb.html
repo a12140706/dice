@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport"
         content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover" />
-    <title>地雷尋寶</title>
+    <title>尋寶冒險</title>
     <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore-compat.js"></script>
 
@@ -897,7 +897,7 @@
 
     <div id="rankOverlay" onclick="toggleRank()"></div>
     <div id="rankSidebar">
-        <h3 style="color:var(--gold); margin-bottom:20px; text-align:center;">🏆掃雷排行榜</h3>
+        <h3 style="color:var(--gold); margin-bottom:20px; text-align:center;">🏆尋寶排行榜</h3>
         <div id="mineRankList"></div>
     </div>
 
@@ -930,7 +930,7 @@
                 </div>
             </div>
             <div class="input-row">
-                <span>💣 炸彈數量(影響每次探險倍率)</span>
+                <span>💣 炸彈數量(影響探險倍率)</span>
                 <div class="bet-selector">
                     <button class="bet-btn" onclick="changeBomb(-1)" id="bombMinus">-</button>
                     <div class="bet-display" id="bombText">10</div>
