@@ -21,24 +21,24 @@
             }
         }
 
-        @media (max-height: 700px) {
-            :root {
-                --tile-size: 50px;
-            }
+        @media (max-height: 850px) {
+    :root {
+        --tile-size: 45px; /* 縮小一點，確保 8 行能塞進去 */
+    }
 
-            .grid {
-                gap: 2px;
-                padding: 4px;
-            }
+    .grid {
+        gap: 2px;
+        padding: 4px;
+    }
 
-            .heart-icon {
-                font-size: 30px;
-            }
+    .heart-icon {
+        font-size: 28px; /* 圖示也要跟著縮小 */
+    }
 
-            .heart-val {
-                font-size: 9px;
-            }
-        }
+    .heart-val {
+        font-size: 8px;
+    }
+}
 
         * {
             box-sizing: border-box;
@@ -103,19 +103,17 @@
         }
 
         .main-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            /* 讓格子在中間 */
-            align-items: center;
-            padding: 10px;
-            position: relative;
-            /* 關鍵：加入 min-height: 0，防止內容（8行格子）把容器撐大 */
-            min-height: 0;
-            overflow: hidden;
-        }
-
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* 垂直置中 */
+    align-items: center;     /* 水平置中 */
+    padding: 10px;
+    position: relative;
+    min-height: 0;
+    /* 移除 overflow: hidden 避免強制剪裁 */
+    overflow: visible; 
+}
         #spinsLeftLabel {
             display: none;
             background: var(--heart-red);
@@ -583,23 +581,22 @@
         }
 
         .bottom-panel {
-            background: #000;
-            /* 頂部縮小到 5px，左右 10px，底部直接等於系統安全區 */
-            padding: 5px 10px calc(5px + env(safe-area-inset-bottom)) 10px;
-
-            width: 100%;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            z-index: 100;
-            border-top: 1px solid #333;
-            box-sizing: border-box;
-
-            /* 確保面板不會被內容撐開 */
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
+    background: #000;
+    padding: 5px 10px calc(5px + env(safe-area-inset-bottom)) 10px;
+    width: 100%;
+    /* 關鍵修改：從 fixed 改為相對佈局，使其佔據實際空間 */
+    position: relative; 
+    bottom: auto;
+    left: auto;
+    z-index: 100;
+    border-top: 1px solid #333;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    /* 確保面板不會縮小，維持固定高度 */
+    flex-shrink: 0; 
+}
 
         .display-group {
             display: flex;
