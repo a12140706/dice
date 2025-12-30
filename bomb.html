@@ -976,6 +976,7 @@
         // 定義炸彈數量的選項（依照原本 select 的值）
         const bombOptions = [3, 5, 10, 15, 20];
         let currentBombIndex = 2; // 預設 3 顆
+        const CASHOUT_RETENTION = 0.7; //提統跑路
 
         function changeBomb(delta) {
             // 遊戲進行中禁止修改
@@ -1193,7 +1194,8 @@
         function revealTile(idx, el) {
             if (!isGameActive || el.classList.contains('disabled')) return;
 
-            const currentBombs = parseInt(document.getElementById('bombText').innerText); // 修正這裡
+            const bombCountEl = document.getElementById('bombText');
+            const currentBombs = bombCountEl ? parseInt(bombCountEl.innerText) : 3;
 
             if (mines[idx]) {
                 gameOver(false);
@@ -1206,15 +1208,20 @@
 
                 document.getElementById('cashoutBtn').disabled = false;
 
-                const m = getMultiplier(currentBombs, revealedCount); // 修正這裡
-                document.getElementById('cashoutBtn').textContent = `提桶跑路: 💎${Math.floor(currentBet * m).toLocaleString()}`;
+                // 計算原始倍率
+                const m = getMultiplier(currentBombs, revealedCount);
+
+                // --- 修改處：跑路按鈕顯示 7 折後的金額 ---
+                const cashoutAmount = Math.floor(currentBet * m * CASHOUT_RETENTION);
+                document.getElementById('cashoutBtn').textContent = `提桶跑路: 💎${cashoutAmount.toLocaleString()}`;
 
                 updateNextWinInfo();
 
-                const totalSafeTiles = 25 - currentBombs; // 修正這裡
+                const totalSafeTiles = 25 - currentBombs;
                 if (revealedCount === totalSafeTiles) {
                     showWinToast(`🎉 完美的探險！全開獎金 x${m.toFixed(2)}`);
-                    setTimeout(() => { cashout(); }, 1500);
+                    // --- 修改處：傳入 true 代表全開通關，領取全額 ---
+                    setTimeout(() => { cashout(true); }, 1500);
                 }
             }
         }
@@ -1228,24 +1235,32 @@
             setTimeout(() => toast.remove(), 2500);
         }
 
-        async function cashout() {
+        async function cashout(isAutoWin = false) {
             if (!isGameActive) return;
 
-            const bombCount = parseInt(document.getElementById('bombText').innerText); // 修正這裡
-            const m = getMultiplier(bombCount, revealedCount);
+            const bombCountEl = document.getElementById('bombText');
+            const bombCount = bombCountEl ? parseInt(bombCountEl.innerText) : 3;
+
+            // 獲取基礎倍率
+            let m = getMultiplier(bombCount, revealedCount);
+
+            // --- 核心邏輯：中途跑路只領 70%，全開領 100% ---
+            if (!isAutoWin) {
+                m = m * CASHOUT_RETENTION;
+            }
+
             const win = Math.floor(currentBet * m);
 
-            // --- 根據倍率決定顯示哪種結算畫面 ---
+            // 根據最終倍率顯示 UI
             if (m >= 40) {
-                showBigWinUI(win, m); // 呼叫之前寫的豪華版 (全螢幕/手動關閉)
+                showBigWinUI(win, m);
             } else {
-                showSimpleWinUI(win, m); // 呼叫普通版 (小框/自動消失)
+                showSimpleWinUI(win, m);
             }
 
             balance += win;
-            // ... (這裡保留你原本的 Firebase 同步與 localStorage 更新邏輯，不要改動)
 
-            // 執行同步
+            // Firebase 同步邏輯 (維持你原本的邏輯，不修改 Firebase 結構)
             const playerId = localStorage.getItem('player_id');
             if (playerId && db) {
                 try {
@@ -1261,7 +1276,7 @@
                     }
                     await userRef.update(updateData);
                     lastSyncedBalance = balance;
-                } catch (e) { }
+                } catch (e) { console.error("同步失敗", e); }
             }
 
             gameOver(true);
