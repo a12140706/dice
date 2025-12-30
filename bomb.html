@@ -984,7 +984,11 @@
         // 請在原本的 startGame 函數中，將抓取 bombCount 的地方改為：
         // const bombCount = parseInt(document.getElementById('bombText').innerText);
         function updateUI() {
-            document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString();
+            const balanceEl = document.getElementById('balanceText');
+            if (balanceEl) {
+                balanceEl.textContent = Math.floor(balance).toLocaleString();
+            }
+            // 確保 Key 值與您其他遊戲一致
             localStorage.setItem('sicbo_balance', balance);
         }
 
@@ -1301,7 +1305,33 @@
             e.preventDefault(); await syncToFirebase(); window.location.href = "index.html";
         });
 
-        window.onload = () => { updateUI(); renderGrid(); listenRank(); };
+        window.onload = async () => { 
+            // 1. 優先顯示本地餘額，讓玩家第一眼就看到錢
+            updateUI(); 
+            
+            // 2. 嘗試從 Firebase 抓取最新資料 (非同步)
+            const playerId = localStorage.getItem('player_id');
+            if (playerId) {
+                try {
+                    const doc = await db.collection("users").doc(playerId).get();
+                    if (doc.exists && doc.data().balance !== undefined) {
+                        balance = doc.data().balance;
+                        updateUI(); // 抓到雲端數據後再次更新介面
+                    }
+                } catch (e) {
+                    console.log("Firebase 餘額載入跳過:", e);
+                }
+            }
+
+            // 3. 渲染格子
+            renderGrid(); 
+            
+            // 4. 初始化倍率顯示 (確保 ID 使用正確)
+            updateNextWinInfo(); 
+
+            // 5. 啟動排行榜監聽
+            listenRank(); 
+        };
     </script>
 </body>
 
