@@ -1008,7 +1008,11 @@
   </div>
 
   <div class="container">
-    <div class="welcome-msg" id="welcomeUser">名稱</div>
+
+    <div class="welcome-msg" id="welcomeUser" onclick="changePlayerName()" 
+     style="cursor: pointer; display: inline-block; min-height: 20px;">
+    載入中...
+</div>
 
     <div class="welcome-msg">
       <span id="welcomeUserContainer">選擇遊戲</span>
@@ -1176,6 +1180,54 @@
 
     function openModal() { document.getElementById('depositModal').style.display = 'flex'; }
     function closeModal() { document.getElementById('depositModal').style.display = 'none'; }
+    //改名
+  async function changePlayerName() {
+    return;
+    const changeNameFee = 50000000; // 改名費用
+    const playerId = localStorage.getItem('player_id');
+    let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
+
+    if (!playerId) return alert("請先登入遊戲！");
+
+    // 取得目前的純名字 (不含稱號標籤)
+    const currentName = localStorage.getItem('player_name') || "無名氏";
+    const newName = prompt(`修改暱稱需花費 💎 ${changeNameFee.toLocaleString()}\n請輸入新暱稱 (最多8個字)：`, currentName);
+
+    if (newName === null) return; 
+    const trimmedName = newName.trim();
+    
+    if (trimmedName === "" || trimmedName === currentName) return; 
+    if (trimmedName.length > 8) return alert("暱稱太長囉！");
+    
+    if (balance < changeNameFee) {
+        return alert(`錢不夠啦！改名需要 💎 ${changeNameFee.toLocaleString()}`);
+    }
+
+    if (!confirm(`確定要花費 💎 ${changeNameFee.toLocaleString()} 改名為「${trimmedName}」嗎？`)) return;
+
+    try {
+        balance -= changeNameFee;
+        
+        // 【核心】只更新名字和餘額，原本的 equipped_title 和 equipped_fx 會保留在雲端
+        await db.collection("users").doc(playerId).update({
+            name: trimmedName,
+            balance: balance
+        });
+
+        localStorage.setItem('sicbo_balance', balance);
+        localStorage.setItem('player_name', trimmedName);
+
+        updateMainBalance();
+        
+        // 【關鍵】重新執行這個函數，它會把新名字配上舊特效重新畫出來
+        checkUserStatus(); 
+        
+        alert("改名成功！");
+    } catch (e) {
+        console.error("改名失敗:", e);
+        alert("改名失敗，請稍後再試");
+    }
+}
 
     async function handleDeposit(amt) {
       const playerId = localStorage.getItem('player_id');
