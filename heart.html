@@ -359,12 +359,42 @@
         }
 
         /* [特效：雷霆霓虹] */
-        .fx-neon {
-            border: 2px solid #fff !important;
-            background: rgba(0, 0, 0, 0.9) !important;
-            box-shadow: 0 0 10px #fff, 0 0 20px #00d2ff !important;
-            animation: neon-flicker 2s infinite, neon-rainbow 4s linear infinite !important;
-        }
+         .fx-neon {
+    border: 2px solid #fff !important;
+    /* 1. 關鍵修改：將 0% 和 100% 的黑色改為深藍色，hue-rotate 才能抓到顏色變色 */
+    background: linear-gradient(
+        135deg, 
+        #001a33 0%,   /* 取代黑色 */
+        #004488 25%, 
+        #0066aa 50%, 
+        #440088 75%, 
+        #001a33 100%  /* 取代黑色 */
+    ) !important;
+    background-size: 300% 300% !important;
+    color: #fff !important;
+    
+    /* 2. 增加強烈的內部發光，直接把背景照亮 */
+    box-shadow: 
+        inset 0 0 30px rgba(0, 210, 255, 0.7), 
+        0 0 10px #fff, 
+        0 0 20px #00d2ff !important;
+
+    /* 3. 動畫組合 */
+    animation:
+        neon-flicker 2s infinite,
+        neon-rainbow 2s linear infinite,
+        bg-flow-extreme 1s ease-in-out infinite !important;
+    
+    /* 確保內容在發光背景上依然清晰 */
+    text-shadow: 0 0 5px #000, 2px 2px 2px #000 !important;
+}
+
+/* 4. 強化的背景移動：讓漸層在盒子裡大幅度滑動 */
+@keyframes bg-flow-extreme {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
 
         /* [特效：至尊皇金] */
         .fx-gold {
@@ -832,7 +862,7 @@
                 <div style="font-size: 10px; color: #888;">BET</div>
                 <div style="display:flex; align-items:center; justify-content:space-around;">
                     <span onclick="changeBet(-1)" style="color:var(--gold); font-size:24px; padding:0 10px;">-</span>
-                    <span id="betText" style="font-weight:bold; font-size:18px;">100000</span>
+                    <span id="betText" style="font-weight:bold; font-size:18px;">200000</span>
                     <span onclick="changeBet(1)" style="color:var(--gold); font-size:24px; padding:0 10px;">+</span>
                 </div>
             </div>
@@ -888,7 +918,7 @@
         let missCount = parseInt(localStorage.getItem('heart_miss_count')) || 0;
         let rows = 4, cols = 5;
         let isSpinning = false, isAuto = false, isSpecialMode = false;
-        let betOptions = [500, 1000, 3000, 5000, 10000, 50000, 100000], betIdx = 6;
+        let betOptions = [500, 1000, 3000, 5000, 10000, 50000, 100000,200000], betIdx = 7;
 
         const SYMBOL_VALUES = { '👑': 3, '💎': 2, '🪙': 1, '💍': 1, '🔮': 0.5, '✨': 0.2 };
         let symbols = Object.keys(SYMBOL_VALUES);
@@ -1040,7 +1070,7 @@
                         temp.innerText = symbols[Math.floor(Math.random() * symbols.length)];
                         strip.appendChild(temp);
                     }
-                    let isHeart = Math.random() < 0.055;
+                    let isHeart = Math.random() < 0.05;
                     board[r][c] = isHeart ? { type: '❤️', val: getHeartMultiplier(r) } : { type: symbols[Math.floor(Math.random() * symbols.length)], val: 0 };
 
                     const delay = (c * 60) + (r * 20);
