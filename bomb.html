@@ -1170,6 +1170,7 @@
             document.getElementById('startBtn').style.display = 'none';
             document.getElementById('cashoutBtn').style.display = 'block';
             document.getElementById('cashoutBtn').disabled = true;
+            document.getElementById('cashoutBtn').textContent = `本金: 💎${bet.toLocaleString()}`;
 
             // 禁用所有調整選項 (包含籌碼與炸彈)
             document.getElementById('betMinus').disabled = true;
@@ -1307,25 +1308,38 @@
             }
         }
         // 輔助函數：顯示輸球提示 (自動消失)
-        function showLoseUI(betAmount) {
+        function showLoseUI(betAmount, potentialWin) {
             const overlay = document.createElement('div');
-            overlay.className = 'big-win-overlay'; // 沿用大獎的背景遮罩樣式
-            overlay.style.background = 'rgba(40, 0, 0, 0.85)'; // 改成偏紅的暗色
+            overlay.className = 'big-win-overlay';
+            overlay.style.background = 'rgba(40, 0, 0, 0.85)';
+
+            // 根據是否有潛在獎金來決定第二行字
+            let extraMsg = '';
+            if (potentialWin > 0) {
+                extraMsg = `
+            <div style="color: #ffd86b; font-size: 18px; font-weight: bold; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; margin-top: 10px;">
+                差一點就能帶走 💎 ${potentialWin.toLocaleString()}
+            </div>`;
+            } else {
+                // 第一下就踩雷的安慰話
+                extraMsg = `<p style="color: #ff9f43; margin-top: 10px;">出師不利...</p>`;
+            }
+
             overlay.innerHTML = `
         <div class="big-win-content" style="animation: shake 0.5s ease-in-out;">
             <div class="big-win-title" style="color: #ff4757; text-shadow: 0 0 20px #ff0000;">💥 踩到炸彈 💥</div>
-            <div class="big-win-amount" style="color: #fff; font-size: 32px;">損失 💎 ${betAmount.toLocaleString()}</div>
-            <p style="color: #aaa; margin-top: 20px;">好運在下一局等著你...</p>
+            <div class="big-win-amount" style="color: #fff; font-size: 24px; margin-bottom: 5px;">損失本金 💎 ${betAmount.toLocaleString()}</div>
+            ${extraMsg}
+            <p style="color: #aaa; margin-top: 20px; font-size: 14px;">別灰心，下一把一定中！</p>
         </div>
     `;
             document.body.appendChild(overlay);
 
-            // 2秒後自動移除
             setTimeout(() => {
                 overlay.style.opacity = '0';
                 overlay.style.transition = '0.5s';
                 setTimeout(() => overlay.remove(), 500);
-            }, 1000);
+            }, 1500);
         }
         function gameOver(isWin) {
             isGameActive = false;
@@ -1346,8 +1360,15 @@
             // 3. 處理輸贏分支
             if (!isWin) {
                 if (!isMuted) document.getElementById('sndBomb').play().catch(() => { });
+
+                // 計算當前倍率
+                const currentMult = multipliers[currentBombs][revealedCount] || 1;
+                const potentialWin = Math.floor(lastBet * currentMult);
+
                 setTimeout(() => {
-                    showLoseUI(lastBet);
+                    // 如果 revealedCount > 0，代表有累積到獎金，才傳入 potentialWin
+                    // 如果第一下就死 (revealedCount === 0)，我們傳入 0 或者是 null
+                    showLoseUI(lastBet, revealedCount > 0 ? potentialWin : 0);
                 }, 500);
             }
 
