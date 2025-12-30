@@ -26,23 +26,26 @@
         }
 
         body {
-    margin: 0;
-    padding: 0;
-    background-color: #000; /* 確保底色是黑的，不漏白 */
-    min-height: 100vh;
-    overflow-x: hidden;
-    overscroll-behavior-y: none;
-}
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            /* 確保底色是黑的，不漏白 */
+            min-height: 100vh;
+            overflow-x: hidden;
+            overscroll-behavior-y: none;
+        }
 
-.bg-stars {
-    position: fixed; /* 改為 fixed 確保捲動時依然覆蓋 */
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: -1;
-    background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%); /* 深色漸層 */
-}
+        .bg-stars {
+            position: fixed;
+            /* 改為 fixed 確保捲動時依然覆蓋 */
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+            /* 深色漸層 */
+        }
 
         @keyframes bgMove {
             from {
@@ -54,7 +57,7 @@
             }
         }
 
-         .topbar {
+        .topbar {
             /* 1. 背景顏色會從最頂部開始填滿 */
             background: linear-gradient(#4a0404, #2a0202);
 
@@ -85,6 +88,7 @@
             border-radius: 12px;
             color: #fff;
         }
+
         .balance-box {
             background: rgba(0, 0, 0, 0.5);
             border: 1px solid var(--gold);
@@ -96,45 +100,48 @@
         }
 
         .main-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center; /* 新增：讓內容垂直置中，填補下方空洞 */
-    padding: 10px;
-    gap: 15px; /* 稍微加大間距，讓手機點擊更舒服 */
-    overflow-y: auto;
-    z-index: 10;
-    width: 100%;
-    box-sizing: border-box;
-}
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            /* 新增：讓內容垂直置中，填補下方空洞 */
+            padding: 10px;
+            gap: 15px;
+            /* 稍微加大間距，讓手機點擊更舒服 */
+            overflow-y: auto;
+            z-index: 10;
+            width: 100%;
+            box-sizing: border-box;
+        }
 
         .top-winner-bar {
-    width: 90%;
-    max-width: 400px;
-    /* 增加上下內距，讓內容物更有呼吸空間，同時增加高度 */
-    padding: 25px 15px; 
-    /* 增加底部外距，強行把後面的遊戲格子往下推 */
-    margin: 15px 0 35px 0; 
-    
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--gold);
-    border-radius: 20px;
-    text-align: center;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-    
-    /* 確保裡面的稱號和特效 z-index 正常 */
-    position: relative; 
-    z-index: 5;
-}
+            width: 90%;
+            max-width: 400px;
+            /* 增加上下內距，讓內容物更有呼吸空間，同時增加高度 */
+            padding: 25px 15px;
+            /* 增加底部外距，強行把後面的遊戲格子往下推 */
+            margin: 15px 0 35px 0;
 
-/* 如果你想讓裡面的名字或紀錄大一點，也可以微調 */
-#topWinnerName {
-    display: flex;
-    flex-direction: column; /* 讓稱號、名字、金額垂直排開，更佔空間 */
-    gap: 8px;
-    align-items: center;
-}
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--gold);
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+
+            /* 確保裡面的稱號和特效 z-index 正常 */
+            position: relative;
+            z-index: 5;
+        }
+
+        /* 如果你想讓裡面的名字或紀錄大一點，也可以微調 */
+        #topWinnerName {
+            display: flex;
+            flex-direction: column;
+            /* 讓稱號、名字、金額垂直排開，更佔空間 */
+            gap: 8px;
+            align-items: center;
+        }
 
         .multiplier-step {
             font-size: 14px;
@@ -164,66 +171,132 @@
         }
 
         .tile {
-            background: rgba(61, 10, 10, 0.8);
+            background: #3d0a0a;
+            /* 深紅褐色底 */
             border-radius: 8px;
-            border-bottom: 4px solid #2a0505;
+            /* 使用兩層陰影：外層深色厚度，內層淺色高光 */
+            border: 1px solid #5c0a0a;
+            border-bottom: 5px solid #2a0505;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 24px;
             cursor: pointer;
-            transition: 0.1s;
+            transition: all 0.2s ease;
             position: relative;
         }
 
-        .tile.active:active {
-            transform: translateY(2px);
-            border-bottom-width: 2px;
+
+        @keyframes gemAppear {
+            0% {
+                transform: scale(0) rotate(-45deg);
+                opacity: 0;
+            }
+
+            80% {
+                transform: scale(1.2) rotate(10deg);
+            }
+
+            100% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
         }
 
+        .tile.active {
+            background: linear-gradient(145deg, #4a0a0a, #2a0505);
+            border: 1.5px solid var(--gold);
+            /* 加入金邊 */
+            box-shadow: inset 0 0 10px rgba(255, 216, 107, 0.2);
+            /* 加入呼吸燈特效，一眼看出這區可以點 */
+            animation: pulse-active 2s infinite alternate;
+        }
 
-@keyframes gemAppear {
-    0% { transform: scale(0) rotate(-45deg); opacity: 0; }
-    80% { transform: scale(1.2) rotate(10deg); }
-    100% { transform: scale(1) rotate(0deg); opacity: 1; }
-}
+        /* 移除或覆蓋原本會導致位移的 active 縮放 */
+        .tile.active:active {
+            transform: scale(0.95);
+            /* 改用等比例微縮小模擬按壓，不會影響佈局 */
+            border-bottom-width: 4px;
+            /* 保持邊框高度一致防止抖動 */
+        }
 
-       /* 安全格：鑽石風格 */
-.tile.revealed-coin {
-    background: linear-gradient(135deg, #00d2ff, #3a7bd5); /* 亮藍到深藍 */
-    border-bottom: 4px solid #2d5a9e;
-    color: white;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
-    animation: flip 0.3s forwards;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.5rem; /* 讓鑽石大一點 */
-}
+        /* 安全格：修正動畫確保尺寸穩定 */
+        .tile.revealed-coin {
+            background: linear-gradient(135deg, #00d2ff, #3a7bd5);
+            border-bottom: 4px solid #2d5a9e;
+            color: white;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+            /* 確保翻轉動畫不會改變容器尺寸 */
+            animation: flip 0.3s forwards;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            cursor: default;
+            /* 揭開後不顯示手指 */
+        }
 
-/* 炸彈格：熔岩風格 */
-.tile.revealed-bomb {
-    background: linear-gradient(135deg, #ff4b2b, #ff416c); /* 鮮紅到深紅 */
-    border-bottom: 4px solid #b22222;
-    animation: shake 0.4s; /* 增加一個震動感 */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.5rem;
-}
+        /* 炸彈格：修正動畫 */
+        .tile.revealed-bomb {
+            background: linear-gradient(135deg, #ff4b2b, #ff416c);
+            border-bottom: 4px solid #b22222;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            animation: shake 0.4s ease-in-out;
+            /* 移除引發位移的潛在因素 */
+            cursor: default;
+        }
 
-/* 炸彈震動特效 */
-@keyframes shake {
-    0% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    50% { transform: translateX(5px); }
-    75% { transform: translateX(-5px); }
-    100% { transform: translateX(0); }
-}
+        /* 修正 flip 動畫，確保 transform 不會殘留縮放以外的偏移 */
+        @keyframes flip {
+            from {
+                transform: perspective(400px) rotateY(90deg);
+                opacity: 0;
+            }
+
+            to {
+                transform: perspective(400px) rotateY(0deg);
+                opacity: 1;
+            }
+        }
+
+        /* 修正 shake 動畫，確保最後回到原位且不影響寬度 */
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-3px);
+            }
+
+            75% {
+                transform: translateX(3px);
+            }
+        }
+
+        /* 呼吸燈動畫定義 */
+        @keyframes pulse-active {
+            from {
+                box-shadow: inset 0 0 5px rgba(255, 216, 107, 0.1), 0 0 5px rgba(255, 216, 107, 0.1);
+            }
+
+            to {
+                box-shadow: inset 0 0 15px rgba(255, 216, 107, 0.3), 0 0 12px rgba(255, 216, 107, 0.4);
+            }
+        }
 
         .tile.disabled {
             cursor: default;
-            opacity: 0.6;
+            opacity: 0.5;
+            filter: grayscale(1);
+            border-color: #333;
+            border-bottom: 2px solid #111;
+            animation: none;
         }
 
         .controls {
@@ -239,24 +312,32 @@
         }
 
         .input-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-            font-size: 14px;
-        }
+    display: flex;
+    justify-content: space-between; /* 讓文字與選擇器分開到兩端 */
+    align-items: center;
+    gap: 20px;
+    width: 100%; /* 強制填滿容器寬度 */
+    padding: 5px 0;
+}
 
-        input,
-        select {
-            background: #000;
-            border: 1px solid var(--gold);
-            color: var(--gold);
-            padding: 8px;
-            border-radius: 8px;
-            font-size: 16px;
-            width: 95px;
-            text-align: center;
-        }
+.input-row span {
+    color: #ccc;
+    font-weight: bold;
+    flex: 1; /* 讓文字佔據剩餘空間，推動右側對齊 */
+    text-align: left;
+}
+
+.bet-selector {
+    /* 保持固定寬度 150px 確保上下兩行對齊 */
+    width: 150px; 
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid #5c0a0a;
+    border-radius: 10px;
+    padding: 2px;
+}
 
         .action-btn {
             width: 100%;
@@ -363,17 +444,6 @@
             }
         }
 
-        .bet-selector {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid #5c0a0a;
-            border-radius: 10px;
-            padding: 2px;
-            width: 150px;
-        }
-
         .bet-btn {
             background: #3d0a0a;
             border: 1px solid var(--gold);
@@ -396,108 +466,166 @@
             color: var(--gold);
             font-size: 16px;
         }
+
         .win-toast {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.9);
-    color: var(--gold);
-    padding: 20px 40px;
-    border: 2px solid var(--gold);
-    border-radius: 15px;
-    font-size: 20px;
-    font-weight: bold;
-    z-index: 10000;
-    text-align: center;
-    box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
-    animation: toastFade 2.5s forwards;
-    pointer-events: none;
-}
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: var(--gold);
+            padding: 20px 40px;
+            border: 2px solid var(--gold);
+            border-radius: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            z-index: 10000;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+            animation: toastFade 2.5s forwards;
+            pointer-events: none;
+        }
 
-@keyframes toastFade {
-    0% { opacity: 0; transform: translate(-50%, -40%); }
-    20% { opacity: 1; transform: translate(-50%, -50%); }
-    80% { opacity: 1; transform: translate(-50%, -50%); }
-    100% { opacity: 0; transform: translate(-50%, -60%); }
-}
-/* 大獎結算畫面 */
-.big-win-overlay {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.85);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 10001;
-    animation: fadeIn 0.5s forwards;
-}
+        @keyframes toastFade {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -40%);
+            }
 
-.big-win-content {
-    text-align: center;
-    animation: scorePopup 0.6s cubic-bezier(0.17, 0.89, 0.32, 1.49);
-}
+            20% {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
 
-.big-win-title {
-    font-size: 40px;
-    color: #ff0000;
-    text-shadow: 0 0 20px #ff0000, 0 0 40px #ff8c00;
-    font-weight: 900;
-    margin-bottom: 10px;
-    letter-spacing: 5px;
-}
+            80% {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
 
-.big-win-amount {
-    font-size: 48px;
-    color: var(--gold);
-    text-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
-    font-weight: bold;
-    margin: 20px 0;
-}
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -60%);
+            }
+        }
 
-.big-win-mult {
-    font-size: 24px;
-    color: #fff;
-    background: rgba(255, 255, 255, 0.2);
-    padding: 5px 20px;
-    border-radius: 20px;
-}
+        /* 大獎結算畫面 */
+        .big-win-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10001;
+            animation: fadeIn 0.5s forwards;
+        }
 
-@keyframes scorePopup {
-    0% { transform: scale(0.5); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
-}
+        .big-win-content {
+            text-align: center;
+            animation: scorePopup 0.6s cubic-bezier(0.17, 0.89, 0.32, 1.49);
+        }
 
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-/* 普通中獎提示 (小提示框) */
-.win-result-toast {
-    position: fixed;
-    top: 40%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(20, 20, 20, 0.95);
-    border: 1px solid #444;
-    padding: 15px 30px;
-    border-radius: 12px;
-    text-align: center;
-    z-index: 10002;
-    pointer-events: none;
-    animation: simpleFade 2s forwards;
-}
-.win-result-toast .amount { color: var(--gold); font-size: 24px; font-weight: bold; }
-.win-result-toast .mult { color: #888; font-size: 14px; }
+        .big-win-title {
+            font-size: 40px;
+            color: #ff0000;
+            text-shadow: 0 0 20px #ff0000, 0 0 40px #ff8c00;
+            font-weight: 900;
+            margin-bottom: 10px;
+            letter-spacing: 5px;
+        }
 
-@keyframes simpleFade {
-    0% { opacity: 0; transform: translate(-50%, -30%); }
-    15% { opacity: 1; transform: translate(-50%, -50%); }
-    85% { opacity: 1; transform: translate(-50%, -50%); }
-    100% { opacity: 0; transform: translate(-50%, -60%); }
-}
- .player-title {
+        .big-win-amount {
+            font-size: 48px;
+            color: var(--gold);
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        .big-win-mult {
+            font-size: 24px;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 20px;
+            border-radius: 20px;
+        }
+
+        @keyframes scorePopup {
+            0% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* 普通中獎提示 (小提示框) */
+        .win-result-toast {
+            position: fixed;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(20, 20, 20, 0.95);
+            border: 1px solid #444;
+            padding: 15px 30px;
+            border-radius: 12px;
+            text-align: center;
+            z-index: 10002;
+            pointer-events: none;
+            animation: simpleFade 2s forwards;
+        }
+
+        .win-result-toast .amount {
+            color: var(--gold);
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .win-result-toast .mult {
+            color: #888;
+            font-size: 14px;
+        }
+
+        @keyframes simpleFade {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -30%);
+            }
+
+            15% {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+
+            85% {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -60%);
+            }
+        }
+
+        .player-title {
             font-weight: 900;
             margin-right: 5px;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
@@ -748,9 +876,9 @@
 
     <div id="rankOverlay" onclick="toggleRank()"></div>
     <div id="rankSidebar">
-    <h3 style="color:var(--gold); margin-bottom:20px; text-align:center;">🏆掃雷排行榜</h3>
-    <div id="mineRankList"></div> 
-</div>
+        <h3 style="color:var(--gold); margin-bottom:20px; text-align:center;">🏆掃雷排行榜</h3>
+        <div id="mineRankList"></div>
+    </div>
 
     <div class="topbar">
         <div class="sound-btn" onclick="toggleMute()" id="muteBtn">🔊</div>
@@ -765,7 +893,7 @@
                 style="background:none; border:1px solid #777; color:#ccc; border-radius:5px; padding:5px 12px; font-size:14px; font-weight:bold;">🏠
                 回大廳</button>
         </a>
-</div>
+    </div>
     <div class="main-container">
         <div class="top-winner-bar" id="topWinnerName">載入中...</div>
         <div class="multiplier-step" id="multDisplay">下一格倍率: --</div>
@@ -781,15 +909,14 @@
                 </div>
             </div>
             <div class="input-row">
-                <span>💣 炸彈數量(影響每次探險倍率):</span>
-                <select id="bombCount" onchange="updateNextWinInfo()">
-                    <option value="3" selected>3</option>
-                    <option value="5">5</option>
-                    <option value="10">10</option>
-                    <option value="15">15</option>
-                    <option value="20">20</option>
-                </select>
+                <span>💣 炸彈數量(影響每次探險倍率)</span>
+                <div class="bet-selector">
+                    <button class="bet-btn" onclick="changeBomb(-1)" id="bombMinus">-</button>
+                    <div class="bet-display" id="bombText">10</div>
+                    <button class="bet-btn" onclick="changeBomb(1)" id="bombPlus">+</button>
+                </div>
             </div>
+
             <button class="action-btn btn-start" id="startBtn" onclick="startGame()">開始探險</button>
             <button class="action-btn btn-cashout" id="cashoutBtn" onclick="cashout()">贏得: $0</button>
         </div>
@@ -799,8 +926,8 @@
     <audio id="sndBomb" src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3" preload="auto"></audio>
     <audio id="bgm1" src="background-music-434612.mp3" loop preload="auto"></audio>
     <audio id="bgm2" src="another-bgm.mp3" loop preload="auto"></audio>
-<script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore-compat.js"></script>
     <script>
         // --- Firebase 初始化 ---
         const _k = ["AIzaSyDSRfVA", "uWCWCUd1NJop", "J6wHvsqsAM4UzJA"];
@@ -825,7 +952,32 @@
         let isMuted = false, currentBGM = 1, hasInteracted = false;
         const betOptions = [10000, 50000, 100000, 1000000, 5000000, 10000000];
         let currentBetIdx = 5;
+        // 定義炸彈數量的選項（依照原本 select 的值）
+        const bombOptions = [3, 5, 10, 15, 20];
+        let currentBombIndex = 0; // 預設 3 顆
 
+        function changeBomb(delta) {
+            // 遊戲進行中禁止修改
+            if (typeof isGameActive !== 'undefined' && isGameActive) return;
+
+            currentBombIndex += delta;
+
+            // 限制範圍
+            if (currentBombIndex < 0) currentBombIndex = 0;
+            if (currentBombIndex >= bombOptions.length) currentBombIndex = bombOptions.length - 1;
+
+            const count = bombOptions[currentBombIndex];
+            document.getElementById('bombText').innerText = count;
+
+            // 更新倍率顯示（如果有這功能）
+            if (typeof updateNextWinInfo === 'function') {
+                updateNextWinInfo();
+            }
+        }
+
+        // 修正原本 startGame 抓取炸彈值的方式
+        // 請在原本的 startGame 函數中，將抓取 bombCount 的地方改為：
+        // const bombCount = parseInt(document.getElementById('bombText').innerText);
         function updateUI() {
             document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString();
             localStorage.setItem('sicbo_balance', balance);
@@ -863,33 +1015,33 @@
             } catch (e) { console.error("同步失敗", e); }
         }
 
-       function listenRank() {
-  db.collection("users")
-    .where("mineMaxWin", ">", 0)
-    .orderBy("mineMaxWin", "desc")
-    .limit(10)
-    .onSnapshot(snap => {
-      let html = '';
-      let i = 1;
+        function listenRank() {
+            db.collection("users")
+                .where("mineMaxWin", ">", 0)
+                .orderBy("mineMaxWin", "desc")
+                .limit(10)
+                .onSnapshot(snap => {
+                    let html = '';
+                    let i = 1;
 
-      snap.forEach(doc => {
-        const data = doc.data();
-        const win = data.mineMaxWin || 0;
-        
-        // --- 核心：提取特效與稱號邏輯 ---
-        const fxClass = data.equipped_fx || "";
-        const titleText = data.equipped_title || "";
-        
-        let titleColorClass = "t-blue"; // 預設藍色
-        if (titleText.includes("幸運錦鯉")) titleColorClass = "t-koi-color";
-        else if (titleText.includes("賭神") || titleText.includes("富可敵國")) titleColorClass = "t-red";
-        else if (titleText.includes("梟雄") || titleText.includes("傳奇")) titleColorClass = "t-orange";
-        else if (titleText.includes("土豪") || titleText.includes("千金") || titleText.includes("少爺")) titleColorClass = "t-purple";
+                    snap.forEach(doc => {
+                        const data = doc.data();
+                        const win = data.mineMaxWin || 0;
 
-        const titleHTML = titleText ? `<span class="player-title ${titleColorClass}">【${titleText}】</span>` : "";
+                        // --- 核心：提取特效與稱號邏輯 ---
+                        const fxClass = data.equipped_fx || "";
+                        const titleText = data.equipped_title || "";
 
-        // --- 組裝 HTML ---
-        html += `
+                        let titleColorClass = "t-blue"; // 預設藍色
+                        if (titleText.includes("幸運錦鯉")) titleColorClass = "t-koi-color";
+                        else if (titleText.includes("賭神") || titleText.includes("富可敵國")) titleColorClass = "t-red";
+                        else if (titleText.includes("梟雄") || titleText.includes("傳奇")) titleColorClass = "t-orange";
+                        else if (titleText.includes("土豪") || titleText.includes("千金") || titleText.includes("少爺")) titleColorClass = "t-purple";
+
+                        const titleHTML = titleText ? `<span class="player-title ${titleColorClass}">【${titleText}】</span>` : "";
+
+                        // --- 組裝 HTML ---
+                        html += `
           <div class="rank-item ${fxClass}">
             <div class="rank-info">
               <span class="rank-num">${i === 1 ? '🏆' : i}</span>
@@ -898,19 +1050,19 @@
             <span class="rank-bal" style="color:var(--gold)">💰${Math.floor(win).toLocaleString()}</span>
           </div>
         `;
-        
-        // 更新頂部跑馬燈或第一名標示
-        if (i === 1) {
-            document.getElementById('topWinnerName').innerHTML = `🏆 最高紀錄：${titleHTML}${data.name} 贏得 $${Math.floor(win).toLocaleString()}`;
+
+                        // 更新頂部跑馬燈或第一名標示
+                        if (i === 1) {
+                            document.getElementById('topWinnerName').innerHTML = `🏆 最高紀錄：${titleHTML}${data.name} 贏得 $${Math.floor(win).toLocaleString()}`;
+                        }
+
+                        i++;
+                    });
+
+                    const rankList = document.getElementById('mineRankList'); // 確保 ID 正確
+                    if (rankList) rankList.innerHTML = html || '<p style="text-align:center; color:#888;">尚無數據</p>';
+                });
         }
-        
-        i++;
-      });
-      
-      const rankList = document.getElementById('mineRankList'); // 確保 ID 正確
-      if(rankList) rankList.innerHTML = html || '<p style="text-align:center; color:#888;">尚無數據</p>';
-    });
-}
 
         function toggleRank() {
             const s = document.getElementById('rankSidebar'), o = document.getElementById('rankOverlay');
@@ -955,17 +1107,40 @@
         function startGame() {
             const bet = betOptions[currentBetIdx];
             if (bet > balance) { alert("餘額不足！"); return; }
-            balance -= bet; currentBet = bet; updateUI(); syncToFirebase();
-            isGameActive = true; revealedCount = 0; mines = new Array(25).fill(false);
-            let count = 0; const targetMines = parseInt(document.getElementById('bombCount').value);
-            while (count < targetMines) { let r = Math.floor(Math.random() * 25); if (!mines[r]) { mines[r] = true; count++; } }
+
+            // 扣款與初始化
+            balance -= bet;
+            currentBet = bet;
+            updateUI();
+            syncToFirebase();
+
+            isGameActive = true;
+            revealedCount = 0;
+            mines = new Array(25).fill(false);
+
+            // 讀取新的炸彈顯示文字
+            let count = 0;
+            const targetMines = parseInt(document.getElementById('bombText').innerText);
+
+            // 佈雷邏輯
+            while (count < targetMines) {
+                let r = Math.floor(Math.random() * 25);
+                if (!mines[r]) { mines[r] = true; count++; }
+            }
+
+            // 按鈕狀態切換
             document.getElementById('startBtn').style.display = 'none';
             document.getElementById('cashoutBtn').style.display = 'block';
             document.getElementById('cashoutBtn').disabled = true;
+
+            // 禁用所有調整選項 (包含籌碼與炸彈)
             document.getElementById('betMinus').disabled = true;
             document.getElementById('betPlus').disabled = true;
-            document.getElementById('bombCount').disabled = true;
-            updateNextWinInfo(); renderGrid();
+            document.getElementById('bombMinus').disabled = true; // 新增：禁用炸彈減號
+            document.getElementById('bombPlus').disabled = true;  // 新增：禁用炸彈加號
+
+            updateNextWinInfo();
+            renderGrid();
         }
 
         function renderGrid() {
@@ -977,100 +1152,100 @@
         }
 
         function revealTile(idx, el) {
-    if (!isGameActive || el.classList.contains('disabled')) return;
-    if (mines[idx]) { 
-        gameOver(false); 
-    }
-    else {
-        revealedCount++; 
-        el.classList.add('revealed-coin', 'disabled'); 
-        el.innerHTML = '💎';
-        
-        if (!isMuted) document.getElementById('sndCoin').play().catch(() => { });
-        
-        document.getElementById('cashoutBtn').disabled = false;
-        const m = getMultiplier(parseInt(document.getElementById('bombCount').value), revealedCount);
-        document.getElementById('cashoutBtn').textContent = `提桶跑路: 💎${Math.floor(currentBet * m).toLocaleString()}`;
-        
-        updateNextWinInfo();
+            if (!isGameActive || el.classList.contains('disabled')) return;
+            if (mines[idx]) {
+                gameOver(false);
+            }
+            else {
+                revealedCount++;
+                el.classList.add('revealed-coin', 'disabled');
+                el.innerHTML = '💎';
 
-        // --- 改動這裡：判斷是否全開 ---
-        const totalSafeTiles = 25 - parseInt(document.getElementById('bombCount').value);
-        if (revealedCount === totalSafeTiles) {
-            showWinToast(`🎉 完美的探險！全開獎金 x${m.toFixed(2)}`);
-            setTimeout(() => {
-                cashout();
-            }, 1500); // 稍微留點時間讓玩家看清楚畫面再結算
-        }
-    }
-}
+                if (!isMuted) document.getElementById('sndCoin').play().catch(() => { });
 
-// 輔助函數：顯示提示
-function showWinToast(msg) {
-    const toast = document.createElement('div');
-    toast.className = 'win-toast';
-    toast.innerHTML = msg;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 2500);
-}
+                document.getElementById('cashoutBtn').disabled = false;
+                const m = getMultiplier(parseInt(document.getElementById('bombCount').value), revealedCount);
+                document.getElementById('cashoutBtn').textContent = `提桶跑路: 💎${Math.floor(currentBet * m).toLocaleString()}`;
 
-    async function cashout() {
-    if (!isGameActive) return;
-    
-    const bombCount = parseInt(document.getElementById('bombCount').value);
-    const m = getMultiplier(bombCount, revealedCount);
-    const win = Math.floor(currentBet * m);
+                updateNextWinInfo();
 
-    // --- 根據倍率決定顯示哪種結算畫面 ---
-    if (m >= 40) {
-        showBigWinUI(win, m); // 呼叫之前寫的豪華版 (全螢幕/手動關閉)
-    } else {
-        showSimpleWinUI(win, m); // 呼叫普通版 (小框/自動消失)
-    }
-
-    balance += win;
-    // ... (這裡保留你原本的 Firebase 同步與 localStorage 更新邏輯，不要改動)
-    
-    // 執行同步
-    const playerId = localStorage.getItem('player_id');
-    if (playerId && db) {
-        try {
-            const userRef = db.collection("users").doc(playerId);
-            const doc = await userRef.get();
-            let updateData = { balance: balance, lastUpdate: firebase.firestore.Timestamp.now() };
-            if (doc.exists) {
-                let currentMax = doc.data().mineMaxWin || 0;
-                if (win > currentMax) { 
-                    updateData.mineMaxWin = win;
-                    updateData.mineMaxTime = firebase.firestore.FieldValue.serverTimestamp();
+                // --- 改動這裡：判斷是否全開 ---
+                const totalSafeTiles = 25 - parseInt(document.getElementById('bombCount').value);
+                if (revealedCount === totalSafeTiles) {
+                    showWinToast(`🎉 完美的探險！全開獎金 x${m.toFixed(2)}`);
+                    setTimeout(() => {
+                        cashout();
+                    }, 1500); // 稍微留點時間讓玩家看清楚畫面再結算
                 }
             }
-            await userRef.update(updateData);
-            lastSyncedBalance = balance;
-        } catch (e) { }
-    }
-    
-    gameOver(true);
-}
+        }
 
-// 輔助函數：普通贏錢提示 (自動消失)
-function showSimpleWinUI(amount, mult) {
-    const toast = document.createElement('div');
-    toast.className = 'win-result-toast';
-    toast.innerHTML = `
+        // 輔助函數：顯示提示
+        function showWinToast(msg) {
+            const toast = document.createElement('div');
+            toast.className = 'win-toast';
+            toast.innerHTML = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2500);
+        }
+
+        async function cashout() {
+            if (!isGameActive) return;
+
+            const bombCount = parseInt(document.getElementById('bombCount').value);
+            const m = getMultiplier(bombCount, revealedCount);
+            const win = Math.floor(currentBet * m);
+
+            // --- 根據倍率決定顯示哪種結算畫面 ---
+            if (m >= 40) {
+                showBigWinUI(win, m); // 呼叫之前寫的豪華版 (全螢幕/手動關閉)
+            } else {
+                showSimpleWinUI(win, m); // 呼叫普通版 (小框/自動消失)
+            }
+
+            balance += win;
+            // ... (這裡保留你原本的 Firebase 同步與 localStorage 更新邏輯，不要改動)
+
+            // 執行同步
+            const playerId = localStorage.getItem('player_id');
+            if (playerId && db) {
+                try {
+                    const userRef = db.collection("users").doc(playerId);
+                    const doc = await userRef.get();
+                    let updateData = { balance: balance, lastUpdate: firebase.firestore.Timestamp.now() };
+                    if (doc.exists) {
+                        let currentMax = doc.data().mineMaxWin || 0;
+                        if (win > currentMax) {
+                            updateData.mineMaxWin = win;
+                            updateData.mineMaxTime = firebase.firestore.FieldValue.serverTimestamp();
+                        }
+                    }
+                    await userRef.update(updateData);
+                    lastSyncedBalance = balance;
+                } catch (e) { }
+            }
+
+            gameOver(true);
+        }
+
+        // 輔助函數：普通贏錢提示 (自動消失)
+        function showSimpleWinUI(amount, mult) {
+            const toast = document.createElement('div');
+            toast.className = 'win-result-toast';
+            toast.innerHTML = `
         <div style="color:#ccc; font-size:14px; margin-bottom:5px;">成功撤退</div>
         <div class="amount">💎 ${amount.toLocaleString()}</div>
         <div class="mult">獲利倍率 x${mult.toFixed(2)}</div>
     `;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 2000); // 2秒後自動消失
-}
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000); // 2秒後自動消失
+        }
 
-// 輔助函數：顯示大獎 UI
-function showBigWinUI(amount, mult) {
-    const overlay = document.createElement('div');
-    overlay.className = 'big-win-overlay';
-    overlay.innerHTML = `
+        // 輔助函數：顯示大獎 UI
+        function showBigWinUI(amount, mult) {
+            const overlay = document.createElement('div');
+            overlay.className = 'big-win-overlay';
+            overlay.innerHTML = `
         <div class="big-win-content">
             <div class="big-win-title">🔥 BIG WIN 🔥</div>
             <div class="big-win-amount">💎 ${amount.toLocaleString()}</div>
@@ -1078,21 +1253,21 @@ function showBigWinUI(amount, mult) {
             <p style="color: #aaa; margin-top: 30px;">點擊任何處繼續</p>
         </div>
     `;
-    
-    // 點擊後關閉大獎畫面
-    overlay.onclick = () => {
-        overlay.style.opacity = '0';
-        setTimeout(() => overlay.remove(), 300);
-    };
-    
-    document.body.appendChild(overlay);
 
-    // 如果沒靜音，播放一個震撼的音效
-    if (!isMuted) {
-        // 這裡可以使用你現有的 sndCoin，或者另外找個大獎音效
-        document.getElementById('sndCoin').play().catch(()=>{});
-    }
-}
+            // 點擊後關閉大獎畫面
+            overlay.onclick = () => {
+                overlay.style.opacity = '0';
+                setTimeout(() => overlay.remove(), 300);
+            };
+
+            document.body.appendChild(overlay);
+
+            // 如果沒靜音，播放一個震撼的音效
+            if (!isMuted) {
+                // 這裡可以使用你現有的 sndCoin，或者另外找個大獎音效
+                document.getElementById('sndCoin').play().catch(() => { });
+            }
+        }
 
         function gameOver(isWin) {
             isGameActive = false;
@@ -1105,7 +1280,8 @@ function showBigWinUI(amount, mult) {
             document.getElementById('cashoutBtn').style.display = 'none';
             document.getElementById('betMinus').disabled = false;
             document.getElementById('betPlus').disabled = false;
-            document.getElementById('bombCount').disabled = false;
+            document.getElementById('bombMinus').disabled = false;
+            document.getElementById('bombPlus').disabled = false;
             updateUI(); syncToFirebase();
             updateNextWinInfo();
         }
