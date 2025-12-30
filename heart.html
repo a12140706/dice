@@ -580,22 +580,26 @@
             transform: translateY(-50%);
         }
 
-        .bottom-panel {
+       .bottom-panel {
     background: #000;
-    padding: 5px 10px calc(5px + env(safe-area-inset-bottom)) 10px;
+    /* 1. 完全取消下方的推擠，padding-bottom 設為 0 */
+    /* 這樣它會緊貼著螢幕最底端（或 main-container 的最底端） */
+    padding: 5px 10px 0px 10px; 
+    
     width: 100%;
-    /* 關鍵修改：從 fixed 改為相對佈局，使其佔據實際空間 */
     position: relative; 
-    bottom: auto;
-    left: auto;
+    
+    /* 2. 移除所有自動邊距，防止內容往上頂 */
+    margin-top: 0;
+    margin-bottom: 0;
+
     z-index: 100;
     border-top: 1px solid #333;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    /* 確保面板不會縮小，維持固定高度 */
-    flex-shrink: 0; 
+    flex-shrink: 0;
 }
 
         .display-group {
