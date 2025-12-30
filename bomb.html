@@ -1362,7 +1362,7 @@
                 if (!isMuted) document.getElementById('sndBomb').play().catch(() => { });
 
                 // 計算當前倍率
-                const currentMult = multipliers[currentBombs][revealedCount] || 1;
+                const currentMult = getMultiplier(currentBombs, revealedCount);
                 const potentialWin = Math.floor(lastBet * currentMult);
 
                 setTimeout(() => {
