@@ -121,27 +121,30 @@
         }
 
         .top-winner-bar {
-    width: 92%;
-    padding: 8px 12px;
-    /* 減少邊距，避免把遊戲區推得太遠 */
-    margin: 10px auto 15px auto;
+            width: 92%;
+            padding: 8px 12px;
+            /* 減少邊距，避免把遊戲區推得太遠 */
+            margin: 10px auto 15px auto;
 
-    background: rgba(0, 0, 0, 0.3); /* 深色背景更能顯出稱號特效 */
-    border: 1px solid rgba(212, 175, 55, 0.5); /* 降低邊框亮度 */
-    border-radius: 50px; /* 變成圓角的膠囊狀更精緻 */
-    text-align: center;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.3);
+            /* 深色背景更能顯出稱號特效 */
+            border: 1px solid rgba(212, 175, 55, 0.5);
+            /* 降低邊框亮度 */
+            border-radius: 50px;
+            /* 變成圓角的膠囊狀更精緻 */
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 
-    position: relative;
-    z-index: 5;
-    
-    /* 確保內容物在同一行且不換行 */
-    white-space: nowrap;
-    overflow: hidden;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
+            position: relative;
+            z-index: 5;
+
+            /* 確保內容物在同一行且不換行 */
+            white-space: nowrap;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
         /* 如果你想讓裡面的名字或紀錄大一點，也可以微調 */
         #topWinnerName {
@@ -180,22 +183,22 @@
         }
 
         .tile {
-    background: #3d0a0a;
-    border-radius: 8px;
-    border: 1px solid #5c0a0a;
-    border-bottom: 5px solid #2a0505;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-    /* 新增以下三行，確保格子絕對是正方形且不變形 */
-    aspect-ratio: 1 / 1; 
-    width: 100%;
-    box-sizing: border-box; 
-}
+            background: #3d0a0a;
+            border-radius: 8px;
+            border: 1px solid #5c0a0a;
+            border-bottom: 5px solid #2a0505;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            /* 新增以下三行，確保格子絕對是正方形且不變形 */
+            aspect-ratio: 1 / 1;
+            width: 100%;
+            box-sizing: border-box;
+        }
 
 
         @keyframes gemAppear {
@@ -232,33 +235,34 @@
         }
 
         .tile.revealed-coin {
-    background: linear-gradient(135deg, #00d2ff, #3a7bd5) !important;
-    border: 1.5px solid #fff !important;
-    border-bottom: 4px solid #2d5a9e !important;
-    color: white;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
-    animation: flip 0.3s forwards;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.5rem;
-    cursor: default;
-    z-index: 2; /* 確保層級高於一般格子 */
-}
+            background: linear-gradient(135deg, #00d2ff, #3a7bd5) !important;
+            border: 1.5px solid #fff !important;
+            border-bottom: 4px solid #2d5a9e !important;
+            color: white;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+            animation: flip 0.3s forwards;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            cursor: default;
+            z-index: 2;
+            /* 確保層級高於一般格子 */
+        }
 
-/* 炸彈格：修正顏色並確保不被覆蓋 */
-.tile.revealed-bomb {
-    background: linear-gradient(135deg, #ff4b2b, #ff416c) !important;
-    border: 1.5px solid #fff !important;
-    border-bottom: 4px solid #b22222 !important;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.5rem;
-    animation: shake 0.4s ease-in-out;
-    cursor: default;
-    z-index: 2;
-}
+        /* 炸彈格：修正顏色並確保不被覆蓋 */
+        .tile.revealed-bomb {
+            background: linear-gradient(135deg, #ff4b2b, #ff416c) !important;
+            border: 1.5px solid #fff !important;
+            border-bottom: 4px solid #b22222 !important;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            animation: shake 0.4s ease-in-out;
+            cursor: default;
+            z-index: 2;
+        }
 
         /* 修正 flip 動畫，確保 transform 不會殘留縮放以外的偏移 */
         @keyframes flip {
@@ -323,32 +327,35 @@
         }
 
         .input-row {
-    display: flex;
-    justify-content: space-between; /* 讓文字與選擇器分開到兩端 */
-    align-items: center;
-    gap: 20px;
-    width: 100%; /* 強制填滿容器寬度 */
-    padding: 5px 0;
-}
+            display: flex;
+            justify-content: space-between;
+            /* 讓文字與選擇器分開到兩端 */
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+            /* 強制填滿容器寬度 */
+            padding: 5px 0;
+        }
 
-.input-row span {
-    color: #ccc;
-    font-weight: bold;
-    flex: 1; /* 讓文字佔據剩餘空間，推動右側對齊 */
-    text-align: left;
-}
+        .input-row span {
+            color: #ccc;
+            font-weight: bold;
+            flex: 1;
+            /* 讓文字佔據剩餘空間，推動右側對齊 */
+            text-align: left;
+        }
 
-.bet-selector {
-    /* 保持固定寬度 150px 確保上下兩行對齊 */
-    width: 150px; 
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: rgba(0, 0, 0, 0.5);
-    border: 1px solid #5c0a0a;
-    border-radius: 10px;
-    padding: 2px;
-}
+        .bet-selector {
+            /* 保持固定寬度 150px 確保上下兩行對齊 */
+            width: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #5c0a0a;
+            border-radius: 10px;
+            padding: 2px;
+        }
 
         .action-btn {
             width: 100%;
@@ -429,22 +436,34 @@
             color: #a4b0be;
         }
 
-       @keyframes flip {
-    from {
-        transform: perspective(400px) rotateY(90deg);
-        opacity: 0;
-    }
-    to {
-        transform: perspective(400px) rotateY(0deg);
-        opacity: 1;
-    }
-}
+        @keyframes flip {
+            from {
+                transform: perspective(400px) rotateY(90deg);
+                opacity: 0;
+            }
 
-@keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-2px); } /* 縮小抖動幅度減少對佈局的影響 */
-    75% { transform: translateX(2px); }
-}
+            to {
+                transform: perspective(400px) rotateY(0deg);
+                opacity: 1;
+            }
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-2px);
+            }
+
+            /* 縮小抖動幅度減少對佈局的影響 */
+            75% {
+                transform: translateX(2px);
+            }
+        }
 
         .bet-btn {
             background: #3d0a0a;
@@ -1022,37 +1041,37 @@
         }
 
         function listenRank() {
-    const rankList = document.getElementById('mineRankList');
-    const topBar = document.getElementById('topWinnerName');
-    
-    if (!rankList || !topBar) return;
+            const rankList = document.getElementById('mineRankList');
+            const topBar = document.getElementById('topWinnerName');
 
-    db.collection("users")
-        .orderBy("mineMaxWin", "desc")
-        .limit(10)
-        .onSnapshot(snap => {
-            let html = '';
-            let i = 1;
+            if (!rankList || !topBar) return;
 
-            if (snap.empty) {
-                topBar.innerHTML = "🏆 暫無最高紀錄";
-                rankList.innerHTML = '<p style="text-align:center; color:#888;">尚無數據</p>';
-                return;
-            }
+            db.collection("users")
+                .orderBy("mineMaxWin", "desc")
+                .limit(10)
+                .onSnapshot(snap => {
+                    let html = '';
+                    let i = 1;
 
-            snap.forEach(doc => {
-                const data = doc.data();
-                const win = data.mineMaxWin || 0;
-                if (win <= 0) return;
+                    if (snap.empty) {
+                        topBar.innerHTML = "🏆 暫無最高紀錄";
+                        rankList.innerHTML = '<p style="text-align:center; color:#888;">尚無數據</p>';
+                        return;
+                    }
 
-                const fxClass = data.equipped_fx || "";
-                const titleText = data.equipped_title || "";
-                let titleColorClass = "t-blue";
-                if (titleText.includes("幸運錦鯉")) titleColorClass = "t-koi-color";
-                else if (titleText.includes("賭神") || titleText.includes("富可敵國")) titleColorClass = "t-red";
-                const titleHTML = titleText ? `<span class="player-title ${titleColorClass}">【${titleText}】</span>` : "";
+                    snap.forEach(doc => {
+                        const data = doc.data();
+                        const win = data.mineMaxWin || 0;
+                        if (win <= 0) return;
 
-                html += `
+                        const fxClass = data.equipped_fx || "";
+                        const titleText = data.equipped_title || "";
+                        let titleColorClass = "t-blue";
+                        if (titleText.includes("幸運錦鯉")) titleColorClass = "t-koi-color";
+                        else if (titleText.includes("賭神") || titleText.includes("富可敵國")) titleColorClass = "t-red";
+                        const titleHTML = titleText ? `<span class="player-title ${titleColorClass}">【${titleText}】</span>` : "";
+
+                        html += `
                     <div class="rank-item ${fxClass}">
                         <div class="rank-info">
                             <span class="rank-num">${i === 1 ? '🏆' : i}</span>
@@ -1061,21 +1080,21 @@
                         <span class="rank-bal" style="color:var(--gold)">💎${Math.floor(win).toLocaleString()}</span>
                     </div>`;
 
-                if (i === 1) {
+                        if (i === 1) {
                             topBar.innerHTML = `
                                 <div class="${fxClass}" style="display:inline-block; font-size: 14px; padding: 2px 10px;">
                                     🏆 最高紀錄：${titleHTML}<span style="color:#fff">${data.name || '無名氏'}</span> 
                                     <span style="color:var(--gold); margin-left:5px;">贏得 $${Math.floor(win).toLocaleString()}</span>
                                 </div>`;
                         }
-                i++;
-            });
-            rankList.innerHTML = html;
-        }, err => {
-            console.error("排行榜監聽錯誤:", err);
-            topBar.innerHTML = "🏆 掃雷大挑戰"; // 報錯時給予預設文字，不顯示載入中
-        });
-}
+                        i++;
+                    });
+                    rankList.innerHTML = html;
+                }, err => {
+                    console.error("排行榜監聽錯誤:", err);
+                    topBar.innerHTML = "🏆 掃雷大挑戰"; // 報錯時給予預設文字，不顯示載入中
+                });
+        }
 
         function toggleRank() {
             const s = document.getElementById('rankSidebar'), o = document.getElementById('rankOverlay');
@@ -1106,18 +1125,18 @@
         }
 
         function updateNextWinInfo() {
-    // 將原本的 bombCount 改為 bombText，並用 innerText 取值
-    const bombCountEl = document.getElementById('bombText');
-    const bombCount = bombCountEl ? parseInt(bombCountEl.innerText) : 3; 
-    
-    const nextMult = getMultiplier(bombCount, revealedCount + 1);
-    const infoEl = document.getElementById('multDisplay');
-    if (infoEl) {
-        infoEl.textContent = `下一格倍率: x${nextMult.toFixed(2)}`;
-        infoEl.classList.add('active'); 
-        setTimeout(() => infoEl.classList.remove('active'), 200);
-    }
-}
+            // 將原本的 bombCount 改為 bombText，並用 innerText 取值
+            const bombCountEl = document.getElementById('bombText');
+            const bombCount = bombCountEl ? parseInt(bombCountEl.innerText) : 3;
+
+            const nextMult = getMultiplier(bombCount, revealedCount + 1);
+            const infoEl = document.getElementById('multDisplay');
+            if (infoEl) {
+                infoEl.textContent = `下一格倍率: x${nextMult.toFixed(2)}`;
+                infoEl.classList.add('active');
+                setTimeout(() => infoEl.classList.remove('active'), 200);
+            }
+        }
         function changeBet(dir) {
             if (isGameActive) return; // 遊戲中不能換籌碼
             currentBetIdx = Math.max(0, Math.min(betOptions.length - 1, currentBetIdx + dir));
@@ -1171,33 +1190,33 @@
         }
 
         function revealTile(idx, el) {
-    if (!isGameActive || el.classList.contains('disabled')) return;
-    
-    const currentBombs = parseInt(document.getElementById('bombText').innerText); // 修正這裡
-    
-    if (mines[idx]) {
-        gameOver(false);
-    } else {
-        revealedCount++;
-        el.classList.add('revealed-coin', 'disabled');
-        el.innerHTML = '💎';
+            if (!isGameActive || el.classList.contains('disabled')) return;
 
-        if (!isMuted) document.getElementById('sndCoin').play().catch(() => { });
+            const currentBombs = parseInt(document.getElementById('bombText').innerText); // 修正這裡
 
-        document.getElementById('cashoutBtn').disabled = false;
-        
-        const m = getMultiplier(currentBombs, revealedCount); // 修正這裡
-        document.getElementById('cashoutBtn').textContent = `提桶跑路: 💎${Math.floor(currentBet * m).toLocaleString()}`;
+            if (mines[idx]) {
+                gameOver(false);
+            } else {
+                revealedCount++;
+                el.classList.add('revealed-coin', 'disabled');
+                el.innerHTML = '💎';
 
-        updateNextWinInfo();
+                if (!isMuted) document.getElementById('sndCoin').play().catch(() => { });
 
-        const totalSafeTiles = 25 - currentBombs; // 修正這裡
-        if (revealedCount === totalSafeTiles) {
-            showWinToast(`🎉 完美的探險！全開獎金 x${m.toFixed(2)}`);
-            setTimeout(() => { cashout(); }, 1500);
+                document.getElementById('cashoutBtn').disabled = false;
+
+                const m = getMultiplier(currentBombs, revealedCount); // 修正這裡
+                document.getElementById('cashoutBtn').textContent = `提桶跑路: 💎${Math.floor(currentBet * m).toLocaleString()}`;
+
+                updateNextWinInfo();
+
+                const totalSafeTiles = 25 - currentBombs; // 修正這裡
+                if (revealedCount === totalSafeTiles) {
+                    showWinToast(`🎉 完美的探險！全開獎金 x${m.toFixed(2)}`);
+                    setTimeout(() => { cashout(); }, 1500);
+                }
+            }
         }
-    }
-}
 
         // 輔助函數：顯示提示
         function showWinToast(msg) {
@@ -1209,11 +1228,11 @@
         }
 
         async function cashout() {
-           if (!isGameActive) return;
+            if (!isGameActive) return;
 
-    const bombCount = parseInt(document.getElementById('bombText').innerText); // 修正這裡
-    const m = getMultiplier(bombCount, revealedCount);
-    const win = Math.floor(currentBet * m);
+            const bombCount = parseInt(document.getElementById('bombText').innerText); // 修正這裡
+            const m = getMultiplier(bombCount, revealedCount);
+            const win = Math.floor(currentBet * m);
 
             // --- 根據倍率決定顯示哪種結算畫面 ---
             if (m >= 40) {
@@ -1287,35 +1306,77 @@
                 document.getElementById('sndCoin').play().catch(() => { });
             }
         }
+        // 輔助函數：顯示輸球提示 (自動消失)
+        function showLoseUI(betAmount) {
+            const overlay = document.createElement('div');
+            overlay.className = 'big-win-overlay'; // 沿用大獎的背景遮罩樣式
+            overlay.style.background = 'rgba(40, 0, 0, 0.85)'; // 改成偏紅的暗色
+            overlay.innerHTML = `
+        <div class="big-win-content" style="animation: shake 0.5s ease-in-out;">
+            <div class="big-win-title" style="color: #ff4757; text-shadow: 0 0 20px #ff0000;">💥 踩到炸彈 💥</div>
+            <div class="big-win-amount" style="color: #fff; font-size: 32px;">損失 💎 ${betAmount.toLocaleString()}</div>
+            <p style="color: #aaa; margin-top: 20px;">好運在下一局等著你...</p>
+        </div>
+    `;
+            document.body.appendChild(overlay);
 
+            // 2秒後自動移除
+            setTimeout(() => {
+                overlay.style.opacity = '0';
+                overlay.style.transition = '0.5s';
+                setTimeout(() => overlay.remove(), 500);
+            }, 1000);
+        }
         function gameOver(isWin) {
             isGameActive = false;
-            revealedCount = 0;
+
+            // 1. 先抓取當前狀態
+            const lastBet = currentBet;
+            const currentBombs = parseInt(document.getElementById('bombText').innerText);
+
+            // 2. 翻開所有格子
             document.querySelectorAll('.tile').forEach((t, i) => {
-                t.classList.add('disabled'); if (mines[i]) { t.innerHTML = '💣'; t.classList.add('revealed-bomb'); }
+                t.classList.add('disabled');
+                if (mines[i]) {
+                    t.innerHTML = '💣';
+                    t.classList.add('revealed-bomb');
+                }
             });
-            if (!isWin && !isMuted) document.getElementById('sndBomb').play().catch(() => { });
+
+            // 3. 處理輸贏分支
+            if (!isWin) {
+                if (!isMuted) document.getElementById('sndBomb').play().catch(() => { });
+                setTimeout(() => {
+                    showLoseUI(lastBet);
+                }, 500);
+            }
+
+            // 4. 重置 UI 與按鈕
             document.getElementById('startBtn').style.display = 'block';
             document.getElementById('cashoutBtn').style.display = 'none';
             document.getElementById('betMinus').disabled = false;
             document.getElementById('betPlus').disabled = false;
             document.getElementById('bombMinus').disabled = false;
             document.getElementById('bombPlus').disabled = false;
-            updateUI(); syncToFirebase();
+
+            // 5. 更新數據與同步 (最後再歸零)
+            updateUI();
+            syncToFirebase();
             updateNextWinInfo();
+            revealedCount = 0; // 放在最後，確保之前的 UI 更新能抓到正確的數值
         }
 
-    
 
-        window.onload = async () => { 
+
+        window.onload = async () => {
             // 1. 第一時間讀取本地，讓玩家進場立刻看到錢，不卡頓
             const savedBal = localStorage.getItem('sicbo_balance');
             if (savedBal !== null) {
                 balance = parseFloat(savedBal);
             }
-            
+
             // 先顯示本地資料，確保畫面不留白
-            updateUI(); 
+            updateUI();
             renderGrid();
             updateNextWinInfo();
 
@@ -1346,7 +1407,7 @@
             }
 
             // 3. 最後加載排行榜
-            listenRank(); 
+            listenRank();
         };
     </script>
 </body>
