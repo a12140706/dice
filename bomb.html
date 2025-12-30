@@ -60,39 +60,45 @@
             }
         }
 
-        .topbar {
-            width: 100%;
-            padding-top: env(safe-area-inset-top);
-            height: calc(60px + env(safe-area-inset-top));
-            background: rgba(42, 2, 2, 0.9);
+         .topbar {
+            /* 1. 背景顏色會從最頂部開始填滿 */
+            background: linear-gradient(#4a0404, #2a0202);
+
+            /* 2. 增加總高度，原本是 50px，我們改為 65px 確保空間充足 */
+            height: calc(30px + env(safe-area-inset-top));
+
+            /* 3. 使用 padding-top 避開瀏海，並增加一點額外的安全距離 (如 10px) */
+            padding-top: calc(env(safe-area-inset-top));
+
             display: flex;
             align-items: center;
-            padding: 0 15px;
-            gap: 10px;
+            /* 讓內容在剩餘的空間垂直置中 */
+            justify-content: flex-start;
+            gap: 6px;
+            padding-left: 10px;
+            padding-right: 10px;
             border-bottom: 2px solid #5c0a0a;
-            flex-shrink: 0;
             z-index: 1000;
+            box-sizing: border-box;
+            width: 100%;
         }
 
         .sound-btn {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 4px 8px;
-            border-radius: 8px;
-            border: 1px solid var(--gold);
-            cursor: pointer;
-            font-size: 13px;
+            font-size: 10px;
+            background: #4a148c;
+            border: 1px solid #ce93d8;
+            padding: 3px 6px;
+            border-radius: 12px;
             color: #fff;
-            white-space: nowrap;
         }
-
         .balance-box {
             background: rgba(0, 0, 0, 0.5);
             border: 1px solid var(--gold);
-            border-radius: 15px;
-            padding: 4px 12px;
+            border-radius: 8px;
+            padding: 4px 8px;
             color: var(--gold);
             font-weight: bold;
-            font-size: 16px;
+            font-size: 13px;
         }
 
         .main-container {
@@ -499,9 +505,11 @@
         <button onclick="toggleRank()"
             style="background:none; border:1px solid var(--gold); color:var(--gold); padding:5px 10px; border-radius:5px; font-size:12px;">🏆
             排行榜</button>
-        <a href="index.html" id="homeLink"><button
-                style="background:none; border:1px solid #777; color:#ccc; padding:5px; border-radius:5px; margin-left:5px;">🏠</button></a>
-    </div>
+        <a href="index.html" style="text-decoration:none;">
+            <button
+                style="background:none; border:1px solid #777; color:#ccc; border-radius:5px; padding:5px 12px; font-size:14px; font-weight:bold;">🏠
+                回大廳</button>
+        </a>
 
     <div class="main-container">
         <div class="top-winner-bar" id="topWinnerName">載入中...</div>
@@ -528,7 +536,7 @@
                 </select>
             </div>
             <button class="action-btn btn-start" id="startBtn" onclick="startGame()">開始探險</button>
-            <button class="action-btn btn-cashout" id="cashoutBtn" onclick="cashout()">提前結束: $0</button>
+            <button class="action-btn btn-cashout" id="cashoutBtn" onclick="cashout()">贏得: $0</button>
         </div>
     </div>
 
@@ -727,7 +735,7 @@
         
         document.getElementById('cashoutBtn').disabled = false;
         const m = getMultiplier(parseInt(document.getElementById('bombCount').value), revealedCount);
-        document.getElementById('cashoutBtn').textContent = `贏得: 💎${Math.floor(currentBet * m).toLocaleString()}`;
+        document.getElementById('cashoutBtn').textContent = `提桶跑路: 💎${Math.floor(currentBet * m).toLocaleString()}`;
         
         updateNextWinInfo();
 
