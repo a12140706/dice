@@ -28,11 +28,16 @@
         body {
             margin: 0;
             padding: 0;
-            background-color: #000;
-            /* 確保底色是黑的，不漏白 */
-            min-height: 100vh;
-            overflow-x: hidden;
-            overscroll-behavior-y: none;
+            background: var(--bg);
+            color: #fff;
+            font-family: Arial;
+            height: 100dvh;
+            /* 確保使用動態視窗高度 */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            touch-action: manipulation;
+            /* 移除原本這裡的 padding-bottom，改到面板裡處理 */
         }
 
         .bg-stars {
@@ -1093,12 +1098,18 @@
         }
 
         function updateNextWinInfo() {
-            const bombCount = parseInt(document.getElementById('bombCount').value);
-            const nextMult = getMultiplier(bombCount, revealedCount + 1);
-            const infoEl = document.getElementById('multDisplay');
-            infoEl.textContent = `下一格倍率: x${nextMult.toFixed(2)}`;
-            infoEl.classList.add('active'); setTimeout(() => infoEl.classList.remove('active'), 200);
-        }
+    // 將原本的 bombCount 改為 bombText，並用 innerText 取值
+    const bombCountEl = document.getElementById('bombText');
+    const bombCount = bombCountEl ? parseInt(bombCountEl.innerText) : 3; 
+    
+    const nextMult = getMultiplier(bombCount, revealedCount + 1);
+    const infoEl = document.getElementById('multDisplay');
+    if (infoEl) {
+        infoEl.textContent = `下一格倍率: x${nextMult.toFixed(2)}`;
+        infoEl.classList.add('active'); 
+        setTimeout(() => infoEl.classList.remove('active'), 200);
+    }
+}
         function changeBet(dir) {
             if (isGameActive) return; // 遊戲中不能換籌碼
             currentBetIdx = Math.max(0, Math.min(betOptions.length - 1, currentBetIdx + dir));
@@ -1152,33 +1163,33 @@
         }
 
         function revealTile(idx, el) {
-            if (!isGameActive || el.classList.contains('disabled')) return;
-            if (mines[idx]) {
-                gameOver(false);
-            }
-            else {
-                revealedCount++;
-                el.classList.add('revealed-coin', 'disabled');
-                el.innerHTML = '💎';
+    if (!isGameActive || el.classList.contains('disabled')) return;
+    
+    const currentBombs = parseInt(document.getElementById('bombText').innerText); // 修正這裡
+    
+    if (mines[idx]) {
+        gameOver(false);
+    } else {
+        revealedCount++;
+        el.classList.add('revealed-coin', 'disabled');
+        el.innerHTML = '💎';
 
-                if (!isMuted) document.getElementById('sndCoin').play().catch(() => { });
+        if (!isMuted) document.getElementById('sndCoin').play().catch(() => { });
 
-                document.getElementById('cashoutBtn').disabled = false;
-                const m = getMultiplier(parseInt(document.getElementById('bombCount').value), revealedCount);
-                document.getElementById('cashoutBtn').textContent = `提桶跑路: 💎${Math.floor(currentBet * m).toLocaleString()}`;
+        document.getElementById('cashoutBtn').disabled = false;
+        
+        const m = getMultiplier(currentBombs, revealedCount); // 修正這裡
+        document.getElementById('cashoutBtn').textContent = `提桶跑路: 💎${Math.floor(currentBet * m).toLocaleString()}`;
 
-                updateNextWinInfo();
+        updateNextWinInfo();
 
-                // --- 改動這裡：判斷是否全開 ---
-                const totalSafeTiles = 25 - parseInt(document.getElementById('bombCount').value);
-                if (revealedCount === totalSafeTiles) {
-                    showWinToast(`🎉 完美的探險！全開獎金 x${m.toFixed(2)}`);
-                    setTimeout(() => {
-                        cashout();
-                    }, 1500); // 稍微留點時間讓玩家看清楚畫面再結算
-                }
-            }
+        const totalSafeTiles = 25 - currentBombs; // 修正這裡
+        if (revealedCount === totalSafeTiles) {
+            showWinToast(`🎉 完美的探險！全開獎金 x${m.toFixed(2)}`);
+            setTimeout(() => { cashout(); }, 1500);
         }
+    }
+}
 
         // 輔助函數：顯示提示
         function showWinToast(msg) {
@@ -1190,11 +1201,11 @@
         }
 
         async function cashout() {
-            if (!isGameActive) return;
+           if (!isGameActive) return;
 
-            const bombCount = parseInt(document.getElementById('bombCount').value);
-            const m = getMultiplier(bombCount, revealedCount);
-            const win = Math.floor(currentBet * m);
+    const bombCount = parseInt(document.getElementById('bombText').innerText); // 修正這裡
+    const m = getMultiplier(bombCount, revealedCount);
+    const win = Math.floor(currentBet * m);
 
             // --- 根據倍率決定顯示哪種結算畫面 ---
             if (m >= 40) {
