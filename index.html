@@ -1064,10 +1064,16 @@
           <div class="game-title">連連看</div>
         </div>
       </a>
-      <a href="#" class="game-card">
+      <a href="bomb.html" class="game-card">
+        <div class="game-img" style="background: linear-gradient(45deg, #ff0505, #00c3ff);">🗺️</div>
+        <div class="game-info">
+          <div class="game-title">尋寶傳奇</div>
+        </div>
+      </a>
+      <a href="gua.html" class="game-card">
         <div class="game-img" style="background: linear-gradient(45deg, #312222, #bad7c7);">🧧</div>
         <div class="game-info">
-          <div class="game-title">(暫無)未完成刮刮樂</div>
+          <div class="game-title">未完成刮刮樂</div>
         </div>
       </a>
     </div>
@@ -1242,7 +1248,7 @@
 
     let currentShopTab = 'title';
     const LOTTO_CONFIG = {
-      price: 10000,
+      price: 10000000,
       grandPrize: 100000000, // 1億
       chanceMoney: 0.05,    // 1% 中一億
       chanceTitle: 0.01,    // 2% 中稱號 "🌌 幸運錦鯉"
@@ -1302,21 +1308,21 @@
       let results = [];
       let updates = { balance: balance, lastLottoDate: today };
 
-      if (Math.random() < 0.05) {
+      if (Math.random() < 0.03) {
         balance += 100000000;
         updates.balance = balance;
         localStorage.setItem('sicbo_balance', balance);
         results.push("💰 1億元大獎");
       }
 
-      if (Math.random() < 0.02) {
+      if (Math.random() < 0.01) {
         updates[`assets.t_koi`] = now;
-        results.push("🏷️ 限定稱號：幸運錦鯉");
+        results.push("🌌 限定稱號：幸運錦鯉");
       }
 
-      if (Math.random() < 0.01) {
+      if (Math.random() < 0.005) {
         updates[`assets.e_koi`] = now;
-        results.push("✨ 絕世特效：錦鯉躍遷");
+        results.push("🌊 限定特效：錦鯉躍遷");
       }
 
       try {
