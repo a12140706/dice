@@ -1330,7 +1330,7 @@
             const playerId = localStorage.getItem('player_id');
             if (playerId && typeof db !== 'undefined') {
                 try {
-                    const doc =  db.collection("users").doc(playerId).get();
+                    const doc = await db.collection("users").doc(playerId).get();
                     if (doc.exists) {
                         const cloudBal = doc.data().balance;
 
