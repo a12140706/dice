@@ -63,28 +63,57 @@
         }
 
         .topbar {
-            /* 1. 背景顏色會從最頂部開始填滿 */
-            background: linear-gradient(#4a0404, #2a0202);
+    background: linear-gradient(#4a0404, #2a0202);
+    /* 1. 增加總高度並預留手機安全區（避開瀏海） */
+    height: calc(45px + env(safe-area-inset-top));
+    padding-top: calc(15px + env(safe-area-inset-top));
+    padding-bottom: 5px;
+    
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 5px; /* 2. 縮小間距防止跑版 */
+    padding-left: 10px;
+    padding-right: 10px;
+    border-bottom: 2px solid #5c0a0a;
+    z-index: 1000;
+    box-sizing: border-box;
+    width: 100%;
+    white-space: nowrap; /* 3. 強制單行，不換行 */
+}
+/* 4. 排行榜與回大廳按鈕縮小，並加入 flex-shrink 確保不變形 */
+.topbar-rank-btn {
+    background: none;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    padding: 4px 6px;
+    border-radius: 5px;
+    font-size: 11px;
+    flex-shrink: 0; 
+}
 
-            /* 2. 增加總高度，原本是 50px，我們改為 65px 確保空間充足 */
-            height: calc(30px + env(safe-area-inset-top));
+.topbar-exit-btn {
+    background: none;
+    border: 1px solid #777;
+    color: #ccc;
+    border-radius: 5px;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: bold;
+    flex-shrink: 0;
+}
 
-            /* 3. 使用 padding-top 避開瀏海，並增加一點額外的安全距離 (如 10px) */
-            padding-top: calc(env(safe-area-inset-top));
-
-            display: flex;
-            align-items: center;
-            /* 讓內容在剩餘的空間垂直置中 */
-            justify-content: flex-start;
-            gap: 6px;
-            padding-left: 10px;
-            padding-right: 10px;
-            border-bottom: 2px solid #5c0a0a;
-            z-index: 1000;
-            box-sizing: border-box;
-            width: 100%;
-        }
-
+/* 5. 金額區塊微調 */
+.balance-box {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--gold);
+    border-radius: 8px;
+    padding: 4px 8px;
+    color: var(--gold);
+    font-weight: bold;
+    font-size: 13px;
+    flex-shrink: 1; /* 金額過長時允許自動縮放 */
+}
         .sound-btn {
             font-size: 10px;
             background: #4a148c;
@@ -902,19 +931,18 @@
     </div>
 
     <div class="topbar">
-        <div class="sound-btn" onclick="toggleMute()" id="muteBtn">🔊</div>
-        <div class="sound-btn" onclick="cycleBGM()" id="bgmBtn">🎵 音樂 1</div>
-        <div class="balance-box">💎 <span id="balanceText">0</span></div>
-        <div style="flex:1"></div>
-        <button onclick="toggleRank()"
-            style="background:none; border:1px solid var(--gold); color:var(--gold); padding:5px 10px; border-radius:5px; font-size:12px;">🏆
-            排行榜</button>
-        <a href="index.html" style="text-decoration:none;">
-            <button
-                style="background:none; border:1px solid #777; color:#ccc; border-radius:5px; padding:5px 12px; font-size:14px; font-weight:bold;">🏠
-                回大廳</button>
-        </a>
-    </div>
+    <div class="sound-btn" onclick="toggleMute()" id="muteBtn">🔊</div>
+    <div class="sound-btn" onclick="cycleBGM()" id="bgmBtn">🎵音樂 1</div>
+    <div class="balance-box">💎 <span id="balanceText">0</span></div>
+    
+    <div style="flex:1"></div>
+    
+    <button onclick="toggleRank()" class="topbar-rank-btn">🏆排行榜</button>
+    
+    <a href="index.html" style="text-decoration:none;">
+        <button class="topbar-exit-btn">🏠大廳</button>
+    </a>
+</div>
     <div class="main-container">
         <div class="top-winner-bar" id="topWinnerName">載入中...</div>
         <div class="multiplier-step" id="multDisplay">下一格倍率: --</div>
