@@ -305,7 +305,7 @@
             }
         }
 
-        .tile.disabled {
+        .tile.disabled:not(.revealed-coin):not(.revealed-bomb) {
             cursor: default;
             opacity: 0.5;
             filter: grayscale(1);
