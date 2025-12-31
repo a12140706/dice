@@ -464,7 +464,7 @@
     ctx.globalCompositeOperation = 'destination-out';
     ctx.beginPath(); ctx.arc(x, y, 35, 0, Math.PI * 2); ctx.fill();
     scratchPointCount++; 
-  if (scratchPointCount > 450) { // 手機滑動約 3-5 下會達到此值
+  if (scratchPointCount > 250) { // 手機滑動約 3-5 下會達到此值
     revealCard();
   }
   }
