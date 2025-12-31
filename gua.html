@@ -112,7 +112,8 @@
     <div class="sound-toggle" onclick="toggleMute()" id="soundIcon">🔊</div>
     <div class="sound-toggle" onclick="cycleBGM()" id="bgmBtn">🎵 音樂 1</div>
     <div class="balance-box">💎 <span id="balanceText">0</span></div>
-    <a href="index.html" style="text-decoration:none;"><button style="background:none; border:1px solid #777; color:#ccc; padding:5px; border-radius:5px;">🏠</button></a>
+    <marquee style="flex:1; color:var(--gold); font-size: 12px;">有問題再說</marquee>
+    <a href="index.html" style="text-decoration:none;"><button style="background:none; border:1px solid #777; color:#ccc; padding:5px; border-radius:5px;">🏠回大廳</button></a>
   </div>
 
   <div id="lobby">
@@ -595,7 +596,7 @@ function startNewGame() {
     [lastX, lastY] = [x, y];
     
     scratchPointCount++; 
-    if (scratchPointCount > 180) { 
+    if (scratchPointCount > 200) { 
       revealCard();
     }
   }
