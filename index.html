@@ -221,42 +221,51 @@
     }
 
     /* [特效：雷霆霓虹] */
-         .fx-neon {
-    border: 2px solid #fff !important;
-    /* 1. 關鍵修改：將 0% 和 100% 的黑色改為深藍色，hue-rotate 才能抓到顏色變色 */
-    background: linear-gradient(
-        135deg, 
-        #001a33 0%,   /* 取代黑色 */
-        #004488 25%, 
-        #0066aa 50%, 
-        #440088 75%, 
-        #001a33 100%  /* 取代黑色 */
-    ) !important;
-    background-size: 300% 300% !important;
-    color: #fff !important;
-    
-    /* 2. 增加強烈的內部發光，直接把背景照亮 */
-    box-shadow: 
-        inset 0 0 30px rgba(0, 210, 255, 0.7), 
-        0 0 10px #fff, 
+    .fx-neon {
+      border: 2px solid #fff !important;
+      /* 1. 關鍵修改：將 0% 和 100% 的黑色改為深藍色，hue-rotate 才能抓到顏色變色 */
+      background: linear-gradient(135deg,
+          #001a33 0%,
+          /* 取代黑色 */
+          #004488 25%,
+          #0066aa 50%,
+          #440088 75%,
+          #001a33 100%
+          /* 取代黑色 */
+        ) !important;
+      background-size: 300% 300% !important;
+      color: #fff !important;
+
+      /* 2. 增加強烈的內部發光，直接把背景照亮 */
+      box-shadow:
+        inset 0 0 30px rgba(0, 210, 255, 0.7),
+        0 0 10px #fff,
         0 0 20px #00d2ff !important;
 
-    /* 3. 動畫組合 */
-    animation:
+      /* 3. 動畫組合 */
+      animation:
         neon-flicker 2s infinite,
         neon-rainbow 2s linear infinite,
         bg-flow-extreme 1s ease-in-out infinite !important;
-    
-    /* 確保內容在發光背景上依然清晰 */
-    text-shadow: 0 0 5px #000, 2px 2px 2px #000 !important;
-}
 
-/* 4. 強化的背景移動：讓漸層在盒子裡大幅度滑動 */
-@keyframes bg-flow-extreme {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
+      /* 確保內容在發光背景上依然清晰 */
+      text-shadow: 0 0 5px #000, 2px 2px 2px #000 !important;
+    }
+
+    /* 4. 強化的背景移動：讓漸層在盒子裡大幅度滑動 */
+    @keyframes bg-flow-extreme {
+      0% {
+        background-position: 0% 50%;
+      }
+
+      50% {
+        background-position: 100% 50%;
+      }
+
+      100% {
+        background-position: 0% 50%;
+      }
+    }
 
     /* --- 特效 3：至尊皇金 (保持簡潔高級感) --- */
     .fx-gold {
@@ -486,6 +495,388 @@
       animation: rotate-slow 3s linear infinite;
       z-index: -1;
       opacity: 0.4;
+    }
+
+    /* --- 特效 7：駭客任務 (真·矩陣代碼雨 - 無限循環修復) --- */
+    .fx-hacker {
+      position: relative !important;
+      background: #000 !important;
+      border: 2px solid #0f0 !important;
+      color: #0f0 !important;
+      font-family: 'Courier New', monospace;
+      overflow: hidden !important;
+      box-shadow: 0 0 15px #0f0, inset 0 0 30px rgba(0, 255, 0, 0.4) !important;
+      z-index: 1;
+    }
+
+    /* 1. 背景條紋 */
+    .fx-hacker::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(0deg,
+          transparent,
+          transparent 2px,
+          rgba(0, 255, 0, 0.1) 2px,
+          rgba(0, 255, 0, 0.1) 4px);
+      z-index: -1;
+    }
+
+    /* 2. 亂碼瀑布流 - 加長內容確保循環不斷 */
+    .fx-hacker::after {
+      content: "10110010101010010101101010101001010101010101010010110101001010110101010010101101010010101010101010010010110100101010100101010101010100101101010010101101010100101011010100101010101010101001\A 0101010101010101010101010010101010101010110101010010101010100101010101010010101010010110101001010101\A 1101010100101011010100101010101010100101101010010101010010101101010101001001010110101010101001\A 1011001010101001010110101010100101010101010101001011010100101011010101001010110101001010101010101001001011010010101010010101010101010010110101001010110101010010101101010010101010101010101001";
+      position: absolute;
+      top: -100%;
+      left: 0;
+      width: 100%;
+      height: 300%;
+      /* 增加高度 */
+      font-size: 12px;
+      line-height: 12px;
+      word-break: break-all;
+      white-space: pre-wrap;
+      color: rgba(0, 255, 0, 0.3);
+      animation: matrix-scroll 4s linear infinite;
+      z-index: -1;
+    }
+
+    @keyframes matrix-scroll {
+      0% {
+        transform: translateY(0);
+      }
+
+      100% {
+        transform: translateY(50%);
+      }
+
+      /* 控制移動範圍 */
+    }
+
+    @keyframes matrix-bg-scroll {
+      0% {
+        transform: translateY(0);
+      }
+
+      100% {
+        transform: translateY(-20px);
+      }
+    }
+
+    @keyframes scanline-pass {
+      0% {
+        top: -20%;
+      }
+
+      100% {
+        top: 120%;
+      }
+    }
+
+    /* --- 特效 8：星雲霸主 (銀河繁星版) --- */
+    .fx-nebula {
+      position: relative !important;
+      background: transparent !important;
+      border: 2px solid transparent !important;
+      color: #fff !important;
+      overflow: hidden !important;
+      box-shadow: 0 0 20px #7b2cbf, 0 0 40px #e0aaff !important;
+      text-shadow: 0 0 5px #fff, 0 0 10px #ff00de !important;
+      z-index: 1;
+    }
+
+    /* 邊框層 */
+    .fx-nebula::before {
+      content: "";
+      position: absolute;
+      inset: -3px;
+      background: conic-gradient(from 0deg, #ff00de, #7b2cbf, #4cc9f0, #ff00de);
+      z-index: -2;
+      animation: spin-super-fast 3s linear infinite;
+      border-radius: 12px;
+    }
+
+    /* 背景層：極致密度的星空 */
+    .fx-nebula::after {
+      content: "";
+      position: absolute;
+      inset: 3px;
+      background:
+        /* Bright Stars (Big) */
+        radial-gradient(2px 2px at 15% 15%, #fff, transparent),
+        radial-gradient(2px 2px at 50% 20%, #fff, transparent),
+        radial-gradient(2px 2px at 85% 15%, #fff, transparent),
+        radial-gradient(2px 2px at 10% 80%, #fff, transparent),
+        radial-gradient(2px 2px at 90% 85%, #fff, transparent),
+
+        /* Medium Stars */
+        radial-gradient(1.5px 1.5px at 30% 40%, rgba(255, 255, 255, 0.8), transparent),
+        radial-gradient(1.5px 1.5px at 70% 60%, rgba(255, 255, 255, 0.8), transparent),
+        radial-gradient(1.5px 1.5px at 20% 60%, rgba(255, 255, 255, 0.8), transparent),
+        radial-gradient(1.5px 1.5px at 80% 30%, rgba(255, 255, 255, 0.8), transparent),
+
+        /* Tiny Stars Cluster */
+        radial-gradient(1px 1px at 5% 5%, rgba(255, 255, 255, 0.5), transparent),
+        radial-gradient(1px 1px at 25% 25%, rgba(255, 255, 255, 0.5), transparent),
+        radial-gradient(1px 1px at 45% 45%, rgba(255, 255, 255, 0.5), transparent),
+        radial-gradient(1px 1px at 65% 65%, rgba(255, 255, 255, 0.5), transparent),
+        radial-gradient(1px 1px at 85% 85%, rgba(255, 255, 255, 0.5), transparent),
+        radial-gradient(1px 1px at 15% 75%, rgba(255, 255, 255, 0.5), transparent),
+        radial-gradient(1px 1px at 35% 95%, rgba(255, 255, 255, 0.5), transparent),
+        radial-gradient(1px 1px at 55% 15%, rgba(255, 255, 255, 0.5), transparent),
+        radial-gradient(1px 1px at 75% 35%, rgba(255, 255, 255, 0.5), transparent),
+        radial-gradient(1px 1px at 95% 55%, rgba(255, 255, 255, 0.5), transparent),
+        radial-gradient(1px 1px at 2% 40%, rgba(255, 255, 255, 0.5), transparent),
+        radial-gradient(1px 1px at 98% 60%, rgba(255, 255, 255, 0.5), transparent),
+
+        /* Deep Background */
+        linear-gradient(135deg, #12002f 0%, #30005a 100%);
+      background-size: 200% 200%;
+      z-index: -1;
+      border-radius: 10px;
+      animation: nebula-bg-shift 6s ease infinite alternate;
+    }
+
+    @keyframes nebula-bg-shift {
+      0% {
+        background-position: 0% 50%;
+      }
+
+      100% {
+        background-position: 100% 50%;
+      }
+    }
+
+    /* --- 特效 9：時光領主 (齒輪回歸版) --- */
+    .fx-timelord {
+      position: relative !important;
+      background-color: #111 !important;
+      /* 將網格背景移到主元素，讓出 ::before 給齒輪 */
+      background-image:
+        linear-gradient(#444 1px, transparent 1px),
+        linear-gradient(90deg, #444 1px, transparent 1px);
+      background-size: 30px 30px;
+      color: #ffd700 !important;
+      border: 2px solid #ffd700 !important;
+      overflow: hidden !important;
+      box-shadow: inset 0 0 20px #000, 0 0 15px #ffd700 !important;
+      z-index: 1;
+      animation: bg-grid-scroll 4s linear infinite !important;
+    }
+
+    /* 1. 巨大金屬齒輪 (回歸) */
+    .fx-timelord::before {
+      content: "⚙️";
+      position: absolute;
+      right: -25px;
+      bottom: -25px;
+      font-size: 90px;
+      opacity: 0.15;
+      z-index: 0;
+      animation: rotate-slow 10s linear infinite;
+      filter: grayscale(1) brightness(1.5);
+    }
+
+    /* 2. 黃金指針掃過 (Overlay 模式) */
+    .fx-timelord::after {
+      content: "";
+      position: absolute;
+      top: -100%;
+      left: -50%;
+      width: 200%;
+      height: 300%;
+      /* 使用 hard-light 混合模式 */
+      background: conic-gradient(from 0deg, transparent 0deg, rgba(255, 230, 0, 0.4) 15deg, rgba(255, 255, 255, 0.9) 20deg, transparent 25deg, transparent 40deg);
+      animation: radar-sweep 3s linear infinite;
+      z-index: 2;
+      /* 放在最上層 */
+      pointer-events: none;
+      /* 讓點擊穿透 */
+      mix-blend-mode: hard-light;
+      /* 讓光效疊加在文字上 */
+    }
+
+    @keyframes bg-grid-scroll {
+      0% {
+        background-position: 0 0;
+      }
+
+      100% {
+        background-position: 0 30px;
+      }
+    }
+
+    @keyframes grid-move {
+      0% {}
+
+      100% {
+        transform: translateY(30px);
+      }
+    }
+
+    @keyframes radar-sweep {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+
+    /* --- 特效 10：眾神之王 (MAXIMALISM VERSION) --- */
+    .fx-god-king {
+      position: relative !important;
+      /* Radiant sunburst gradient */
+      background: radial-gradient(circle at center, #ffecb3 0%, #ffd700 40%, #a07e00 100%) !important;
+      border: 2px solid #fff !important;
+      color: #5c0a0a !important;
+      /* Dark text for contrast */
+      font-weight: 900 !important;
+      overflow: hidden !important;
+      /* Blinding outer glow */
+      box-shadow: 0 0 30px #ffd700, 0 0 60px #fff, 0 0 80px #ffea00 !important;
+      text-shadow: 0 1px 0 #fff, 0 -1px 0 #fff, 1px 0 0 #fff, -1px 0 0 #fff;
+      /* White outline for text */
+      animation: god-pulse 2s ease-in-out infinite !important;
+      z-index: 1;
+    }
+
+    /* Rotating Rays - Stronger contrast */
+    .fx-god-king::before {
+      content: "";
+      position: absolute;
+      top: -100%;
+      left: -100%;
+      width: 300%;
+      height: 300%;
+      background: repeating-conic-gradient(from 0deg,
+          rgba(255, 255, 255, 0.4) 0deg 5deg,
+          transparent 5deg 15deg);
+      animation: spin-slow 10s linear infinite;
+      z-index: 0;
+    }
+
+    /* Falling Gold Dust / Sparkles */
+    .fx-god-king::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        radial-gradient(circle, #fff 1px, transparent 1px),
+        radial-gradient(circle, #fff 2px, transparent 2px);
+      background-size: 15px 15px, 30px 30px;
+      animation: god-particles 1s linear infinite;
+      z-index: 0;
+      opacity: 0.6;
+    }
+
+    @keyframes nebula-float {
+      0% {
+        transform: translateY(0px) scale(1);
+      }
+
+      100% {
+        transform: translateY(-3px) scale(1.02);
+      }
+    }
+
+    @keyframes spin-super-fast {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes time-warp {
+      0% {
+        transform: perspective(300px) rotateX(20deg) translateY(0);
+      }
+
+      100% {
+        transform: perspective(300px) rotateX(20deg) translateY(-20px);
+      }
+    }
+
+    @keyframes god-pulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+        box-shadow: 0 0 30px #ffd700;
+      }
+
+      50% {
+        transform: scale(1.03);
+        box-shadow: 0 0 50px #ffd700, 0 0 80px #fff;
+      }
+    }
+
+    @keyframes god-particles {
+      from {
+        background-position: 0 0, 0 0;
+      }
+
+      to {
+        background-position: 0 15px, 0 30px;
+      }
+    }
+
+
+    /* --- 特效 11：七彩霓虹流光特效 (fx-rainbow) --- */
+    .fx-rainbow {
+      background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff) !important;
+      background-size: 400% 400% !important;
+      animation: rainbow-move 3s ease infinite !important;
+      color: #fff !important;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5) !important;
+      border: none !important;
+    }
+
+    @keyframes rainbow-move {
+      0% {
+        background-position: 0% 50%;
+      }
+
+      50% {
+        background-position: 100% 50%;
+      }
+
+      100% {
+        background-position: 0% 50%;
+      }
+    }
+
+    /* --- 特效 12：暗影雷電特效 (fx-lightning) --- */
+    .fx-lightning {
+      background: #000 !important;
+      color: #fff !important;
+      box-shadow: 0 0 10px #00d2ff, 0 0 20px #3a7bd5 inset !important;
+      animation: lightning-flash 2s infinite !important;
+    }
+
+    @keyframes lightning-flash {
+
+      0%,
+      90%,
+      100% {
+        opacity: 1;
+      }
+
+      92% {
+        filter: brightness(3);
+        transform: scale(1.02);
+      }
+
+      94% {
+        filter: brightness(1);
+      }
+
+      96% {
+        filter: brightness(2.5);
+      }
     }
 
     /* --- 新特效動畫定義 --- */
@@ -734,11 +1125,13 @@
     .rank-list {
       flex: 1;
       overflow-y: auto;
+      overflow-x: hidden !important;
       margin-top: 10px;
     }
 
     .rank-item {
       display: flex;
+
       justify-content: space-between;
       padding: 12px 5px;
       border-bottom: 1px solid rgba(255, 216, 107, 0.1);
@@ -817,89 +1210,226 @@
       font-weight: bold;
       color: #fff;
     }
-
- /* 絕世特效：錦鯉躍遷 (終極動態版) */
-.fx-cosmic-koi {
+/* 至尊傳奇：背景流光 + 多色流動陰影（補償粒子） */
+.fx-ultimate-legend {
     position: relative;
-    padding: 12px 20px;
-    border-radius: 15px;
-    color: white !important;
-    font-weight: bold;
-    text-align: center;
-    text-shadow: 0 0 10px rgba(255, 158, 0, 0.8);
-    overflow: hidden; /* 確保流光與粒子不溢出 */
+    /* 1. 背景改為流光漸層，取代純黑 */
+    background: linear-gradient(90deg, 
+        #000 0%, 
+        #FFD700 20%, 
+        #FFFFFF 40%, 
+        #FF4500 60%, 
+        #9400D3 80%, 
+        #000 100%
+    ) !important;
+    background-size: 300% 100% !important;
+    
     z-index: 1;
-    border: none;
-    background: #10002b; /* 深色底，防止背景縮放時露底 */
+    border: 1px solid #FFD700;
+    /* 這裡必須是 visible，否則流動陰影會被切掉 */
+    overflow: visible !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+
+    /* 震動效果 + 背景流動動畫 */
+    animation: ult-bg-flow 4s linear infinite, ult-vibrate 0.15s infinite;
 }
 
-/* 1. 流光邊框旋轉層 (::before) */
-.fx-cosmic-koi::before {
+/* 改造後的陰影層：多色呼吸發光 */
+.fx-ultimate-legend::after {
     content: '';
     position: absolute;
-    top: -50%; left: -50%;
-    width: 200%; height: 200%;
-    background: conic-gradient(
-        transparent, 
-        #ff9e00 10%, 
-        #ff0054 20%, 
-        transparent 30%, 
-        transparent 70%, 
-        #9d4edd 80%, 
-        #ff9e00 90%
-    );
-    animation: koiRotate 4s linear infinite;
-    z-index: -2;
+    inset: -2px;
+    border-radius: 52px;
+    z-index: -1;
+    filter: blur(12px); /* 稍微加深模糊，更有能量場的感覺 */
+    opacity: 0.7;
+    /* 執行多色陰影變換動畫 */
+    animation: ult-shadow-glow 3s ease-in-out infinite alternate;
 }
 
-/* 2. 背景與粒子組合層 (::after) */
-/* 這一層負責背景漸變、粒子、以及縮放效果 */
-.fx-cosmic-koi::after {
-    content: '';
-    position: absolute;
-    inset: 3px; /* 這裡決定邊框的粗細 (3px) */
-    background: 
+/* 文字層維持你原本的流光質感 */
+.fx-ultimate-legend span {
+    position: relative;
+    z-index: 20 !important;
+    background: linear-gradient(to right, #fff 20%, #ffd700 40%, #ff4500 60%, #fff 80%);
+    background-size: 200% auto;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: ult-text-flow 2s linear infinite;
+    font-weight: 900;
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
+}
+
+/* --- 新增/修改動畫定義 --- */
+
+/* 背景流動：讓黑框裡的顏色動起來 */
+@keyframes ult-bg-flow {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 300% 50%; }
+}
+
+/* 多色陰影變換：補償原本 JS 粒子的顏色動態 */
+@keyframes ult-shadow-glow {
+    0% {
+        background: #0f12dd;
+        box-shadow: 0 0 15px #0f12dd, 0 0 30px rgba(255, 215, 0, 0.4);
+    }
+    50% {
+        background: #9400D3;
+        box-shadow: 0 0 20px #9400D3, 0 0 40px rgba(148, 0, 211, 0.4);
+    }
+    100% {
+        background: #FF4500;
+        box-shadow: 0 0 15px #FF4500, 0 0 30px rgba(255, 69, 0, 0.4);
+    }
+}
+
+/* 原本的動畫保留 */
+@keyframes ult-text-flow {
+    0% { background-position: 0% center; }
+    100% { background-position: 200% center; }
+}
+
+@keyframes ult-vibrate {
+    0% { transform: translate(0,0); }
+    50% { transform: translate(0.5px, -0.5px); }
+    100% { transform: translate(0,0); }
+}
+    /* 絕世特效：錦鯉躍遷 (終極動態版) */
+    .fx-cosmic-koi {
+      position: relative;
+      padding: 12px 20px;
+      border-radius: 15px;
+      color: white !important;
+      font-weight: bold;
+      text-align: center;
+      text-shadow: 0 0 10px rgba(255, 158, 0, 0.8);
+      overflow: hidden;
+      /* 確保流光與粒子不溢出 */
+      z-index: 1;
+      border: none;
+      background: #10002b;
+      /* 深色底，防止背景縮放時露底 */
+    }
+
+    /* 1. 流光邊框旋轉層 (::before) */
+    .fx-cosmic-koi::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: conic-gradient(transparent,
+          #ff9e00 10%,
+          #ff0054 20%,
+          transparent 30%,
+          transparent 70%,
+          #9d4edd 80%,
+          #ff9e00 90%);
+      animation: koiRotate 4s linear infinite;
+      z-index: -2;
+    }
+
+    /* 2. 背景與粒子組合層 (::after) */
+    /* 這一層負責背景漸變、粒子、以及縮放效果 */
+    .fx-cosmic-koi::after {
+      content: '';
+      position: absolute;
+      inset: 3px;
+      /* 這裡決定邊框的粗細 (3px) */
+      background:
         /* 懸浮粒子圖案 */
         radial-gradient(circle, rgba(255, 255, 255, 0.3) 1px, transparent 1px),
         /* 底層漸變背景 */
         linear-gradient(135deg, #240046 0%, #3c096c 50%, #5a189a 100%);
-    background-size: 20px 20px, 400% 400%; /* 粒子密度與背景尺寸 */
-    border-radius: 12px;
-    z-index: -1;
-    /* 這裡同時執行：粒子飄浮動畫、背景流動、整體縮放 */
-    animation: 
-        koiParticleMove 20s linear infinite, 
+      background-size: 20px 20px, 400% 400%;
+      /* 粒子密度與背景尺寸 */
+      border-radius: 12px;
+      z-index: -1;
+      /* 這裡同時執行：粒子飄浮動畫、背景流動、整體縮放 */
+      animation:
+        koiParticleMove 20s linear infinite,
         koiBgFlow 8s ease infinite,
         koiScaleBreath 3s ease-in-out infinite;
-}
-@keyframes koiRotate {
-    100% { transform: rotate(360deg); }
-}
-@keyframes koiParticleMove {
-    0% { background-position: 0px 0px, 0% 50%; }
-    100% { background-position: 100px 100px, 100% 50%; }
-}
-/* 動畫定義 */
-@keyframes rotateBorder {
-    100% { transform: rotate(360deg); }
-}
-@keyframes koiScaleBreath {
-    0%, 100% { transform: scale(1); opacity: 0.9; }
-    50% { transform: scale(1.05); opacity: 1; }
-}
-@keyframes koiFlow {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-@keyframes koiBgFlow {
-    0%, 100% { background-position: 20px 20px, 0% 50%; }
-    50% { background-position: 20px 20px, 100% 50%; }
-}
-@keyframes koiGlow {
-    0%, 100% { box-shadow: inset 0 0 0 2px rgba(16, 0, 43, 0.9), 0 0 10px rgba(255, 158, 0, 0.4); }
-    50% { box-shadow: inset 0 0 0 2px rgba(16, 0, 43, 0.9), 0 0 25px rgba(255, 158, 0, 0.7); }
-}
+    }
+
+    @keyframes koiRotate {
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes koiParticleMove {
+      0% {
+        background-position: 0px 0px, 0% 50%;
+      }
+
+      100% {
+        background-position: 100px 100px, 100% 50%;
+      }
+    }
+
+    /* 動畫定義 */
+    @keyframes rotateBorder {
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes koiScaleBreath {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 0.9;
+      }
+
+      50% {
+        transform: scale(1.05);
+        opacity: 1;
+      }
+    }
+
+    @keyframes koiFlow {
+      0% {
+        background-position: 0% 50%;
+      }
+
+      50% {
+        background-position: 100% 50%;
+      }
+
+      100% {
+        background-position: 0% 50%;
+      }
+    }
+
+    @keyframes koiBgFlow {
+
+      0%,
+      100% {
+        background-position: 20px 20px, 0% 50%;
+      }
+
+      50% {
+        background-position: 20px 20px, 100% 50%;
+      }
+    }
+
+    @keyframes koiGlow {
+
+      0%,
+      100% {
+        box-shadow: inset 0 0 0 2px rgba(16, 0, 43, 0.9), 0 0 10px rgba(255, 158, 0, 0.4);
+      }
+
+      50% {
+        box-shadow: inset 0 0 0 2px rgba(16, 0, 43, 0.9), 0 0 25px rgba(255, 158, 0, 0.7);
+      }
+    }
 
     .player-title.t-koi {
       color: #fff;
@@ -1031,10 +1561,10 @@
 
   <div class="container">
 
-    <div class="welcome-msg" id="welcomeUser" onclick="changePlayerName()" 
-     style="cursor: pointer; display: inline-block; min-height: 20px;">
-    載入中...
-</div>
+    <div class="welcome-msg" id="welcomeUser" onclick="changePlayerName()"
+      style="cursor: pointer; display: inline-block; min-height: 20px;">
+      載入中...
+    </div>
 
     <div class="welcome-msg">
       <span id="welcomeUserContainer">選擇遊戲</span>
@@ -1203,53 +1733,53 @@
     function openModal() { document.getElementById('depositModal').style.display = 'flex'; }
     function closeModal() { document.getElementById('depositModal').style.display = 'none'; }
     //改名
-  async function changePlayerName() {
-    return;
-    const changeNameFee = 50000000; // 改名費用
-    const playerId = localStorage.getItem('player_id');
-    let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
+    async function changePlayerName() {
+      return;
+      const changeNameFee = 50000000; // 改名費用
+      const playerId = localStorage.getItem('player_id');
+      let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
 
-    if (!playerId) return alert("請先登入遊戲！");
+      if (!playerId) return alert("請先登入遊戲！");
 
-    // 取得目前的純名字 (不含稱號標籤)
-    const currentName = localStorage.getItem('player_name') || "無名氏";
-    const newName = prompt(`修改暱稱需花費 💎 ${changeNameFee.toLocaleString()}\n請輸入新暱稱 (最多8個字)：`, currentName);
+      // 取得目前的純名字 (不含稱號標籤)
+      const currentName = localStorage.getItem('player_name') || "無名氏";
+      const newName = prompt(`修改暱稱需花費 💎 ${changeNameFee.toLocaleString()}\n請輸入新暱稱 (最多8個字)：`, currentName);
 
-    if (newName === null) return; 
-    const trimmedName = newName.trim();
-    
-    if (trimmedName === "" || trimmedName === currentName) return; 
-    if (trimmedName.length > 8) return alert("暱稱太長囉！");
-    
-    if (balance < changeNameFee) {
+      if (newName === null) return;
+      const trimmedName = newName.trim();
+
+      if (trimmedName === "" || trimmedName === currentName) return;
+      if (trimmedName.length > 8) return alert("暱稱太長囉！");
+
+      if (balance < changeNameFee) {
         return alert(`錢不夠啦！改名需要 💎 ${changeNameFee.toLocaleString()}`);
-    }
+      }
 
-    if (!confirm(`確定要花費 💎 ${changeNameFee.toLocaleString()} 改名為「${trimmedName}」嗎？`)) return;
+      if (!confirm(`確定要花費 💎 ${changeNameFee.toLocaleString()} 改名為「${trimmedName}」嗎？`)) return;
 
-    try {
+      try {
         balance -= changeNameFee;
-        
+
         // 【核心】只更新名字和餘額，原本的 equipped_title 和 equipped_fx 會保留在雲端
         await db.collection("users").doc(playerId).update({
-            name: trimmedName,
-            balance: balance
+          name: trimmedName,
+          balance: balance
         });
 
         localStorage.setItem('sicbo_balance', balance);
         localStorage.setItem('player_name', trimmedName);
 
         updateMainBalance();
-        
+
         // 【關鍵】重新執行這個函數，它會把新名字配上舊特效重新畫出來
-        checkUserStatus(); 
-        
+        checkUserStatus();
+
         alert("改名成功！");
-    } catch (e) {
+      } catch (e) {
         console.error("改名失敗:", e);
         alert("改名失敗，請稍後再試");
+      }
     }
-}
 
     async function handleDeposit(amt) {
       const playerId = localStorage.getItem('player_id');
@@ -1298,24 +1828,37 @@
     // 商品定義
     const SHOP_DATA = {
       title: [
-        { id: 't_new', name: '🌱 初出茅廬', price: 50000 },
-        { id: 't_hunter', name: '🏹 賭場獵人', price: 200000 },
-        { id: 't_rich', name: '💰 土豪', price: 1000000 },
-        { id: 't_lady', name: '👗 千金大小姐', price: 5000000 },
-        { id: 't_sir', name: '🎩 豪門大少爺', price: 5000000 },
-        { id: 't_king', name: '👑 梟雄', price: 10000000 },
-        { id: 't_legend', name: '🐉 賭城傳奇', price: 50000000 },
-        { id: 't_god', name: '⚖️ 富可敵國', price: 100000000 },
-        { id: 't_world', name: '🪐 賭神', price: 500000000 },
-        { id: 't_koi', name: '🌌 幸運錦鯉', price: 0, lottoOnly: true }
+        { id: 't_new', name: '🌱初出茅廬', price: 50000 },
+        { id: 't_hunter', name: '🏹賭場獵人', price: 200000 },
+        { id: 't_rich', name: '💰土豪', price: 1000000 },
+        { id: 't_lady', name: '👗千金大小姐', price: 5000000 },
+        { id: 't_god', name: '🌟幸運星', price: 100000000 },
+        { id: 't_sir', name: '🎩豪門大少爺', price: 5000000 },
+        { id: 't_king', name: '👑梟雄', price: 10000000 },
+        { id: 't_legend', name: '💩狗屎運', price: 30000000 },
+        { id: 't_legend', name: '🐉賭城傳奇', price: 50000000 },
+        { id: 't_legend', name: '🧧鴻運當頭', price: 50000000 },  
+        { id: 't_world', name: '💤 躺平大師', price: 100000000 },
+        { id: 't_god', name: '⚖️富可敵國', price: 100000000 },
+        { id: 't_lady', name: '🧚可愛美麗小仙女', price: 200000000 },
+        { id: 't_legend', name: '🍀天選之人', price: 500000000 },
+        { id: 't_world', name: '🪐賭神', price: 500000000 },
+        { id: 'e_ultimate', name: '𒁂至尊', price: 500000000, class: 'fx-ultimate-legend' },
+        { id: 't_koi', name: '🌌幸運錦鯉', price: 0, lottoOnly: true }
       ],
       effect: [
         { id: 'e_thunder', name: '⚡ 電閃雷鳴', price: 2000000, class: 'fx-thunder' },
         { id: 'e_void', name: '🌀 湮滅黑洞', price: 5000000, class: 'fx-void' },
         { id: 'e_gold', name: '✨ 黃金呼吸', price: 8000000, class: 'fx-gold' },
         { id: 'e_ice', name: '❄️ 絕對零度', price: 10000000, class: 'fx-ice' },
+        { id: 'e_lightning', name: '⚡ 暗影雷電', price: 100000000, class: 'fx-lightning' },
         { id: 'e_fire', name: '🔥 地獄火', price: 200000000, class: 'fx-fire' },
         { id: 'e_neon', name: '🌈 彩虹極光', price: 500000000, class: 'fx-neon' },
+        { id: 'e_hacker', name: '💻 駭客任務', price: 500000000, class: 'fx-hacker' },
+        { id: 'e_nebula', name: '🌌 廣闊星雲', price: 500000000, class: 'fx-nebula' },
+        { id: 'e_timelord', name: '⏳ 時光領域', price: 500000000, class: 'fx-timelord' },
+        { id: 'e_god_king', name: '🔱 眾神之巔', price: 1000000000, class: 'fx-god-king' },
+        { id: 'e_ultimate', name: '𒁂 傳奇至尊', price: 1, class: 'fx-ultimate-legend' },
         { id: 'e_koi', name: '🌊 錦鯉躍遷', price: 0, class: 'fx-cosmic-koi', lottoOnly: true }
       ]
     };
@@ -1423,7 +1966,7 @@
       renderShop();
     }
 
-    function renderShop() {
+   function renderShop() {
       const shopList = document.getElementById('shopList');
       const myItems = JSON.parse(localStorage.getItem('my_assets') || '{}');
       const currentEquipped = JSON.parse(localStorage.getItem('equipped_assets') || '{"title":"","effect":""}');
@@ -1434,40 +1977,37 @@
         const expiry = myItems[item.id] || 0;
         const isOwned = now < expiry;
         const isEquipped = (currentShopTab === 'title' ? currentEquipped.title : currentEquipped.effect) === item.id;
-        const isLottoOnly = item.lottoOnly === true; // 判斷是否為樂透限定
+        const isLottoOnly = item.lottoOnly === true; 
 
-        // 判斷是否為特效分頁，如果是，就加上對應的特效 Class 進行預覽
+        // 1. 判斷 Class
         const previewClass = (currentShopTab === 'effect' && item.class) ? item.class : "";
+        
+        // 2. 修改這裡：補上 z-index: 1 以及調整 padding 讓特效流光有空間跑
         const previewStyle = (currentShopTab === 'effect') ?
-          "padding: 10px; border-radius: 15px; margin-bottom: 5px; text-align: center; font-weight: bold; position: relative; overflow: hidden; contain: paint;" : "";
+  "padding: 15px; border-radius: 25px; margin-bottom: 5px; text-align: center; font-weight: bold; position: relative; overflow: hidden; contain: paint; z-index: 1; display: block; width: 100%; box-sizing: border-box;" : "";
 
-        // 計算剩餘天數與顯示文字
         let priceDisplay = '';
         let actionButton = '';
 
         if (isOwned) {
-          // 已擁有狀態：判斷是否為永久（設定超過 10000 天即視為永久）
           const daysLeft = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
           priceDisplay = daysLeft > 10000 ? '⌛ 永久擁有' : `⏳ 剩餘: ${daysLeft} 天`;
           actionButton = `<button class="equip-btn" onclick="equipAsset('${currentShopTab}', '${item.id}')">${isEquipped ? '✅ 使用中' : '裝備'}</button>`;
         } else if (isLottoOnly) {
-          // 未擁有且是樂透限定
           priceDisplay = `<span style="color:var(--gold); font-weight:bold;">🎰 大樂透限定</span>`;
           actionButton = `<button class="buy-btn" style="background:#555; cursor:not-allowed; opacity:0.7;" disabled>非賣品</button>`;
         } else {
-          // 一般購買商品
           priceDisplay = `價格: 💎 ${item.price.toLocaleString()}`;
           actionButton = `<button class="buy-btn" onclick="buyAsset('${currentShopTab}', '${item.id}', ${item.price})">🛒 購買</button>`;
         }
-
-        html += `
-        <div style="border:1px solid #444; padding:12px; margin-bottom:12px; border-radius:15px; background:rgba(0,0,0,0.5); transition: 0.3s;">
-          <div class="${previewClass}" style="${previewStyle}">
-            <div style="color:var(--gold); font-weight:bold; font-size: 16px;">${item.name}</div>
-            ${currentShopTab === 'effect' ? '<div style="font-size:10px; opacity:0.8;"></div>' : ''}
-          </div>
+html += `
+<div style="border:1px solid #444; padding:12px; margin-bottom:12px; border-radius:15px; background:rgba(0,0,0,0.5); transition: 0.3s;">
+  <div class="${previewClass}" style="${previewStyle}">
+    <span style="color:var(--gold); font-weight:bold; font-size: 16px; position:relative; z-index:2;">${item.name}</span>
+    ${currentShopTab === 'effect' ? '<div style="font-size:10px; opacity:0.8;"></div>' : ''}
+  </div>
           
-          <div style="display:flex; justify-content:space-between; align-items:center; mt-2">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
             <div style="text-align:left;">
               <div style="color:#aaa; font-size:11px; margin-top:5px;">
                 ${priceDisplay}
@@ -1477,8 +2017,7 @@
               ${actionButton}
             </div>
           </div>
-        </div>
-      `;
+        </div>`;
       });
       shopList.innerHTML = html;
     }
@@ -1590,7 +2129,23 @@
         rankList.innerHTML = '<p style="text-align:center; color:red;">載入失敗</p>';
       }
     }
+function applyUltimateFX(elementId) {
+    const el = document.getElementById(elementId);
+    if (!el || !el.classList.contains('fx-ultimate-legend')) return;
 
+    // 每隔 300ms 產生一個小火星
+    setInterval(() => {
+        const sparkle = document.createElement('div');
+        sparkle.className = 'sparkle';
+        // 隨機在元素內部產生位置
+        sparkle.style.left = Math.random() * 100 + '%';
+        sparkle.style.top = Math.random() * 100 + '%';
+        el.appendChild(sparkle);
+
+        // 1秒後移除，防止記憶體洩漏
+        setTimeout(() => sparkle.remove(), 1000);
+    }, 300);
+}
     async function checkUserStatus() {
       let playerId = localStorage.getItem('player_id');
 
@@ -1616,45 +2171,80 @@
             await db.collection("users").doc(playerId).update({ balance: localBal });
           }
 
-          // --- 商城特效與稱號顯示邏輯 ---
-          // --- 商城特效與稱號顯示邏輯 (拆分版顯示) ---
           const welcomeEl = document.getElementById('welcomeUser');
           const fxClass = cloudData.equipped_fx || "";
           const titleText = cloudData.equipped_title || "";
           const userName = cloudData.name || "無名氏";
 
-          welcomeEl.innerHTML = ""; // 先清空
+          welcomeEl.innerHTML = ""; 
+          welcomeEl.className = "welcome-msg"; // 重置 Class
+
+          // --- 建立發光文字包裹層 ---
+          const textWrapper = document.createElement('span');
+          textWrapper.style.position = "relative";
+          textWrapper.style.zIndex = "5";
 
           if (titleText) {
             const titleSpan = document.createElement('span');
             titleSpan.textContent = `【${titleText}】`;
             titleSpan.className = "player-title";
-
-            // 根據文字內容自動上色 (你可以依需求增加更多判斷)
+            
+            // 顏色判斷
             if (titleText.includes("賭神") || titleText.includes("富可敵國")) titleSpan.classList.add("t-red");
             else if (titleText.includes("梟雄") || titleText.includes("傳奇")) titleSpan.classList.add("t-orange");
             else if (titleText.includes("土豪") || titleText.includes("千金") || titleText.includes("少爺")) titleSpan.classList.add("t-purple");
             else titleSpan.classList.add("t-blue");
-
-            welcomeEl.appendChild(titleSpan);
+            
+            textWrapper.appendChild(titleSpan);
           }
 
           const nameSpan = document.createElement('span');
           nameSpan.textContent = userName;
-          welcomeEl.appendChild(nameSpan);
+          textWrapper.appendChild(nameSpan);
+          welcomeEl.appendChild(textWrapper);
 
-          // 後續 Class 處理維持原樣
-          welcomeEl.className = "welcome-msg";
+          // --- 套用特效 ---
           if (fxClass) {
-            welcomeEl.classList.add(fxClass);
-            welcomeEl.style.display = "inline-block";
-            welcomeEl.style.padding = "8px 25px";
-            welcomeEl.style.borderRadius = "25px";
-            welcomeEl.style.position = "relative";
-            welcomeEl.style.contain = "paint";
-            welcomeEl.style.zIndex = "1";
-            welcomeEl.style.color = "#fff";
-          }
+    welcomeEl.classList.add(fxClass);
+    welcomeEl.style.display = "inline-block";
+    
+    // 如果是至尊傳奇，額外加入能量脈衝背景與粒子
+    // 在 checkUserStatus 內部的粒子生成部分
+if (fxClass === 'fx-ultimate-legend') {
+        if (window.ultTimer) clearInterval(window.ultTimer);
+        window.ultTimer = setInterval(() => {
+            // 【關鍵修改】掃描畫面上所有的至尊傳奇容器（包含首頁與排行榜）
+            const targets = document.querySelectorAll('.fx-ultimate-legend');
+            
+            targets.forEach(target => {
+                for(let i=0; i<1; i++) { // 每個容器噴 1 個，維持效能
+                    const sp = document.createElement('div');
+                    sp.className = 'ult-flame';
+                    
+                    // 起始位置設在該容器的中心
+                    sp.style.left = '50%';
+                    sp.style.top = '50%';
+                    
+                    const angle = Math.random() * Math.PI * 2;
+                    const tx = Math.cos(angle) * 60 + 'px'; // 擴散距離稍微縮小，避免排行榜爆框
+                    const ty = Math.sin(angle) * 60 + 'px';
+                    
+                    sp.style.setProperty('--tx', tx);
+                    sp.style.setProperty('--ty', ty);
+                    
+                 
+                    sp.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    sp.style.boxShadow = `0 0 8px ${sp.style.background}`;
+                    
+                    // 【關鍵修改】直接加到目前的 target 裡面
+                    target.appendChild(sp);
+                    
+                    setTimeout(() => sp.remove(), 1000);
+                }
+            });
+        }, 80); // 稍微調慢頻率，兼顧手機版效能與多重顯示
+    }
+}
 
           updateMainBalance();
         } else {
@@ -1662,12 +2252,6 @@
         }
       } catch (e) {
         console.error("Firebase 連線失敗", e);
-        const localName = localStorage.getItem('player_name');
-        if (localName) {
-          document.getElementById('welcomeUser').textContent = `歡迎回來(離線)，${localName}`;
-        } else {
-          document.getElementById('nameModal').style.display = 'flex';
-        }
         updateMainBalance();
       }
     }
