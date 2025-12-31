@@ -217,7 +217,7 @@
   const CONFIGS = {
     small: { price: 10000, prizes: [10000, 200000, 500000, 1000000], winRate: 0.35, desc: "對中幸運號碼即中獎" },
     mid: { price: 50000, prizes: [50000, 100000, 200000, 500000, 5000000], winRate: 0.33, desc: "搜集 🐲 或 🧧" },
-    big: { price: 500000, prizes: [500000, 1000000,5000000, 10000000], winRate: 0.3, desc: "三同金額或刮出👑即中" },
+    big: { price: 500000, prizes: [500000, 1000000,5000000, 10000000, 50000000], winRate: 0.3, desc: "三同金額或刮出👑即中" },
     xmas: { price: 1000000, prizes: [5000000,10000000, 100000000], winRate: 0.32, desc: "集齊聖誕老人隊伍" },
     newyear: { price: 2026000, prizes: [202600, 2026000, 20260000, 202600000], winRate: 0.3, desc: "里程達標即點亮獎金" }
   };
@@ -287,29 +287,52 @@
       const syms = ['🎋', '🏮', '🍊', '🧨'];
       let count = isWin ? Math.floor(Math.random() * 2) + 1 : 0;
       if(isWin) winAmount = currentConfig.prizes[Math.floor(Math.random() * currentConfig.prizes.length)];
+      
       let items = [];
       for(let i=0; i<6; i++) {
-        if(i < count) items.push({s:'🐲', p:winAmount/count, w:true});
-        else items.push({s:syms[Math.floor(Math.random()*syms.length)], p:0, w:false});
+        // 隨機選一個獎金顯示在格子上，讓沒中獎的格子也有數字
+        let randomPrize = currentConfig.prizes[Math.floor(Math.random() * currentConfig.prizes.length)];
+        
+        if(i < count) {
+          items.push({s:'🐲', p: winAmount/count, w:true});
+        } else {
+          items.push({s:syms[Math.floor(Math.random()*syms.length)], p: randomPrize, w:false});
+        }
       }
       items.sort(()=>Math.random()-0.5);
-      html = items.map(it => `<div class="prize-item ${it.w?'win-mark':''}"><h3>${it.s}</h3><span class="prize-amount">${it.p>0?'$'+it.p.toLocaleString():''}</span></div>`).join('');
-    } 
+      // 修改這裡：讓所有 it.p 都能顯示出來
+      html = items.map(it => `<div class="prize-item ${it.w?'win-mark':''}"><h3>${it.s}</h3><span class="prize-amount">$${it.p.toLocaleString()}</span></div>`).join('');
+    }
     else if (currentType === 'big') {
       container.classList.add('layout-symbols');
       const isCrown = isWin && Math.random() > 0.7;
       if(isWin) winAmount = currentConfig.prizes[Math.floor(Math.random() * currentConfig.prizes.length)];
+      
       let items = [];
       if(isCrown) {
+        // 皇冠即中
         items.push({s:'👑', p:winAmount, w:true});
         while(items.length < 6) items.push({s:'🧧', p:currentConfig.prizes[0], w:false});
       } else if(isWin) {
+        // 真的中獎：給三個一樣的金額
         for(let i=0; i<3; i++) items.push({s:'🧧', p:winAmount, w:true});
-        while(items.length < 6) items.push({s:'🧧', p:currentConfig.prizes[0], w:false});
+        // 剩下三格要確保「不等於」中獎金額，避免混淆
+        while(items.length < 6) {
+          let p = currentConfig.prizes[Math.floor(Math.random() * currentConfig.prizes.length)];
+          if(p !== winAmount) items.push({s:'🧧', p:p, w:false});
+        }
       } else {
-        let p1 = currentConfig.prizes[0], p2 = currentConfig.prizes[1];
-        for(let i=0; i<6; i++) items.push({s:'🧧', p:i%2?p1:p2, w:false});
-      }
+  // 沒中獎：從你的 prizes 陣列中隨機取出金額，且每種金額最多只放兩個
+  let availablePrizes = [...currentConfig.prizes];
+  // 隨機打亂獎金池
+  availablePrizes.sort(() => Math.random() - 0.5);
+  
+  items = [
+    {s:'🧧', p:availablePrizes[0], w:false}, {s:'🧧', p:availablePrizes[0], w:false},
+    {s:'🧧', p:availablePrizes[1], w:false}, {s:'🧧', p:availablePrizes[1], w:false},
+    {s:'🧧', p:availablePrizes[2] % availablePrizes.length, w:false}, {s:'🧧', p:availablePrizes[2] % availablePrizes.length, w:false}
+  ];
+}
       items.sort(()=>Math.random()-0.5);
       html = items.map(it => `<div class="prize-item ${it.w?'win-mark':''}" data-val="${it.p}"><h3>${it.s}</h3><span class="prize-amount">$${it.p.toLocaleString()}</span></div>`).join('');
     }
