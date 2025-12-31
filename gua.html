@@ -572,18 +572,32 @@ function startNewGame() {
   });
 }
 
-  function handleScratch(e) {
+ function handleScratch(e) {
     if (!isDrawing || isScratched) return;
     e.preventDefault();
     const rect = canvas.getBoundingClientRect();
     const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
     const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+
+    // --- 關鍵修改：從圓圈改為連線 ---
     ctx.globalCompositeOperation = 'destination-out';
-    ctx.beginPath(); ctx.arc(x, y, 35, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath();
+    ctx.lineWidth = 70;         // 刮出的寬度 (原本 arc 半徑 35，直徑就是 70)
+    ctx.lineCap = 'round';      // 讓線條轉角圓滑
+    ctx.lineJoin = 'round';     // 讓線條連接處圓滑
+    
+    // 從上次的點連到現在的點
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+
+    // 更新最後座標
+    [lastX, lastY] = [x, y];
+    
     scratchPointCount++; 
-  if (scratchPointCount > 250) { // 手機滑動約 3-5 下會達到此值
-    revealCard();
-  }
+    if (scratchPointCount > 250) { 
+      revealCard();
+    }
   }
 
 
@@ -623,10 +637,24 @@ function startNewGame() {
   function reBuy() { startNewGame(); }
   function backToLobby() { document.getElementById('lobby').style.display = 'flex'; document.getElementById('gameRoom').style.display = 'none'; }
 
-  canvas.addEventListener('mousedown', (e) => { isDrawing = true; handleScratch(e); });
+  canvas.addEventListener('mousedown', (e) => { 
+    isDrawing = true; 
+    const rect = canvas.getBoundingClientRect();
+    // 紀錄起始點，防止噴線
+    lastX = (e.clientX - rect.left);
+    lastY = (e.clientY - rect.top);
+    handleScratch(e); 
+  });
   window.addEventListener('mouseup', () => isDrawing = false);
   canvas.addEventListener('mousemove', handleScratch);
-  canvas.addEventListener('touchstart', (e) => { isDrawing = true; handleScratch(e); });
+  canvas.addEventListener('touchstart', (e) => { 
+    isDrawing = true; 
+    const rect = canvas.getBoundingClientRect();
+    // 紀錄起始點，防止噴線
+    lastX = (e.touches[0].clientX - rect.left);
+    lastY = (e.touches[0].clientY - rect.top);
+    handleScratch(e); 
+  });
   canvas.addEventListener('touchmove', handleScratch);
   window.addEventListener('touchend', () => isDrawing = false);
 
