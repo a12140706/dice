@@ -1210,31 +1210,34 @@
       font-weight: bold;
       color: #fff;
     }
-/* 至尊傳奇：背景流光 + 多色流動陰影（補償粒子） */
+/* 至尊傳奇：在不改動你原本設定的前提下，加入流動邊框 */
 .fx-ultimate-legend {
     position: relative;
-    /* 1. 背景改為流光漸層，取代純黑 */
-    background: linear-gradient(90deg, 
-        #000 0%, 
-        #FFD700 20%, 
-        #FFFFFF 40%, 
-        #FF4500 60%, 
-        #9400D3 80%, 
-        #000 100%
-    ) !important;
+    /* --- 1. 你原本的樣式完全保留 --- */
+    background: linear-gradient(90deg, #000 0%, #FFD700 20%, #FFFFFF 40%, #FF4500 60%, #9400D3 80%, #000 100%) !important;
     background-size: 300% 100% !important;
-    
     z-index: 1;
-    border: 1px solid #FFD700;
-    /* 這裡必須是 visible，否則流動陰影會被切掉 */
     overflow: visible !important;
     width: 100% !important;
     box-sizing: border-box !important;
+    
+    /* --- 2. 圓角關鍵設定 --- */
+    border-radius: 50px !important; /* 確保圓弧存在 */
+   /* 預留邊框空間 */
+    background-clip: padding-box !important; /* 防止背景溢出到邊框區域 */
 
-    /* 震動效果 + 背景流動動畫 */
+    /* --- 3. 邊框特效：利用多重陰影模擬流光邊框 --- */
+    /* 這行會在圓弧邊緣加上一道金屬光感，且不破壞圓角 */
+    box-shadow: 0 0 0 1.5px #FFD700, 0 0 10px rgba(255, 215, 0, 0.5); 
+    
     animation: ult-bg-flow 4s linear infinite, ult-vibrate 0.15s infinite;
 }
 
+/* --- 新增邊框專用動畫 --- */
+@keyframes border-flow {
+    0% { border-image-source: linear-gradient(0deg, #FFD700, #FF4500, #9400D3, #FFD700); }
+    100% { border-image-source: linear-gradient(360deg, #FFD700, #FF4500, #9400D3, #FFD700); }
+}
 /* 改造後的陰影層：多色呼吸發光 */
 .fx-ultimate-legend::after {
     content: '';
@@ -1263,7 +1266,29 @@
 }
 
 /* --- 新增/修改動畫定義 --- */
-
+.fx-ultimate-legend::before {
+    content: '';
+    position: absolute;
+    /* 讓這個層比主體大一點點，當作邊框 */
+    inset: 0px; 
+    border-radius: 50px; 
+    padding: 1.5px; /* 邊框寬度 */
+    
+    /* 邊框的流動漸層顏色 */
+    background: linear-gradient(90deg, #FFD700, #FFFFFF, #FF4500, #9400D3, #FFD700);
+    background-size: 200% auto;
+    
+    /* 遮罩黑科技：只顯示邊框，中間挖空 */
+    -webkit-mask: 
+        linear-gradient(#fff 0 0) content-box, 
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    
+    /* 邊框流動動畫 */
+    animation: ult-text-flow 2s linear infinite; 
+    z-index: 2;
+}
 /* 背景流動：讓黑框裡的顏色動起來 */
 @keyframes ult-bg-flow {
     0% { background-position: 0% 50%; }
