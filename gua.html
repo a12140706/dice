@@ -464,58 +464,74 @@
     checkProgress();
   }
 
-  function checkProgress() {
+ function checkProgress() {
     const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-    let count = 0; 
-    for (let i = 3; i < data.length; i += 200) if (data[i] === 0) count++;
-    if (count > (data.length / 1000)) revealCard(); 
+    let clearedCount = 0;
+    const step = 80; // 採樣步長，兼顧效能與精準度
+    
+    for (let i = 3; i < data.length; i += step) {
+      if (data[i] === 0) clearedCount++;
+    }
+
+    // 計算刮開比例：當採樣點中超過 45% 是透明時，觸發結算
+    const totalSamplePoints = data.length / step;
+    if (clearedCount > totalSamplePoints * 0.45) {
+      revealCard();
+    }
   }
 
-  async function revealCard() { // 注意：這裡前面要加 async，才能配合 await syncToFirebase
+  async function revealCard() {
     if(isScratched) return;
     isScratched = true; 
-    canvas.style.opacity = '0';
-    document.getElementById('quickBuyBtn').disabled = false;
     
-    // 1. 馬年亮燈邏輯 (原本的)
-    if (currentType === 'newyear') {
-      const goals = [100, 250, 500, 1000];
-      goals.forEach(g => {
-        if (currentNewYearTotalKM >= g) document.getElementById(`goal-${g}`).classList.add('goal-active');
-      });
+    // --- 優先處理 UI，確保玩家不會卡住 ---
+    canvas.style.opacity = '0';
+    const quickBuyBtn = document.getElementById('quickBuyBtn');
+    if (quickBuyBtn) quickBuyBtn.disabled = false; // 立即恢復按鈕功能
+    
+    // --- 亮燈邏輯 (加入錯誤保護，避免 ID 沒對到導致程式中斷) ---
+    try {
+      if (currentType === 'newyear') {
+        const goals = [100, 250, 500, 1000];
+        goals.forEach(g => {
+          const el = document.getElementById(`goal-${g}`);
+          if (currentNewYearTotalKM >= g && el) el.classList.add('goal-active');
+        });
+      }
+
+      if (currentType === 'xmas') {
+        const winLvAttr = document.getElementById('cardContent').dataset.winLevel;
+        const level = parseInt(winLvAttr || 0);
+        for (let i = 1; i <= 3; i++) {
+          const el = document.getElementById(`xmas-house-${i}`);
+          if (level >= i && el) el.classList.add('goal-active');
+        }
+      }
+    } catch (e) {
+      console.warn("亮燈動畫執行異常，但不影響結算:", e);
     }
 
-    // 2. 聖誕亮燈邏輯 (原本的)
-    if (currentType === 'xmas') {
-      const level = parseInt(document.getElementById('cardContent').dataset.winLevel);
-      if (level >= 1) document.getElementById('xmas-house-1').classList.add('goal-active');
-      if (level >= 2) document.getElementById('xmas-house-2').classList.add('goal-active');
-      if (level === 3) document.getElementById('xmas-house-3').classList.add('goal-active');
-    }
-
-    // 3. 獎金結算與 Firebase 同步 (你要加的地方)
+    // --- 獎金結算與同步 ---
     if (winAmount > 0) {
       balance += winAmount; 
-      updateUI(); // 這裡面已經有 saveToLocal()
+      updateUI(); 
       
       if(!isMuted) {
           const snd = document.getElementById('sndWin');
           if(snd) snd.play().catch(()=>{});
       }
 
-      // 特效：讓中獎格閃爍
+      // 中獎特效
       document.querySelectorAll('.win-mark, .xmas-member').forEach(el => el.classList.add('item-win'));
       
-      // --- Firebase 同步重點 ---
-      // 如果中了超過 500 萬的大獎，立即強制同步一次，確保紀錄不遺失
+      // 大獎用 await 強制同步，小獎在背景執行
       if (winAmount >= 5000000) {
         await syncToFirebase(); 
       } else {
-        // 小獎的話可以背景同步就好
         syncToFirebase();
       }
     } else {
-      // 沒中獎也同步一次餘額 (因為買卡扣了錢)
+      // 沒中獎也要同步 (因為 startNewGame 扣了錢)
       syncToFirebase();
     }
   }
