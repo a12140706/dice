@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
-<title>彩券行</title>
+<title>2026 賀歲彩券行</title>
 <style>
   :root {
     --gold: #ffd86b; --red: #ff4757; --bg-red: #b33939; --win-green: #2ecc71;
@@ -24,11 +24,11 @@
   .balance-box { background: rgba(0,0,0,0.5); border: 1px solid var(--gold); border-radius: 15px; padding: 4px 12px; color: var(--gold); font-weight: bold; font-size: 16px; }
 
   /* 櫃台介面 */
-  #lobby { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; padding: 20px; overflow-y: auto; }
+  #lobby { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 12px; padding: 20px; overflow-y: auto; }
   .card-option {
     width: 100%; max-width: 320px; background: #fff; color: #333; border-radius: 15px;
-    padding: 20px; display: flex; align-items: center; box-shadow: 0 8px 15px rgba(0,0,0,0.4);
-    border-left: 10px solid var(--gold); position: relative; cursor: pointer;
+    padding: 15px; display: flex; align-items: center; box-shadow: 0 8px 15px rgba(0,0,0,0.4);
+    border-left: 10px solid var(--gold); position: relative; cursor: pointer; flex-shrink: 0;
   }
   .price-tag { position: absolute; top: -10px; right: 10px; background: #e67e22; color: #fff; padding: 2px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; }
 
@@ -43,14 +43,42 @@
   }
 
   .card-content { width: 100%; height: 100%; display: grid; padding: 10px; gap: 5px; background: #fff; }
-  
-  /* 財神到 佈局 */
   .layout-numbers { grid-template-rows: 1fr 2.5fr; }
+  .layout-symbols { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, 1fr); }
+
+  /* 馬年特效樣式 */
+  .goal-item { background: rgba(0,0,0,0.4); border: 1px solid #777; border-radius: 8px; padding: 4px; text-align: center; transition: all 0.4s ease; }
+  .goal-active { 
+    background: linear-gradient(145deg, #ff4757, #b33939) !important; 
+    border-color: #f1c40f !important; 
+    box-shadow: 0 0 15px #ff4757; 
+    transform: scale(1.05);
+    animation: flash 1s infinite alternate;
+  }
+  /* 點亮目標的紅火特效 */
+.goal-active { 
+  background: linear-gradient(145deg, #ff4757, #b33939) !important; 
+  border: 2px solid #ffd86b !important; 
+  box-shadow: 0 0 20px #ff4757; 
+  transform: scale(1.05);
+  animation: houseFlash 0.8s infinite alternate;
+  z-index: 5;
+}
+@keyframes houseFlash {
+  from { filter: brightness(1); }
+  to { filter: brightness(1.5); }
+}
+
+/* 中獎格子的閃爍 */
+.item-win { 
+  background: #fff3cd !important; 
+  border: 2px solid #2ecc71 !important; 
+  animation: pulse 0.6s infinite; 
+}
+  @keyframes flash { from { opacity: 0.8; } to { opacity: 1; box-shadow: 0 0 20px #ffd86b; } }
+
   .lucky-zone { border-bottom: 2px dashed #e67e22; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fff9f0; }
   .number-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, 1fr); gap: 8px; padding-top: 10px; }
-  
-  /* 金龍 & 紅包 佈局 */
-  .layout-symbols { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, 1fr); }
 
   .prize-item { display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fefefe; border: 1px solid #eee; border-radius: 8px; color: #333; }
   .prize-amount { font-size: 14px; font-weight: bold; color: #d63031; }
@@ -67,227 +95,442 @@
   @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.03); } 100% { transform: scale(1); } }
 </style>
 </head>
-<body>
+  <body>
 
-<div class="topbar">
-  <div class="sound-toggle" onclick="toggleMute()" id="soundIcon">🔊</div>
-  <div class="sound-toggle" onclick="cycleBGM()" id="bgmBtn">🎵 音樂 1</div>
-  <div class="balance-box">💎 <span id="balanceText">0</span></div>
-  <a href="index.html" style="text-decoration:none;"><button style="background:none; border:1px solid #777; color:#ccc; padding:5px; border-radius:5px;">🏠</button></a>
-</div>
+  <div class="topbar">
+    <div class="sound-toggle" onclick="toggleMute()" id="soundIcon">🔊</div>
+    <div class="sound-toggle" onclick="cycleBGM()" id="bgmBtn">🎵 音樂 1</div>
+    <div class="balance-box">💎 <span id="balanceText">0</span></div>
+    <a href="index.html" style="text-decoration:none;"><button style="background:none; border:1px solid #777; color:#ccc; padding:5px; border-radius:5px;">🏠</button></a>
+  </div>
 
-<div id="lobby">
-  <h2 style="color:var(--gold); margin-bottom: 10px;">🧧 挑選刮刮樂</h2>
-  <div class="card-option" onclick="selectCard('small')">
-    <div class="price-tag">$100</div>
-    <div><h3>💰 財神到</h3><p style="font-size:12px;color:#666">幸運號碼對中即得獎金</p></div>
-  </div>
-  <div class="card-option" onclick="selectCard('mid')">
-    <div class="price-tag">$500</div>
-    <div><h3>🐲 金龍賀歲</h3><p style="font-size:12px;color:#666">刮出 🧧 或 🐲 中獎</p></div>
-  </div>
-  <div class="card-option" onclick="selectCard('big')">
-    <div class="price-tag">$5000</div>
-    <div><h3>🧧 億元大紅包</h3><p style="font-size:12px;color:#666">三個相同金額即中獎</p></div>
-  </div>
-</div>
-
-<div id="gameRoom">
-  <div id="gameRuleDesc">玩法說明</div>
-  <div class="scratch-card-container">
-    <div class="scratch-card">
-      <div id="cardContent" class="card-content"></div>
-      <canvas id="scratchCanvas" width="320" height="420"></canvas>
+  <div id="lobby">
+    <h2 style="color:var(--gold); margin-bottom: 10px;">🧧 挑選刮刮樂</h2>
+    <div class="card-option" onclick="selectCard('small')">
+      <div class="price-tag">$10,000</div>
+      <div><h3>💰 財神到</h3><p style="font-size:12px;color:#666">對中幸運號碼即中獎</p></div>
+    </div>
+    <div class="card-option" onclick="selectCard('mid')">
+      <div class="price-tag">$50,000</div>
+      <div><h3>🐲 金龍賀歲</h3><p style="font-size:12px;color:#666">搜集 🐲 或 🧧 中大獎</p></div>
+    </div>
+    <div class="card-option" onclick="selectCard('big')">
+      <div class="price-tag">$500,000</div>
+      <div><h3>🧧 大紅包</h3><p style="font-size:12px;color:#666">三同金額或刮出👑即中</p></div>
+    </div>
+    <div class="card-option" onclick="selectCard('xmas')" style="background: #eb4d4b; color: white;">
+      <div class="price-tag" style="background: #27ae60;">$1,000,000</div>
+      <div><h3>🎄聖誕禮物</h3><p style="font-size:12px;color:#eee">集齊聖誕老人隊伍</p></div>
+    </div>
+    <div class="card-option" onclick="selectCard('newyear')" style="background: #d63031; color: white;">
+      <div class="price-tag" style="background: #f1c40f; color: #000;">$2,026,000</div>
+      <div><h3>🐎新年快樂</h3><p style="font-size:12px;color:#fff">超越里程拿獎金</p></div>
     </div>
   </div>
-  <div class="button-group">
-    <button class="btn btn-secondary" onclick="backToLobby()">回櫃台</button>
-    <button class="btn" id="quickBuyBtn" onclick="reBuy()" disabled>再刮一張</button>
+
+  <div id="gameRoom">
+    <div id="gameRuleDesc">玩法說明</div>
+    <div class="scratch-card-container">
+      <div class="scratch-card">
+        <div id="cardContent" class="card-content"></div>
+        <canvas id="scratchCanvas" width="320" height="420"></canvas>
+      </div>
+    </div>
+    <div class="button-group">
+      <button class="btn btn-secondary" onclick="backToLobby()">回櫃台</button>
+      <button class="btn" id="quickBuyBtn" onclick="reBuy()" disabled>再刮一張</button>
+    </div>
   </div>
-</div>
 
-<audio id="sndWin" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="auto"></audio>
-<audio id="bgm1" src="background-music-434612.mp3" loop preload="auto"></audio>
-<audio id="bgm2" src="soft-background-music-427252.mp3" loop preload="auto"></audio>
-<audio id="bgm3" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" loop preload="auto"></audio>
+  <audio id="sndWin" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="auto"></audio>
+  <audio id="bgm1" src="background-music-434612.mp3" loop preload="auto"></audio>
+  <audio id="bgm2" src="soft-background-music-427252.mp3" loop preload="auto"></audio>
+  <audio id="bgm3" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" loop preload="auto"></audio>
 
-<script>
-let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
-let currentConfig = null, isDrawing = false, isScratched = false, winAmount = 0, currentType = '';
-let isMuted = false, currentBgmIdx = 1;
-const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
-const canvas = document.getElementById('scratchCanvas'), ctx = canvas.getContext('2d');
-
-const CONFIGS = {
-  small: { price: 10000, prizes: [100, 200, 500, 1000, 2000], winRate: 0.35, desc: "對中幸運號碼即中獎" },
-  mid: { price: 50000, prizes: [500, 1000, 2000, 5000, 10000, 500000], winRate: 0.33, desc: "刮出 🧧 或 🐲 即中獎" },
-  big: { price: 500000, prizes: [50000, 500000, 1000000, 10000000, 100000000], winRate: 0.3, desc: "三個相同金額即中獎" }
-};
-
-function updateUI() { 
-  document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString(); 
-  localStorage.setItem('sicbo_balance', balance); 
-}
-
-// --- 音效與音樂邏輯 ---
-function stopAllBGM() { bgmList.forEach(id => { if(id) { const a = document.getElementById(id); a.pause(); a.currentTime = 0; } }); }
-function cycleBGM() {
-    stopAllBGM(); currentBgmIdx = (currentBgmIdx + 1) % 4;
-    const btn = document.getElementById('bgmBtn');
-    if (currentBgmIdx === 0) btn.textContent = '🚫 音樂關';
-    else { btn.textContent = '🎵 音樂 ' + currentBgmIdx; if (!isMuted) { const bgm = document.getElementById(bgmList[currentBgmIdx]); if(bgm) { bgm.volume = 0.3; bgm.play().catch(()=>{}); } } }
-}
-function toggleMute() {
-    isMuted = !isMuted; document.getElementById('soundIcon').textContent = isMuted ? '🔇' : '🔊';
-    if (isMuted) stopAllBGM();
-    else if (currentBgmIdx !== 0) { const bgm = document.getElementById(bgmList[currentBgmIdx]); if(bgm) bgm.play().catch(()=>{}); }
-}
-
-function selectCard(type) {
-  currentType = type; currentConfig = CONFIGS[type];
-  if(balance < currentConfig.price) { alert("餘額不足！"); return; }
-  document.getElementById('lobby').style.display = 'none';
-  document.getElementById('gameRoom').style.display = 'flex';
-  document.getElementById('gameRuleDesc').textContent = currentConfig.desc;
-  startNewGame();
-}
-
-function startNewGame() {
-  if(balance < currentConfig.price) { alert("餘額不足！"); backToLobby(); return; }
-  balance -= currentConfig.price; updateUI();
-  isScratched = false; winAmount = 0; canvas.style.opacity = '1';
-  document.getElementById('quickBuyBtn').disabled = true;
-  generateCardLayout();
-  initScratchLayer();
-}
-
-function generateCardLayout() {
-  const container = document.getElementById('cardContent');
-  container.className = 'card-content';
-  const isWin = Math.random() < currentConfig.winRate;
-  let html = '';
-
-  if (currentType === 'small') {
-    container.classList.add('layout-numbers');
-    const luckyNum = Math.floor(Math.random() * 90) + 10;
-    html = `<div class="lucky-zone"><span style="font-size:12px;color:#666">幸運號碼</span><span style="font-size:40px;font-weight:bold;color:#d63031">${luckyNum}</span></div><div class="number-grid">`;
-    
-    let winPos = isWin ? Math.floor(Math.random() * 6) : -1;
-    if(isWin) winAmount = currentConfig.prizes[Math.floor(Math.random() * currentConfig.prizes.length)];
-
-    for(let i=0; i<6; i++) {
-      let n = Math.floor(Math.random() * 90) + 10;
-      let p = currentConfig.prizes[Math.floor(Math.random() * 3)]; // 隨機顯示金額
-      if (i === winPos) { n = luckyNum; p = winAmount; }
-      else if (n === luckyNum) n++;
-      
-      html += `<div class="prize-item ${i === winPos ? 'win-mark' : ''}">
-                <span style="font-size:22px;font-weight:bold">${n}</span>
-                <span class="prize-amount">$${p.toLocaleString()}</span>
-               </div>`;
-    }
-    html += `</div>`;
-  } 
-  else if (currentType === 'mid') {
-    container.classList.add('layout-symbols');
-    const symbols = ['🎋', '🏮', '🍊', '🧨', '💰', '🔥', '☁️', '🔔'];
-    const winSymbols = ['🧧', '🐲'];
-    let winPos = isWin ? Math.floor(Math.random() * 6) : -1;
-    if(isWin) winAmount = currentConfig.prizes[Math.floor(Math.random() * currentConfig.prizes.length)];
-
-    for(let i=0; i<6; i++) {
-      let s = symbols[Math.floor(Math.random()*symbols.length)];
-      let p = currentConfig.prizes[Math.floor(Math.random() * 3)];
-      if (i === winPos) { s = winSymbols[Math.floor(Math.random()*2)]; p = winAmount; }
-      html += `<div class="prize-item ${i === winPos ? 'win-mark' : ''}">
-                <span class="prize-symbol">${s}</span>
-                <span class="prize-amount">$${p.toLocaleString()}</span>
-               </div>`;
-    }
-  } 
-  else { // big (百萬大紅包: 三個相同即中獎)
-    container.classList.add('layout-symbols');
-    winAmount = isWin ? currentConfig.prizes[Math.floor(Math.random() * currentConfig.prizes.length)] : 0;
-    let items = [];
-    if(isWin) {
-      for(let i=0; i<3; i++) items.push(winAmount);
-      while(items.length < 6) {
-        let p = currentConfig.prizes[Math.floor(Math.random()*currentConfig.prizes.length)];
-        if(p !== winAmount) items.push(p);
-      }
-    } else {
-      let pool = [];
-      currentConfig.prizes.forEach(p => { pool.push(p, p); }); // 每個金額最多出現兩次
-      for(let i=0; i<6; i++) {
-        let idx = Math.floor(Math.random() * pool.length);
-        items.push(pool.splice(idx, 1)[0]);
-      }
-    }
-    items.sort(()=>Math.random()-0.5);
-    html = items.map(p => `<div class="prize-item" data-val="${p}"><span class="prize-symbol">🧧</span><span class="prize-amount">$${p.toLocaleString()}</span></div>`).join('');
+  <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore-compat.js"></script>
+  <script>
+    const _k = ["AIzaSyDSRfVA", "uWCWCUd1NJop", "J6wHvsqsAM4UzJA"];
+  const firebaseConfig = {
+    apiKey: _k.join(''),
+    authDomain: "game-80d68.firebaseapp.com",
+    projectId: "game-80d68",
+    storageBucket: "game-80d68.firebasestorage.app",
+    messagingSenderId: "636332967920",
+    appId: "1:636332967920:web:29e5600daf4db0ab613f35",
+    measurementId: "G-MJZ4PGEHSQ"
+  };
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
   }
-  container.innerHTML = html;
-}
+  const db = firebase.firestore();
+  let balance = parseFloat(localStorage.getItem('sicbo_balance'));
+  let lastSyncedBalance = balance;
+  let currentConfig = null, isDrawing = false, isScratched = false, winAmount = 0, currentType = '';
+  let isMuted = false, currentBgmIdx = 1;
+  let currentNewYearTotalKM = 0; 
+  const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
+  const canvas = document.getElementById('scratchCanvas'), ctx = canvas.getContext('2d');
 
-function initScratchLayer() {
-  ctx.globalCompositeOperation = 'source-over';
-  const g = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-  g.addColorStop(0, '#d4af37'); g.addColorStop(0.5, '#f1c40f'); g.addColorStop(1, '#b38b00');
-  ctx.fillStyle = g; ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.font = "bold 40px Arial"; ctx.textAlign = "center";
-  ctx.fillText("刮開區", canvas.width/2, canvas.height/2 + 15);
-}
+  function saveToLocal() {
+    localStorage.setItem('sicbo_balance', balance);
+  }
 
-function handleScratch(e) {
-  if (!isDrawing || isScratched) return;
-  e.preventDefault();
-  const rect = canvas.getBoundingClientRect();
-  const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-  const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-  ctx.globalCompositeOperation = 'destination-out';
-  ctx.beginPath(); ctx.arc(x, y, 35, 0, Math.PI * 2); ctx.fill();
-  checkProgress();
-}
+  async function syncToFirebase() {
+    const playerId = localStorage.getItem('player_id');
+    if (!playerId || !db || balance === lastSyncedBalance) return;
 
-function checkProgress() {
-  const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-  let count = 0; 
-  for (let i = 3; i < data.length; i += 120) if (data[i] === 0) count++;
-  if (count > (data.length / 550)) revealCard(); // 刮開約 50% 自動全開
-}
-
-function revealCard() {
-  if(isScratched) return;
-  isScratched = true; canvas.style.opacity = '0';
-  document.getElementById('quickBuyBtn').disabled = false;
-  if (winAmount > 0) {
-    balance += winAmount; updateUI();
-    if(!isMuted) document.getElementById('sndWin').play().catch(()=>{});
-    
-    // 顯示中獎視覺效果
-    if(currentType === 'big') {
-      const items = document.querySelectorAll('.prize-item');
-      items.forEach(el => {
-        if(el.getAttribute('data-val') == winAmount) el.classList.add('item-win');
+    try {
+      await db.collection("users").doc(playerId).update({
+        balance: balance,
+        lastUpdate: firebase.firestore.Timestamp.now()
       });
-    } else {
-      document.querySelectorAll('.win-mark').forEach(el => el.classList.add('item-win'));
+      lastSyncedBalance = balance;
+      console.log("✅ 餘額已同步至雲端");
+    } catch (e) {
+      console.error("❌ 雲端同步失敗", e);
     }
   }
-}
 
-function reBuy() { startNewGame(); }
-function backToLobby() { document.getElementById('lobby').style.display = 'flex'; document.getElementById('gameRoom').style.display = 'none'; }
+  // 畫面加載時從雲端抓取餘額 (保持跟你的麻將例子一致)
+  window.onload = async () => {
+    const localBal = localStorage.getItem('sicbo_balance');
+    if (localBal !== null) balance = parseFloat(localBal);
 
-// 監聽畫布事件
-canvas.addEventListener('mousedown', (e) => { isDrawing = true; handleScratch(e); });
-window.addEventListener('mouseup', () => isDrawing = false);
-canvas.addEventListener('mousemove', handleScratch);
-canvas.addEventListener('touchstart', (e) => { isDrawing = true; handleScratch(e); });
-canvas.addEventListener('touchmove', handleScratch);
-window.addEventListener('touchend', () => isDrawing = false);
+    const playerId = localStorage.getItem('player_id');
+    if (playerId && db) {
+      try {
+        const doc = await db.collection("users").doc(playerId).get();
+        if (doc.exists) {
+          const cloudBal = doc.data().balance;
+          // 如果雲端錢比較多，以雲端為主
+          if (cloudBal !== undefined && cloudBal > balance) {
+            balance = cloudBal;
+            saveToLocal();
+          }
+        }
+      } catch (e) { console.log("離線模式"); }
+    }
+    updateUI();
+  };
+  const CONFIGS = {
+    small: { price: 10000, prizes: [10000, 200000, 500000, 1000000], winRate: 0.35, desc: "對中幸運號碼即中獎" },
+    mid: { price: 50000, prizes: [50000, 100000, 200000, 500000, 5000000], winRate: 0.33, desc: "搜集 🐲 或 🧧" },
+    big: { price: 500000, prizes: [500000, 1000000,5000000, 10000000], winRate: 0.3, desc: "三同金額或刮出👑即中" },
+    xmas: { price: 1000000, prizes: [5000000,10000000, 100000000], winRate: 0.32, desc: "集齊聖誕老人隊伍" },
+    newyear: { price: 2026000, prizes: [202600, 2026000, 20260000, 202600000], winRate: 0.3, desc: "里程達標即點亮獎金" }
+  };
 
-updateUI();
-</script>
-</body>
+  function updateUI() { 
+    document.getElementById('balanceText').textContent = Math.floor(balance).toLocaleString(); 
+    saveToLocal(); // 存本地
+  }
+
+  function stopAllBGM() { bgmList.forEach(id => { if(id) { const a = document.getElementById(id); a.pause(); a.currentTime = 0; } }); }
+  function cycleBGM() {
+      stopAllBGM(); currentBgmIdx = (currentBgmIdx + 1) % 4;
+      const btn = document.getElementById('bgmBtn');
+      if (currentBgmIdx === 0) btn.textContent = '🚫 音樂關';
+      else { btn.textContent = '🎵 音樂 ' + currentBgmIdx; if (!isMuted) { const bgm = document.getElementById(bgmList[currentBgmIdx]); if(bgm) { bgm.volume = 0.3; bgm.play().catch(()=>{}); } } }
+  }
+  function toggleMute() {
+      isMuted = !isMuted; document.getElementById('soundIcon').textContent = isMuted ? '🔇' : '🔊';
+      if (isMuted) stopAllBGM();
+      else if (currentBgmIdx !== 0) { const bgm = document.getElementById(bgmList[currentBgmIdx]); if(bgm) bgm.play().catch(()=>{}); }
+  }
+
+  function selectCard(type) {
+    currentType = type; currentConfig = CONFIGS[type];
+    if(balance < currentConfig.price) { alert("餘額不足！"); return; }
+    document.getElementById('lobby').style.display = 'none';
+    document.getElementById('gameRoom').style.display = 'flex';
+    document.getElementById('gameRuleDesc').textContent = currentConfig.desc;
+    startNewGame();
+  }
+
+  function startNewGame() {
+    if(balance < currentConfig.price) { alert("餘額不足！"); backToLobby(); return; }
+    balance -= currentConfig.price; updateUI();
+    isScratched = false; winAmount = 0; currentNewYearTotalKM = 0; 
+    canvas.style.opacity = '1';
+    document.getElementById('quickBuyBtn').disabled = true;
+    generateCardLayout();
+    initScratchLayer();
+  }
+
+  async function generateCardLayout() {
+    const container = document.getElementById('cardContent');
+    container.className = 'card-content';
+    container.style.background = '#fff';
+    const isWin = Math.random() < currentConfig.winRate;
+    let html = '';
+
+    if (currentType === 'small') {
+      container.classList.add('layout-numbers');
+      const luckyNum = Math.floor(Math.random() * 90) + 10;
+      const multi = Math.random() > 0.8 ? 2 : 1;
+      html = `<div class="lucky-zone"><span>幸運號碼</span><span style="font-size:40px;color:#d63031">${luckyNum}</span>${multi>1?'<b style="color:#e67e22">x2</b>':''}</div><div class="number-grid">`;
+      let winPos = isWin ? Math.floor(Math.random() * 6) : -1;
+      if(isWin) winAmount = currentConfig.prizes[Math.floor(Math.random() * currentConfig.prizes.length)] * multi;
+      for(let i=0; i<6; i++) {
+        let n = Math.floor(Math.random() * 90) + 10;
+        let p = currentConfig.prizes[Math.floor(Math.random() * 3)];
+        if (i === winPos) { n = luckyNum; p = winAmount / multi; } else if (n === luckyNum) n++;
+        html += `<div class="prize-item ${i === winPos ? 'win-mark' : ''}"><span>${n}</span><span class="prize-amount">$${p.toLocaleString()}</span></div>`;
+      }
+      html += `</div>`;
+    } 
+    else if (currentType === 'mid') {
+      container.classList.add('layout-symbols');
+      const syms = ['🎋', '🏮', '🍊', '🧨'];
+      let count = isWin ? Math.floor(Math.random() * 2) + 1 : 0;
+      if(isWin) winAmount = currentConfig.prizes[Math.floor(Math.random() * currentConfig.prizes.length)];
+      let items = [];
+      for(let i=0; i<6; i++) {
+        if(i < count) items.push({s:'🐲', p:winAmount/count, w:true});
+        else items.push({s:syms[Math.floor(Math.random()*syms.length)], p:0, w:false});
+      }
+      items.sort(()=>Math.random()-0.5);
+      html = items.map(it => `<div class="prize-item ${it.w?'win-mark':''}"><h3>${it.s}</h3><span class="prize-amount">${it.p>0?'$'+it.p.toLocaleString():''}</span></div>`).join('');
+    } 
+    else if (currentType === 'big') {
+      container.classList.add('layout-symbols');
+      const isCrown = isWin && Math.random() > 0.7;
+      if(isWin) winAmount = currentConfig.prizes[Math.floor(Math.random() * currentConfig.prizes.length)];
+      let items = [];
+      if(isCrown) {
+        items.push({s:'👑', p:winAmount, w:true});
+        while(items.length < 6) items.push({s:'🧧', p:currentConfig.prizes[0], w:false});
+      } else if(isWin) {
+        for(let i=0; i<3; i++) items.push({s:'🧧', p:winAmount, w:true});
+        while(items.length < 6) items.push({s:'🧧', p:currentConfig.prizes[0], w:false});
+      } else {
+        let p1 = currentConfig.prizes[0], p2 = currentConfig.prizes[1];
+        for(let i=0; i<6; i++) items.push({s:'🧧', p:i%2?p1:p2, w:false});
+      }
+      items.sort(()=>Math.random()-0.5);
+      html = items.map(it => `<div class="prize-item ${it.w?'win-mark':''}" data-val="${it.p}"><h3>${it.s}</h3><span class="prize-amount">$${it.p.toLocaleString()}</span></div>`).join('');
+    }
+    else if (currentType === 'xmas') {
+      // 【🎄 聖誕外送團隊 - 集成員進煙囪版】
+      container.classList.add('layout-symbols');
+      container.style.background = '#16a085'; // 聖誕墨綠
+      container.style.display = 'flex';
+      container.style.flexDirection = 'column';
+
+      const goalPrizes = [currentConfig.prizes[0], currentConfig.prizes[1], currentConfig.prizes[2]];
+      const isWin = Math.random() < currentConfig.winRate;
+
+      // 1. 決定最終中獎等級 (0:不中, 1:紅, 2:綠, 3:金)
+      let winLevel = 0;
+      if (isWin) {
+        let r = Math.random();
+        if (r > 0.9) winLevel = 3;      // 10% 中金房子
+        else if (r > 0.6) winLevel = 2; // 30% 中綠房子
+        else winLevel = 1;              // 60% 中紅房子
+      }
+
+      // 2. 根據中獎等級分配 6 格內容
+      let items = [];
+      if (winLevel === 3) {
+        items = [{s:'🦌'}, {s:'🦌'}, {s:'🛷'}, {s:'🎅'}, {s:'🍭'}, {s:'🍭'}];
+        winAmount = goalPrizes[2];
+      } else if (winLevel === 2) {
+        items = [{s:'🦌'}, {s:'🦌'}, {s:'🛷'}, {s:'☁️'}, {s:'🧊'}, {s:'🍭'}];
+        winAmount = goalPrizes[1];
+      } else if (winLevel === 1) {
+        items = [{s:'🦌'}, {s:'🦌'}, {s:'☁️'}, {s:'🧊'}, {s:'🧊'}, {s:'🍭'}];
+        winAmount = goalPrizes[0];
+      } else {
+        // 沒中獎：故意給 1 隻麋鹿或 1 個雪橇，讓你差一點點
+        items = [{s:'🦌'}, {s:'🛷'}, {s:'☁️'}, {s:'🧊'}, {s:'🧊'}, {s:'🍭'}];
+        winAmount = 0;
+      }
+      items.sort(() => Math.random() - 0.5);
+
+      // 3. 生成 HTML
+      // 上方：煙囪家屋目標區
+      let htmlTop = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:5px; width:100%; margin-bottom:10px;">`;
+      const houseNames = ["紅房子", "綠房子", "金家屋"];
+      const houseIcons = ["🏠", "🏡", "🏰"];
+      const houseReqs = ["🦌x2", "🦌x2+🛷", "🦌x2+🛷+🎅"];
+      
+      houseNames.forEach((name, i) => {
+        htmlTop += `
+          <div class="goal-item" id="xmas-house-${i+1}" style="background:rgba(255,255,255,0.1); border:1px solid #555; border-radius:8px; padding:4px; text-align:center;">
+            <div style="font-size:12px;">${houseIcons[i]}</div>
+            <div style="font-size:8px; color:#fff;">${houseReqs[i]}</div>
+            <div style="font-size:10px; color:#ffd86b; font-weight:bold;">$${(goalPrizes[i]/10000).toLocaleString()}萬</div>
+          </div>`;
+      });
+      htmlTop += `</div>`;
+
+      // 下方：6 格外送成員區
+      let htmlGrid = `<div style="display:grid; grid-template-columns:1fr 1fr; grid-template-rows:repeat(3,1fr); gap:5px; flex:1; width:100%;">`;
+      items.forEach(it => {
+        // 標記有效成員以便後續亮燈判定
+        const isMember = ['🦌', '🛷', '🎅'].includes(it.s);
+        htmlGrid += `
+          <div class="prize-item ${isMember ? 'xmas-member' : ''}" data-symbol="${it.s}" style="background:#fffafa; border:1px solid #27ae60">
+            <span style="font-size:28px;">${it.s}</span>
+            <span style="font-size:9px; color:#27ae60">${isMember ? '外送員' : '干擾'}</span>
+          </div>`;
+      });
+      htmlGrid += `</div>`;
+
+      html = htmlTop + htmlGrid;
+      container.dataset.winLevel = winLevel; // 紀錄中獎等級給 revealCard 用
+    }
+    else if (currentType === 'newyear') {
+      // 【2026 丙午紅馬 - 里程奔騰版】
+      container.classList.add('layout-symbols');
+      container.style.background = '#d63031';
+      container.style.display = 'flex';
+      container.style.flexDirection = 'column';
+
+      const goals = [100, 250, 500, 1000];
+      const goalPrizes = [currentConfig.prizes[0], currentConfig.prizes[1], currentConfig.prizes[2], currentConfig.prizes[3]];
+      
+      // 預算總里程
+      let targetKM = isWin ? (Math.random() > 0.7 ? 1050 : 550) : 120;
+      currentNewYearTotalKM = targetKM; // 存入全域變數方便 revealCard 判定
+
+      // 生成 6 格里程
+      let steps = [];
+      let tempSum = 0;
+      for(let i=0; i<5; i++){
+        let s = Math.floor(Math.random() * (targetKM/3.5));
+        steps.push(s); tempSum += s;
+      }
+      steps.push(Math.max(10, targetKM - tempSum)); 
+      steps.sort(()=>Math.random()-0.5);
+
+      // HTML：上方目標獎金
+      let htmlTop = `<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:4px; width:100%; margin-bottom:10px;">`;
+      goals.forEach((g, i) => {
+        htmlTop += `
+          <div class="goal-item" id="goal-${g}">
+            <div style="font-size:9px; color:#ccc;">${g}km</div>
+            <div style="font-size:10px; color:var(--gold); font-weight:bold;">$${(goalPrizes[i]/10000).toLocaleString()}萬</div>
+          </div>`;
+      });
+      htmlTop += `</div>`;
+
+      // HTML：下方里程格
+      let htmlGrid = `<div style="display:grid; grid-template-columns:1fr 1fr; grid-template-rows:repeat(3,1fr); gap:5px; flex:1; width:100%;">`;
+      steps.forEach((s, idx) => {
+        htmlGrid += `
+          <div class="prize-item" style="background:#fff9f0; border:1px solid #f1c40f">
+            <span style="font-size:24px;">${s >= 150 ? '🐎' : '💨'}</span>
+            <span style="font-size:16px; font-weight:bold; color:#c0392b">+${s}km</span>
+          </div>`;
+      });
+      htmlGrid += `</div>`;
+
+      html = htmlTop + htmlGrid;
+      
+      // 判定最終獎金
+      if(isWin) {
+        if(targetKM >= 1000) winAmount = goalPrizes[3];
+        else if(targetKM >= 500) winAmount = goalPrizes[2];
+        else if(targetKM >= 250) winAmount = goalPrizes[1];
+        else winAmount = goalPrizes[0];
+      } else {
+        winAmount = 0;
+      }
+      
+    }
+    
+    container.innerHTML = html;
+  }
+
+  function initScratchLayer() {
+    ctx.globalCompositeOperation = 'source-over';
+    const g = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    g.addColorStop(0, '#d4af37'); g.addColorStop(0.5, '#f1c40f'); g.addColorStop(1, '#b38b00');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.font = "bold 40px Arial"; ctx.textAlign = "center";
+    ctx.fillText("刮開區", canvas.width/2, canvas.height/2 + 15);
+  }
+
+  function handleScratch(e) {
+    if (!isDrawing || isScratched) return;
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath(); ctx.arc(x, y, 35, 0, Math.PI * 2); ctx.fill();
+    checkProgress();
+  }
+
+  function checkProgress() {
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    let count = 0; 
+    for (let i = 3; i < data.length; i += 200) if (data[i] === 0) count++;
+    if (count > (data.length / 1000)) revealCard(); 
+  }
+
+  async function revealCard() { // 注意：這裡前面要加 async，才能配合 await syncToFirebase
+    if(isScratched) return;
+    isScratched = true; 
+    canvas.style.opacity = '0';
+    document.getElementById('quickBuyBtn').disabled = false;
+    
+    // 1. 馬年亮燈邏輯 (原本的)
+    if (currentType === 'newyear') {
+      const goals = [100, 250, 500, 1000];
+      goals.forEach(g => {
+        if (currentNewYearTotalKM >= g) document.getElementById(`goal-${g}`).classList.add('goal-active');
+      });
+    }
+
+    // 2. 聖誕亮燈邏輯 (原本的)
+    if (currentType === 'xmas') {
+      const level = parseInt(document.getElementById('cardContent').dataset.winLevel);
+      if (level >= 1) document.getElementById('xmas-house-1').classList.add('goal-active');
+      if (level >= 2) document.getElementById('xmas-house-2').classList.add('goal-active');
+      if (level === 3) document.getElementById('xmas-house-3').classList.add('goal-active');
+    }
+
+    // 3. 獎金結算與 Firebase 同步 (你要加的地方)
+    if (winAmount > 0) {
+      balance += winAmount; 
+      updateUI(); // 這裡面已經有 saveToLocal()
+      
+      if(!isMuted) {
+          const snd = document.getElementById('sndWin');
+          if(snd) snd.play().catch(()=>{});
+      }
+
+      // 特效：讓中獎格閃爍
+      document.querySelectorAll('.win-mark, .xmas-member').forEach(el => el.classList.add('item-win'));
+      
+      // --- Firebase 同步重點 ---
+      // 如果中了超過 500 萬的大獎，立即強制同步一次，確保紀錄不遺失
+      if (winAmount >= 5000000) {
+        await syncToFirebase(); 
+      } else {
+        // 小獎的話可以背景同步就好
+        syncToFirebase();
+      }
+    } else {
+      // 沒中獎也同步一次餘額 (因為買卡扣了錢)
+      syncToFirebase();
+    }
+  }
+
+  function reBuy() { startNewGame(); }
+  function backToLobby() { document.getElementById('lobby').style.display = 'flex'; document.getElementById('gameRoom').style.display = 'none'; }
+
+  canvas.addEventListener('mousedown', (e) => { isDrawing = true; handleScratch(e); });
+  window.addEventListener('mouseup', () => isDrawing = false);
+  canvas.addEventListener('mousemove', handleScratch);
+  canvas.addEventListener('touchstart', (e) => { isDrawing = true; handleScratch(e); });
+  canvas.addEventListener('touchmove', handleScratch);
+  window.addEventListener('touchend', () => isDrawing = false);
+
+  updateUI();
+  </script>
+  </body>
 </html>
