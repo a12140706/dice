@@ -182,6 +182,7 @@
   let isMuted = false, currentBgmIdx = 1;
   let currentNewYearTotalKM = 0; 
   let scratchPointCount = 0;
+  let totalDist = 0; // 紀錄手指刮過的總距離
   const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
   const canvas = document.getElementById('scratchCanvas'), ctx = canvas.getContext('2d');
 
@@ -270,7 +271,7 @@ function startNewGame() {
   // 2. 扣錢、重置變數
   balance -= currentConfig.price; 
   updateUI();
-  isScratched = false; winAmount = 0; currentNewYearTotalKM = 0; scratchPointCount = 0;
+  isScratched = false; winAmount = 0; currentNewYearTotalKM = 0; totalDist = 0;
 
   // 3. 讓畫布出現並塗金
   canvas.style.opacity = '1';
@@ -406,20 +407,21 @@ function startNewGame() {
       container.style.background = '#16a085'; // 聖誕墨綠
       container.style.display = 'flex';
       container.style.flexDirection = 'column';
+      container.style.padding = '8px'; // 增加內邊距讓畫面不擠
 
       const goalPrizes = [currentConfig.prizes[0], currentConfig.prizes[1], currentConfig.prizes[2]];
       const isWin = Math.random() < currentConfig.winRate;
 
-      // 1. 決定最終中獎等級 (0:不中, 1:紅, 2:綠, 3:金)
+      // 1. 決定最終中獎等級
       let winLevel = 0;
       if (isWin) {
         let r = Math.random();
-        if (r > 0.9) winLevel = 3;      // 10% 中金房子
-        else if (r > 0.6) winLevel = 2; // 30% 中綠房子
-        else winLevel = 1;              // 60% 中紅房子
+        if (r > 0.9) winLevel = 3; 
+        else if (r > 0.6) winLevel = 2; 
+        else winLevel = 1; 
       }
 
-      // 2. 根據中獎等級分配 6 格內容
+      // 2. 分配 6 格內容
       let items = [];
       if (winLevel === 3) {
         items = [{s:'🦌'}, {s:'🦌'}, {s:'🛷'}, {s:'🎅'}, {s:'🍭'}, {s:'🍭'}];
@@ -431,44 +433,53 @@ function startNewGame() {
         items = [{s:'🦌'}, {s:'🦌'}, {s:'☁️'}, {s:'🧊'}, {s:'🧊'}, {s:'🍭'}];
         winAmount = goalPrizes[0];
       } else {
-        // 沒中獎：故意給 1 隻麋鹿或 1 個雪橇，讓你差一點點
         items = [{s:'🦌'}, {s:'🛷'}, {s:'☁️'}, {s:'🧊'}, {s:'🧊'}, {s:'🍭'}];
         winAmount = 0;
       }
       items.sort(() => Math.random() - 0.5);
 
       // 3. 生成 HTML
-      // 上方：煙囪家屋目標區
-      let htmlTop = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:5px; width:100%; margin-bottom:10px;">`;
-      const houseNames = ["紅房子", "綠房子", "金家屋"];
+      // 上方：目標區 (微調尺寸)
+      let htmlTop = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:6px; width:100%; margin-bottom:10px;">`;
       const houseIcons = ["🏠", "🏡", "🏰"];
       const houseReqs = ["🦌x2", "🦌x2+🛷", "🦌x2+🛷+🎅"];
       
-      houseNames.forEach((name, i) => {
+      [0, 1, 2].forEach((i) => {
         htmlTop += `
-          <div class="goal-item" id="xmas-house-${i+1}" style="background:rgba(255,255,255,0.1); border:1px solid #555; border-radius:8px; padding:4px; text-align:center;">
-            <div style="font-size:12px;">${houseIcons[i]}</div>
-            <div style="font-size:8px; color:#fff;">${houseReqs[i]}</div>
-            <div style="font-size:10px; color:#ffd86b; font-weight:bold;">$${(goalPrizes[i]/10000).toLocaleString()}萬</div>
+          <div class="goal-item" id="xmas-house-${i+1}" style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.4); border-radius:8px; padding:6px; text-align:center;">
+            <div style="font-size:22px;">${houseIcons[i]}</div>
+            <div style="font-size:10px; color:#fff;">${houseReqs[i]}</div>
+            <div style="font-size:12px; color:#ffd86b; font-weight:bold;">$${(goalPrizes[i]/10000).toLocaleString()}萬</div>
           </div>`;
       });
       htmlTop += `</div>`;
 
-      // 下方：6 格外送成員區
-      let htmlGrid = `<div style="display:grid; grid-template-columns:1fr 1fr; grid-template-rows:repeat(3,1fr); gap:5px; flex:1; width:100%;">`;
+      // 下方：6 格成員區 (圖案 36px / 文字 14px)
+      let htmlGrid = `<div style="display:grid; grid-template-columns:1fr 1fr; grid-template-rows:repeat(3,1fr); gap:8px; flex:1; width:100%;">`;
+      
+      const symbolNames = {
+        '🦌': '魯道夫',
+        '🛷': '雪橇車',
+        '🎅': '聖誕老公公',
+        '🍭': '礙事拐杖糖',
+        '🧊': '擋路冰塊',
+        '☁️': '遮眼烏雲'
+      };
+
       items.forEach(it => {
-        // 標記有效成員以便後續亮燈判定
         const isMember = ['🦌', '🛷', '🎅'].includes(it.s);
+        const displayName = symbolNames[it.s] || '神秘物';
+        
         htmlGrid += `
-          <div class="prize-item ${isMember ? 'xmas-member' : ''}" data-symbol="${it.s}" style="background:#fffafa; border:1px solid #27ae60">
-            <span style="font-size:28px;">${it.s}</span>
-            <span style="font-size:9px; color:#27ae60">${isMember ? '外送員' : '干擾'}</span>
+          <div class="prize-item ${isMember ? 'xmas-member' : ''}" data-symbol="${it.s}" style="background:#fffafa; border:2px solid #27ae60; border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:5px;">
+            <span style="font-size:36px; line-height:1.1;">${it.s}</span>
+            <span style="font-size:14px; color:#27ae60; font-weight:900; margin-top:2px; white-space:nowrap;">${displayName}</span>
           </div>`;
       });
       htmlGrid += `</div>`;
 
       html = htmlTop + htmlGrid;
-      container.dataset.winLevel = winLevel; // 紀錄中獎等級給 revealCard 用
+      container.dataset.winLevel = winLevel; 
     }
     else if (currentType === 'newyear') {
       // 【2026 丙午紅馬 - 里程奔騰版】
@@ -580,23 +591,33 @@ function startNewGame() {
     const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
     const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
 
-    // --- 關鍵修改：從圓圈改為連線 ---
+    // 1. 繪製線條 (保持絲滑)
     ctx.globalCompositeOperation = 'destination-out';
     ctx.beginPath();
-    ctx.lineWidth = 70;         // 刮出的寬度 (原本 arc 半徑 35，直徑就是 70)
-    ctx.lineCap = 'round';      // 讓線條轉角圓滑
-    ctx.lineJoin = 'round';     // 讓線條連接處圓滑
-    
-    // 從上次的點連到現在的點
+    ctx.lineWidth = 70;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
     ctx.moveTo(lastX, lastY);
     ctx.lineTo(x, y);
     ctx.stroke();
 
-    // 更新最後座標
-    [lastX, lastY] = [x, y];
+    // 2. 計算這一步滑動的距離 (勾股定理)
+    const dx = x - lastX;
+    const dy = y - lastY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
     
-    scratchPointCount++; 
-    if (scratchPointCount > 200) { 
+    // 3. 只有當手指真的有在動時才累加，避免原地踏步
+    if (distance > 2) {
+      totalDist += distance;
+    }
+
+    [lastX, lastY] = [x, y];
+
+    // 4. 判定門檻：根據畫布寬度動態調整
+    // 假設玩家需要劃過約 2.5 倍畫布寬度的總長度就全開
+    const threshold = canvas.width * 6; 
+    
+    if (totalDist > threshold) {
       revealCard();
     }
   }
