@@ -220,8 +220,8 @@
       /* 火苗向上竄動 */
     }
 
-    /* --- 特效 2：雷霆霓虹 (強化霓虹感，取消描邊) --- */
-   .fx-neon {
+    /* [特效：雷霆霓虹] */
+         .fx-neon {
     border: 2px solid #fff !important;
     /* 1. 關鍵修改：將 0% 和 100% 的黑色改為深藍色，hue-rotate 才能抓到顏色變色 */
     background: linear-gradient(
@@ -257,6 +257,7 @@
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
 }
+
     /* --- 特效 3：至尊皇金 (保持簡潔高級感) --- */
     .fx-gold {
       border: 1px solid #ffd700 !important;
@@ -1029,7 +1030,11 @@
   </div>
 
   <div class="container">
-    <div class="welcome-msg" id="welcomeUser">名稱</div>
+
+    <div class="welcome-msg" id="welcomeUser" onclick="changePlayerName()" 
+     style="cursor: pointer; display: inline-block; min-height: 20px;">
+    載入中...
+</div>
 
     <div class="welcome-msg">
       <span id="welcomeUserContainer">選擇遊戲</span>
@@ -1085,16 +1090,16 @@
           <div class="game-title">連連看</div>
         </div>
       </a>
-       <a href="bomb.html" class="game-card">
-        <div class="game-img" style="background: linear-gradient(45deg, #312222, #bad7c7);">🧧</div>
+      <a href="bomb.html" class="game-card">
+        <div class="game-img" style="background: linear-gradient(45deg, #ff0505, #00c3ff);">🗺️</div>
         <div class="game-info">
-          <div class="game-title">尋寶</div>
+          <div class="game-title">尋寶冒險</div>
         </div>
       </a>
-      <a href="#" class="game-card">
+      <a href="gua.html" class="game-card">
         <div class="game-img" style="background: linear-gradient(45deg, #312222, #bad7c7);">🧧</div>
         <div class="game-info">
-          <div class="game-title">(暫無)未完成刮刮樂</div>
+          <div class="game-title">不會給錢的刮刮樂</div>
         </div>
       </a>
     </div>
@@ -1122,7 +1127,7 @@
 
   <div id="depositModal" class="modal">
     <div class="modal-content">
-      <h2 style="color:var(--gold); margin-bottom:15px; font-size: 22px;">刷阿記的卡，阿記的錢有限，一天一次</h2>
+      <h2 style="color:var(--gold); margin-bottom:15px; font-size: 22px;">刷阿記的卡，阿記的錢有限，一天一次(暫時無限)</h2>
       <button class="modal-btn" style="background:#f59e0b;" onclick="handleDeposit(1000000)">儲值 1,000,000</button>
       <button class="modal-btn" style="background:#444; color:#ccc;" onclick="closeModal()">算了</button>
     </div>
@@ -1197,6 +1202,54 @@
 
     function openModal() { document.getElementById('depositModal').style.display = 'flex'; }
     function closeModal() { document.getElementById('depositModal').style.display = 'none'; }
+    //改名
+  async function changePlayerName() {
+    return;
+    const changeNameFee = 50000000; // 改名費用
+    const playerId = localStorage.getItem('player_id');
+    let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
+
+    if (!playerId) return alert("請先登入遊戲！");
+
+    // 取得目前的純名字 (不含稱號標籤)
+    const currentName = localStorage.getItem('player_name') || "無名氏";
+    const newName = prompt(`修改暱稱需花費 💎 ${changeNameFee.toLocaleString()}\n請輸入新暱稱 (最多8個字)：`, currentName);
+
+    if (newName === null) return; 
+    const trimmedName = newName.trim();
+    
+    if (trimmedName === "" || trimmedName === currentName) return; 
+    if (trimmedName.length > 8) return alert("暱稱太長囉！");
+    
+    if (balance < changeNameFee) {
+        return alert(`錢不夠啦！改名需要 💎 ${changeNameFee.toLocaleString()}`);
+    }
+
+    if (!confirm(`確定要花費 💎 ${changeNameFee.toLocaleString()} 改名為「${trimmedName}」嗎？`)) return;
+
+    try {
+        balance -= changeNameFee;
+        
+        // 【核心】只更新名字和餘額，原本的 equipped_title 和 equipped_fx 會保留在雲端
+        await db.collection("users").doc(playerId).update({
+            name: trimmedName,
+            balance: balance
+        });
+
+        localStorage.setItem('sicbo_balance', balance);
+        localStorage.setItem('player_name', trimmedName);
+
+        updateMainBalance();
+        
+        // 【關鍵】重新執行這個函數，它會把新名字配上舊特效重新畫出來
+        checkUserStatus(); 
+        
+        alert("改名成功！");
+    } catch (e) {
+        console.error("改名失敗:", e);
+        alert("改名失敗，請稍後再試");
+    }
+}
 
     async function handleDeposit(amt) {
       const playerId = localStorage.getItem('player_id');
@@ -1269,7 +1322,7 @@
 
     let currentShopTab = 'title';
     const LOTTO_CONFIG = {
-      price: 10000,
+      price: 10000000,
       grandPrize: 100000000, // 1億
       chanceMoney: 0.05,    // 1% 中一億
       chanceTitle: 0.01,    // 2% 中稱號 "🌌 幸運錦鯉"
@@ -1329,21 +1382,21 @@
       let results = [];
       let updates = { balance: balance, lastLottoDate: today };
 
-      if (Math.random() < 0.05) {
+      if (Math.random() < 0.03) {
         balance += 100000000;
         updates.balance = balance;
         localStorage.setItem('sicbo_balance', balance);
         results.push("💰 1億元大獎");
       }
 
-      if (Math.random() < 0.02) {
+      if (Math.random() < 0.01) {
         updates[`assets.t_koi`] = now;
-        results.push("🏷️ 限定稱號：幸運錦鯉");
+        results.push("🌌 限定稱號：幸運錦鯉");
       }
 
-      if (Math.random() < 0.01) {
+      if (Math.random() < 0.005) {
         updates[`assets.e_koi`] = now;
-        results.push("✨ 絕世特效：錦鯉躍遷");
+        results.push("🌊 限定特效：錦鯉躍遷");
       }
 
       try {
