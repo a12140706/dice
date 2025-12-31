@@ -108,15 +108,15 @@
     <h2 style="color:var(--gold); margin-bottom: 10px;">🧧 挑選刮刮樂</h2>
     <div class="card-option" onclick="selectCard('small')">
       <div class="price-tag">$10,000</div>
-      <div><h3>💰 財神到</h3><p style="font-size:12px;color:#666">對中幸運號碼即中獎</p></div>
+      <div><h3>💰財神到</h3><p style="font-size:12px;color:#666">對中幸運號碼即中獎</p></div>
     </div>
     <div class="card-option" onclick="selectCard('mid')">
       <div class="price-tag">$50,000</div>
-      <div><h3>🐲 金龍賀歲</h3><p style="font-size:12px;color:#666">搜集 🐲 或 🧧 中大獎</p></div>
+      <div><h3>🐲金龍賀歲</h3><p style="font-size:12px;color:#666">搜集 🐲 或 🧧 中大獎</p></div>
     </div>
     <div class="card-option" onclick="selectCard('big')">
       <div class="price-tag">$500,000</div>
-      <div><h3>🧧 大紅包</h3><p style="font-size:12px;color:#666">三同金額或刮出👑即中</p></div>
+      <div><h3>🧧大紅包</h3><p style="font-size:12px;color:#666">三同金額或刮出👑即中</p></div>
     </div>
     <div class="card-option" onclick="selectCard('xmas')" style="background: #eb4d4b; color: white;">
       <div class="price-tag" style="background: #27ae60;">$1,000,000</div>
@@ -124,7 +124,7 @@
     </div>
     <div class="card-option" onclick="selectCard('newyear')" style="background: #d63031; color: white;">
       <div class="price-tag" style="background: #f1c40f; color: #000;">$2,026,000</div>
-      <div><h3>🐎新年快樂</h3><p style="font-size:12px;color:#fff">超越里程拿獎金</p></div>
+      <div><h3>🐎新年快樂，別玩這個</h3><p style="font-size:12px;color:#fff">先別玩這個，不給錢，超越里程拿獎金</p></div>
     </div>
   </div>
 
@@ -169,6 +169,7 @@
   let currentConfig = null, isDrawing = false, isScratched = false, winAmount = 0, currentType = '';
   let isMuted = false, currentBgmIdx = 1;
   let currentNewYearTotalKM = 0; 
+  let scratchPointCount = 0;
   const bgmList = [null, 'bgm1', 'bgm2', 'bgm3'];
   const canvas = document.getElementById('scratchCanvas'), ctx = canvas.getContext('2d');
 
@@ -253,7 +254,8 @@
     balance -= currentConfig.price; updateUI();
     isScratched = false; winAmount = 0; currentNewYearTotalKM = 0; 
     canvas.style.opacity = '1';
-    document.getElementById('quickBuyBtn').disabled = true;
+    scratchPointCount = 0; // 每一局都要重置計數
+  document.getElementById('quickBuyBtn').disabled = true; //
     generateCardLayout();
     initScratchLayer();
   }
@@ -461,80 +463,50 @@
     const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
     ctx.globalCompositeOperation = 'destination-out';
     ctx.beginPath(); ctx.arc(x, y, 35, 0, Math.PI * 2); ctx.fill();
-    checkProgress();
+    scratchPointCount++; 
+  if (scratchPointCount > 450) { // 手機滑動約 3-5 下會達到此值
+    revealCard();
+  }
   }
 
- function checkProgress() {
-    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-    let clearedCount = 0;
-    const step = 80; // 採樣步長，兼顧效能與精準度
-    
-    for (let i = 3; i < data.length; i += step) {
-      if (data[i] === 0) clearedCount++;
-    }
-
-    // 計算刮開比例：當採樣點中超過 45% 是透明時，觸發結算
-    const totalSamplePoints = data.length / step;
-    if (clearedCount > totalSamplePoints * 0.45) {
-      revealCard();
-    }
-  }
 
   async function revealCard() {
-    if(isScratched) return;
-    isScratched = true; 
-    
-    // --- 優先處理 UI，確保玩家不會卡住 ---
-    canvas.style.opacity = '0';
-    const quickBuyBtn = document.getElementById('quickBuyBtn');
-    if (quickBuyBtn) quickBuyBtn.disabled = false; // 立即恢復按鈕功能
-    
-    // --- 亮燈邏輯 (加入錯誤保護，避免 ID 沒對到導致程式中斷) ---
-    try {
-      if (currentType === 'newyear') {
-        const goals = [100, 250, 500, 1000];
-        goals.forEach(g => {
-          const el = document.getElementById(`goal-${g}`);
-          if (currentNewYearTotalKM >= g && el) el.classList.add('goal-active');
-        });
-      }
+  if(isScratched) return;
+  isScratched = true; 
+  canvas.style.opacity = '0';
+  
+  // --- 1. 優先解鎖按鈕，確保玩家能點「再買一次」 ---
+  const btn = document.getElementById('quickBuyBtn');
+  if(btn) btn.disabled = false;
 
-      if (currentType === 'xmas') {
-        const winLvAttr = document.getElementById('cardContent').dataset.winLevel;
-        const level = parseInt(winLvAttr || 0);
-        for (let i = 1; i <= 3; i++) {
-          const el = document.getElementById(`xmas-house-${i}`);
-          if (level >= i && el) el.classList.add('goal-active');
-        }
-      }
-    } catch (e) {
-      console.warn("亮燈動畫執行異常，但不影響結算:", e);
+  // --- 2. 亮燈邏輯 (加入 try-catch 避免 ID 錯誤導致後面不結算) ---
+  try {
+    if (currentType === 'newyear') {
+      [100, 250, 500, 1000].forEach(g => {
+        const el = document.getElementById(`goal-${g}`);
+        if (currentNewYearTotalKM >= g && el) el.classList.add('goal-active');
+      });
     }
-
-    // --- 獎金結算與同步 ---
-    if (winAmount > 0) {
-      balance += winAmount; 
-      updateUI(); 
-      
-      if(!isMuted) {
-          const snd = document.getElementById('sndWin');
-          if(snd) snd.play().catch(()=>{});
+    if (currentType === 'xmas') {
+      const level = parseInt(document.getElementById('cardContent').dataset.winLevel || 0);
+      for(let i=1; i<=level; i++){
+        const el = document.getElementById(`xmas-house-${i}`);
+        if(el) el.classList.add('goal-active');
       }
-
-      // 中獎特效
-      document.querySelectorAll('.win-mark, .xmas-member').forEach(el => el.classList.add('item-win'));
-      
-      // 大獎用 await 強制同步，小獎在背景執行
-      if (winAmount >= 5000000) {
-        await syncToFirebase(); 
-      } else {
-        syncToFirebase();
-      }
-    } else {
-      // 沒中獎也要同步 (因為 startNewGame 扣了錢)
-      syncToFirebase();
     }
+  } catch(e) { console.warn("視覺特效錯誤", e); }
+
+  // --- 3. 結算獎金 ---
+  if (winAmount > 0) {
+    balance += winAmount; 
+    updateUI(); 
+    if(!isMuted) document.getElementById('sndWin').play().catch(()=>{});
+    document.querySelectorAll('.win-mark, .xmas-member').forEach(el => el.classList.add('item-win'));
   }
+  
+  // --- 4. 背景同步 (不使用 await 避免卡頓) ---
+  syncToFirebase();
+}
 
   function reBuy() { startNewGame(); }
   function backToLobby() { document.getElementById('lobby').style.display = 'flex'; document.getElementById('gameRoom').style.display = 'none'; }
