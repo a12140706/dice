@@ -83,8 +83,24 @@
   .prize-item { display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fefefe; border: 1px solid #eee; border-radius: 8px; color: #333; }
   .prize-amount { font-size: 14px; font-weight: bold; color: #d63031; }
   .prize-symbol { font-size: 32px; }
-  .item-win { background: #dff9fb !important; border: 2px solid var(--win-green) !important; animation: pulse 0.8s infinite; }
+  .item-win { background: #dff9fb !important; border: 2px solid var(--win-green) !important; animation: pulse 0.8s infinite; animation: winPulse 0.8s infinite alternate;}
+.goal-active {
+  background: rgba(255, 215, 0, 0.4) !important; /* 背景變金色 */
+  border: 2px solid #fff !important;
+  box-shadow: 0 0 15px #ffd700; /* 金光外框 */
+  transform: scale(1.1); /* 稍微放大 */
+  animation: houseJump 0.6s infinite alternate ease-in-out;
+  z-index: 5;
+}
+@keyframes winPulse {
+  from { transform: scale(1); filter: brightness(1); }
+  to { transform: scale(1.1); filter: brightness(1.3); }
+}
 
+@keyframes houseJump {
+  0% { transform: scale(1.1) translateY(0); }
+  100% { transform: scale(1.15) translateY(-5px); } /* 往上跳並放大 */
+}
   canvas { position: absolute; top: 0; left: 0; z-index: 10; cursor: crosshair; transition: opacity 0.5s; touch-action: none; }
 #scratchCanvas {
   position: absolute;
@@ -403,6 +419,7 @@ function startNewGame() {
     }
     else if (currentType === 'xmas') {
       // 【🎄 聖誕外送團隊 - 集成員進煙囪版】
+      
       container.classList.add('layout-symbols');
       container.style.background = '#16a085'; // 聖誕墨綠
       container.style.display = 'flex';
@@ -458,7 +475,7 @@ function startNewGame() {
       let htmlGrid = `<div style="display:grid; grid-template-columns:1fr 1fr; grid-template-rows:repeat(3,1fr); gap:8px; flex:1; width:100%;">`;
       
       const symbolNames = {
-        '🦌': '魯道夫',
+        '🦌': '聖誕麋鹿',
         '🛷': '雪橇車',
         '🎅': '聖誕老公公',
         '🍭': '礙事拐杖糖',
@@ -634,7 +651,7 @@ function startNewGame() {
   // 檢查畫面上是否有標記中獎的格子
   const winMarks = document.querySelectorAll('.win-mark, .xmas-member');
   
-  // --- 關鍵修改：除了金額大於0，還要畫面上真的有對中才播音效 ---
+  // --- 除了金額大於0，還要畫面上真的有對中才播音效 ---
   if (winAmount > 0 && winMarks.length > 0) {
     balance += winAmount; 
     updateUI(); 
@@ -644,14 +661,32 @@ function startNewGame() {
 
   // 處理特殊類型的燈號亮起
   try {
+    // 【馬年：只亮最高達標的那一個】
     if (currentType === 'newyear') {
-      [100, 250, 500, 1000].forEach(g => {
-        const el = document.getElementById(`goal-${g}`);
-        if (currentNewYearTotalKM >= g && el) el.classList.add('goal-active');
-      });
+      const goals = [1000, 500, 250, 100]; // 由大到小判斷
+      const finalGoal = goals.find(g => currentNewYearTotalKM >= g);
+      if (finalGoal) {
+        const el = document.getElementById(`goal-${finalGoal}`);
+        if (el) el.classList.add('goal-active');
+      }
     }
-    // ... xmas 邏輯保持不變 ...
-  } catch(e) { console.warn(e); }
+    
+    // 【聖誕：只亮發錢的那一棟】
+    else if (currentType === 'xmas') {
+      const container = document.getElementById('cardContent');
+      const level = parseInt(container.dataset.winLevel || 0);
+      
+      // 只有中獎等級 > 0 時，才點亮對應的那一棟
+      if (level > 0) {
+        const el = document.getElementById(`xmas-house-${level}`);
+        if (el) {
+          el.classList.add('goal-active');
+        }
+      }
+    }
+  } catch(e) { 
+    console.warn(e); 
+  }
 
   syncToFirebase();
 }
