@@ -1132,10 +1132,10 @@ async function showRank() {
 
             // 4. 稱號顏色判定
             let titleColorClass = "t-blue";
-            if (titleText.includes("賭神") || titleText.includes("富可敵國") || titleText.includes("紅")) titleColorClass = "t-red";
-            else if (titleText.includes("梟雄") || titleText.includes("傳奇") || titleText.includes("橙")) titleColorClass = "t-orange";
-            else if (titleText.includes("土豪") || titleText.includes("紫")) titleColorClass = "t-purple";
-            else if (titleText.includes("綠")) titleColorClass = "t-green";
+            if (titleText.includes("幸運錦鯉")) titleColorClass = "t-koi-color"; // 新增錦鯉色
+          else if (titleText.includes("賭神") || titleText.includes("富可敵國") || titleText.includes("至尊") || titleText.includes("躺平")) titleColorClass = "t-red";
+          else if (titleText.includes("梟雄") || titleText.includes("傳奇") || titleText.includes("鴻運") || titleText.includes("天選")) titleColorClass = "t-orange";
+          else if (titleText.includes("土豪") ||  titleText.includes("千金") || titleText.includes("狗屎") || titleText.includes("少爺") || titleText.includes("仙女") ) titleColorClass = "t-purple";
 
             const titleHTML = titleText ? `<span class="player-title ${titleColorClass}" style="font-size:10px; display:block;">【${titleText}】</span>` : "";
 

@@ -1484,9 +1484,10 @@
 
             // --- 稱號顏色判定 (同步首頁) ---
             let titleColorClass = "t-blue";
-            if (titleText.includes("賭神") || titleText.includes("富可敵國")) titleColorClass = "t-red";
-            else if (titleText.includes("梟雄") || titleText.includes("傳奇")) titleColorClass = "t-orange";
-            else if (titleText.includes("土豪") || titleText.includes("千金") || titleText.includes("少爺")) titleColorClass = "t-purple";
+            if (titleText.includes("幸運錦鯉")) titleColorClass = "t-koi-color"; // 新增錦鯉色
+          else if (titleText.includes("賭神") || titleText.includes("富可敵國") || titleText.includes("至尊") || titleText.includes("躺平")) titleColorClass = "t-red";
+          else if (titleText.includes("梟雄") || titleText.includes("傳奇") || titleText.includes("鴻運") || titleText.includes("天選")) titleColorClass = "t-orange";
+          else if (titleText.includes("土豪") ||  titleText.includes("千金") || titleText.includes("狗屎") || titleText.includes("少爺") || titleText.includes("仙女") ) titleColorClass = "t-purple";
 
             const titleHTML = titleText ? `<span class="player-title ${titleColorClass}">【${titleText}】</span>` : "";
 
@@ -1500,21 +1501,22 @@
             }
 
             // 2. 生成側邊欄的清單 HTML
-            // 2. 生成側邊欄的清單 HTML
            html += `
-<div class="rank-item ${fxClass}" style="margin-bottom:12px; padding:10px; border-radius:10px; background:rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center; width:100%; box-sizing:border-box; overflow:visible;">
+<div class="rank-item ${fxClass}" style="margin-bottom:12px; padding:10px; border-radius:10px; background:rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center; width:100%; box-sizing:border-box; overflow:visible; position:relative;">
   <div style="display:flex; align-items:center; gap:8px; overflow:hidden; flex:1;">
-    <span style="color:#ffd700; font-weight:bold; width:22px; flex-shrink: 0; text-align:center;">${i === 1 ? '🏆' : i}</span>
+    <span style="color:#ffd700; font-weight:bold; width:22px; flex-shrink:0; text-align:center;">${i === 1 ? '🏆' : i}</span>
     
-    <div class="rank-info" style="display:flex; flex-direction:column; overflow:hidden; flex:1; min-width:0;">
-      <span class="rank-name" style="font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+    <div class="rank-info" style="display:flex; flex-direction:column; flex:1; min-width:0; overflow:visible;">
+      <div style="font-size:10px; display:block; width:100%; overflow:visible; margin-bottom:2px;">
         ${titleHTML}
-        <span style="color:#fff;">${userName}</span>
+      </div>
+      <span style="color:#fff; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+        ${userName}
       </span>
     </div>
   </div>
   
-  <span style="color:#ffd700; font-weight:bold; font-size:13px; margin-left:8px; flex-shrink:0;">
+  <span style="color:#ffd700; font-weight:bold; font-size:13px; margin-left:12px; flex-shrink:0;">
     $${Math.floor(recordWin).toLocaleString()}
   </span>
 </div>`;

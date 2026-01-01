@@ -1277,7 +1277,9 @@
     /* 邊框的流動漸層顏色 */
     background: linear-gradient(90deg, #FFD700, #FFFFFF, #FF4500, #9400D3, #FFD700);
     background-size: 200% auto;
-    
+    mask: 
+        linear-gradient(#fff 0 0) content-box, 
+        linear-gradient(#fff 0 0);
     /* 遮罩黑科技：只顯示邊框，中間挖空 */
     -webkit-mask: 
         linear-gradient(#fff 0 0) content-box, 
@@ -1857,16 +1859,16 @@
         { id: 't_hunter', name: '🏹賭場獵人', price: 200000 },
         { id: 't_rich', name: '💰土豪', price: 1000000 },
         { id: 't_lady', name: '👗千金大小姐', price: 5000000 },
-        { id: 't_god', name: '🌟幸運星', price: 100000000 },
+        { id: 't_lucky', name: '🌟幸運星', price: 100000000 },
         { id: 't_sir', name: '🎩豪門大少爺', price: 5000000 },
         { id: 't_king', name: '👑梟雄', price: 10000000 },
-        { id: 't_legend', name: '💩狗屎運', price: 30000000 },
+        { id: 't_shit', name: '💩狗屎運', price: 30000000 },
         { id: 't_legend', name: '🐉賭城傳奇', price: 50000000 },
-        { id: 't_legend', name: '🧧鴻運當頭', price: 50000000 },  
-        { id: 't_world', name: '💤 躺平大師', price: 100000000 },
+        { id: 't_red', name: '🧧鴻運當頭', price: 50000000 },  
+        { id: 't_sleep', name: '💤 躺平大師', price: 100000000 },
         { id: 't_god', name: '⚖️富可敵國', price: 100000000 },
-        { id: 't_lady', name: '🧚可愛美麗小仙女', price: 200000000 },
-        { id: 't_legend', name: '🍀天選之人', price: 500000000 },
+        { id: 't_beauty', name: '🧚可愛美麗小仙女', price: 200000000 },
+        { id: 't_sky', name: '🍀天選之人', price: 500000000 },
         { id: 't_world', name: '🪐賭神', price: 500000000 },
         { id: 'e_ultimate', name: '𒁂至尊', price: 500000000, class: 'fx-ultimate-legend' },
         { id: 't_koi', name: '🌌幸運錦鯉', price: 0, lottoOnly: true }
@@ -2132,9 +2134,10 @@ html += `
 
           let titleColorClass = "t-blue"; // 預設藍色
           if (titleText.includes("幸運錦鯉")) titleColorClass = "t-koi-color"; // 新增錦鯉色
-          else if (titleText.includes("賭神") || titleText.includes("富可敵國")) titleColorClass = "t-red";
-          else if (titleText.includes("梟雄") || titleText.includes("傳奇")) titleColorClass = "t-orange";
-          else if (titleText.includes("土豪") || titleText.includes("千金") || titleText.includes("少爺")) titleColorClass = "t-purple";
+          else if (titleText.includes("賭神") || titleText.includes("富可敵國") || titleText.includes("至尊") || titleText.includes("躺平")) titleColorClass = "t-red";
+          else if (titleText.includes("梟雄") || titleText.includes("傳奇") || titleText.includes("鴻運") || titleText.includes("天選")) titleColorClass = "t-orange";
+          else if (titleText.includes("土豪") ||  titleText.includes("千金") || titleText.includes("狗屎") || titleText.includes("少爺") || titleText.includes("仙女") ) titleColorClass = "t-purple";
+
 
           const titleHTML = titleText ? `<span class="player-title ${titleColorClass}">【${titleText}】</span>` : "";
 
