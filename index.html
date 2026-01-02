@@ -2021,7 +2021,7 @@ const PET_TEMPLE_DATA = {
         { id: 'p_cat_2', name: '🕶️ 忍者嘟', price: 10000000000, img: 'ninja.png', desc: '上忍者課' },
         { id: 'p_cat_3', name: '💰 招財嘟', price: 10000000000, img: 'money.png', desc: '來財' },
         { id: 'p_cat_4', name: '🍄 瑪莉嘟', price: 10000000000, img: 'mario.png', desc: '超級瑪莉嘟' },
-        { id: 'p_cat_5', name: '🧣 小紅貓', price: 10000000000, img: 'mario.png', desc: '小紅貓' },
+        { id: 'p_cat_5', name: '🧣 小紅貓', price: 10000000000, img: 'red.png', desc: '小紅貓' },
         { id: 'p_cat_6', name: '🪄 麻法嘟', price: 10000000000, img: 'magic.png', desc: '麻瓜嘟嘟' },
         { id: 'p_cat_7', name: '☔ 雨傘嘟', price: 10000000000, img: 'rain.png', desc: '下雨了' },
         { id: 'p_cat_8', name: '🛸 太空嘟', price: 10000000000, img: 'space.png', desc: '出球玩玩' },
@@ -2521,10 +2521,10 @@ html += `
         const petSys = userData.pet_system || {
             current_pet_id: "",
             unlocked_pets: [],
-            current_bg_id: "bg_default",
-            unlocked_bgs: ["bg_default"]
+            current_bg_id: "bg_basic",
+            unlocked_bgs: ["bg_basic"]
         };
-
+        const activeBgId = petSys.current_bg_id || "bg_basic";
         const currentPetObj = PET_TEMPLE_DATA.pets.find(p => p.id === petSys.current_pet_id);
         const currentBgObj = PET_TEMPLE_DATA.backgrounds.find(b => b.id === petSys.current_bg_id);
         
@@ -2666,34 +2666,65 @@ async function actionPet(type, id, price) {
 // 處理背景 購買/更換
 async function actionBg(type, id, price) {
     const playerId = localStorage.getItem('player_id');
-    let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
-    
+    // 優先從 Firebase 拿最新錢包，避免 localStorage 延遲
     try {
-        const doc = await db.collection("users").doc(playerId).get();
-        const petSys = doc.data().pet_system || { unlocked_bgs: ["bg_default"], current_bg_id: "bg_default" };
+        const userRef = db.collection("users").doc(playerId);
+        const doc = await userRef.get();
+        if (!doc.exists) return;
+        
+        let userData = doc.data();
+        let balance = userData.balance || 0;
+        let petSys = userData.pet_system || { unlocked_bgs: ["bg_default"], current_bg_id: "bg_default" };
 
         if (type === 'buy') {
             if (balance < price) return alert("錢不夠裝潢喔！");
-            if (!confirm(`要花費 💎 ${(price/100000000)}億 購買此裝潢嗎？`)) return;
+            if (!confirm(`要花費 💎 ${(price / 100000000).toLocaleString()}億 購買此裝潢嗎？`)) return;
             balance -= price;
-            petSys.unlocked_bgs.push(id);
+            // 避免重複購買
+            if (!petSys.unlocked_bgs.includes(id)) {
+                petSys.unlocked_bgs.push(id);
+            }
         }
         
+        // 更新當前使用的背景 ID
         petSys.current_bg_id = id;
-        await db.collection("users").doc(playerId).update({ 
+
+        // 寫回資料庫
+        await userRef.update({ 
             balance: balance,
             pet_system: petSys 
         });
 
+        // 更新本地端顯示 (不改動 localStorage 結構，只改值)
         localStorage.setItem('sicbo_balance', balance);
-        updateMainBalance();
-        
-        // 重新渲染神殿 UI
+        if (typeof updateMainBalance === 'function') updateMainBalance();
+
+        // --- 核心優化：直接更新畫面，不重開神殿 ---
+        const bgObj = PET_TEMPLE_DATA.backgrounds.find(b => b.id === id);
         const overlay = document.getElementById('pet-temple-overlay');
-        if (overlay) overlay.remove();
-        openPetTemple();
+        
+        if (overlay && bgObj) {
+            // 1. 即時更換大背景圖
+            overlay.style.backgroundImage = `url('assets/pet/${bgObj.img}')`;
+            
+            // 2. 更新上方顯示的餘額數字
+            const balanceDisplay = overlay.querySelector('div[style*="var(--gold)"]');
+            if (balanceDisplay) balanceDisplay.innerHTML = `💎 ${Math.floor(balance).toLocaleString()}`;
+            
+            // 3. 關閉選單 (讓玩家看到背景更換了)
+            const drawer = document.getElementById('pet-menu-drawer');
+            if (drawer) drawer.style.display = 'none';
+            
+            showWinToast?.("🎨 神殿裝潢更新成功！");
+        } else {
+            // 如果找不到 DOM (保險用)，再重開
+            if (overlay) overlay.remove();
+            openPetTemple();
+        }
+
     } catch (e) {
         console.error("背景操作失敗:", e);
+        alert("網路不穩，請稍後再試");
     }
 }
 
