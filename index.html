@@ -1768,53 +1768,75 @@ html {
     function openModal() { document.getElementById('depositModal').style.display = 'flex'; }
     function closeModal() { document.getElementById('depositModal').style.display = 'none'; }
     //改名
-    async function changePlayerName() {
-      return;
-      const changeNameFee = 100000000; // 改名費用
-      const playerId = localStorage.getItem('player_id');
-      let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
+    function changePlayerName() {
+    const changeNameFee = 100000000;
+    const playerId = localStorage.getItem('player_id');
+    const balance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
+    const currentName = localStorage.getItem('player_name') || "無名氏";
 
-      if (!playerId) return alert("請先登入遊戲！");
+    if (!playerId) return alert("請先登入遊戲！");
 
-      // 取得目前的純名字 (不含稱號標籤)
-      const currentName = localStorage.getItem('player_name') || "無名氏";
-      const newName = prompt(`修改暱稱需花費 💎 ${changeNameFee.toLocaleString()}\n請輸入新暱稱 (最多8個字)：`, currentName);
+    // 建立改名彈窗
+    const modal = document.createElement('div');
+    modal.id = 'name-change-modal';
+    modal.style = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.85); display: flex; align-items: center;
+        justify-content: center; z-index: 100000; font-family: sans-serif;
+    `;
 
-      if (newName === null) return;
-      const trimmedName = newName.trim();
+    modal.innerHTML = `
+        <div style="width: 85%; max-width: 320px; background: #222; border: 2px solid gold; border-radius: 20px; padding: 25px; text-align: center; box-shadow: 0 0 20px rgba(0,0,0,0.5);">
+            <h3 style="color: gold; margin-top: 0;">修改暱稱</h3>
+            <p style="font-size: 14px; color: #ccc;">費用：💎 ${(changeNameFee/100000000)} 億</p>
+            
+            <input type="text" id="newNameInput" value="${currentName}" maxlength="8" 
+                style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #444; background: #333; color: white; text-align: center; font-size: 16px; margin: 15px 0; box-sizing: border-box;">
+            
+            <div style="display: flex; gap: 10px;">
+                <button id="cancelBtn" style="flex: 1; padding: 10px; border-radius: 10px; border: none; background: #555; color: white;">取消</button>
+                <button id="confirmBtn" style="flex: 1; padding: 10px; border-radius: 10px; border: none; background: var(--red, #c0392b); color: white; font-weight: bold;">確認修改</button>
+            </div>
+        </div>
+    `;
 
-      if (trimmedName === "" || trimmedName === currentName) return;
-      if (trimmedName.length > 8) return alert("暱稱太長囉！");
+    document.body.appendChild(modal);
 
-      if (balance < changeNameFee) {
-        return alert(`錢不夠啦！改名需要 💎 ${changeNameFee.toLocaleString()}`);
-      }
+    // 按鈕邏輯
+    document.getElementById('cancelBtn').onclick = () => modal.remove();
+    
+    document.getElementById('confirmBtn').onclick = async () => {
+        const newName = document.getElementById('newNameInput').value.trim();
+        
+        if (!newName || newName === currentName) {
+            modal.remove();
+            return;
+        }
+        if (newName.length > 8) return alert("暱稱太長囉！");
+        if (balance < changeNameFee) return alert("餘額不足！");
 
-      if (!confirm(`確定要花費 💎 ${changeNameFee.toLocaleString()} 改名為「${trimmedName}」嗎？`)) return;
+        // 執行更新
+        try {
+            const finalBalance = balance - changeNameFee;
+            await db.collection("users").doc(playerId).update({
+                name: newName,
+                balance: finalBalance
+            });
 
-      try {
-        balance -= changeNameFee;
+            localStorage.setItem('sicbo_balance', finalBalance);
+            localStorage.setItem('player_name', newName);
 
-        // 【核心】只更新名字和餘額，原本的 equipped_title 和 equipped_fx 會保留在雲端
-        await db.collection("users").doc(playerId).update({
-          name: trimmedName,
-          balance: balance
-        });
-
-        localStorage.setItem('sicbo_balance', balance);
-        localStorage.setItem('player_name', trimmedName);
-
-        updateMainBalance();
-
-        // 【關鍵】重新執行這個函數，它會把新名字配上舊特效重新畫出來
-        checkUserStatus();
-
-        alert("改名成功！");
-      } catch (e) {
-        console.error("改名失敗:", e);
-        alert("改名失敗，請稍後再試");
-      }
-    }
+            updateMainBalance();
+            checkUserStatus(); // 刷新首頁顯示
+            
+            alert("改名成功！");
+            modal.remove();
+        } catch (e) {
+            console.error(e);
+            alert("系統錯誤");
+        }
+    };
+}
 
     async function handleDeposit(amt) {
       const playerId = localStorage.getItem('player_id');
