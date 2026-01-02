@@ -409,12 +409,19 @@
         }
 
         .btn-cashout {
-            background: var(--green);
-            color: #fff;
-            box-shadow: 0 5px 0 #27ae60;
-            display: none;
-        }
-
+    background: var(--green);
+    color: #fff;
+    box-shadow: 0 5px 0 #27ae60;
+    display: none;
+    
+    /* 新增以下屬性來支援兩行顯示 */
+    white-space: pre-line;   /* 關鍵：讓 \n 能夠換行 */
+    line-height: 1.3;        /* 讓兩行字之間的距離適中 */
+    padding: 12px 10px;      /* 增加上下內距，確保裝得下兩行字 */
+    min-height: 65px;        /* 確保按鈕高度固定，點擊時不會跳動 */
+    align-items: center;
+    justify-content: center;
+}
         #rankSidebar {
             position: fixed;
             top: 0;
@@ -1824,26 +1831,30 @@
         }
 
         function getMultiplier(totalMines, revealed) {
-            if (revealed === 0) return 1;
-            const totalTiles = 25;
-            let multiplier = 1;
+    if (revealed === 0) return 1;
+    const totalTiles = 25;
+    let multiplier = 1;
 
-            // 1. 基礎機率計算
-            for (let i = 0; i < revealed; i++) {
-                multiplier *= (totalTiles - i) / (totalTiles - totalMines - i);
-            }
+    // 基礎數學邏輯
+    for (let i = 0; i < revealed; i++) {
+        multiplier *= (totalTiles - i) / (totalTiles - totalMines - i);
+    }
 
-            // 2. 基礎抽水維持 0.75
-            let finalMult = multiplier * 0.9;
+    let finalMult = multiplier;
 
-            // 3. 強化縮減邏輯：提前至超過 40 倍後，增長速度即變為 2%
-            if (finalMult > 40) {
-                let excess = finalMult - 40;
-                finalMult = 40 + (excess * 0.02);
-            }
+    // 門檻 1000 倍 (以1000萬下注計即為100億)
+    if (finalMult > 1000 && finalMult <= 100000) {
+        // 超過 1000 倍的部分砍 70%，留 30%
+        finalMult = 1000 + (finalMult - 1000) * 0.3;
+    } 
+    else if (finalMult > 100000) {
+        // 超過 10 萬倍的部分（針對極端炸彈）強制鎖死成長
+        let baseBonus = 99000 * 0.3; // 前段增量
+        finalMult = 1000 + baseBonus + (finalMult - 100000) * 0.0001;
+    }
 
-            return finalMult;
-        }
+    return finalMult;
+}
 
         function updateNextWinInfo() {
             // 將原本的 bombCount 改為 bombText，並用 innerText 取值
@@ -1912,39 +1923,54 @@
         }
 
         function revealTile(idx, el) {
-            if (!isGameActive || el.classList.contains('disabled')) return;
+    if (!isGameActive || el.classList.contains('disabled')) return;
 
-            const bombCountEl = document.getElementById('bombText');
-            const currentBombs = bombCountEl ? parseInt(bombCountEl.innerText) : 3;
+    const bombCountEl = document.getElementById('bombText');
+    const currentBombs = bombCountEl ? parseInt(bombCountEl.innerText) : 3;
 
-            if (mines[idx]) {
-                gameOver(false);
+    if (mines[idx]) {
+        gameOver(false);
+    } else {
+        revealedCount++;
+        el.classList.add('revealed-coin', 'disabled');
+        el.innerHTML = '💎';
+        if (!isMuted) document.getElementById('sndCoin').play().catch(() => { });
+
+        document.getElementById('cashoutBtn').disabled = false;
+
+        const totalSafeTiles = 25 - currentBombs;
+        const currentM = getMultiplier(currentBombs, revealedCount);
+        
+        // 1. 計算當前跑路金額 (90%)
+        const currentCashout = Math.floor(currentBet * currentM * CASHOUT_RETENTION);
+
+        // 2. 計算下一格預告
+        let nextInfo = "";
+        if (revealedCount < totalSafeTiles) {
+            const nextM = getMultiplier(currentBombs, revealedCount + 1);
+            if (revealedCount + 1 === totalSafeTiles) {
+                // 最後一格，顯示 100% 全開大獎 (不乘 0.9)
+                const nextAmount = Math.floor(currentBet * nextM);
+                nextInfo = `\n[ 下一格全開: 💎${nextAmount.toLocaleString()} ]`;
             } else {
-                revealedCount++;
-                el.classList.add('revealed-coin', 'disabled');
-                el.innerHTML = '💎';
-
-                if (!isMuted) document.getElementById('sndCoin').play().catch(() => { });
-
-                document.getElementById('cashoutBtn').disabled = false;
-
-                // 計算原始倍率
-                const m = getMultiplier(currentBombs, revealedCount);
-
-                // --- 修改處：跑路按鈕顯示 7 折後的金額 ---
-                const cashoutAmount = Math.floor(currentBet * m * CASHOUT_RETENTION);
-                document.getElementById('cashoutBtn').textContent = `提桶跑路: 💎${cashoutAmount.toLocaleString()}`;
-
-                updateNextWinInfo();
-
-                const totalSafeTiles = 25 - currentBombs;
-                if (revealedCount === totalSafeTiles) {
-                    showWinToast(`🎉 完美的探險！全開獎金 x${m.toFixed(2)}`);
-                    // --- 修改處：傳入 true 代表全開通關，領取全額 ---
-                    setTimeout(() => { cashout(true); }, 1500);
-                }
+                // 非最後一格，顯示下一格跑路 (90%)
+                const nextAmount = Math.floor(currentBet * nextM * CASHOUT_RETENTION);
+                nextInfo = `\n(下一格: 💎${nextAmount.toLocaleString()})`;
             }
+        } else {
+            nextInfo = "\n(🎉 完美通關！)";
         }
+        const btn = document.getElementById('cashoutBtn');
+        btn.textContent = `提桶跑路: 💎${currentCashout.toLocaleString()}${nextInfo}`;
+
+        // 4. 全開自動結算
+        if (revealedCount === totalSafeTiles) {
+
+            showWinToast(`🎉 完美的探險！全開獎金 x${currentM.toFixed(2)}`);
+            setTimeout(() => { cashout(true); }, 1500);
+        }
+    }
+}
 
         // 輔助函數：顯示提示
         function showWinToast(msg) {
