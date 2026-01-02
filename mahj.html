@@ -1622,31 +1622,26 @@
 
       // --- [機率調整區] 1. 特殊牌基礎機率 ---
       if (Math.random() < 0.05) return '元寶'; // 元寶出現率
-      if (!isFree && Math.random() > 0.985) return '胡'; // 非免費遊戲時胡的機率
+      if (!isFree && Math.random() > 0.99) return '胡'; // 非免費遊戲時胡的機率
 
       const currentCounts = countTiles();
       const wildCandidates = ['⬜', '🀄', '🀅'];
 
+
       // --- [機率調整區] 2. Wild 掉落核心邏輯 ---
-      let wildChance = 0.7; // [設定點A] 基礎 Wild 掉落率 (起始機率)
+let wildChance = 0.4; // 起始機率從 0.7 降至 0.4
 
-      if (combo >= 20) {
-        // [設定點B] 強制斷線門檻：達到此連擊數後 Wild 機率歸 0
-        wildChance = 0.02;
-      } else if (combo >= 16) {
-        // [設定點C] 瓶頸期機率：16連擊後有感降低至 5%
-        wildChance = 0.03;
-      } else if (combo >= 12) {
-        // [設定點C] 瓶頸期機率：16連擊後有感降低至 5%
-        wildChance = 0.05;
-      } else {
-        // [設定點D] 衰減係數：使用 0.96 讓連擊極其平滑 (原版為 0.85)
-        // 數值愈接近 1 愈容易達成高連擊
-        wildChance = wildChance * Math.pow(0.9, combo);
-      }
+// 平滑衰減邏輯
+wildChance = wildChance * Math.pow(0.85, combo);
 
-      // [設定點E] 手機端起手優化：前兩行機率修正 (0.98 代表幾乎不壓制)
-      if (c !== undefined && c < 2) wildChance *= 0.85;
+// 強制斷線門檻 (預算超支保護)
+if (combo >= 20) {
+    wildChance = 0.01; 
+}
+
+// [關鍵] 前兩行壓制：0.4 * 0.5 = 0.2 (20% 起手)
+// 這能有效防止小錢領不停
+if (c !== undefined && c < 2) wildChance *= 0.8;
 
       // 3. 準備候選清單
       let availableIcons = baseIcons.filter(icon => (currentCounts[icon] || 0) < 4);
@@ -1809,6 +1804,7 @@
       if (toEliminate.size > 0) {
         combo++;
         if (!isMuted) document.getElementById('sndMatch').play();
+        //倍率
         let win = toEliminate.size * (betOptions[currentBetIdx] / 20) * currentMultiplier;
 
         if (document.getElementById('mainBody').classList.contains('in-free')) {
