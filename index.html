@@ -2192,23 +2192,6 @@ html += `
         rankList.innerHTML = '<p style="text-align:center; color:red;">載入失敗</p>';
     }
 }
-function applyUltimateFX(elementId) {
-    const el = document.getElementById(elementId);
-    if (!el || !el.classList.contains('fx-ultimate-legend')) return;
-
-    // 每隔 300ms 產生一個小火星
-    setInterval(() => {
-        const sparkle = document.createElement('div');
-        sparkle.className = 'sparkle';
-        // 隨機在元素內部產生位置
-        sparkle.style.left = Math.random() * 100 + '%';
-        sparkle.style.top = Math.random() * 100 + '%';
-        el.appendChild(sparkle);
-
-        // 1秒後移除，防止記憶體洩漏
-        setTimeout(() => sparkle.remove(), 1000);
-    }, 300);
-}
     async function checkUserStatus() {
     let playerId = localStorage.getItem('player_id');
     if (!playerId || playerId === "null") {
@@ -2229,7 +2212,6 @@ function applyUltimateFX(elementId) {
             let currentFx = cloudData.equipped_fx || "";
             let needUpdateCloud = false;
 
-            // 透過 SHOP_DATA 找回 ID 來比對 assets 裡的時間
             const titleObj = SHOP_DATA.title.find(t => t.name === currentTitle);
             const effectObj = SHOP_DATA.effect.find(e => e.class === currentFx);
 
@@ -2242,19 +2224,19 @@ function applyUltimateFX(elementId) {
                 needUpdateCloud = true;
             }
 
-            // 如果過期，同步更新雲端與本地裝備紀錄
             if (needUpdateCloud) {
                 await db.collection("users").doc(playerId).update({
                     equipped_title: currentTitle,
                     equipped_fx: currentFx
                 });
-                localStorage.setItem('equipped_assets', JSON.stringify({
-                    title: titleObj && currentTitle === "" ? "" : (localStorage.getItem('equipped_assets') ? JSON.parse(localStorage.getItem('equipped_assets')).title : ""),
-                    effect: effectObj && currentFx === "" ? "" : (localStorage.getItem('equipped_assets') ? JSON.parse(localStorage.getItem('equipped_assets')).effect : "")
-                }));
+                // 更新本地快取
+                const localEquipped = JSON.parse(localStorage.getItem('equipped_assets') || '{}');
+                if (currentTitle === "") localEquipped.title = "";
+                if (currentFx === "") localEquipped.effect = "";
+                localStorage.setItem('equipped_assets', JSON.stringify(localEquipped));
             }
 
-            // --- 2. 餘額同步邏輯 (維持原樣) ---
+            // --- 2. 餘額同步邏輯 ---
             const localBal = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
             const cloudBal = cloudData.balance;
             localStorage.setItem('player_name', cloudData.name);
@@ -2277,13 +2259,17 @@ function applyUltimateFX(elementId) {
                 const titleSpan = document.createElement('span');
                 titleSpan.textContent = `【${currentTitle}】`;
                 titleSpan.className = "player-title";
-                  
-                // 顏色判斷邏輯
-                if (titleText.includes("幸運錦鯉")) titleColorClass = "t-koi-color"; // 新增錦鯉色
-          else if (titleText.includes("賭神") || titleText.includes("富可敵國") || titleText.includes("至尊") || titleText.includes("躺平")) titleColorClass = "t-red";
-          else if (titleText.includes("梟雄") || titleText.includes("傳奇") || titleText.includes("鴻運")  || titleText.includes("天選")) titleColorClass = "t-orange";
-          else if (titleText.includes("土豪") ||  titleText.includes("千金") || titleText.includes("狗屎") || titleText.includes("少爺") || titleText.includes("仙女") ) titleColorClass = "t-purple";
-          else if (titleText.includes("幸運")) titleColorClass = "t-yellow";
+                
+                // 定義判斷用的變數，對應你下方的 titleText
+                const titleText = currentTitle;
+
+                // 顏色判斷邏輯 (修正原本報錯的變數名稱並執行 add)
+                if (titleText.includes("幸運錦鯉")) titleSpan.classList.add("t-koi-color");
+                else if (titleText.includes("賭神") || titleText.includes("富可敵國") || titleText.includes("至尊") || titleText.includes("躺平")) titleSpan.classList.add("t-red");
+                else if (titleText.includes("梟雄") || titleText.includes("傳奇") || titleText.includes("鴻運") || titleText.includes("天選")) titleSpan.classList.add("t-orange");
+                else if (titleText.includes("土豪") || titleText.includes("千金") || titleText.includes("狗屎") || titleText.includes("少爺") || titleText.includes("仙女")) titleSpan.classList.add("t-purple");
+                else if (titleText.includes("幸運")) titleSpan.classList.add("t-yellow");
+                else titleSpan.classList.add("t-blue");
                 
                 textWrapper.appendChild(titleSpan);
             }
@@ -2293,10 +2279,13 @@ function applyUltimateFX(elementId) {
             textWrapper.appendChild(nameSpan);
             welcomeEl.appendChild(textWrapper);
 
-            // 套用特效 Class (現在純靠 CSS 控制)
+            // 套用特效 Class
             if (currentFx) {
                 welcomeEl.classList.add(currentFx);
                 welcomeEl.style.display = "inline-block";
+                // 補上樣式確保特效顯示正常
+                welcomeEl.style.padding = "8px 25px";
+                welcomeEl.style.borderRadius = "25px";
             }
 
             updateMainBalance();
