@@ -440,39 +440,38 @@ html {
     }
 
     /* --- 特效 4：絕對零度 (冰藍呼吸 + 結晶閃爍) --- */
-    .fx-ice {
-      position: relative;
+   .fx-ice {
+    position: relative;
     overflow: hidden;
-      border: 1px solid #00f2fe !important;
-      background: linear-gradient(135deg, #005f73, #00d4ff) !important;
-      color: #fff !important;
-      text-shadow: 0 0 10px #7ed6ff !important;
-      box-shadow: 0 0 15px rgba(0, 242, 254, 0.5) !important;
-      animation: ice-shimmer 2s ease-in-out infinite alternate !important;
-    }
+    border: 1px solid #00f2fe !important;
+    background: linear-gradient(135deg, #005f73, #00d4ff) !important;
+    color: #fff !important;
+    text-shadow: 0 0 10px #7ed6ff !important;
+    box-shadow: 0 0 15px rgba(0, 242, 254, 0.5) !important;
+    animation: ice-shimmer 2s ease-in-out infinite alternate !important;
+}
+/* ❄️ 這裡是雪花專屬層 */
 .fx-ice::after {
     content: "";
     position: absolute;
-    /* 這裡只畫一個超小的雪花原點 */
-    width: 3px;
-    height: 3px;
-    background: white;
-    border-radius: 50%;
-    opacity: 0.8;
-    top: -10px;
-    
-    /* 透過陰影在隨機位置產生雪花，這樣就不會滿滿的一整排 */
-    /* 格式: x y 模糊 顏色 */
-    box-shadow: 
-        15px 10px 1px white, 
-        45px 35px 2px white, 
-        10px 50px 1px white, 
-        35px 70px 2px white,
-        55px 15px 1px white,
-        25px 85px 1px white;
-    
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     pointer-events: none;
-    animation: random-snow 6s linear infinite;
+    z-index: 1;
+    
+    /* 使用三層隨機分佈的雪花點 */
+    background-image: 
+        radial-gradient(1.5px 1.5px at 20% 30%, #fff 100%, transparent),
+        radial-gradient(2px 2px at 50% 70%, #fff 100%, transparent),
+        radial-gradient(1.2px 1.2px at 80% 40%, #fff 100%, transparent);
+    
+    /* 讓雪花背景重複鋪滿，並設定不同的大小來打破規律 */
+    background-size: 100px 100px, 150px 150px, 200px 200px;
+    
+    /* 執行下雪動畫 */
+    animation: snow-fall-fixed 10s linear infinite;
 }
     .fx-ice::before {
       content: "❄" !important;
@@ -485,21 +484,13 @@ html {
       font-size: 20px;
       animation: rotate-slow 5s linear infinite;
     }
-    @keyframes random-snow {
+    @keyframes snow-fall-fixed {
     0% {
-        transform: translate(0, 0);
-    }
-    25% {
-        transform: translate(3px, 25px); /* 往右擺 */
-    }
-    50% {
-        transform: translate(-3px, 50px); /* 往左擺 */
-    }
-    75% {
-        transform: translate(2px, 75px);
+        background-position: 0 0, 0 0, 0 0;
     }
     100% {
-        transform: translate(0, 110px); /* 飄出底部 */
+        /* 讓三層雪花以不同速度和方向飄落，視覺上很隨機 */
+        background-position: 100px 100px, -150px 300px, 200px 600px;
     }
 }
 
@@ -2028,18 +2019,21 @@ const PET_TEMPLE_DATA = {
     pets: [
         { id: 'p_cat_1', name: '🐾 嘟嘟貓', price: 1000000000, img: 'basic.png', desc: '好運的開端' },
         { id: 'p_cat_2', name: '🕶️ 忍者嘟', price: 10000000000, img: 'ninja.png', desc: '上忍者課' },
-        { id: 'p_cat_3', name: '👑 招財嘟', price: 100000000000, img: 'money.png', desc: '來財' },
-        { id: 'p_cat_4', name: '🐾 瑪莉嘟', price: 1000000000, img: 'mario.png', desc: '超級瑪莉嘟' },
-        { id: 'p_cat_5', name: '🕶️ 麻法嘟', price: 10000000000, img: 'magic.png', desc: '麻瓜嘟嘟' },
-        { id: 'p_cat_6', name: '👑 雨傘嘟', price: 100000000000, img: 'rain.png', desc: '下雨了' },
-        { id: 'p_cat_7', name: '👑 太空嘟', price: 100000000000, img: 'space.png', desc: '出球玩玩' },
-        { id: 'p_cat_8', name: '👑 玩具嘟', price: 100000000000, img: 'toyz.png', desc: '玩具太少了' },
-        { id: 'p_cat_9', name: '👑 皇帝嘟', price: 100000000000, img: 'king.png', desc: '吾嘟萬歲' },
+        { id: 'p_cat_3', name: '💰 招財嘟', price: 10000000000, img: 'money.png', desc: '來財' },
+        { id: 'p_cat_4', name: '🍄 瑪莉嘟', price: 10000000000, img: 'mario.png', desc: '超級瑪莉嘟' },
+        { id: 'p_cat_5', name: '🧣 小紅貓', price: 10000000000, img: 'mario.png', desc: '小紅貓' },
+        { id: 'p_cat_6', name: '🪄 麻法嘟', price: 10000000000, img: 'magic.png', desc: '麻瓜嘟嘟' },
+        { id: 'p_cat_7', name: '☔ 雨傘嘟', price: 10000000000, img: 'rain.png', desc: '下雨了' },
+        { id: 'p_cat_8', name: '🛸 太空嘟', price: 10000000000, img: 'space.png', desc: '出球玩玩' },
+        { id: 'p_cat_9', name: '🧸 玩具嘟', price: 10000000000, img: 'toyz.png', desc: '玩具太少了' },
+        { id: 'p_cat_10', name: '👑 皇帝嘟', price: 10000000000, img: 'king.png', desc: '吾嘟萬歲' }
     ],
     backgrounds: [
         { id: 'bg_default', name: '🏠 溫馨貓窩', price: 0, img: 'bg_basic.jpg' },
-        { id: 'bg_neon', name: '🌃 霓虹賭城', price: 5000000000, img: 'bg_neon.jpg' },
-        { id: 'bg_gold', name: '💰 黃金殿堂', price: 50000000000, img: 'bg_gold.jpg' }
+        { id: 'bg_neon', name: '🌃 霓虹賭城', price: 5000000000, img: 'bg_city.jpg' },
+        { id: 'bg_cute', name: '🚂 可愛小屋', price: 5000000000, img: 'bg_room.jpg' },
+        { id: 'bg_toyz', name: '🧩 玩具歷險', price: 5000000000, img: 'bg_toyzspace.jpg' },
+        { id: 'bg_gold', name: '💰 黃金殿堂', price: 5000000000, img: 'bg_gold.jpg' }
     ]
 };
     let currentShopTab = 'title';
