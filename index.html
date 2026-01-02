@@ -450,13 +450,13 @@ html {
     }
 
     .fx-ice::before {
-      content: "❄";
-      color: #281cff; 
-      text-shadow: 0 0 5px rgba(237, 159, 255, 0.8);
+      content: "❄" !important;
+      color: #6860fe !important; 
+      text-shadow: 0 0 5px rgba(237, 159, 255, 0.8) !important;
       position: absolute;
       right: 5px;
       top: -5px;
-      opacity: 0.3;
+      opacity: 1;
       font-size: 20px;
       animation: rotate-slow 5s linear infinite;
     }
@@ -1591,6 +1591,16 @@ html {
   </div>
   <div>
     <marquee style="flex:1; color:var(--gold);">線上測試版</marquee>
+    <button onclick="loginWithID()" style="
+        border: 1px solid #00d4ff; 
+        color: #00d4ff; 
+        border-radius: 20px; 
+        font-size: 12px; 
+        cursor: pointer;
+        box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+    ">
+        🔄 切換帳號
+    </button>
   </div>
 
   <div class="container">
@@ -1669,7 +1679,7 @@ html {
     </div>
 
     <div class="deposit-area">
-      <button class="btn-rank" onclick="openPetTemple()">🐾 未完成</button>
+      <button class="btn-rank" onclick="openPetTemple()">🐾 寵物</button>
       <button class="btn-deposit" onclick="openModal()">💸 謀吉阿</button>
       <button class="btn-rank" onclick="toggleRank()">🏆 排行</button>
     </div>
@@ -1767,6 +1777,59 @@ html {
 
     function openModal() { document.getElementById('depositModal').style.display = 'flex'; }
     function closeModal() { document.getElementById('depositModal').style.display = 'none'; }
+
+    /**
+ * 使用 Firebase ID 登入引繼
+ */
+// 修改後的登入功能，確保稱號特效同步
+/**
+ * 使用 Firebase ID 登入引繼
+ * 會同步：ID、暱稱、餘額、所有資產到期日、當前裝備狀態
+ */
+async function loginWithID() {
+    // 1. 取得目標 ID
+    const targetID = prompt("請輸入引繼碼：");
+    if (!targetID || targetID.trim() === "") return;
+
+    const newID = targetID.trim();
+    const currentID = localStorage.getItem('player_id');
+
+    // 如果輸入的就是目前的 ID，就不必執行
+    if (newID === currentID) {
+        alert("您目前就是此帳號。");
+        return;
+    }
+
+    try {
+        // 2. 檢查目標 ID 在 Firebase 是否存在
+        const doc = await db.collection("users").doc(newID).get();
+        if (!doc.exists) {
+            alert("❌ 找不到該 ID 的紀錄，請檢查輸入是否正確。");
+            return;
+        }
+
+        // 3. 二次確認（針對已有紀錄的玩家）
+        const confirmMsg = currentID 
+            ? "⚠️ 注意：您目前已有遊戲紀錄。\n引繼將會登出目前帳號並載入新帳號資料。\n確定要繼續嗎？" 
+            : "確定要引繼此帳號並載入所有雲端紀錄嗎？";
+
+        if (confirm(confirmMsg)) {
+            // 4. 清除本地舊資料，避免舊帳號的餘額或資產殘留
+            localStorage.clear(); 
+            
+            // 5. 寫入新 ID
+            localStorage.setItem('player_id', newID);
+            
+            alert("✅ 引繼成功！正在重新載入遊戲數據...");
+            
+            // 6. 強制刷新，讓 checkUserStatus 重新從雲端抓取新帳號的所有資料
+            location.reload(); 
+        }
+    } catch (e) {
+        console.error("引繼出錯:", e);
+        alert("連線失敗，請檢查網路狀態。");
+    }
+}
     //改名
     function changePlayerName() {
     const changeNameFee = 100000000;
@@ -2219,7 +2282,7 @@ html += `
         rankList.innerHTML = '<p style="text-align:center; color:red;">載入失敗</p>';
     }
 }
-    async function checkUserStatus() {
+   async function checkUserStatus() {
     let playerId = localStorage.getItem('player_id');
     if (!playerId || playerId === "null") {
         document.getElementById('nameModal').style.display = 'flex';
@@ -2234,7 +2297,22 @@ html += `
             const now = Date.now();
             const myAssets = cloudData.assets || {};
 
-            // --- 1. 自動檢查稱號與特效是否過期 ---
+            // --- [新增這段：確保引繼後的資產同步到本地] ---
+            localStorage.setItem('my_assets', JSON.stringify(myAssets));
+            
+            const localEquipped = { title: "", effect: "" };
+            if (cloudData.equipped_title) {
+                const tObj = SHOP_DATA.title.find(t => t.name === cloudData.equipped_title);
+                if (tObj) localEquipped.title = tObj.id;
+            }
+            if (cloudData.equipped_fx) {
+                const eObj = SHOP_DATA.effect.find(e => e.class === cloudData.equipped_fx);
+                if (eObj) localEquipped.effect = eObj.id;
+            }
+            localStorage.setItem('equipped_assets', JSON.stringify(localEquipped));
+            // ------------------------------------------
+
+            // --- 1. 自動檢查稱號與特效是否過期 (你原本的邏輯) ---
             let currentTitle = cloudData.equipped_title || "";
             let currentFx = cloudData.equipped_fx || "";
             let needUpdateCloud = false;
@@ -2256,24 +2334,25 @@ html += `
                     equipped_title: currentTitle,
                     equipped_fx: currentFx
                 });
-                // 更新本地快取
-                const localEquipped = JSON.parse(localStorage.getItem('equipped_assets') || '{}');
-                if (currentTitle === "") localEquipped.title = "";
-                if (currentFx === "") localEquipped.effect = "";
-                localStorage.setItem('equipped_assets', JSON.stringify(localEquipped));
+                const lEquip = JSON.parse(localStorage.getItem('equipped_assets') || '{}');
+                if (currentTitle === "") lEquip.title = "";
+                if (currentFx === "") lEquip.effect = "";
+                localStorage.setItem('equipped_assets', JSON.stringify(lEquip));
             }
 
-            // --- 2. 餘額同步邏輯 ---
-            const localBal = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
+            // --- 2. 餘額同步邏輯 (你原本的邏輯) ---
+            const localBal = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
             const cloudBal = cloudData.balance;
             localStorage.setItem('player_name', cloudData.name);
+            
+            // 只要雲端錢不等於本地，引繼時會以雲端為主
             if (cloudBal !== undefined && cloudBal > localBal) {
                 localStorage.setItem('sicbo_balance', cloudBal);
             } else if (cloudBal !== undefined && localBal > cloudBal) {
                 await db.collection("users").doc(playerId).update({ balance: localBal });
             }
 
-            // --- 3. 渲染 UI 顯示 ---
+            // --- 3. 渲染 UI 顯示 (你原本的邏輯) ---
             const welcomeEl = document.getElementById('welcomeUser');
             welcomeEl.innerHTML = ""; 
             welcomeEl.className = "welcome-msg"; 
@@ -2286,11 +2365,8 @@ html += `
                 const titleSpan = document.createElement('span');
                 titleSpan.textContent = `【${currentTitle}】`;
                 titleSpan.className = "player-title";
-                
-                // 定義判斷用的變數，對應你下方的 titleText
                 const titleText = currentTitle;
 
-                // 顏色判斷邏輯 (修正原本報錯的變數名稱並執行 add)
                 if (titleText.includes("幸運錦鯉")) titleSpan.classList.add("t-koi-color");
                 else if (titleText.includes("賭神") || titleText.includes("富可敵國") || titleText.includes("至尊") || titleText.includes("躺平")) titleSpan.classList.add("t-red");
                 else if (titleText.includes("梟雄") || titleText.includes("傳奇") || titleText.includes("鴻運") || titleText.includes("天選")) titleSpan.classList.add("t-orange");
@@ -2306,11 +2382,9 @@ html += `
             textWrapper.appendChild(nameSpan);
             welcomeEl.appendChild(textWrapper);
 
-            // 套用特效 Class
             if (currentFx) {
                 welcomeEl.classList.add(currentFx);
                 welcomeEl.style.display = "inline-block";
-                // 補上樣式確保特效顯示正常
                 welcomeEl.style.padding = "8px 25px";
                 welcomeEl.style.borderRadius = "25px";
             }
