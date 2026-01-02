@@ -451,6 +451,8 @@ html {
 
     .fx-ice::before {
       content: "❄";
+      color: #281cff; 
+      text-shadow: 0 0 5px rgba(237, 159, 255, 0.8);
       position: absolute;
       right: 5px;
       top: -5px;
@@ -1880,10 +1882,10 @@ html {
         { id: 't_koi', name: '🌌幸運錦鯉', price: 0, lottoOnly: true }
       ],
       effect: [
-        { id: 'e_thunder', name: '⚡ 電閃雷鳴', price: 2000000, class: 'fx-thunder' },
-        { id: 'e_void', name: '🌀 湮滅黑洞', price: 5000000, class: 'fx-void' },
-        { id: 'e_gold', name: '✨ 黃金呼吸', price: 8000000, class: 'fx-gold' },
-        { id: 'e_ice', name: '❄️ 絕對零度', price: 10000000, class: 'fx-ice' },
+        { id: 'e_thunder', name: '⚡ 電閃雷鳴', price: 20000000, class: 'fx-thunder' },
+        { id: 'e_void', name: '🌀 湮滅黑洞', price: 50000000, class: 'fx-void' },
+        { id: 'e_gold', name: '✨ 黃金呼吸', price: 80000000, class: 'fx-gold' },
+        { id: 'e_ice', name: '❄️ 絕對零度', price: 100000000, class: 'fx-ice' },
         { id: 'e_lightning', name: '⚡ 暗影雷電', price: 100000000, class: 'fx-lightning' },
         { id: 'e_fire', name: '🔥 地獄火', price: 200000000, class: 'fx-fire' },
         { id: 'e_neon', name: '🌈 彩虹極光', price: 500000000, class: 'fx-neon' },
@@ -2427,7 +2429,7 @@ html += `
                         }
                     </div>
                     <div style="margin-top: 15px; background:rgba(0,0,0,0.6); padding:5px 15px; border-radius:15px; font-size:14px;">
-                        ${currentPetObj ? `✨ ${currentPetObj.name}` : '點擊下方領養貓咪'}
+                        ${currentPetObj ? `✨ ${currentPetObj.name}` : '請於下方領養貓咪'}
                     </div>
                 </div>
 
