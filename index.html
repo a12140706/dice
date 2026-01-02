@@ -2134,44 +2134,64 @@ html += `
 
     // 從 Firebase 抓取前 10 名
     async function loadRanking() {
-      const rankList = document.getElementById('rankList');
-      try {
+    const rankList = document.getElementById('rankList');
+    try {
         const snapshot = await db.collection("users").orderBy("balance", "desc").limit(10).get();
         let html = '';
         let i = 1;
+        const now = Date.now(); // 取得當前時間
 
-        // 修改 loadRanking 內部的 HTML 生成部分
         snapshot.forEach(doc => {
-          const data = doc.data();
-          const fxClass = data.equipped_fx || "";
-          const titleText = data.equipped_title || "";
+            const data = doc.data();
+            const userAssets = data.assets || {}; // 取得該玩家的所有資產到期日
 
-          let titleColorClass = "t-blue"; // 預設藍色
-          if (titleText.includes("幸運錦鯉")) titleColorClass = "t-koi-color"; // 新增錦鯉色
-          else if (titleText.includes("賭神") || titleText.includes("富可敵國") || titleText.includes("至尊") || titleText.includes("躺平")) titleColorClass = "t-red";
-          else if (titleText.includes("梟雄") || titleText.includes("傳奇") || titleText.includes("鴻運")  || titleText.includes("天選")) titleColorClass = "t-orange";
-          else if (titleText.includes("土豪") ||  titleText.includes("千金") || titleText.includes("狗屎") || titleText.includes("少爺") || titleText.includes("仙女") ) titleColorClass = "t-purple";
-          else if (titleText.includes("幸運")) titleColorClass = "t-yellow";
+            // --- 核心修改：稱號過期判斷 ---
+            let titleText = data.equipped_title || "";
+            if (titleText) {
+                const titleObj = SHOP_DATA.title.find(t => t.name === titleText);
+                // 如果找不到該稱號 ID，或者現在時間已超過到期日，就清空不顯示
+                if (titleObj && userAssets[titleObj.id] && now > userAssets[titleObj.id]) {
+                    titleText = ""; 
+                }
+            }
 
+            // --- 核心修改：特效過期判斷 ---
+            let fxClass = data.equipped_fx || "";
+            if (fxClass) {
+                const effectObj = SHOP_DATA.effect.find(e => e.class === fxClass);
+                // 如果現在時間已超過到期日，就清空 Class
+                if (effectObj && userAssets[effectObj.id] && now > userAssets[effectObj.id]) {
+                    fxClass = "";
+                }
+            }
 
-          const titleHTML = titleText ? `<span class="player-title ${titleColorClass}">【${titleText}】</span>` : "";
+            // --- 以下維持你原本的顏色判斷與 HTML 生成 ---
+            let titleColorClass = "t-blue";
+            if (titleText.includes("幸運錦鯉")) titleColorClass = "t-koi-color";
+            else if (titleText.includes("賭神") || titleText.includes("富可敵國") || titleText.includes("至尊") || titleText.includes("躺平")) titleColorClass = "t-red";
+            else if (titleText.includes("梟雄") || titleText.includes("傳奇") || titleText.includes("鴻運") || titleText.includes("天選")) titleColorClass = "t-orange";
+            else if (titleText.includes("土豪") || titleText.includes("千金") || titleText.includes("狗屎") || titleText.includes("少爺") || titleText.includes("仙女")) titleColorClass = "t-purple";
+            else if (titleText.includes("幸運")) titleColorClass = "t-yellow";
 
-          html += `
-            <div class="rank-item ${fxClass}">
-              <div class="rank-info">
-                <span class="rank-num">${i === 1 ? '🏆' : i}</span>
-                <span class="rank-name">${titleHTML}${data.name || '無名氏'}</span>
-              </div>
-              <span class="rank-bal">💎${Math.floor(data.balance).toLocaleString()}</span>
-            </div>
-          `;
-          i++;
+            const titleHTML = titleText ? `<span class="player-title ${titleColorClass}">【${titleText}】</span>` : "";
+
+            html += `
+                <div class="rank-item ${fxClass}">
+                  <div class="rank-info">
+                    <span class="rank-num">${i === 1 ? '🏆' : i}</span>
+                    <span class="rank-name">${titleHTML}${data.name || '無名氏'}</span>
+                  </div>
+                  <span class="rank-bal">💎${Math.floor(data.balance).toLocaleString()}</span>
+                </div>
+            `;
+            i++;
         });
         rankList.innerHTML = html || '<p style="text-align:center; color:#888;">尚無排名數據</p>';
-      } catch (e) {
+    } catch (e) {
+        console.error("載入排行榜失敗:", e);
         rankList.innerHTML = '<p style="text-align:center; color:red;">載入失敗</p>';
-      }
     }
+}
 function applyUltimateFX(elementId) {
     const el = document.getElementById(elementId);
     if (!el || !el.classList.contains('fx-ultimate-legend')) return;
@@ -2190,114 +2210,104 @@ function applyUltimateFX(elementId) {
     }, 300);
 }
     async function checkUserStatus() {
-      let playerId = localStorage.getItem('player_id');
-
-      if (!playerId || playerId === "null") {
+    let playerId = localStorage.getItem('player_id');
+    if (!playerId || playerId === "null") {
         document.getElementById('nameModal').style.display = 'flex';
         updateMainBalance();
         return;
-      }
+    }
 
-      try {
+    try {
         const doc = await db.collection("users").doc(playerId).get();
         if (doc.exists) {
-          const cloudData = doc.data();
-          const localBal = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
-          const cloudBal = cloudData.balance;
+            const cloudData = doc.data();
+            const now = Date.now();
+            const myAssets = cloudData.assets || {};
 
-          localStorage.setItem('player_name', cloudData.name);
+            // --- 1. 自動檢查稱號與特效是否過期 ---
+            let currentTitle = cloudData.equipped_title || "";
+            let currentFx = cloudData.equipped_fx || "";
+            let needUpdateCloud = false;
 
-          if (cloudBal !== undefined && cloudBal > localBal) {
-            localStorage.setItem('sicbo_balance', cloudBal);
-          }
-          else if (cloudBal !== undefined && localBal > cloudBal) {
-            await db.collection("users").doc(playerId).update({ balance: localBal });
-          }
+            // 透過 SHOP_DATA 找回 ID 來比對 assets 裡的時間
+            const titleObj = SHOP_DATA.title.find(t => t.name === currentTitle);
+            const effectObj = SHOP_DATA.effect.find(e => e.class === currentFx);
 
-          const welcomeEl = document.getElementById('welcomeUser');
-          const fxClass = cloudData.equipped_fx || "";
-          const titleText = cloudData.equipped_title || "";
-          const userName = cloudData.name || "無名氏";
+            if (titleObj && myAssets[titleObj.id] && now > myAssets[titleObj.id]) {
+                currentTitle = "";
+                needUpdateCloud = true;
+            }
+            if (effectObj && myAssets[effectObj.id] && now > myAssets[effectObj.id]) {
+                currentFx = "";
+                needUpdateCloud = true;
+            }
 
-          welcomeEl.innerHTML = ""; 
-          welcomeEl.className = "welcome-msg"; // 重置 Class
+            // 如果過期，同步更新雲端與本地裝備紀錄
+            if (needUpdateCloud) {
+                await db.collection("users").doc(playerId).update({
+                    equipped_title: currentTitle,
+                    equipped_fx: currentFx
+                });
+                localStorage.setItem('equipped_assets', JSON.stringify({
+                    title: titleObj && currentTitle === "" ? "" : (localStorage.getItem('equipped_assets') ? JSON.parse(localStorage.getItem('equipped_assets')).title : ""),
+                    effect: effectObj && currentFx === "" ? "" : (localStorage.getItem('equipped_assets') ? JSON.parse(localStorage.getItem('equipped_assets')).effect : "")
+                }));
+            }
 
-          // --- 建立發光文字包裹層 ---
-          const textWrapper = document.createElement('span');
-          textWrapper.style.position = "relative";
-          textWrapper.style.zIndex = "5";
+            // --- 2. 餘額同步邏輯 (維持原樣) ---
+            const localBal = parseFloat(localStorage.getItem('sicbo_balance')) || 5000;
+            const cloudBal = cloudData.balance;
+            localStorage.setItem('player_name', cloudData.name);
+            if (cloudBal !== undefined && cloudBal > localBal) {
+                localStorage.setItem('sicbo_balance', cloudBal);
+            } else if (cloudBal !== undefined && localBal > cloudBal) {
+                await db.collection("users").doc(playerId).update({ balance: localBal });
+            }
 
-          if (titleText) {
-            const titleSpan = document.createElement('span');
-            titleSpan.textContent = `【${titleText}】`;
-            titleSpan.className = "player-title";
-            
-            // 顏色判斷
-            if (titleText.includes("賭神") || titleText.includes("富可敵國")) titleSpan.classList.add("t-red");
-            else if (titleText.includes("梟雄") || titleText.includes("傳奇")) titleSpan.classList.add("t-orange");
-            else if (titleText.includes("土豪") || titleText.includes("千金") || titleText.includes("少爺")) titleSpan.classList.add("t-purple");
-            else titleSpan.classList.add("t-blue");
-            
-            textWrapper.appendChild(titleSpan);
-          }
+            // --- 3. 渲染 UI 顯示 ---
+            const welcomeEl = document.getElementById('welcomeUser');
+            welcomeEl.innerHTML = ""; 
+            welcomeEl.className = "welcome-msg"; 
 
-          const nameSpan = document.createElement('span');
-          nameSpan.textContent = userName;
-          textWrapper.appendChild(nameSpan);
-          welcomeEl.appendChild(textWrapper);
+            const textWrapper = document.createElement('span');
+            textWrapper.style.position = "relative";
+            textWrapper.style.zIndex = "5";
 
-          // --- 套用特效 ---
-          if (fxClass) {
-    welcomeEl.classList.add(fxClass);
-    welcomeEl.style.display = "inline-block";
-    
-    // 如果是至尊傳奇，額外加入能量脈衝背景與粒子
-    // 在 checkUserStatus 內部的粒子生成部分
-if (fxClass === 'fx-ultimate-legend') {
-        if (window.ultTimer) clearInterval(window.ultTimer);
-        window.ultTimer = setInterval(() => {
-            // 【關鍵修改】掃描畫面上所有的至尊傳奇容器（包含首頁與排行榜）
-            const targets = document.querySelectorAll('.fx-ultimate-legend');
-            
-            targets.forEach(target => {
-                for(let i=0; i<1; i++) { // 每個容器噴 1 個，維持效能
-                    const sp = document.createElement('div');
-                    sp.className = 'ult-flame';
-                    
-                    // 起始位置設在該容器的中心
-                    sp.style.left = '50%';
-                    sp.style.top = '50%';
-                    
-                    const angle = Math.random() * Math.PI * 2;
-                    const tx = Math.cos(angle) * 60 + 'px'; // 擴散距離稍微縮小，避免排行榜爆框
-                    const ty = Math.sin(angle) * 60 + 'px';
-                    
-                    sp.style.setProperty('--tx', tx);
-                    sp.style.setProperty('--ty', ty);
-                    
-                 
-                    sp.style.background = colors[Math.floor(Math.random() * colors.length)];
-                    sp.style.boxShadow = `0 0 8px ${sp.style.background}`;
-                    
-                    // 【關鍵修改】直接加到目前的 target 裡面
-                    target.appendChild(sp);
-                    
-                    setTimeout(() => sp.remove(), 1000);
-                }
-            });
-        }, 80); // 稍微調慢頻率，兼顧手機版效能與多重顯示
-    }
-}
+            if (currentTitle) {
+                const titleSpan = document.createElement('span');
+                titleSpan.textContent = `【${currentTitle}】`;
+                titleSpan.className = "player-title";
+                  
+                // 顏色判斷邏輯
+                if (titleText.includes("幸運錦鯉")) titleColorClass = "t-koi-color"; // 新增錦鯉色
+          else if (titleText.includes("賭神") || titleText.includes("富可敵國") || titleText.includes("至尊") || titleText.includes("躺平")) titleColorClass = "t-red";
+          else if (titleText.includes("梟雄") || titleText.includes("傳奇") || titleText.includes("鴻運")  || titleText.includes("天選")) titleColorClass = "t-orange";
+          else if (titleText.includes("土豪") ||  titleText.includes("千金") || titleText.includes("狗屎") || titleText.includes("少爺") || titleText.includes("仙女") ) titleColorClass = "t-purple";
+          else if (titleText.includes("幸運")) titleColorClass = "t-yellow";
+                
+                textWrapper.appendChild(titleSpan);
+            }
 
-          updateMainBalance();
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = cloudData.name || "無名氏";
+            textWrapper.appendChild(nameSpan);
+            welcomeEl.appendChild(textWrapper);
+
+            // 套用特效 Class (現在純靠 CSS 控制)
+            if (currentFx) {
+                welcomeEl.classList.add(currentFx);
+                welcomeEl.style.display = "inline-block";
+            }
+
+            updateMainBalance();
         } else {
-          document.getElementById('nameModal').style.display = 'flex';
+            document.getElementById('nameModal').style.display = 'flex';
         }
-      } catch (e) {
+    } catch (e) {
         console.error("Firebase 連線失敗", e);
         updateMainBalance();
-      }
     }
+}
     // --- 商城功能 ---
     function openShop() { document.getElementById('shopModal').style.display = 'flex'; }
     function closeShop() { document.getElementById('shopModal').style.display = 'none'; }
@@ -2478,26 +2488,34 @@ async function actionPet(type, id, price) {
 async function actionBg(type, id, price) {
     const playerId = localStorage.getItem('player_id');
     let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
-    const doc = await db.collection("users").doc(playerId).get();
-    const petSys = doc.data().pet_system || { unlocked_bgs: ["bg_default"], current_bg_id: "bg_default" };
-
-    if (type === 'buy') {
-        if (balance < price) return alert("錢不夠裝潢神殿喔！");
-        if (!confirm(`要花費 💎 ${(price/100000000)}億 購買此背景嗎？`)) return;
-        balance -= price;
-        petSys.unlocked_bgs.push(id);
-    }
     
-    petSys.current_bg_id = id;
-    await db.collection("users").doc(playerId).update({ 
-        balance: balance,
-        pet_system: petSys 
-    });
+    try {
+        const doc = await db.collection("users").doc(playerId).get();
+        const petSys = doc.data().pet_system || { unlocked_bgs: ["bg_default"], current_bg_id: "bg_default" };
 
-    localStorage.setItem('sicbo_balance', balance);
-    updateMainBalance();
-    document.getElementById('pet-temple-overlay').remove();
-    openPetTemple();
+        if (type === 'buy') {
+            if (balance < price) return alert("錢不夠裝潢喔！");
+            if (!confirm(`要花費 💎 ${(price/100000000)}億 購買此裝潢嗎？`)) return;
+            balance -= price;
+            petSys.unlocked_bgs.push(id);
+        }
+        
+        petSys.current_bg_id = id;
+        await db.collection("users").doc(playerId).update({ 
+            balance: balance,
+            pet_system: petSys 
+        });
+
+        localStorage.setItem('sicbo_balance', balance);
+        updateMainBalance();
+        
+        // 重新渲染神殿 UI
+        const overlay = document.getElementById('pet-temple-overlay');
+        if (overlay) overlay.remove();
+        openPetTemple();
+    } catch (e) {
+        console.error("背景操作失敗:", e);
+    }
 }
 
     window.onload = function () {
