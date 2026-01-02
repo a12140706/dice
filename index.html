@@ -24,7 +24,10 @@
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
     }
-
+html {
+    /* 關鍵：在最底層就給黑色，防止任何彈跳露白 */
+    background-color: #050000; 
+}
     body {
       margin: 0;
       padding: 0;
@@ -2400,8 +2403,17 @@ html += `
 
         // 渲染 UI (大圖優先，功能收納至底部按鈕)
         let html = `
-            <div style="height: 100%; display: flex; flex-direction: column; background: rgba(0,0,0,0.4);">
-                <div style="padding: 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="
+                height: 100%; 
+                display: flex; 
+                flex-direction: column; 
+                background: rgba(0,0,0,0.4);
+                /* 關鍵：自動避開瀏海區域 */
+                padding-top: env(safe-area-inset-top); 
+                padding-bottom: env(safe-area-inset-bottom);
+                box-sizing: border-box;
+            ">
+                <div style="padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
                     <button onclick="document.getElementById('pet-temple-overlay').remove()" style="background:rgba(0,0,0,0.5); color:white; border:1px solid #666; padding:8px 15px; border-radius:20px;">⬅ 返回</button>
                     <div style="background:rgba(0,0,0,0.5); padding:5px 15px; border-radius:20px; color:var(--gold); font-weight:bold; border:1px solid gold;">💎 ${Math.floor(userData.balance).toLocaleString()}</div>
                 </div>
