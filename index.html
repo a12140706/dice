@@ -1664,6 +1664,7 @@
     </div>
 
     <div class="deposit-area">
+      <button class="btn-rank" onclick="openPetTemple()">🐾 未完成</button>
       <button class="btn-deposit" onclick="openModal()">💸 謀吉阿</button>
       <button class="btn-rank" onclick="toggleRank()">🏆 排行</button>
     </div>
@@ -1764,7 +1765,7 @@
     //改名
     async function changePlayerName() {
       return;
-      const changeNameFee = 50000000; // 改名費用
+      const changeNameFee = 100000000; // 改名費用
       const playerId = localStorage.getItem('player_id');
       let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
 
@@ -1891,7 +1892,18 @@
         { id: 'e_koi', name: '🌊 錦鯉躍遷', price: 0, class: 'fx-cosmic-koi', lottoOnly: true }
       ]
     };
-
+const PET_TEMPLE_DATA = {
+    pets: [
+        { id: 'p_cat_1', name: '🐾 嘟嘟貓', price: 1000000000, img: 'basic.jpg', desc: '好運的開端' },
+        { id: 'p_cat_2', name: '🕶️ 忍者嘟嘟', price: 10000000000, img: 'ninja.jpg', desc: '去上忍者課' },
+        { id: 'p_cat_3', name: '👑 招財嘟嘟', price: 100000000000, img: 'money.jpg', desc: '來財' }
+    ],
+    backgrounds: [
+        { id: 'bg_default', name: '🏠 溫馨貓窩', price: 0, img: 'bg_basic.jpg' },
+        { id: 'bg_neon', name: '🌃 霓虹賭城', price: 5000000000, img: 'bg_neon.jpg' },
+        { id: 'bg_gold', name: '💰 純金殿堂', price: 50000000000, img: 'bg_gold.jpg' }
+    ]
+};
     let currentShopTab = 'title';
     const LOTTO_CONFIG = {
       price: 10000000,
@@ -2354,6 +2366,139 @@ if (fxClass === 'fx-ultimate-legend') {
         updateMainBalance();
       }
     }
+    // 開啟貓咪神殿頁面
+async function openPetTemple() {
+    const playerId = localStorage.getItem('player_id');
+    if (!playerId) return alert("請先登入遊戲！");
+
+    // 取得雲端最新寵物資料
+    const doc = await db.collection("users").doc(playerId).get();
+    const userData = doc.data();
+    
+    // 初始化或讀取寵物系統資料 (不改動原本 USERS 其他欄位)
+    const petSys = userData.pet_system || {
+        current_pet_id: "",
+        unlocked_pets: [],
+        current_bg_id: "bg_default",
+        unlocked_bgs: ["bg_default"]
+    };
+
+    const overlay = document.createElement('div');
+    overlay.id = 'pet-temple-overlay';
+    overlay.style = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background-color: #121212; background-image: url('assets/${petSys.current_bg_id}.jpg');
+        background-size: cover; background-position: center;
+        color: white; z-index: 99999; overflow-y: auto; font-family: sans-serif;
+    `;
+
+    // 渲染 UI (手機優先排版)
+    let html = `
+        <div style="padding: 20px; text-align: center; background: rgba(0,0,0,0.6); min-height: 100%;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <button onclick="document.getElementById('pet-temple-overlay').remove()" style="background:#444; color:white; border:none; padding:8px 15px; border-radius:10px;">⬅ 返回</button>
+                <div style="color:var(--gold); font-weight:bold;">💎 ${Math.floor(userData.balance).toLocaleString()}</div>
+            </div>
+            
+            <h1 style="color:#ffd700; text-shadow: 0 0 10px rgba(255,215,0,0.5); margin: 20px 0;">貓咪神殿</h1>
+            
+            <div id="temple-pet-display" style="margin: 30px 0;">
+                ${petSys.current_pet_id ? 
+                    `<img src="assets/${petSys.current_pet_id}.png" style="width:180px; filter: drop-shadow(0 0 15px gold);">` : 
+                    `<div style="height:180px; display:flex; align-items:center; justify-content:center; color:#888;">尚未領養貓咪</div>`
+                }
+            </div>
+
+            <h3 style="text-align:left; border-left:4px solid gold; padding-left:10px;">進化與領養</h3>
+            <div style="display:flex; overflow-x:auto; gap:15px; padding:10px 0;">
+                ${PET_TEMPLE_DATA.pets.map(p => {
+                    const isOwned = petSys.unlocked_pets.includes(p.id);
+                    return `
+                        <div style="min-width:140px; background:rgba(255,255,255,0.1); padding:15px; border-radius:15px; border:${petSys.current_pet_id === p.id ? '2px solid gold' : '1px solid #444'}">
+                            <img src="assets/${p.img}" style="width:60px; height:60px; object-fit:contain;">
+                            <div style="font-size:12px; margin:5px 0;">${p.name}</div>
+                            ${isOwned ? 
+                                `<button onclick="actionPet('equip','${p.id}')" style="width:100%; background:gray; border:none; border-radius:5px; color:white;">${petSys.current_pet_id === p.id ? '使用中' : '裝備'}</button>` :
+                                `<button onclick="actionPet('buy','${p.id}',${p.price})" style="width:100%; background:var(--red); border:none; border-radius:5px; color:white; font-size:10px;">💎${(p.price/100000000)}億</button>`
+                            }
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+
+            <h3 style="text-align:left; border-left:4px solid #00d2ff; padding-left:10px; margin-top:30px;">神殿裝潢</h3>
+            <div style="display:flex; overflow-x:auto; gap:15px; padding:10px 0;">
+                ${PET_TEMPLE_DATA.backgrounds.map(bg => {
+                    const isOwned = petSys.unlocked_bgs.includes(bg.id);
+                    return `
+                        <div style="min-width:140px; background:rgba(255,255,255,0.1); padding:15px; border-radius:15px; border:${petSys.current_bg_id === bg.id ? '2px solid #00d2ff' : '1px solid #444'}">
+                            <div style="height:40px; background-image:url('assets/${bg.img}'); background-size:cover; border-radius:5px;"></div>
+                            <div style="font-size:12px; margin:5px 0;">${bg.name}</div>
+                            ${isOwned ? 
+                                `<button onclick="actionBg('equip','${bg.id}')" style="width:100%; background:gray; border:none; border-radius:5px; color:white;">${petSys.current_bg_id === bg.id ? '套用中' : '更換'}</button>` :
+                                `<button onclick="actionBg('buy','${bg.id}',${bg.price})" style="width:100%; background:#007bff; border:none; border-radius:5px; color:white; font-size:10px;">💎${(bg.price/100000000)}億</button>`
+                            }
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+    `;
+    overlay.innerHTML = html;
+    document.body.appendChild(overlay);
+}
+
+// 處理貓咪 購買/裝備
+async function actionPet(type, id, price) {
+    const playerId = localStorage.getItem('player_id');
+    let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
+    const doc = await db.collection("users").doc(playerId).get();
+    const petSys = doc.data().pet_system || { unlocked_pets: [], current_pet_id: "" };
+
+    if (type === 'buy') {
+        if (balance < price) return alert("餘額不足！再贏一點吧");
+        if (!confirm(`要花費 💎 ${(price/100000000)}億 領養/進化嗎？`)) return;
+        balance -= price;
+        petSys.unlocked_pets.push(id);
+    }
+    
+    petSys.current_pet_id = id;
+    await db.collection("users").doc(playerId).update({ 
+        balance: balance,
+        pet_system: petSys 
+    });
+    
+    localStorage.setItem('sicbo_balance', balance);
+    updateMainBalance();
+    document.getElementById('pet-temple-overlay').remove();
+    openPetTemple(); // 刷新頁面
+}
+
+// 處理背景 購買/更換
+async function actionBg(type, id, price) {
+    const playerId = localStorage.getItem('player_id');
+    let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
+    const doc = await db.collection("users").doc(playerId).get();
+    const petSys = doc.data().pet_system || { unlocked_bgs: ["bg_default"], current_bg_id: "bg_default" };
+
+    if (type === 'buy') {
+        if (balance < price) return alert("錢不夠裝潢神殿喔！");
+        if (!confirm(`要花費 💎 ${(price/100000000)}億 購買此背景嗎？`)) return;
+        balance -= price;
+        petSys.unlocked_bgs.push(id);
+    }
+    
+    petSys.current_bg_id = id;
+    await db.collection("users").doc(playerId).update({ 
+        balance: balance,
+        pet_system: petSys 
+    });
+
+    localStorage.setItem('sicbo_balance', balance);
+    updateMainBalance();
+    document.getElementById('pet-temple-overlay').remove();
+    openPetTemple();
+}
 
     window.onload = function () {
       updateMainBalance();
