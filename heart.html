@@ -1610,7 +1610,7 @@
                         temp.innerText = symbols[Math.floor(Math.random() * symbols.length)];
                         strip.appendChild(temp);
                     }
-                    let isHeart = Math.random() < 0.03;
+                    let isHeart = Math.random() < 0.045;
                     board[r][c] = isHeart ? { type: '❤️', val: getHeartMultiplier(r) } : { type: symbols[Math.floor(Math.random() * symbols.length)], val: 0 };
 
                     const delay = (c * 60) + (r * 20);

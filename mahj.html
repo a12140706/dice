@@ -1660,7 +1660,7 @@
 
       // --- [機率調整區] 1. 特殊牌基礎機率 ---
       if (Math.random() < 0.05) return '元寶'; // 元寶出現率
-      if (!isFree && Math.random() > 0.99) return '胡'; // 非免費遊戲時胡的機率
+      if (!isFree && Math.random() > 0.987) return '胡'; // 非免費遊戲時胡的機率
 
       const currentCounts = countTiles();
       const wildCandidates = ['⬜', '🀄', '🀅'];
@@ -1670,11 +1670,11 @@
 let wildChance = 0.4; // 起始機率從 0.7 降至 0.4
 
 // 平滑衰減邏輯
-wildChance = wildChance * Math.pow(0.85, combo);
+wildChance = wildChance * Math.pow(0.95, combo);
 
 // 強制斷線門檻 (預算超支保護)
 if (combo >= 20) {
-    wildChance = 0.01; 
+    wildChance = 0.05; 
 }
 
 // [關鍵] 前兩行壓制：0.4 * 0.5 = 0.2 (20% 起手)
