@@ -1283,43 +1283,70 @@ function updateUI() {
 
 function simulateRound() {
   playSound('sndDice');
-  let d = [Math.floor(Math.random()*6)+1, Math.floor(Math.random()*6)+1, Math.floor(Math.random()*6)+1];
-  const sum = d[0]+d[1]+d[2], isTriple = (d[0]===d[1] && d[1]===d[2]);
-  
+  let d = [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
+  const sum = d[0] + d[1] + d[2], isTriple = (d[0] === d[1] && d[1] === d[2]);
+
   missCount = isTriple ? 0 : missCount + 1;
 
   const center = document.getElementById('centerDisplay');
   document.getElementById('bigDiceIcons').textContent = `${DICE_CHARS[d[0]]} ${DICE_CHARS[d[1]]} ${DICE_CHARS[d[2]]}`;
   document.getElementById('bigResultText').textContent = `${sum} 點 - ${isTriple ? "圍骰" : (sum >= 11 ? "大" : "小")}`;
-  center.style.display = 'block'; 
+  center.style.display = 'block';
   setTimeout(() => center.classList.add('show'), 50);
   if (isTriple) playSound('sndTriple');
 
   let winTotal = 0, tripleWinAmt = 0;
+
   for (let key in betData) {
-    let amt = betData[key], won = 0;
-    if (!isTriple) { 
-        if (key === 'small' && sum <= 10) won = amt * 1; 
-        if (key === 'big' && sum >= 11) won = amt * 1; 
+    let amt = betData[key];
+    let won = 0;
+
+    // 1. 大/小 判定 (圍骰通殺)
+    if (!isTriple) {
+      if (key === 'small' && sum <= 10) won = amt * 1;
+      if (key === 'big' && sum >= 11) won = amt * 1;
     }
-    if (key === `sum_${sum}`) won = amt * SUM_ODDS[sum];
-    if (key === 'anyTriple' && isTriple) { won = amt * 34; tripleWinAmt += (amt + won); }
-    if (key === `triple_${d[0]}` && isTriple) { won = amt * 210; tripleWinAmt += (amt + won); }
-    if (key === `single_${d[0]}`) won += amt * 1;
-    if (key === `single_${d[1]}`) won += amt * 1;
-    if (key === `single_${d[2]}`) won += amt * 1;
-    if (won > 0) winTotal += (amt + won);
+
+    // 2. 總和判定 (就算圍骰，總和還是會中)
+    if (key === `sum_${sum}`) {
+      won = amt * SUM_ODDS[sum];
+    }
+
+    // 3. 全圍/單圍判定
+    if (key === 'anyTriple' && isTriple) {
+      won = amt * 34;
+      tripleWinAmt += (amt + won);
+    }
+    if (key === `triple_${d[0]}` && isTriple) {
+      won = amt * 210;
+      tripleWinAmt += (amt + won);
+    }
+
+    // 4. 單骰判定 (1-6 點數，不管是不是圍骰都要算)
+    // 這裡改為獨立累加，避免被上方的 won 覆蓋
+    let singleWon = 0;
+    if (key === `single_${d[0]}`) singleWon += amt * 1;
+    if (key === `single_${d[1]}`) singleWon += amt * 1;
+    if (key === `single_${d[2]}`) singleWon += amt * 1;
+
+    // 最終該區域總獎金 = 原始投注 + 賠率獎金
+    if (won > 0 || singleWon > 0) {
+      winTotal += (amt + won + singleWon);
+    }
   }
 
   // 僅在開出圍骰且有人獲獎時存入紀錄
   if (isTriple && tripleWinAmt > 0) {
-      db.collection("sicbo_wins").add({
-          name: localStorage.getItem('player_name') || '幸運兒',
-          win: tripleWinAmt, dice: `${d[0]}${d[1]}${d[2]}`, time: firebase.firestore.FieldValue.serverTimestamp()
-      });
+    db.collection("sicbo_wins").add({
+      name: localStorage.getItem('player_name') || '幸運兒',
+      win: tripleWinAmt,
+      dice: `${d[0]}${d[1]}${d[2]}`,
+      time: firebase.firestore.FieldValue.serverTimestamp()
+    });
   }
 
   balance += winTotal;
+  // ... 以下剩餘的 UI 更新與延遲邏輯保持不變 ...
   if (winTotal > 0) {
       setTimeout(() => { if(!isTriple) playSound('sndWin'); }, 1200);
       const effect = document.getElementById('winAmountEffect');
