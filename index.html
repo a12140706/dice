@@ -2640,16 +2640,15 @@
           const title = document.getElementById('menu-title');
           const content = document.getElementById('menu-content');
 
-          // 1. 重置狀態：清空內容並隱藏，確保動畫能重新觸發
-          content.innerHTML = '';
+          // 1. 執行重置動作 (隱藏並清空)
           drawer.style.display = 'none';
+          content.innerHTML = '';
           content.scrollLeft = 0;
 
-          let itemsHtml = '';
-
+          // 2. 根據類型生成 HTML
           if (type === 'adopt') {
             title.innerText = "🐾 選擇你的夥伴";
-            itemsHtml = PET_TEMPLE_DATA.pets.map(p => {
+            content.innerHTML = PET_TEMPLE_DATA.pets.map(p => {
               const isOwned = petSys.unlocked_pets.includes(p.id);
               const isEquipped = petSys.current_pet_id === p.id;
               return `
@@ -2664,9 +2663,10 @@
                 }
                 </div>`;
             }).join('');
-          } else if (type === 'deco') {
+          }
+          else if (type === 'deco') {
             title.innerText = "🖼️ 選擇神殿背景";
-            itemsHtml = PET_TEMPLE_DATA.backgrounds.map(bg => {
+            content.innerHTML = PET_TEMPLE_DATA.backgrounds.map(bg => {
               const isOwned = petSys.unlocked_bgs.includes(bg.id);
               const isEquipped = petSys.current_bg_id === bg.id;
               return `
@@ -2683,8 +2683,7 @@
             }).join('');
           }
 
-          // 2. 渲染內容並顯示 Drawer
-          content.innerHTML = itemsHtml;
+          // 3. 最後統一顯示
           drawer.style.display = 'block';
         };
 
