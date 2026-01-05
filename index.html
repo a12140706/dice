@@ -2559,7 +2559,6 @@
         if (!doc.exists) return;
         const userData = doc.data();
 
-        // 1. 確保拿到最新的資料
         const petSys = userData.pet_system || {
             current_pet_id: "",
             unlocked_pets: [],
@@ -2567,18 +2566,26 @@
             unlocked_bgs: ["bg_basic"]
         };
 
+        // --- 核心修正：預先定義好 HTML 字串，不要在模板內做三元運算 ---
         const currentPetObj = PET_TEMPLE_DATA.pets.find(p => p.id === petSys.current_pet_id);
         const currentBgObj = PET_TEMPLE_DATA.backgrounds.find(b => b.id === (petSys.current_bg_id || "bg_basic"));
 
-        // 2. 預先處理顯示內容，避免在模板字串內產生標籤破碎
-        const petImgHtml = currentPetObj 
-            ? `<img src="assets/pet/${currentPetObj.img}" style="width:220px; filter: drop-shadow(0 0 20px gold); display:block;">` 
-            : `<div style="width:180px; height:180px; border:2px dashed #888; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#ccc; background:rgba(0,0,0,0.3);">尚未領養貓咪</div>`;
-        
-        const petNameHtml = currentPetObj ? `✨ ${currentPetObj.name}` : '請於下方領養貓咪';
-        const bgPath = `assets/pet/${currentBgObj ? currentBgObj.img : "bg_basic.jpg"}`;
+        let petDisplayHTML = '';
+        let petNameHTML = '';
 
-        // 清除舊的 Overlay
+        if (currentPetObj && currentPetObj.img) {
+            // 有貓的情況
+            petDisplayHTML = `<img src="assets/pet/${currentPetObj.img}" style="width:220px; filter: drop-shadow(0 0 20px gold);">`;
+            petNameHTML = `✨ ${currentPetObj.name}`;
+        } else {
+            // 沒貓的情況
+            petDisplayHTML = `<div style="width:180px; height:180px; border:2px dashed #888; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#ccc; background:rgba(0,0,0,0.3);">尚未領養貓咪</div>`;
+            petNameHTML = `請於下方領養貓咪`;
+        }
+
+        const bgPath = `assets/pet/${currentBgObj ? currentBgObj.img : "bg_basic.jpg"}`;
+        // ---------------------------------------------------------
+
         const oldOverlay = document.getElementById('pet-temple-overlay');
         if (oldOverlay) oldOverlay.remove();
 
@@ -2592,7 +2599,6 @@
             color: white; z-index: 99999; overflow: hidden; font-family: sans-serif;
         `;
 
-        // 3. 渲染乾淨的 HTML 結構
         overlay.innerHTML = `
             <div style="height: 100%; display: flex; flex-direction: column; background: rgba(0,0,0,0.4);
                         padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); box-sizing: border-box;">
@@ -2605,33 +2611,32 @@
                 <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;">
                     <h1 style="color:#ffd700; text-shadow: 0 0 15px rgba(255,215,0,0.8); margin: 0; font-size: 24px;">貓咪神殿</h1>
                     <div id="temple-pet-display" style="margin-top: 20px;">
-                        ${petImgHtml}
+                        ${petDisplayHTML}
                     </div>
                     <div style="margin-top: 15px; background:rgba(0,0,0,0.6); padding:5px 15px; border-radius:15px; font-size:14px;">
-                        ${petNameHtml}
+                        ${petNameHTML}
                     </div>
                 </div>
 
-                <div style="padding: 20px; display: flex; gap: 10px; background: rgba(0,0,0,0.8); z-index: 100;">
-                    <button id="btn-adopt" style="flex:1; background: #e67e22; color:white; border:none; padding:15px; border-radius:12px; font-weight:bold; cursor:pointer;">🐾 進化與領養</button>
-                    <button id="btn-deco" style="flex:1; background: #2980b9; color:white; border:none; padding:15px; border-radius:12px; font-weight:bold; cursor:pointer;">🖼️ 神殿裝潢</button>
+                <div style="padding: 20px; display: flex; gap: 10px; background: linear-gradient(transparent, rgba(0,0,0,0.8));">
+                    <button onclick="togglePetMenu('adopt')" style="flex:1; background: #e67e22; color:white; border:none; padding:15px; border-radius:12px; font-weight:bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">🐾 進化與領養</button>
+                    <button onclick="togglePetMenu('deco')" style="flex:1; background: #2980b9; color:white; border:none; padding:15px; border-radius:12px; font-weight:bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">🖼️ 神殿裝潢</button>
                 </div>
 
                 <div id="pet-menu-drawer" style="display:none; position:absolute; bottom:0; left:0; width:100%; background:#222; border-top:3px solid gold; border-radius:20px 20px 0 0; z-index:100000; padding:20px; box-sizing:border-box; animation: slideUp 0.3s ease;">
                     <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
                         <span id="menu-title" style="font-weight:bold; color:gold;"></span>
-                        <span onclick="document.getElementById('pet-menu-drawer').style.display='none'" style="cursor:pointer; padding:5px;">✕</span>
+                        <span onclick="this.parentElement.parentElement.style.display='none'" style="cursor:pointer; padding:5px;">✕</span>
                     </div>
                     <div id="menu-content" style="display:flex; overflow-x:auto; gap:15px; padding-bottom:10px;"></div>
                 </div>
             </div>
             <style> @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } } </style>
         `;
-
         document.body.appendChild(overlay);
 
-        // 4. 改用事件監聽器（EventListener）取代 onclick 屬性，這能解決手機瀏覽器的互斥問題
-        const handler = (type) => {
+        // 定義切換邏輯
+        window.togglePetMenu = function (type) {
             const drawer = document.getElementById('pet-menu-drawer');
             const title = document.getElementById('menu-title');
             const content = document.getElementById('menu-content');
@@ -2640,7 +2645,6 @@
                 drawer.style.display = 'none';
                 return;
             }
-
             drawer.dataset.type = type;
             content.innerHTML = '';
 
@@ -2654,7 +2658,7 @@
                             <img src="assets/pet/${p.img}" onerror="this.src='assets/pet/basic.png'" style="width:80px; height:80px; object-fit:contain; margin-bottom:10px; display:block; margin:0 auto;">
                             <div style="font-size:12px; margin-bottom:10px;">${p.name}</div>
                             ${isOwned ? 
-                                `<button onclick="actionPet('equip','${p.id}')" style="width:100%; background:${isEquipped ? '#444' : '#666'}; border:none; border-radius:5px; color:white; padding:8px 5px;">${isEquipped ? '使用中' : '裝備'}</button>` : 
+                                `<button onclick="actionPet('equip','${p.id}')" style="width:100%; background:${isEquipped ? '#444' : '#666'}; border:none; border-radius:5px; color:white; padding:8px 5px;">${isEquipped ? '溜搭中' : '帶上他'}</button>` : 
                                 `<button onclick="actionPet('buy','${p.id}',${p.price})" style="width:100%; background:#c0392b; border:none; border-radius:5px; color:white; padding:8px 5px; font-size:10px;">💎${(p.price / 100000000).toLocaleString()}億</button>`
                             }
                         </div>`;
@@ -2677,13 +2681,7 @@
             }
             drawer.style.display = 'block';
         };
-
-        document.getElementById('btn-adopt').addEventListener('click', () => handler('adopt'));
-        document.getElementById('btn-deco').addEventListener('click', () => handler('deco'));
-
-    } catch (e) {
-        console.error("載入失敗:", e);
-    }
+    } catch (e) { console.error("載入失敗:", e); }
 }
 
     // 處理貓咪 購買/裝備
