@@ -2640,57 +2640,51 @@
           const title = document.getElementById('menu-title');
           const content = document.getElementById('menu-content');
 
-          // 1. 先清空內容，防止「領養」與「裝潢」內容混雜
+          // 1. 重置狀態：清空內容並隱藏，確保動畫能重新觸發
           content.innerHTML = '';
           drawer.style.display = 'none';
-
-          // 確保每次打開時捲軸回到最左邊
           content.scrollLeft = 0;
+
+          let itemsHtml = '';
 
           if (type === 'adopt') {
             title.innerText = "🐾 選擇你的夥伴";
-
-            // 重新從資料中映射
-            const petHtml = PET_TEMPLE_DATA.pets.map(p => {
+            itemsHtml = PET_TEMPLE_DATA.pets.map(p => {
               const isOwned = petSys.unlocked_pets.includes(p.id);
               const isEquipped = petSys.current_pet_id === p.id;
-
               return `
-                        <div style="min-width:130px; background:#333; padding:15px; border-radius:12px; border:${isEquipped ? '2px solid gold' : '1px solid #555'}; text-align:center;">
-                            <img src="assets/pet/${p.img}" 
-                                 onerror="this.src='assets/pet/bg_basic.jpg'" 
-                                 style="width:80px; height:80px; object-fit:contain; margin-bottom:10px; display:block; margin-left:auto; margin-right:auto;">
-                            <div style="font-size:12px; margin-bottom:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.name}</div>
-                            ${isOwned ?
+                <div style="min-width:130px; background:#333; padding:15px; border-radius:12px; border:${isEquipped ? '2px solid gold' : '1px solid #555'}; text-align:center;">
+                    <img src="assets/pet/${p.img}" 
+                         onerror="this.src='assets/pet/basic.png'" 
+                         style="width:80px; height:80px; object-fit:contain; margin-bottom:10px; display:block; margin-left:auto; margin-right:auto;">
+                    <div style="font-size:12px; margin-bottom:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.name}</div>
+                    ${isOwned ?
                   `<button onclick="actionPet('equip','${p.id}')" style="width:100%; background:${isEquipped ? '#444' : '#666'}; border:none; border-radius:5px; color:white; padding:8px 5px;">${isEquipped ? '使用中' : '裝備'}</button>` :
                   `<button onclick="actionPet('buy','${p.id}',${p.price})" style="width:100%; background:#c0392b; border:none; border-radius:5px; color:white; padding:8px 5px; font-size:10px;">💎${(p.price / 100000000).toLocaleString()}億</button>`
                 }
-                        </div>
-                    `;
+                </div>`;
             }).join('');
-            content.innerHTML = petHtml;
           } else if (type === 'deco') {
             title.innerText = "🖼️ 選擇神殿背景";
-            const bgHtml = PET_TEMPLE_DATA.backgrounds.map(bg => {
+            itemsHtml = PET_TEMPLE_DATA.backgrounds.map(bg => {
               const isOwned = petSys.unlocked_bgs.includes(bg.id);
               const isEquipped = petSys.current_bg_id === bg.id;
-
               return `
-            <div style="min-width:130px; background:#333; padding:15px; border-radius:12px; border:${isEquipped ? '2px solid #3498db' : '1px solid #555'}; text-align:center;">
-                <img src="assets/pet/${bg.img}" 
-                     onerror="this.src='assets/pet/bg-basic.jpg'" 
-                     style="width:100%; height:60px; object-fit:cover; border-radius:5px; margin-bottom:10px; display:block;">
-                
-                <div style="font-size:12px; margin-bottom:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${bg.name}</div>
-                ${isOwned ? 
+                <div style="min-width:130px; background:#333; padding:15px; border-radius:12px; border:${isEquipped ? '2px solid #3498db' : '1px solid #555'}; text-align:center;">
+                    <img src="assets/pet/${bg.img}" 
+                         onerror="this.src='assets/pet/bg-basic.jpg'" 
+                         style="width:100%; height:60px; object-fit:cover; border-radius:5px; margin-bottom:10px; display:block;">
+                    <div style="font-size:12px; margin-bottom:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${bg.name}</div>
+                    ${isOwned ?
                   `<button onclick="actionBg('equip','${bg.id}')" style="width:100%; background:${isEquipped ? '#444' : '#666'}; border:none; border-radius:5px; color:white; padding:8px 5px;">${isEquipped ? '套用中' : '更換'}</button>` :
                   `<button onclick="actionBg('buy','${bg.id}',${bg.price})" style="width:100%; background:#2980b9; border:none; border-radius:5px; color:white; padding:8px 5px; font-size:10px;">💎${(bg.price / 100000000).toLocaleString()}億</button>`
                 }
-            </div>
-        `;
+                </div>`;
             }).join('');
-            content.innerHTML = bgHtml;
           }
+
+          // 2. 渲染內容並顯示 Drawer
+          content.innerHTML = itemsHtml;
           drawer.style.display = 'block';
         };
 
