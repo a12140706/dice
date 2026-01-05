@@ -24,10 +24,12 @@
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
     }
-html {
-    /* 關鍵：在最底層就給黑色，防止任何彈跳露白 */
-    background-color: #050000; 
-}
+
+    html {
+      /* 關鍵：在最底層就給黑色，防止任何彈跳露白 */
+      background-color: #050000;
+    }
+
     body {
       margin: 0;
       padding: 0;
@@ -144,10 +146,12 @@ html {
     .t-purple {
       color: #9b59b6 !important;
     }
-    .t-yellow{
+
+    .t-yellow {
       color: #ffd000 !important;
     }
-   /* 高級 */
+
+    /* 高級 */
     .t-orange {
       color: #e67e22 !important;
     }
@@ -440,42 +444,44 @@ html {
     }
 
     /* --- 特效 4：絕對零度 (冰藍呼吸 + 結晶閃爍) --- */
-   .fx-ice {
-    position: relative;
-    overflow: hidden;
-    border: 1px solid #00f2fe !important;
-    background: linear-gradient(135deg, #005f73, #00d4ff) !important;
-    color: #fff !important;
-    text-shadow: 0 0 10px #7ed6ff !important;
-    box-shadow: 0 0 15px rgba(0, 242, 254, 0.5) !important;
-    animation: ice-shimmer 2s ease-in-out infinite alternate !important;
-}
-/* ❄️ 這裡是雪花專屬層 */
-.fx-ice::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 1;
-    
-    /* 使用三層隨機分佈的雪花點 */
-    background-image: 
+    .fx-ice {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid #00f2fe !important;
+      background: linear-gradient(135deg, #005f73, #00d4ff) !important;
+      color: #fff !important;
+      text-shadow: 0 0 10px #7ed6ff !important;
+      box-shadow: 0 0 15px rgba(0, 242, 254, 0.5) !important;
+      animation: ice-shimmer 2s ease-in-out infinite alternate !important;
+    }
+
+    /* ❄️ 這裡是雪花專屬層 */
+    .fx-ice::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+
+      /* 使用三層隨機分佈的雪花點 */
+      background-image:
         radial-gradient(1.5px 1.5px at 20% 30%, #fff 100%, transparent),
         radial-gradient(2px 2px at 50% 70%, #fff 100%, transparent),
         radial-gradient(1.2px 1.2px at 80% 40%, #fff 100%, transparent);
-    
-    /* 讓雪花背景重複鋪滿，並設定不同的大小來打破規律 */
-    background-size: 100px 100px, 150px 150px, 200px 200px;
-    
-    /* 執行下雪動畫 */
-    animation: snow-fall-fixed 10s linear infinite;
-}
+
+      /* 讓雪花背景重複鋪滿，並設定不同的大小來打破規律 */
+      background-size: 100px 100px, 150px 150px, 200px 200px;
+
+      /* 執行下雪動畫 */
+      animation: snow-fall-fixed 10s linear infinite;
+    }
+
     .fx-ice::before {
       content: "❄" !important;
-      color: #6860fe !important; 
+      color: #6860fe !important;
       text-shadow: 0 0 5px rgba(237, 159, 255, 0.8) !important;
       position: absolute;
       right: 5px;
@@ -484,15 +490,17 @@ html {
       font-size: 20px;
       animation: rotate-slow 5s linear infinite;
     }
+
     @keyframes snow-fall-fixed {
-    0% {
+      0% {
         background-position: 0 0, 0 0, 0 0;
-    }
-    100% {
+      }
+
+      100% {
         /* 讓三層雪花以不同速度和方向飄落，視覺上很隨機 */
         background-position: 100px 100px, -150px 300px, 200px 600px;
+      }
     }
-}
 
     /* --- 特效 5：深海雷鳴 (深藍背景 + 隨機閃電) --- */
     .fx-thunder {
@@ -1250,120 +1258,153 @@ html {
       font-weight: bold;
       color: #fff;
     }
-/* 至尊傳奇：在不改動你原本設定的前提下，加入流動邊框 */
-.fx-ultimate-legend {
-    position: relative;
-    /* --- 1. 你原本的樣式完全保留 --- */
-    background: linear-gradient(90deg, #000 0%, #FFD700 20%, #FFFFFF 40%, #FF4500 60%, #9400D3 80%, #000 100%) !important;
-    background-size: 300% 100% !important;
-    z-index: 1;
-    overflow: visible !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-    
-    /* --- 2. 圓角關鍵設定 --- */
-    border-radius: 50px !important; /* 確保圓弧存在 */
-   /* 預留邊框空間 */
-    background-clip: padding-box !important; /* 防止背景溢出到邊框區域 */
 
-    /* --- 3. 邊框特效：利用多重陰影模擬流光邊框 --- */
-    /* 這行會在圓弧邊緣加上一道金屬光感，且不破壞圓角 */
-    box-shadow: 0 0 0 1.5px #FFD700, 0 0 10px rgba(255, 215, 0, 0.5); 
-    
-    animation: ult-bg-flow 4s linear infinite, ult-vibrate 0.15s infinite;
-}
+    /* 至尊傳奇：在不改動你原本設定的前提下，加入流動邊框 */
+    .fx-ultimate-legend {
+      position: relative;
+      /* --- 1. 你原本的樣式完全保留 --- */
+      background: linear-gradient(90deg, #000 0%, #FFD700 20%, #FFFFFF 40%, #FF4500 60%, #9400D3 80%, #000 100%) !important;
+      background-size: 300% 100% !important;
+      z-index: 1;
+      overflow: visible !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
 
-/* --- 新增邊框專用動畫 --- */
-@keyframes border-flow {
-    0% { border-image-source: linear-gradient(0deg, #FFD700, #FF4500, #9400D3, #FFD700); }
-    100% { border-image-source: linear-gradient(360deg, #FFD700, #FF4500, #9400D3, #FFD700); }
-}
-/* 改造後的陰影層：多色呼吸發光 */
-.fx-ultimate-legend::after {
-    content: '';
-    position: absolute;
-    inset: -2px;
-    border-radius: 52px;
-    z-index: -1;
-    filter: blur(12px); /* 稍微加深模糊，更有能量場的感覺 */
-    opacity: 0.7;
-    /* 執行多色陰影變換動畫 */
-    animation: ult-shadow-glow 3s ease-in-out infinite alternate;
-}
+      /* --- 2. 圓角關鍵設定 --- */
+      border-radius: 50px !important;
+      /* 確保圓弧存在 */
+      /* 預留邊框空間 */
+      background-clip: padding-box !important;
+      /* 防止背景溢出到邊框區域 */
 
-/* 文字層維持你原本的流光質感 */
-.fx-ultimate-legend span {
-    position: relative;
-    z-index: 20 !important;
-    background: linear-gradient(to right, #fff 20%, #ffd700 40%, #ff4500 60%, #fff 80%);
-    background-size: 200% auto;
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: ult-text-flow 2s linear infinite;
-    font-weight: 900;
-    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
-}
+      /* --- 3. 邊框特效：利用多重陰影模擬流光邊框 --- */
+      /* 這行會在圓弧邊緣加上一道金屬光感，且不破壞圓角 */
+      box-shadow: 0 0 0 1.5px #FFD700, 0 0 10px rgba(255, 215, 0, 0.5);
 
-/* --- 新增/修改動畫定義 --- */
-.fx-ultimate-legend::before {
-    content: '';
-    position: absolute;
-    /* 讓這個層比主體大一點點，當作邊框 */
-    inset: 0px; 
-    border-radius: 50px; 
-    padding: 1.5px; /* 邊框寬度 */
-    
-    /* 邊框的流動漸層顏色 */
-    background: linear-gradient(90deg, #FFD700, #FFFFFF, #FF4500, #9400D3, #FFD700);
-    background-size: 200% auto;
-    mask: 
-        linear-gradient(#fff 0 0) content-box, 
+      animation: ult-bg-flow 4s linear infinite, ult-vibrate 0.15s infinite;
+    }
+
+    /* --- 新增邊框專用動畫 --- */
+    @keyframes border-flow {
+      0% {
+        border-image-source: linear-gradient(0deg, #FFD700, #FF4500, #9400D3, #FFD700);
+      }
+
+      100% {
+        border-image-source: linear-gradient(360deg, #FFD700, #FF4500, #9400D3, #FFD700);
+      }
+    }
+
+    /* 改造後的陰影層：多色呼吸發光 */
+    .fx-ultimate-legend::after {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 52px;
+      z-index: -1;
+      filter: blur(12px);
+      /* 稍微加深模糊，更有能量場的感覺 */
+      opacity: 0.7;
+      /* 執行多色陰影變換動畫 */
+      animation: ult-shadow-glow 3s ease-in-out infinite alternate;
+    }
+
+    /* 文字層維持你原本的流光質感 */
+    .fx-ultimate-legend span {
+      position: relative;
+      z-index: 20 !important;
+      background: linear-gradient(to right, #fff 20%, #ffd700 40%, #ff4500 60%, #fff 80%);
+      background-size: 200% auto;
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: ult-text-flow 2s linear infinite;
+      font-weight: 900;
+      filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
+    }
+
+    /* --- 新增/修改動畫定義 --- */
+    .fx-ultimate-legend::before {
+      content: '';
+      position: absolute;
+      /* 讓這個層比主體大一點點，當作邊框 */
+      inset: 0px;
+      border-radius: 50px;
+      padding: 1.5px;
+      /* 邊框寬度 */
+
+      /* 邊框的流動漸層顏色 */
+      background: linear-gradient(90deg, #FFD700, #FFFFFF, #FF4500, #9400D3, #FFD700);
+      background-size: 200% auto;
+      mask:
+        linear-gradient(#fff 0 0) content-box,
         linear-gradient(#fff 0 0);
-    /* 遮罩黑科技：只顯示邊框，中間挖空 */
-    -webkit-mask: 
-        linear-gradient(#fff 0 0) content-box, 
+      /* 遮罩黑科技：只顯示邊框，中間挖空 */
+      -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
         linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    
-    /* 邊框流動動畫 */
-    animation: ult-text-flow 2s linear infinite; 
-    z-index: 2;
-}
-/* 背景流動：讓黑框裡的顏色動起來 */
-@keyframes ult-bg-flow {
-    0% { background-position: 0% 50%; }
-    100% { background-position: 300% 50%; }
-}
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
 
-/* 多色陰影變換：補償原本 JS 粒子的顏色動態 */
-@keyframes ult-shadow-glow {
-    0% {
+      /* 邊框流動動畫 */
+      animation: ult-text-flow 2s linear infinite;
+      z-index: 2;
+    }
+
+    /* 背景流動：讓黑框裡的顏色動起來 */
+    @keyframes ult-bg-flow {
+      0% {
+        background-position: 0% 50%;
+      }
+
+      100% {
+        background-position: 300% 50%;
+      }
+    }
+
+    /* 多色陰影變換：補償原本 JS 粒子的顏色動態 */
+    @keyframes ult-shadow-glow {
+      0% {
         background: #0f12dd;
         box-shadow: 0 0 15px #0f12dd, 0 0 30px rgba(255, 215, 0, 0.4);
-    }
-    50% {
+      }
+
+      50% {
         background: #9400D3;
         box-shadow: 0 0 20px #9400D3, 0 0 40px rgba(148, 0, 211, 0.4);
-    }
-    100% {
+      }
+
+      100% {
         background: #FF4500;
         box-shadow: 0 0 15px #FF4500, 0 0 30px rgba(255, 69, 0, 0.4);
+      }
     }
-}
 
-/* 原本的動畫保留 */
-@keyframes ult-text-flow {
-    0% { background-position: 0% center; }
-    100% { background-position: 200% center; }
-}
+    /* 原本的動畫保留 */
+    @keyframes ult-text-flow {
+      0% {
+        background-position: 0% center;
+      }
 
-@keyframes ult-vibrate {
-    0% { transform: translate(0,0); }
-    50% { transform: translate(0.5px, -0.5px); }
-    100% { transform: translate(0,0); }
-}
+      100% {
+        background-position: 200% center;
+      }
+    }
+
+    @keyframes ult-vibrate {
+      0% {
+        transform: translate(0, 0);
+      }
+
+      50% {
+        transform: translate(0.5px, -0.5px);
+      }
+
+      100% {
+        transform: translate(0, 0);
+      }
+    }
+
     /* 絕世特效：錦鯉躍遷 (終極動態版) */
     .fx-cosmic-koi {
       position: relative;
@@ -1632,7 +1673,7 @@ html {
         cursor: pointer;
         box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
     ">
-        🔄 切換帳號
+      🔄 切換帳號
     </button>
   </div>
 
@@ -1814,77 +1855,77 @@ html {
     /**
  * 使用 Firebase ID 登入引繼
  */
-// 修改後的登入功能，確保稱號特效同步
-/**
- * 使用 Firebase ID 登入引繼
- * 會同步：ID、暱稱、餘額、所有資產到期日、當前裝備狀態
- */
-async function loginWithID() {
-    // 1. 取得目標 ID
-    const targetID = prompt("請輸入引繼碼：");
-    if (!targetID || targetID.trim() === "") return;
+    // 修改後的登入功能，確保稱號特效同步
+    /**
+     * 使用 Firebase ID 登入引繼
+     * 會同步：ID、暱稱、餘額、所有資產到期日、當前裝備狀態
+     */
+    async function loginWithID() {
+      // 1. 取得目標 ID
+      const targetID = prompt("請輸入引繼碼：");
+      if (!targetID || targetID.trim() === "") return;
 
-    const newID = targetID.trim();
-    const currentID = localStorage.getItem('player_id');
+      const newID = targetID.trim();
+      const currentID = localStorage.getItem('player_id');
 
-    // 如果輸入的就是目前的 ID，就不必執行
-    if (newID === currentID) {
+      // 如果輸入的就是目前的 ID，就不必執行
+      if (newID === currentID) {
         alert("您目前就是此帳號。");
         return;
-    }
+      }
 
-    try {
+      try {
         // 2. 檢查目標 ID 在 Firebase 是否存在
         const doc = await db.collection("users").doc(newID).get();
         if (!doc.exists) {
-            alert("❌ 找不到該 ID 的紀錄，請檢查輸入是否正確。");
-            return;
+          alert("❌ 找不到該 ID 的紀錄，請檢查輸入是否正確。");
+          return;
         }
 
         // 3. 二次確認（針對已有紀錄的玩家）
-        const confirmMsg = currentID 
-            ? "⚠️ 注意：您目前已有遊戲紀錄。\n引繼將會登出目前帳號並載入新帳號資料。\n確定要繼續嗎？" 
-            : "確定要引繼此帳號並載入所有雲端紀錄嗎？";
+        const confirmMsg = currentID
+          ? "⚠️ 注意：您目前已有遊戲紀錄。\n引繼將會登出目前帳號並載入新帳號資料。\n確定要繼續嗎？"
+          : "確定要引繼此帳號並載入所有雲端紀錄嗎？";
 
         if (confirm(confirmMsg)) {
-            // 4. 清除本地舊資料，避免舊帳號的餘額或資產殘留
-            localStorage.clear(); 
-            
-            // 5. 寫入新 ID
-            localStorage.setItem('player_id', newID);
-            
-            alert("✅ 引繼成功！正在重新載入遊戲數據...");
-            
-            // 6. 強制刷新，讓 checkUserStatus 重新從雲端抓取新帳號的所有資料
-            location.reload(); 
+          // 4. 清除本地舊資料，避免舊帳號的餘額或資產殘留
+          localStorage.clear();
+
+          // 5. 寫入新 ID
+          localStorage.setItem('player_id', newID);
+
+          alert("✅ 引繼成功！正在重新載入遊戲數據...");
+
+          // 6. 強制刷新，讓 checkUserStatus 重新從雲端抓取新帳號的所有資料
+          location.reload();
         }
-    } catch (e) {
+      } catch (e) {
         console.error("引繼出錯:", e);
         alert("連線失敗，請檢查網路狀態。");
+      }
     }
-}
     //改名
     function changePlayerName() {
-    const changeNameFee = 100000000;
-    const playerId = localStorage.getItem('player_id');
-    const balance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
-    const currentName = localStorage.getItem('player_name') || "無名氏";
+      const changeNameFee = 100000000;
+      const playerId = localStorage.getItem('player_id');
+      const balance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
+      const currentName = localStorage.getItem('player_name') || "無名氏";
 
-    if (!playerId) return alert("請先登入遊戲！");
+      if (!playerId) return alert("請先登入遊戲！");
 
-    // 建立改名彈窗
-    const modal = document.createElement('div');
-    modal.id = 'name-change-modal';
-    modal.style = `
+      // 建立改名彈窗
+      const modal = document.createElement('div');
+      modal.id = 'name-change-modal';
+      modal.style = `
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0,0,0,0.85); display: flex; align-items: center;
         justify-content: center; z-index: 100000; font-family: sans-serif;
     `;
 
-    modal.innerHTML = `
+      modal.innerHTML = `
         <div style="width: 85%; max-width: 320px; background: #222; border: 2px solid gold; border-radius: 20px; padding: 25px; text-align: center; box-shadow: 0 0 20px rgba(0,0,0,0.5);">
             <h3 style="color: gold; margin-top: 0;">修改暱稱</h3>
-            <p style="font-size: 14px; color: #ccc;">費用：💎 ${(changeNameFee/100000000)} 億</p>
+            <p style="font-size: 14px; color: #ccc;">費用：💎 ${(changeNameFee / 100000000)} 億</p>
             
             <input type="text" id="newNameInput" value="${currentName}" maxlength="8" 
                 style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #444; background: #333; color: white; text-align: center; font-size: 16px; margin: 15px 0; box-sizing: border-box;">
@@ -1896,43 +1937,43 @@ async function loginWithID() {
         </div>
     `;
 
-    document.body.appendChild(modal);
+      document.body.appendChild(modal);
 
-    // 按鈕邏輯
-    document.getElementById('cancelBtn').onclick = () => modal.remove();
-    
-    document.getElementById('confirmBtn').onclick = async () => {
+      // 按鈕邏輯
+      document.getElementById('cancelBtn').onclick = () => modal.remove();
+
+      document.getElementById('confirmBtn').onclick = async () => {
         const newName = document.getElementById('newNameInput').value.trim();
-        
+
         if (!newName || newName === currentName) {
-            modal.remove();
-            return;
+          modal.remove();
+          return;
         }
         if (newName.length > 8) return alert("暱稱太長囉！");
         if (balance < changeNameFee) return alert("餘額不足！");
 
         // 執行更新
         try {
-            const finalBalance = balance - changeNameFee;
-            await db.collection("users").doc(playerId).update({
-                name: newName,
-                balance: finalBalance
-            });
+          const finalBalance = balance - changeNameFee;
+          await db.collection("users").doc(playerId).update({
+            name: newName,
+            balance: finalBalance
+          });
 
-            localStorage.setItem('sicbo_balance', finalBalance);
-            localStorage.setItem('player_name', newName);
+          localStorage.setItem('sicbo_balance', finalBalance);
+          localStorage.setItem('player_name', newName);
 
-            updateMainBalance();
-            checkUserStatus(); // 刷新首頁顯示
-            
-            alert("改名成功！");
-            modal.remove();
+          updateMainBalance();
+          checkUserStatus(); // 刷新首頁顯示
+
+          alert("改名成功！");
+          modal.remove();
         } catch (e) {
-            console.error(e);
-            alert("系統錯誤");
+          console.error(e);
+          alert("系統錯誤");
         }
-    };
-}
+      };
+    }
 
     async function handleDeposit(amt) {
       const playerId = localStorage.getItem('player_id');
@@ -1990,7 +2031,7 @@ async function loginWithID() {
         { id: 't_king', name: '👑梟雄', price: 10000000 },
         { id: 't_shit', name: '💩狗屎運', price: 30000000 },
         { id: 't_legend', name: '🐉賭城傳奇', price: 50000000 },
-        { id: 't_red', name: '🧧鴻運當頭', price: 50000000 },  
+        { id: 't_red', name: '🧧鴻運當頭', price: 50000000 },
         { id: 't_sleep', name: '💤 躺平大師', price: 100000000 },
         { id: 't_god', name: '⚖️富可敵國', price: 100000000 },
         { id: 't_beauty', name: '🧚可愛美麗小仙女', price: 200000000 },
@@ -2015,8 +2056,8 @@ async function loginWithID() {
         { id: 'e_koi', name: '🌊 錦鯉躍遷', price: 0, class: 'fx-cosmic-koi', lottoOnly: true }
       ]
     };
-const PET_TEMPLE_DATA = {
-    pets: [
+    const PET_TEMPLE_DATA = {
+      pets: [
         { id: 'p_cat_1', name: '🐾 嘟嘟貓', price: 1000000000, img: 'basic.png', desc: '好運的開端' },
         { id: 'p_cat_2', name: '🕶️ 忍者嘟', price: 10000000000, img: 'ninja.png', desc: '上忍者課' },
         { id: 'p_cat_3', name: '💰 招財嘟', price: 10000000000, img: 'money.png', desc: '來財' },
@@ -2027,15 +2068,15 @@ const PET_TEMPLE_DATA = {
         { id: 'p_cat_8', name: '🛸 太空嘟', price: 10000000000, img: 'space.png', desc: '出球玩玩' },
         { id: 'p_cat_9', name: '🧸 玩具嘟', price: 10000000000, img: 'toyz.png', desc: '玩具太少了' },
         { id: 'p_cat_10', name: '👑 皇帝嘟', price: 10000000000, img: 'king.png', desc: '吾嘟萬歲' }
-    ],
-    backgrounds: [
-        { id: 'bg_default', name: '🏠 溫馨貓窩', price: 0, img: 'bg_basic.jpg' },
-        { id: 'bg_neon', name: '🌃 霓虹賭城', price: 5000000000, img: 'bg_city.jpg' },
-        { id: 'bg_cute', name: '🚂 可愛小屋', price: 5000000000, img: 'bg_room.jpg' },
-        { id: 'bg_toyz', name: '🧩 玩具歷險', price: 5000000000, img: 'bg_toyzspace.jpg' },
-        { id: 'bg_gold', name: '💰 黃金殿堂', price: 5000000000, img: 'bg_gold.jpg' }
-    ]
-};
+      ],
+      backgrounds: [
+        { id: 'bg_default', name: '🏠 溫馨貓窩', price: 0, img: 'bg-basic.jpg' },
+        { id: 'bg_neon', name: '🌃 霓虹賭城', price: 5000000000, img: 'bg-city.jpg' },
+        { id: 'bg_cute', name: '🚂 可愛小屋', price: 5000000000, img: 'bg-room.jpg' },
+        { id: 'bg_toyz', name: '🧩 玩具歷險', price: 5000000000, img: 'bg-toyzspace.jpg' },
+        { id: 'bg_gold', name: '💰 黃金殿堂', price: 5000000000, img: 'bg-gold.jpg' }
+      ]
+    };
     let currentShopTab = 'title';
     const LOTTO_CONFIG = {
       price: 10000000,
@@ -2139,7 +2180,7 @@ const PET_TEMPLE_DATA = {
       renderShop();
     }
 
-   function renderShop() {
+    function renderShop() {
       const shopList = document.getElementById('shopList');
       const myItems = JSON.parse(localStorage.getItem('my_assets') || '{}');
       const currentEquipped = JSON.parse(localStorage.getItem('equipped_assets') || '{"title":"","effect":""}');
@@ -2150,14 +2191,14 @@ const PET_TEMPLE_DATA = {
         const expiry = myItems[item.id] || 0;
         const isOwned = now < expiry;
         const isEquipped = (currentShopTab === 'title' ? currentEquipped.title : currentEquipped.effect) === item.id;
-        const isLottoOnly = item.lottoOnly === true; 
+        const isLottoOnly = item.lottoOnly === true;
 
         // 1. 判斷 Class
         const previewClass = (currentShopTab === 'effect' && item.class) ? item.class : "";
-        
+
         // 2. 修改這裡：補上 z-index: 1 以及調整 padding 讓特效流光有空間跑
         const previewStyle = (currentShopTab === 'effect') ?
-  "padding: 15px; border-radius: 25px; margin-bottom: 5px; text-align: center; font-weight: bold; position: relative; overflow: hidden; contain: paint; z-index: 1; display: block; width: 100%; box-sizing: border-box;" : "";
+          "padding: 15px; border-radius: 25px; margin-bottom: 5px; text-align: center; font-weight: bold; position: relative; overflow: hidden; contain: paint; z-index: 1; display: block; width: 100%; box-sizing: border-box;" : "";
 
         let priceDisplay = '';
         let actionButton = '';
@@ -2173,7 +2214,7 @@ const PET_TEMPLE_DATA = {
           priceDisplay = `價格: 💎 ${item.price.toLocaleString()}`;
           actionButton = `<button class="buy-btn" onclick="buyAsset('${currentShopTab}', '${item.id}', ${item.price})">🛒 購買</button>`;
         }
-html += `
+        html += `
 <div style="border:1px solid #444; padding:12px; margin-bottom:12px; border-radius:15px; background:rgba(0,0,0,0.5); transition: 0.3s;">
   <div class="${previewClass}" style="${previewStyle}">
     <span style="color:var(--gold); font-weight:bold; font-size: 16px; position:relative; z-index:2;">${item.name}</span>
@@ -2266,48 +2307,48 @@ html += `
 
     // 從 Firebase 抓取前 10 名
     async function loadRanking() {
-    const rankList = document.getElementById('rankList');
-    try {
+      const rankList = document.getElementById('rankList');
+      try {
         const snapshot = await db.collection("users").orderBy("balance", "desc").limit(10).get();
         let html = '';
         let i = 1;
         const now = Date.now(); // 取得當前時間
 
         snapshot.forEach(doc => {
-            const data = doc.data();
-            const userAssets = data.assets || {}; // 取得該玩家的所有資產到期日
+          const data = doc.data();
+          const userAssets = data.assets || {}; // 取得該玩家的所有資產到期日
 
-            // --- 核心修改：稱號過期判斷 ---
-            let titleText = data.equipped_title || "";
-            if (titleText) {
-                const titleObj = SHOP_DATA.title.find(t => t.name === titleText);
-                // 如果找不到該稱號 ID，或者現在時間已超過到期日，就清空不顯示
-                if (titleObj && userAssets[titleObj.id] && now > userAssets[titleObj.id]) {
-                    titleText = ""; 
-                }
+          // --- 核心修改：稱號過期判斷 ---
+          let titleText = data.equipped_title || "";
+          if (titleText) {
+            const titleObj = SHOP_DATA.title.find(t => t.name === titleText);
+            // 如果找不到該稱號 ID，或者現在時間已超過到期日，就清空不顯示
+            if (titleObj && userAssets[titleObj.id] && now > userAssets[titleObj.id]) {
+              titleText = "";
             }
+          }
 
-            // --- 核心修改：特效過期判斷 ---
-            let fxClass = data.equipped_fx || "";
-            if (fxClass) {
-                const effectObj = SHOP_DATA.effect.find(e => e.class === fxClass);
-                // 如果現在時間已超過到期日，就清空 Class
-                if (effectObj && userAssets[effectObj.id] && now > userAssets[effectObj.id]) {
-                    fxClass = "";
-                }
+          // --- 核心修改：特效過期判斷 ---
+          let fxClass = data.equipped_fx || "";
+          if (fxClass) {
+            const effectObj = SHOP_DATA.effect.find(e => e.class === fxClass);
+            // 如果現在時間已超過到期日，就清空 Class
+            if (effectObj && userAssets[effectObj.id] && now > userAssets[effectObj.id]) {
+              fxClass = "";
             }
+          }
 
-            // --- 以下維持你原本的顏色判斷與 HTML 生成 ---
-            let titleColorClass = "t-blue";
-            if (titleText.includes("幸運錦鯉")) titleColorClass = "t-koi-color";
-            else if (titleText.includes("賭神") || titleText.includes("富可敵國") || titleText.includes("至尊") || titleText.includes("躺平")) titleColorClass = "t-red";
-            else if (titleText.includes("梟雄") || titleText.includes("傳奇") || titleText.includes("鴻運") || titleText.includes("天選")) titleColorClass = "t-orange";
-            else if (titleText.includes("土豪") || titleText.includes("千金") || titleText.includes("狗屎") || titleText.includes("少爺") || titleText.includes("仙女")) titleColorClass = "t-purple";
-            else if (titleText.includes("幸運")) titleColorClass = "t-yellow";
+          // --- 以下維持你原本的顏色判斷與 HTML 生成 ---
+          let titleColorClass = "t-blue";
+          if (titleText.includes("幸運錦鯉")) titleColorClass = "t-koi-color";
+          else if (titleText.includes("賭神") || titleText.includes("富可敵國") || titleText.includes("至尊") || titleText.includes("躺平")) titleColorClass = "t-red";
+          else if (titleText.includes("梟雄") || titleText.includes("傳奇") || titleText.includes("鴻運") || titleText.includes("天選")) titleColorClass = "t-orange";
+          else if (titleText.includes("土豪") || titleText.includes("千金") || titleText.includes("狗屎") || titleText.includes("少爺") || titleText.includes("仙女")) titleColorClass = "t-purple";
+          else if (titleText.includes("幸運")) titleColorClass = "t-yellow";
 
-            const titleHTML = titleText ? `<span class="player-title ${titleColorClass}">【${titleText}】</span>` : "";
+          const titleHTML = titleText ? `<span class="player-title ${titleColorClass}">【${titleText}】</span>` : "";
 
-            html += `
+          html += `
                 <div class="rank-item ${fxClass}">
                   <div class="rank-info">
                     <span class="rank-num">${i === 1 ? '🏆' : i}</span>
@@ -2316,130 +2357,130 @@ html += `
                   <span class="rank-bal">💎${Math.floor(data.balance).toLocaleString()}</span>
                 </div>
             `;
-            i++;
+          i++;
         });
         rankList.innerHTML = html || '<p style="text-align:center; color:#888;">尚無排名數據</p>';
-    } catch (e) {
+      } catch (e) {
         console.error("載入排行榜失敗:", e);
         rankList.innerHTML = '<p style="text-align:center; color:red;">載入失敗</p>';
+      }
     }
-}
-   async function checkUserStatus() {
-    let playerId = localStorage.getItem('player_id');
-    if (!playerId || playerId === "null") {
+    async function checkUserStatus() {
+      let playerId = localStorage.getItem('player_id');
+      if (!playerId || playerId === "null") {
         document.getElementById('nameModal').style.display = 'flex';
         updateMainBalance();
         return;
-    }
+      }
 
-    try {
+      try {
         const doc = await db.collection("users").doc(playerId).get();
         if (doc.exists) {
-            const cloudData = doc.data();
-            const now = Date.now();
-            const myAssets = cloudData.assets || {};
+          const cloudData = doc.data();
+          const now = Date.now();
+          const myAssets = cloudData.assets || {};
 
-            // --- [新增這段：確保引繼後的資產同步到本地] ---
-            localStorage.setItem('my_assets', JSON.stringify(myAssets));
-            
-            const localEquipped = { title: "", effect: "" };
-            if (cloudData.equipped_title) {
-                const tObj = SHOP_DATA.title.find(t => t.name === cloudData.equipped_title);
-                if (tObj) localEquipped.title = tObj.id;
-            }
-            if (cloudData.equipped_fx) {
-                const eObj = SHOP_DATA.effect.find(e => e.class === cloudData.equipped_fx);
-                if (eObj) localEquipped.effect = eObj.id;
-            }
-            localStorage.setItem('equipped_assets', JSON.stringify(localEquipped));
-            // ------------------------------------------
+          // --- [新增這段：確保引繼後的資產同步到本地] ---
+          localStorage.setItem('my_assets', JSON.stringify(myAssets));
 
-            // --- 1. 自動檢查稱號與特效是否過期 (你原本的邏輯) ---
-            let currentTitle = cloudData.equipped_title || "";
-            let currentFx = cloudData.equipped_fx || "";
-            let needUpdateCloud = false;
+          const localEquipped = { title: "", effect: "" };
+          if (cloudData.equipped_title) {
+            const tObj = SHOP_DATA.title.find(t => t.name === cloudData.equipped_title);
+            if (tObj) localEquipped.title = tObj.id;
+          }
+          if (cloudData.equipped_fx) {
+            const eObj = SHOP_DATA.effect.find(e => e.class === cloudData.equipped_fx);
+            if (eObj) localEquipped.effect = eObj.id;
+          }
+          localStorage.setItem('equipped_assets', JSON.stringify(localEquipped));
+          // ------------------------------------------
 
-            const titleObj = SHOP_DATA.title.find(t => t.name === currentTitle);
-            const effectObj = SHOP_DATA.effect.find(e => e.class === currentFx);
+          // --- 1. 自動檢查稱號與特效是否過期 (你原本的邏輯) ---
+          let currentTitle = cloudData.equipped_title || "";
+          let currentFx = cloudData.equipped_fx || "";
+          let needUpdateCloud = false;
 
-            if (titleObj && myAssets[titleObj.id] && now > myAssets[titleObj.id]) {
-                currentTitle = "";
-                needUpdateCloud = true;
-            }
-            if (effectObj && myAssets[effectObj.id] && now > myAssets[effectObj.id]) {
-                currentFx = "";
-                needUpdateCloud = true;
-            }
+          const titleObj = SHOP_DATA.title.find(t => t.name === currentTitle);
+          const effectObj = SHOP_DATA.effect.find(e => e.class === currentFx);
 
-            if (needUpdateCloud) {
-                await db.collection("users").doc(playerId).update({
-                    equipped_title: currentTitle,
-                    equipped_fx: currentFx
-                });
-                const lEquip = JSON.parse(localStorage.getItem('equipped_assets') || '{}');
-                if (currentTitle === "") lEquip.title = "";
-                if (currentFx === "") lEquip.effect = "";
-                localStorage.setItem('equipped_assets', JSON.stringify(lEquip));
-            }
+          if (titleObj && myAssets[titleObj.id] && now > myAssets[titleObj.id]) {
+            currentTitle = "";
+            needUpdateCloud = true;
+          }
+          if (effectObj && myAssets[effectObj.id] && now > myAssets[effectObj.id]) {
+            currentFx = "";
+            needUpdateCloud = true;
+          }
 
-            // --- 2. 餘額同步邏輯 (你原本的邏輯) ---
-            const localBal = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
-            const cloudBal = cloudData.balance;
-            localStorage.setItem('player_name', cloudData.name);
-            
-            // 只要雲端錢不等於本地，引繼時會以雲端為主
-            if (cloudBal !== undefined && cloudBal > localBal) {
-                localStorage.setItem('sicbo_balance', cloudBal);
-            } else if (cloudBal !== undefined && localBal > cloudBal) {
-                await db.collection("users").doc(playerId).update({ balance: localBal });
-            }
+          if (needUpdateCloud) {
+            await db.collection("users").doc(playerId).update({
+              equipped_title: currentTitle,
+              equipped_fx: currentFx
+            });
+            const lEquip = JSON.parse(localStorage.getItem('equipped_assets') || '{}');
+            if (currentTitle === "") lEquip.title = "";
+            if (currentFx === "") lEquip.effect = "";
+            localStorage.setItem('equipped_assets', JSON.stringify(lEquip));
+          }
 
-            // --- 3. 渲染 UI 顯示 (你原本的邏輯) ---
-            const welcomeEl = document.getElementById('welcomeUser');
-            welcomeEl.innerHTML = ""; 
-            welcomeEl.className = "welcome-msg"; 
+          // --- 2. 餘額同步邏輯 (你原本的邏輯) ---
+          const localBal = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
+          const cloudBal = cloudData.balance;
+          localStorage.setItem('player_name', cloudData.name);
 
-            const textWrapper = document.createElement('span');
-            textWrapper.style.position = "relative";
-            textWrapper.style.zIndex = "5";
+          // 只要雲端錢不等於本地，引繼時會以雲端為主
+          if (cloudBal !== undefined && cloudBal > localBal) {
+            localStorage.setItem('sicbo_balance', cloudBal);
+          } else if (cloudBal !== undefined && localBal > cloudBal) {
+            await db.collection("users").doc(playerId).update({ balance: localBal });
+          }
 
-            if (currentTitle) {
-                const titleSpan = document.createElement('span');
-                titleSpan.textContent = `【${currentTitle}】`;
-                titleSpan.className = "player-title";
-                const titleText = currentTitle;
+          // --- 3. 渲染 UI 顯示 (你原本的邏輯) ---
+          const welcomeEl = document.getElementById('welcomeUser');
+          welcomeEl.innerHTML = "";
+          welcomeEl.className = "welcome-msg";
 
-                if (titleText.includes("幸運錦鯉")) titleSpan.classList.add("t-koi-color");
-                else if (titleText.includes("賭神") || titleText.includes("富可敵國") || titleText.includes("至尊") || titleText.includes("躺平")) titleSpan.classList.add("t-red");
-                else if (titleText.includes("梟雄") || titleText.includes("傳奇") || titleText.includes("鴻運") || titleText.includes("天選")) titleSpan.classList.add("t-orange");
-                else if (titleText.includes("土豪") || titleText.includes("千金") || titleText.includes("狗屎") || titleText.includes("少爺") || titleText.includes("仙女")) titleSpan.classList.add("t-purple");
-                else if (titleText.includes("幸運")) titleSpan.classList.add("t-yellow");
-                else titleSpan.classList.add("t-blue");
-                
-                textWrapper.appendChild(titleSpan);
-            }
+          const textWrapper = document.createElement('span');
+          textWrapper.style.position = "relative";
+          textWrapper.style.zIndex = "5";
 
-            const nameSpan = document.createElement('span');
-            nameSpan.textContent = cloudData.name || "無名氏";
-            textWrapper.appendChild(nameSpan);
-            welcomeEl.appendChild(textWrapper);
+          if (currentTitle) {
+            const titleSpan = document.createElement('span');
+            titleSpan.textContent = `【${currentTitle}】`;
+            titleSpan.className = "player-title";
+            const titleText = currentTitle;
 
-            if (currentFx) {
-                welcomeEl.classList.add(currentFx);
-                welcomeEl.style.display = "inline-block";
-                welcomeEl.style.padding = "8px 25px";
-                welcomeEl.style.borderRadius = "25px";
-            }
+            if (titleText.includes("幸運錦鯉")) titleSpan.classList.add("t-koi-color");
+            else if (titleText.includes("賭神") || titleText.includes("富可敵國") || titleText.includes("至尊") || titleText.includes("躺平")) titleSpan.classList.add("t-red");
+            else if (titleText.includes("梟雄") || titleText.includes("傳奇") || titleText.includes("鴻運") || titleText.includes("天選")) titleSpan.classList.add("t-orange");
+            else if (titleText.includes("土豪") || titleText.includes("千金") || titleText.includes("狗屎") || titleText.includes("少爺") || titleText.includes("仙女")) titleSpan.classList.add("t-purple");
+            else if (titleText.includes("幸運")) titleSpan.classList.add("t-yellow");
+            else titleSpan.classList.add("t-blue");
 
-            updateMainBalance();
+            textWrapper.appendChild(titleSpan);
+          }
+
+          const nameSpan = document.createElement('span');
+          nameSpan.textContent = cloudData.name || "無名氏";
+          textWrapper.appendChild(nameSpan);
+          welcomeEl.appendChild(textWrapper);
+
+          if (currentFx) {
+            welcomeEl.classList.add(currentFx);
+            welcomeEl.style.display = "inline-block";
+            welcomeEl.style.padding = "8px 25px";
+            welcomeEl.style.borderRadius = "25px";
+          }
+
+          updateMainBalance();
         } else {
-            document.getElementById('nameModal').style.display = 'flex';
+          document.getElementById('nameModal').style.display = 'flex';
         }
-    } catch (e) {
+      } catch (e) {
         console.error("Firebase 連線失敗", e);
         updateMainBalance();
+      }
     }
-}
     // --- 商城功能 ---
     function openShop() { document.getElementById('shopModal').style.display = 'flex'; }
     function closeShop() { document.getElementById('shopModal').style.display = 'none'; }
@@ -2509,34 +2550,35 @@ html += `
       }
     }
     // 開啟貓咪神殿頁面
-  async function openPetTemple() {
-    const playerId = localStorage.getItem('player_id');
-    if (!playerId) return alert("請先登入遊戲！");
+    async function openPetTemple() {
+      const playerId = localStorage.getItem('player_id');
+      if (!playerId) return alert("請先登入遊戲！");
 
-    try {
+      try {
         const doc = await db.collection("users").doc(playerId).get();
         if (!doc.exists) return;
         const userData = doc.data();
-        
+
         const petSys = userData.pet_system || {
-            current_pet_id: "",
-            unlocked_pets: [],
-            current_bg_id: "bg_basic",
-            unlocked_bgs: ["bg_basic"]
+          current_pet_id: "",
+          unlocked_pets: [],
+          current_bg_id: "bg_basic",
+          unlocked_bgs: ["bg_basic"]
         };
         const activeBgId = petSys.current_bg_id || "bg_basic";
         const currentPetObj = PET_TEMPLE_DATA.pets.find(p => p.id === petSys.current_pet_id);
         const currentBgObj = PET_TEMPLE_DATA.backgrounds.find(b => b.id === petSys.current_bg_id);
-        
+
         const currentPetImg = currentPetObj ? currentPetObj.img : "";
         const currentBgImg = currentBgObj ? currentBgObj.img : "bg_basic.jpg";
+        const bgPath = `assets/pet/${currentBgImg}`;
 
         const overlay = document.createElement('div');
         overlay.id = 'pet-temple-overlay';
         overlay.style = `
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: #121212; 
-            background-image: url('assets/pet/${currentBgImg}');
+            background-image: url("${bgPath}");
             background-size: cover; background-position: center;
             color: white; z-index: 99999; overflow: hidden; font-family: sans-serif;
         `;
@@ -2561,10 +2603,10 @@ html += `
                 <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;">
                     <h1 style="color:#ffd700; text-shadow: 0 0 15px rgba(255,215,0,0.8); margin: 0; font-size: 24px;">(未完成)貓咪神殿</h1>
                     <div id="temple-pet-display" style="margin-top: 20px;">
-                        ${currentPetImg ? 
-                            `<img src="assets/pet/${currentPetImg}" style="width:220px; filter: drop-shadow(0 0 20px gold);">` : 
-                            `<div style="width:180px; height:180px; border:2px dashed #888; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#ccc; background:rgba(0,0,0,0.3);">尚未領養貓咪</div>`
-                        }
+                        ${currentPetImg ?
+            `<img src="assets/pet/${currentPetImg}" style="width:220px; filter: drop-shadow(0 0 20px gold);">` :
+            `<div style="width:180px; height:180px; border:2px dashed #888; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#ccc; background:rgba(0,0,0,0.3);">尚未領養貓咪</div>`
+          }
                     </div>
                     <div style="margin-top: 15px; background:rgba(0,0,0,0.6); padding:5px 15px; border-radius:15px; font-size:14px;">
                         ${currentPetObj ? `✨ ${currentPetObj.name}` : '請於下方領養貓咪'}
@@ -2592,107 +2634,127 @@ html += `
         overlay.innerHTML = html;
         document.body.appendChild(overlay);
 
-        // 定義內部切換選單的邏輯 (不影響外部 action 函數)
-        window.togglePetMenu = function(type) {
-            const drawer = document.getElementById('pet-menu-drawer');
-            const title = document.getElementById('menu-title');
-            const content = document.getElementById('menu-content');
-            drawer.style.display = 'block';
+        // 定義內部切換選單的邏輯 (修正後的版本)
+        window.togglePetMenu = function (type) {
+          const drawer = document.getElementById('pet-menu-drawer');
+          const title = document.getElementById('menu-title');
+          const content = document.getElementById('menu-content');
 
-            if (type === 'adopt') {
-                title.innerText = "🐾 選擇你的夥伴";
-                content.innerHTML = PET_TEMPLE_DATA.pets.map(p => {
-                    const isOwned = petSys.unlocked_pets.includes(p.id);
-                    return `
-                        <div style="min-width:130px; background:#333; padding:15px; border-radius:12px; border:${petSys.current_pet_id === p.id ? '2px solid gold' : '1px solid #555'}">
-                            <img src="assets/pet/${p.img}" style="width:60px; height:60px; object-fit:contain; margin-bottom:10px;">
-                            <div style="font-size:12px; margin-bottom:10px;">${p.name}</div>
-                            ${isOwned ? 
-                                `<button onclick="actionPet('equip','${p.id}')" style="width:100%; background:#666; border:none; border-radius:5px; color:white; padding:5px;">${petSys.current_pet_id === p.id ? '使用中' : '裝備'}</button>` :
-                                `<button onclick="actionPet('buy','${p.id}',${p.price})" style="width:100%; background:#c0392b; border:none; border-radius:5px; color:white; padding:5px; font-size:10px;">💎${(p.price/100000000).toLocaleString()}億</button>`
-                            }
+          // 1. 先清空內容，防止「領養」與「裝潢」內容混雜
+          content.innerHTML = '';
+          drawer.style.display = 'none';
+
+          // 確保每次打開時捲軸回到最左邊
+          content.scrollLeft = 0;
+
+          if (type === 'adopt') {
+            title.innerText = "🐾 選擇你的夥伴";
+
+            // 重新從資料中映射
+            const petHtml = PET_TEMPLE_DATA.pets.map(p => {
+              const isOwned = petSys.unlocked_pets.includes(p.id);
+              const isEquipped = petSys.current_pet_id === p.id;
+
+              return `
+                        <div style="min-width:130px; background:#333; padding:15px; border-radius:12px; border:${isEquipped ? '2px solid gold' : '1px solid #555'}; text-align:center;">
+                            <img src="assets/pet/${p.img}" 
+                                 onerror="this.src='assets/pet/bg_basic.jpg'" 
+                                 style="width:80px; height:80px; object-fit:contain; margin-bottom:10px; display:block; margin-left:auto; margin-right:auto;">
+                            <div style="font-size:12px; margin-bottom:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.name}</div>
+                            ${isOwned ?
+                  `<button onclick="actionPet('equip','${p.id}')" style="width:100%; background:${isEquipped ? '#444' : '#666'}; border:none; border-radius:5px; color:white; padding:8px 5px;">${isEquipped ? '使用中' : '裝備'}</button>` :
+                  `<button onclick="actionPet('buy','${p.id}',${p.price})" style="width:100%; background:#c0392b; border:none; border-radius:5px; color:white; padding:8px 5px; font-size:10px;">💎${(p.price / 100000000).toLocaleString()}億</button>`
+                }
                         </div>
                     `;
-                }).join('');
-            } else {
-                title.innerText = "🖼️ 選擇神殿背景";
-                content.innerHTML = PET_TEMPLE_DATA.backgrounds.map(bg => {
-                    const isOwned = petSys.unlocked_bgs.includes(bg.id);
-                    return `
-                        <div style="min-width:130px; background:#333; padding:15px; border-radius:12px; border:${petSys.current_bg_id === bg.id ? '2px solid #3498db' : '1px solid #555'}">
-                            <div style="height:40px; background-image:url('assets/pet/${bg.img}'); background-size:cover; border-radius:5px; margin-bottom:10px;"></div>
-                            <div style="font-size:12px; margin-bottom:10px;">${bg.name}</div>
-                            ${isOwned ? 
-                                `<button onclick="actionBg('equip','${bg.id}')" style="width:100%; background:#666; border:none; border-radius:5px; color:white; padding:5px;">${petSys.current_bg_id === bg.id ? '套用中' : '更換'}</button>` :
-                                `<button onclick="actionBg('buy','${bg.id}',${bg.price})" style="width:100%; background:#2980b9; border:none; border-radius:5px; color:white; padding:5px; font-size:10px;">💎${(bg.price/100000000).toLocaleString()}億</button>`
-                            }
-                        </div>
-                    `;
-                }).join('');
-            }
+            }).join('');
+            content.innerHTML = petHtml;
+          } else if (type === 'deco') {
+            title.innerText = "🖼️ 選擇神殿背景";
+            const bgHtml = PET_TEMPLE_DATA.backgrounds.map(bg => {
+              const isOwned = petSys.unlocked_bgs.includes(bg.id);
+              const isEquipped = petSys.current_bg_id === bg.id;
+
+              return `
+            <div style="min-width:130px; background:#333; padding:15px; border-radius:12px; border:${isEquipped ? '2px solid #3498db' : '1px solid #555'}; text-align:center;">
+                <img src="assets/pet/${bg.img}" 
+                     onerror="this.src='assets/pet/bg-basic.jpg'" 
+                     style="width:100%; height:60px; object-fit:cover; border-radius:5px; margin-bottom:10px; display:block;">
+                
+                <div style="font-size:12px; margin-bottom:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${bg.name}</div>
+                ${isOwned ? 
+                  `<button onclick="actionBg('equip','${bg.id}')" style="width:100%; background:${isEquipped ? '#444' : '#666'}; border:none; border-radius:5px; color:white; padding:8px 5px;">${isEquipped ? '套用中' : '更換'}</button>` :
+                  `<button onclick="actionBg('buy','${bg.id}',${bg.price})" style="width:100%; background:#2980b9; border:none; border-radius:5px; color:white; padding:8px 5px; font-size:10px;">💎${(bg.price / 100000000).toLocaleString()}億</button>`
+                }
+            </div>
+        `;
+            }).join('');
+            content.innerHTML = bgHtml;
+          }
+          drawer.style.display = 'block';
         };
 
-    } catch (e) {
+      } catch (e) {
         console.error("載入神殿失敗:", e);
+      }
     }
-}
 
-// 處理貓咪 購買/裝備
-async function actionPet(type, id, price) {
-    const playerId = localStorage.getItem('player_id');
-    let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
-    const doc = await db.collection("users").doc(playerId).get();
-    const petSys = doc.data().pet_system || { unlocked_pets: [], current_pet_id: "" };
+    // 處理貓咪 購買/裝備
+    async function actionPet(type, id, price) {
+      const playerId = localStorage.getItem('player_id');
+      let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
+      const doc = await db.collection("users").doc(playerId).get();
+      const petSys = doc.data().pet_system || { unlocked_pets: [], current_pet_id: "" };
 
-    if (type === 'buy') {
+      if (type === 'buy') {
         if (balance < price) return alert("餘額不足！再贏一點吧");
-        if (!confirm(`要花費 💎 ${(price/100000000)}億 領養/進化嗎？`)) return;
+        if (!confirm(`要花費 💎 ${(price / 100000000)}億 領養/進化嗎？`)) return;
         balance -= price;
         petSys.unlocked_pets.push(id);
-    }
-    
-    petSys.current_pet_id = id;
-    await db.collection("users").doc(playerId).update({ 
-        balance: balance,
-        pet_system: petSys 
-    });
-    
-    localStorage.setItem('sicbo_balance', balance);
-    updateMainBalance();
-    document.getElementById('pet-temple-overlay').remove();
-    openPetTemple(); // 刷新頁面
-}
+      }
 
-// 處理背景 購買/更換
-async function actionBg(type, id, price) {
-    const playerId = localStorage.getItem('player_id');
-    // 優先從 Firebase 拿最新錢包，避免 localStorage 延遲
-    try {
+      petSys.current_pet_id = id;
+      await db.collection("users").doc(playerId).update({
+        balance: balance,
+        pet_system: petSys
+      });
+
+      localStorage.setItem('sicbo_balance', balance);
+      updateMainBalance();
+      document.getElementById('pet-temple-overlay').remove();
+      openPetTemple(); // 刷新頁面
+    }
+
+    // 處理背景 購買/更換
+    async function actionBg(type, id, price) {
+      const playerId = localStorage.getItem('player_id');
+      // 優先從 Firebase 拿最新錢包，避免 localStorage 延遲
+      try {
         const userRef = db.collection("users").doc(playerId);
         const doc = await userRef.get();
         if (!doc.exists) return;
-        
+
         let userData = doc.data();
         let balance = userData.balance || 0;
         let petSys = userData.pet_system || { unlocked_bgs: ["bg_default"], current_bg_id: "bg_default" };
 
         if (type === 'buy') {
-            if (balance < price) return alert("錢不夠裝潢喔！");
-            if (!confirm(`要花費 💎 ${(price / 100000000).toLocaleString()}億 購買此裝潢嗎？`)) return;
-            balance -= price;
-            // 避免重複購買
-            if (!petSys.unlocked_bgs.includes(id)) {
-                petSys.unlocked_bgs.push(id);
-            }
+          if (balance < price) return alert("錢不夠裝潢喔！");
+          if (!confirm(`要花費 💎 ${(price / 100000000).toLocaleString()}億 購買此裝潢嗎？`)) return;
+          balance -= price;
+          // 避免重複購買
+          if (!petSys.unlocked_bgs.includes(id)) {
+            petSys.unlocked_bgs.push(id);
+          }
         }
-        
+
         // 更新當前使用的背景 ID
         petSys.current_bg_id = id;
 
         // 寫回資料庫
-        await userRef.update({ 
-            balance: balance,
-            pet_system: petSys 
+        await userRef.update({
+          balance: balance,
+          pet_system: petSys
         });
 
         // 更新本地端顯示 (不改動 localStorage 結構，只改值)
@@ -2702,31 +2764,31 @@ async function actionBg(type, id, price) {
         // --- 核心優化：直接更新畫面，不重開神殿 ---
         const bgObj = PET_TEMPLE_DATA.backgrounds.find(b => b.id === id);
         const overlay = document.getElementById('pet-temple-overlay');
-        
+
         if (overlay && bgObj) {
-            // 1. 即時更換大背景圖
-            overlay.style.backgroundImage = `url('assets/pet/${bgObj.img}')`;
-            
-            // 2. 更新上方顯示的餘額數字
-            const balanceDisplay = overlay.querySelector('div[style*="var(--gold)"]');
-            if (balanceDisplay) balanceDisplay.innerHTML = `💎 ${Math.floor(balance).toLocaleString()}`;
-            
-            // 3. 關閉選單 (讓玩家看到背景更換了)
-            const drawer = document.getElementById('pet-menu-drawer');
-            if (drawer) drawer.style.display = 'none';
-            
-            showWinToast?.("🎨 神殿裝潢更新成功！");
+          // 1. 即時更換大背景圖
+          overlay.style.backgroundImage = `url('assets/pet/${bgObj.img}')`;
+
+          // 2. 更新上方顯示的餘額數字
+          const balanceDisplay = overlay.querySelector('div[style*="var(--gold)"]');
+          if (balanceDisplay) balanceDisplay.innerHTML = `💎 ${Math.floor(balance).toLocaleString()}`;
+
+          // 3. 關閉選單 (讓玩家看到背景更換了)
+          const drawer = document.getElementById('pet-menu-drawer');
+          if (drawer) drawer.style.display = 'none';
+
+          showWinToast?.("🎨 神殿裝潢更新成功！");
         } else {
-            // 如果找不到 DOM (保險用)，再重開
-            if (overlay) overlay.remove();
-            openPetTemple();
+          // 如果找不到 DOM (保險用)，再重開
+          if (overlay) overlay.remove();
+          openPetTemple();
         }
 
-    } catch (e) {
+      } catch (e) {
         console.error("背景操作失敗:", e);
         alert("網路不穩，請稍後再試");
+      }
     }
-}
 
     window.onload = function () {
       updateMainBalance();
