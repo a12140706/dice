@@ -2606,7 +2606,7 @@
                 </div>
                 
                 <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-                    <h1 style="color:#ffd700; text-shadow: 0 0 15px rgba(255,215,0,0.8); margin: 0; font-size: 24px;">貓咪神殿</h1>
+                    <h1 style="color:#ffd700; text-shadow: 0 0 15px rgba(255,215,0,0.8); margin: 0; font-size: 24px;">(未完成)貓咪神殿</h1>
                     <div id="temple-pet-display" style="margin-top: 20px;">${petDisplayHTML}</div>
                     <div style="margin-top: 15px; background:rgba(0,0,0,0.6); padding:5px 15px; border-radius:15px; font-size:14px;">${petNameHTML}</div>
                 </div>
@@ -2684,30 +2684,63 @@
     }
 }
     // 處理貓咪 購買/裝備
-    async function actionPet(type, id, price) {
-      const playerId = localStorage.getItem('player_id');
-      let balance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
-      const doc = await db.collection("users").doc(playerId).get();
-      const petSys = doc.data().pet_system || { unlocked_pets: [], current_pet_id: "" };
+   async function actionPet(type, id, price) {
+    const playerId = localStorage.getItem('player_id');
+    if (!playerId) return;
 
-      if (type === 'buy') {
-        if (balance < price) return alert("餘額不足！再贏一點吧");
-        if (!confirm(`要花費 💎 ${(price / 100000000)}億 領養/進化嗎？`)) return;
-        balance -= price;
-        petSys.unlocked_pets.push(id);
-      }
+    try {
+        const userRef = db.collection("users").doc(playerId);
+        const doc = await userRef.get();
+        if (!doc.exists) return;
 
-      petSys.current_pet_id = id;
-      await db.collection("users").doc(playerId).update({
-        balance: balance,
-        pet_system: petSys
-      });
+        const userData = doc.data();
+        // 優先使用 Firebase 的餘額，確保扣錢邏輯絕對準確
+        let balance = userData.balance || 0;
 
-      localStorage.setItem('sicbo_balance', balance);
-      updateMainBalance();
-      document.getElementById('pet-temple-overlay').remove();
-      openPetTemple(); // 刷新頁面
+        // 【核心修正】確保 petSys 內部的所有欄位即便不存在，也會被初始化為正確格式
+        let petSys = userData.pet_system || {};
+        if (!petSys.unlocked_pets) petSys.unlocked_pets = [];
+        if (!petSys.current_pet_id) petSys.current_pet_id = "";
+
+        if (type === 'buy') {
+            if (balance < price) return alert("餘額不足！再贏一點吧");
+            
+            // 為了防止手機連點，這裡加上簡單的確認
+            if (!confirm(`要花費 💎 ${(price / 100000000).toLocaleString()}億 領養嗎？`)) return;
+            
+            balance -= price;
+            
+            // 再次檢查是否已擁有，避免重複推入陣列
+            if (!petSys.unlocked_pets.includes(id)) {
+                petSys.unlocked_pets.push(id);
+            }
+        }
+
+        // 不論是購買還是更換，都更新當前使用的 ID
+        petSys.current_pet_id = id;
+
+        // 寫回資料庫
+        await userRef.update({
+            balance: balance,
+            pet_system: petSys
+        });
+
+        // 同步本地快取與 UI
+        localStorage.setItem('sicbo_balance', balance);
+        if (typeof updateMainBalance === 'function') updateMainBalance();
+
+        // 關閉舊頁面並重開，確保看到最新的貓咪
+        const overlay = document.getElementById('pet-temple-overlay');
+        if (overlay) overlay.remove();
+        
+        // 重新開啟神殿頁面
+        openPetTemple();
+
+    } catch (e) {
+        console.error("領養操作失敗:", e);
+        alert("失敗，請回報");
     }
+}
 
     // 處理背景 購買/更換
    async function actionBg(type, id, price) {
@@ -2781,7 +2814,7 @@
 
     } catch (e) {
         console.error("背景操作失敗詳細原因:", e);
-        alert("失敗，請重新嘗試");
+        alert("失敗，請回報");
     }
 }
 
