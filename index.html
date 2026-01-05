@@ -2551,27 +2551,36 @@
     }
     // 開啟貓咪神殿頁面
     async function openPetTemple() {
-      const playerId = localStorage.getItem('player_id');
-      if (!playerId) return alert("請先登入遊戲！");
+    const playerId = localStorage.getItem('player_id');
+    if (!playerId) return alert("請先登入遊戲！");
 
-      try {
+    try {
         const doc = await db.collection("users").doc(playerId).get();
         if (!doc.exists) return;
         const userData = doc.data();
 
+        // 1. 確保拿到最新的資料
         const petSys = userData.pet_system || {
-          current_pet_id: "",
-          unlocked_pets: [],
-          current_bg_id: "bg_basic",
-          unlocked_bgs: ["bg_basic"]
+            current_pet_id: "",
+            unlocked_pets: [],
+            current_bg_id: "bg_basic",
+            unlocked_bgs: ["bg_basic"]
         };
-        const activeBgId = petSys.current_bg_id || "bg_basic";
-        const currentPetObj = PET_TEMPLE_DATA.pets.find(p => p.id === petSys.current_pet_id);
-        const currentBgObj = PET_TEMPLE_DATA.backgrounds.find(b => b.id === petSys.current_bg_id);
 
-        const currentPetImg = currentPetObj ? currentPetObj.img : "";
-        const currentBgImg = currentBgObj ? currentBgObj.img : "bg_basic.jpg";
-        const bgPath = `assets/pet/${currentBgImg}`;
+        const currentPetObj = PET_TEMPLE_DATA.pets.find(p => p.id === petSys.current_pet_id);
+        const currentBgObj = PET_TEMPLE_DATA.backgrounds.find(b => b.id === (petSys.current_bg_id || "bg_basic"));
+
+        // 2. 預先處理顯示內容，避免在模板字串內產生標籤破碎
+        const petImgHtml = currentPetObj 
+            ? `<img src="assets/pet/${currentPetObj.img}" style="width:220px; filter: drop-shadow(0 0 20px gold); display:block;">` 
+            : `<div style="width:180px; height:180px; border:2px dashed #888; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#ccc; background:rgba(0,0,0,0.3);">尚未領養貓咪</div>`;
+        
+        const petNameHtml = currentPetObj ? `✨ ${currentPetObj.name}` : '請於下方領養貓咪';
+        const bgPath = `assets/pet/${currentBgObj ? currentBgObj.img : "bg_basic.jpg"}`;
+
+        // 清除舊的 Overlay
+        const oldOverlay = document.getElementById('pet-temple-overlay');
+        if (oldOverlay) oldOverlay.remove();
 
         const overlay = document.createElement('div');
         overlay.id = 'pet-temple-overlay';
@@ -2583,114 +2592,99 @@
             color: white; z-index: 99999; overflow: hidden; font-family: sans-serif;
         `;
 
-        // 渲染 UI (大圖優先，功能收納至底部按鈕)
-        let html = `
-            <div style="
-                height: 100%; 
-                display: flex; 
-                flex-direction: column; 
-                background: rgba(0,0,0,0.4);
-                /* 關鍵：自動避開瀏海區域 */
-                padding-top: env(safe-area-inset-top); 
-                padding-bottom: env(safe-area-inset-bottom);
-                box-sizing: border-box;
-            ">
+        // 3. 渲染乾淨的 HTML 結構
+        overlay.innerHTML = `
+            <div style="height: 100%; display: flex; flex-direction: column; background: rgba(0,0,0,0.4);
+                        padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); box-sizing: border-box;">
+                
                 <div style="padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
                     <button onclick="document.getElementById('pet-temple-overlay').remove()" style="background:rgba(0,0,0,0.5); color:white; border:1px solid #666; padding:8px 15px; border-radius:20px;">⬅ 返回</button>
-                    <div style="background:rgba(0,0,0,0.5); padding:5px 15px; border-radius:20px; color:var(--gold); font-weight:bold; border:1px solid gold;">💎 ${Math.floor(userData.balance).toLocaleString()}</div>
+                    <div style="background:rgba(0,0,0,0.5); padding:5px 15px; border-radius:20px; color:gold; font-weight:bold; border:1px solid gold;">💎 ${Math.floor(userData.balance).toLocaleString()}</div>
                 </div>
                 
                 <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-                    <h1 style="color:#ffd700; text-shadow: 0 0 15px rgba(255,215,0,0.8); margin: 0; font-size: 24px;">(未完成)貓咪神殿</h1>
+                    <h1 style="color:#ffd700; text-shadow: 0 0 15px rgba(255,215,0,0.8); margin: 0; font-size: 24px;">貓咪神殿</h1>
                     <div id="temple-pet-display" style="margin-top: 20px;">
-                        ${currentPetImg ?
-            `<img src="assets/pet/${currentPetImg}" style="width:220px; filter: drop-shadow(0 0 20px gold);">` :
-            `<div style="width:180px; height:180px; border:2px dashed #888; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#ccc; background:rgba(0,0,0,0.3);">尚未領養貓咪</div>`
-          }
+                        ${petImgHtml}
                     </div>
                     <div style="margin-top: 15px; background:rgba(0,0,0,0.6); padding:5px 15px; border-radius:15px; font-size:14px;">
-                        ${currentPetObj ? `✨ ${currentPetObj.name}` : '請於下方領養貓咪'}
+                        ${petNameHtml}
                     </div>
                 </div>
 
-                <div style="padding: 20px; display: flex; gap: 10px; background: linear-gradient(transparent, rgba(0,0,0,0.8));">
-                    <button onclick="togglePetMenu('adopt')" style="flex:1; background: #e67e22; color:white; border:none; padding:15px; border-radius:12px; font-weight:bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">🐾 進化與領養</button>
-                    <button onclick="togglePetMenu('deco')" style="flex:1; background: #2980b9; color:white; border:none; padding:15px; border-radius:12px; font-weight:bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">🖼️ 神殿裝潢</button>
+                <div style="padding: 20px; display: flex; gap: 10px; background: rgba(0,0,0,0.8); z-index: 100;">
+                    <button id="btn-adopt" style="flex:1; background: #e67e22; color:white; border:none; padding:15px; border-radius:12px; font-weight:bold; cursor:pointer;">🐾 進化與領養</button>
+                    <button id="btn-deco" style="flex:1; background: #2980b9; color:white; border:none; padding:15px; border-radius:12px; font-weight:bold; cursor:pointer;">🖼️ 神殿裝潢</button>
                 </div>
 
                 <div id="pet-menu-drawer" style="display:none; position:absolute; bottom:0; left:0; width:100%; background:#222; border-top:3px solid gold; border-radius:20px 20px 0 0; z-index:100000; padding:20px; box-sizing:border-box; animation: slideUp 0.3s ease;">
                     <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
                         <span id="menu-title" style="font-weight:bold; color:gold;"></span>
-                        <span onclick="this.parentElement.parentElement.style.display='none'" style="cursor:pointer; padding:5px;">✕</span>
+                        <span onclick="document.getElementById('pet-menu-drawer').style.display='none'" style="cursor:pointer; padding:5px;">✕</span>
                     </div>
                     <div id="menu-content" style="display:flex; overflow-x:auto; gap:15px; padding-bottom:10px;"></div>
                 </div>
             </div>
-
-            <style>
-                @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-            </style>
+            <style> @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } } </style>
         `;
-        overlay.innerHTML = html;
+
         document.body.appendChild(overlay);
 
-        // 定義內部切換選單的邏輯 (修正後的版本)
-        window.togglePetMenu = function (type) {
-          const drawer = document.getElementById('pet-menu-drawer');
-          const title = document.getElementById('menu-title');
-          const content = document.getElementById('menu-content');
+        // 4. 改用事件監聽器（EventListener）取代 onclick 屬性，這能解決手機瀏覽器的互斥問題
+        const handler = (type) => {
+            const drawer = document.getElementById('pet-menu-drawer');
+            const title = document.getElementById('menu-title');
+            const content = document.getElementById('menu-content');
 
-          // 1. 執行重置動作 (隱藏並清空)
-          drawer.style.display = 'none';
-          content.innerHTML = '';
-          content.scrollLeft = 0;
+            if (drawer.style.display === 'block' && drawer.dataset.type === type) {
+                drawer.style.display = 'none';
+                return;
+            }
 
-          // 2. 根據類型生成 HTML
-          if (type === 'adopt') {
-            title.innerText = "🐾 選擇你的夥伴";
-            content.innerHTML = PET_TEMPLE_DATA.pets.map(p => {
-              const isOwned = petSys.unlocked_pets.includes(p.id);
-              const isEquipped = petSys.current_pet_id === p.id;
-              return `
-                <div style="min-width:130px; background:#333; padding:15px; border-radius:12px; border:${isEquipped ? '2px solid gold' : '1px solid #555'}; text-align:center;">
-                    <img src="assets/pet/${p.img}" 
-                         onerror="this.src='assets/pet/basic.png'" 
-                         style="width:80px; height:80px; object-fit:contain; margin-bottom:10px; display:block; margin-left:auto; margin-right:auto;">
-                    <div style="font-size:12px; margin-bottom:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.name}</div>
-                    ${isOwned ?
-                  `<button onclick="actionPet('equip','${p.id}')" style="width:100%; background:${isEquipped ? '#444' : '#666'}; border:none; border-radius:5px; color:white; padding:8px 5px;">${isEquipped ? '使用中' : '裝備'}</button>` :
-                  `<button onclick="actionPet('buy','${p.id}',${p.price})" style="width:100%; background:#c0392b; border:none; border-radius:5px; color:white; padding:8px 5px; font-size:10px;">💎${(p.price / 100000000).toLocaleString()}億</button>`
-                }
-                </div>`;
-            }).join('');
-          }
-          else if (type === 'deco') {
-            title.innerText = "🖼️ 選擇神殿背景";
-            content.innerHTML = PET_TEMPLE_DATA.backgrounds.map(bg => {
-              const isOwned = petSys.unlocked_bgs.includes(bg.id);
-              const isEquipped = petSys.current_bg_id === bg.id;
-              return `
-                <div style="min-width:130px; background:#333; padding:15px; border-radius:12px; border:${isEquipped ? '2px solid #3498db' : '1px solid #555'}; text-align:center;">
-                    <img src="assets/pet/${bg.img}" 
-                         onerror="this.src='assets/pet/bg-basic.jpg'" 
-                         style="width:100%; height:60px; object-fit:cover; border-radius:5px; margin-bottom:10px; display:block;">
-                    <div style="font-size:12px; margin-bottom:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${bg.name}</div>
-                    ${isOwned ?
-                  `<button onclick="actionBg('equip','${bg.id}')" style="width:100%; background:${isEquipped ? '#444' : '#666'}; border:none; border-radius:5px; color:white; padding:8px 5px;">${isEquipped ? '套用中' : '更換'}</button>` :
-                  `<button onclick="actionBg('buy','${bg.id}',${bg.price})" style="width:100%; background:#2980b9; border:none; border-radius:5px; color:white; padding:8px 5px; font-size:10px;">💎${(bg.price / 100000000).toLocaleString()}億</button>`
-                }
-                </div>`;
-            }).join('');
-          }
+            drawer.dataset.type = type;
+            content.innerHTML = '';
 
-          // 3. 最後統一顯示
-          drawer.style.display = 'block';
+            if (type === 'adopt') {
+                title.innerText = "🐾 選擇你的夥伴";
+                content.innerHTML = PET_TEMPLE_DATA.pets.map(p => {
+                    const isOwned = petSys.unlocked_pets.includes(p.id);
+                    const isEquipped = petSys.current_pet_id === p.id;
+                    return `
+                        <div style="min-width:130px; background:#333; padding:15px; border-radius:12px; border:${isEquipped ? '2px solid gold' : '1px solid #555'}; text-align:center;">
+                            <img src="assets/pet/${p.img}" onerror="this.src='assets/pet/basic.png'" style="width:80px; height:80px; object-fit:contain; margin-bottom:10px; display:block; margin:0 auto;">
+                            <div style="font-size:12px; margin-bottom:10px;">${p.name}</div>
+                            ${isOwned ? 
+                                `<button onclick="actionPet('equip','${p.id}')" style="width:100%; background:${isEquipped ? '#444' : '#666'}; border:none; border-radius:5px; color:white; padding:8px 5px;">${isEquipped ? '使用中' : '裝備'}</button>` : 
+                                `<button onclick="actionPet('buy','${p.id}',${p.price})" style="width:100%; background:#c0392b; border:none; border-radius:5px; color:white; padding:8px 5px; font-size:10px;">💎${(p.price / 100000000).toLocaleString()}億</button>`
+                            }
+                        </div>`;
+                }).join('');
+            } else {
+                title.innerText = "🖼️ 選擇神殿裝潢";
+                content.innerHTML = PET_TEMPLE_DATA.backgrounds.map(bg => {
+                    const isOwned = petSys.unlocked_bgs.includes(bg.id);
+                    const isEquipped = petSys.current_bg_id === bg.id;
+                    return `
+                        <div style="min-width:130px; background:#333; padding:15px; border-radius:12px; border:${isEquipped ? '2px solid #3498db' : '1px solid #555'}; text-align:center;">
+                            <img src="assets/pet/${bg.img}" onerror="this.src='assets/pet/bg-basic.jpg'" style="width:100%; height:60px; object-fit:cover; border-radius:5px; margin-bottom:10px; display:block;">
+                            <div style="font-size:12px; margin-bottom:10px;">${bg.name}</div>
+                            ${isOwned ? 
+                                `<button onclick="actionBg('equip','${bg.id}')" style="width:100%; background:${isEquipped ? '#444' : '#666'}; border:none; border-radius:5px; color:white; padding:8px 5px;">${isEquipped ? '套用中' : '更換'}</button>` : 
+                                `<button onclick="actionBg('buy','${bg.id}',${bg.price})" style="width:100%; background:#2980b9; border:none; border-radius:5px; color:white; padding:8px 5px; font-size:10px;">💎${(bg.price / 100000000).toLocaleString()}億</button>`
+                            }
+                        </div>`;
+                }).join('');
+            }
+            drawer.style.display = 'block';
         };
 
-      } catch (e) {
-        console.error("載入神殿失敗:", e);
-      }
+        document.getElementById('btn-adopt').addEventListener('click', () => handler('adopt'));
+        document.getElementById('btn-deco').addEventListener('click', () => handler('deco'));
+
+    } catch (e) {
+        console.error("載入失敗:", e);
     }
+}
 
     // 處理貓咪 購買/裝備
     async function actionPet(type, id, price) {
