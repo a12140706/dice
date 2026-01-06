@@ -1656,7 +1656,32 @@
 <body>
 
   <div class="header">
-    <div class="logo">阿記三缺一</div>
+    <div class="logo-area" style="text-align: center; margin: 15px 0;">
+  <button onclick="openWishModal()" style="background: linear-gradient(135deg, #6a11cb, #2575fc); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 10px 20px; border-radius: 25px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+    <span>🌌</span>許願池
+  </button>
+</div>
+
+<div id="wishModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200000; align-items: center; justify-content: center; font-family: sans-serif;">
+  <div style="width: 85%; max-width: 350px; background: #1e1e1e; border: 2px solid #2575fc; border-radius: 20px; padding: 25px; box-sizing: border-box;">
+    <h3 style="color: #2575fc; margin-top: 0; text-align: center;">🌠 許下你的願望</h3>
+    <p style="font-size: 12px; color: #aaa; text-align: center;">投錢許願</p>
+    
+    <select id="wishType" style="width: 100%; padding: 10px; border-radius: 10px; background: #333; color: white; border: 1px solid #444; margin-bottom: 15px;">
+      <option value="new_game">想要新遊戲</option>
+      <option value="bug_report">BUG 回饋</option>
+      <option value="suggestion">建議</option>
+      <option value="other">其他</option>
+    </select>
+
+    <textarea id="wishContent" placeholder="請輸入內容..." style="width: 100%; height: 120px; padding: 12px; border-radius: 10px; background: #333; color: white; border: 1px solid #444; box-sizing: border-box; font-size: 14px; resize: none;"></textarea>
+
+    <div style="display: flex; gap: 10px; margin-top: 20px;">
+      <button onclick="closeWishModal()" style="flex: 1; padding: 12px; border-radius: 10px; border: none; background: #444; color: white;">取消</button>
+      <button id="submitWishBtn" onclick="submitWish()" style="flex: 1; padding: 12px; border-radius: 10px; border: none; background: #2575fc; color: white; font-weight: bold;">傳送願望</button>
+    </div>
+  </div>
+</div>
     <div style="color:var(--gold); font-size:13px; cursor:pointer; text-decoration:underline;" onclick="openShop()">🏪商城
     </div>
     <div style="color:#ff4757; font-size:13px; cursor:pointer; text-decoration:underline; font-weight:bold;"
@@ -1748,6 +1773,12 @@
         <div class="game-img" style="background: linear-gradient(45deg, #312222, #bad7c7);">🧧</div>
         <div class="game-info">
           <div class="game-title">刮刮樂</div>
+        </div>
+      </a>
+      <a href="#" class="game-card">
+        <div class="game-img" style="background: linear-gradient(45deg, #ff00cc, #0015ff);">⚔️</div>
+        <div class="game-info">
+          <div class="game-title">開發中</div>
         </div>
       </a>
     </div>
@@ -1851,7 +1882,50 @@
 
     function openModal() { document.getElementById('depositModal').style.display = 'flex'; }
     function closeModal() { document.getElementById('depositModal').style.display = 'none'; }
+// 開啟許願池
+function openWishModal() {
+    document.getElementById('wishModal').style.display = 'flex';
+}
 
+// 關閉許願池
+function closeWishModal() {
+    document.getElementById('wishModal').style.display = 'none';
+    document.getElementById('wishContent').value = ''; // 清空內容
+}
+
+// 提交願望到 Firebase
+async function submitWish() {
+    const type = document.getElementById('wishType').value;
+    const content = document.getElementById('wishContent').value.trim();
+    const playerId = localStorage.getItem('player_id') || 'guest';
+    const playerName = localStorage.getItem('player_name') || '無名氏';
+    const btn = document.getElementById('submitWishBtn');
+
+    if (!content) return alert("內容不能是空的喔！");
+
+    btn.disabled = true;
+    btn.textContent = "傳送中...";
+
+    try {
+        await db.collection("wishes").add({
+            type: type,
+            content: content,
+            uid: playerId,
+            nickname: playerName,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            status: "pending" // 預設為待處理
+        });
+
+        alert("🚀 願望已傳達！");
+        closeWishModal();
+    } catch (e) {
+        console.error("許願失敗:", e);
+        alert("稍後再試。");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "傳送願望";
+    }
+}
     /**
  * 使用 Firebase ID 登入引繼
  */
