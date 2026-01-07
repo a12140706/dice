@@ -107,7 +107,7 @@
             <span id="goldText" class="font-mono text-xl text-yellow-500 font-bold">0</span>
         </div>
          <div>
-        <p>版本V1.0.2</p>
+        <p>版本V1.0.3</p>
     </div> 
         <a href="index.html" style="text-decoration:none;">
             <button
@@ -192,40 +192,47 @@
         </div>
     </div>
 
-    <script>
-        // --- 1. 基礎資料定義 ---
-        // --- 1. 基礎資料定義 ---
-        const QUALITIES = {
-            common: { name: '普通', color: '#ffffff', textColor: '#000', chance: 0.5 },
-            rare: { name: '稀有', color: '#3b82f6', textColor: '#fff', chance: 0.3 },
-            epic: { name: '史詩', color: '#a855f7', textColor: '#fff', chance: 0.15 },
-            legend: { name: '傳說', color: '#eab308', textColor: '#000', chance: 0.04 },
-            mythic: { name: '神話', color: '#ff00ff', textColor: '#fff', chance: 0.01 }
-        };
+   <script>
+    // --- 1. 基礎資料定義 ---
+    const QUALITIES = {
+        common: { name: '普通', color: '#ffffff', textColor: '#000', chance: 0.5 },
+        rare: { name: '稀有', color: '#3b82f6', textColor: '#fff', chance: 0.3 },
+        epic: { name: '史詩', color: '#a855f7', textColor: '#fff', chance: 0.15 },
+        legend: { name: '傳說', color: '#eab308', textColor: '#000', chance: 0.04 },
+        mythic: { name: '神話', color: '#ff00ff', textColor: '#fff', chance: 0.01 }
+    };
 
-        const ALL_DICES = [
-            { id: 'fire', name: '火', quality: 'common', baseColor: '#ef4444', stats: { atk: 15, speed: 50, effect: '範圍濺射' }, grow: { atk: 5, speed: -1 } },
-            { id: 'wind', name: '風', quality: 'common', baseColor: '#10b981', stats: { atk: 10, speed: 20, effect: '極速射擊' }, grow: { atk: 3, speed: -2 } },
-            { id: 'ice', name: '冰', quality: 'rare', baseColor: '#3b82f6', stats: { atk: 12, speed: 45, effect: '緩速 20%' }, grow: { atk: 4, speed: -0.5 } },
-            { id: 'electric', name: '電', quality: 'rare', baseColor: '#f59e0b', stats: { atk: 8, speed: 40, effect: '連鎖閃電' }, grow: { atk: 3, speed: -1 } },
-            { id: 'poison', name: '毒', quality: 'epic', baseColor: '#8b5cf6', stats: { atk: 5, speed: 60, effect: '持續中毒' }, grow: { atk: 2, speed: -1 } },
-            { id: 'growth', name: '成長', quality: 'legend', baseColor: '#f472b6', stats: { atk: 10, speed: 50, effect: '15秒後隨機升星' }, grow: { atk: 5, speed: -1 } },
-            { id: 'sun', name: '太陽', quality: 'legend', baseColor: '#fbbf24', stats: { atk: 30, speed: 55, effect: '數量為1/4/9時變形' }, grow: { atk: 15, speed: -0.5 } },
-            { id: 'galaxy', name: '銀河', quality: 'mythic', baseColor: '#1e293b', stats: { atk: 50, speed: 80, effect: '黑洞百分比傷害' }, grow: { atk: 30, speed: -1 } }
-        ];
+    const ALL_DICES = [
+        { id: 'fire', name: '火', quality: 'common', baseColor: '#ef4444', stats: { atk: 15, speed: 50, effect: '範圍濺射' }, grow: { atk: 5, speed: -1 } },
+        { id: 'wind', name: '風', quality: 'common', baseColor: '#10b981', stats: { atk: 10, speed: 20, effect: '極速射擊' }, grow: { atk: 3, speed: -2 } },
+        { id: 'ice', name: '冰', quality: 'rare', baseColor: '#3b82f6', stats: { atk: 12, speed: 45, effect: '緩速 20%' }, grow: { atk: 4, speed: -0.5 } },
+        { id: 'electric', name: '電', quality: 'rare', baseColor: '#f59e0b', stats: { atk: 8, speed: 40, effect: '連鎖閃電' }, grow: { atk: 3, speed: -1 } },
+        { id: 'poison', name: '毒', quality: 'epic', baseColor: '#8b5cf6', stats: { atk: 5, speed: 60, effect: '持續中毒' }, grow: { atk: 2, speed: -1 } },
+        { id: 'growth', name: '成長', quality: 'legend', baseColor: '#f472b6', stats: { atk: 10, speed: 50, effect: '15秒後隨機升星' }, grow: { atk: 5, speed: -1 } },
+        { id: 'sun', name: '太陽', quality: 'legend', baseColor: '#fbbf24', stats: { atk: 30, speed: 55, effect: '數量為1/4/9時變形' }, grow: { atk: 15, speed: -0.5 } },
+        { id: 'galaxy', name: '銀河', quality: 'mythic', baseColor: '#1e293b', stats: { atk: 50, speed: 80, effect: '黑洞百分比傷害' }, grow: { atk: 30, speed: -1 } }
+    ];
 
-       let currentBalance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
-    let userData;
+    // --- 2. 資料載入 (修正為穩定模式) ---
+    let currentBalance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
+    let userData = null;
 
     function initGameData() {
         let raw = localStorage.getItem('dice_game_data');
-        let data;
+        let data = null;
+        
         try {
-            data = raw ? JSON.parse(raw) : null;
-            // 檢查是否為有效物件且有 deck 陣列
-            if (!data || !Array.isArray(data.deck)) throw new Error("Format error");
+            if (raw) {
+                data = JSON.parse(raw);
+                // 結構檢查：如果不是陣列就報錯觸發重置
+                if (!data || !Array.isArray(data.deck)) throw new Error("Format error");
+            }
         } catch (e) {
-            // 資料毀損或新玩家：強制初始化
+            console.warn("存檔格式不符，正在修復...");
+            data = null;
+        }
+
+        if (!data) {
             data = {
                 deck: ['fire', 'wind', 'ice', 'electric', 'poison'],
                 inventory: { 'fire': 1, 'wind': 1, 'ice': 1, 'electric': 1, 'poison': 1 },
@@ -234,15 +241,20 @@
             localStorage.setItem('dice_game_data', JSON.stringify(data));
         }
 
-        // 自動補洞：確保 ALL_DICES 裡的所有骰子在存檔中都有對應欄位
+        // 自動補洞
         ALL_DICES.forEach(d => {
+            if (!data.inventory) data.inventory = {};
+            if (!data.diceLevels) data.diceLevels = {};
             if (data.inventory[d.id] === undefined) data.inventory[d.id] = 0;
             if (data.diceLevels[d.id] === undefined) data.diceLevels[d.id] = 1;
         });
+        
         return data;
     }
 
-    userData = initGameData(); // 執行初始化
+    // 確保這裡一定拿得到資料
+    userData = initGameData();
+
     let selectedInventoryId = null;
     let tempUpgradeId = null;
 
@@ -252,13 +264,13 @@
         9: [1000, 100000000], 10: [1200, 500000000]
     };
 
-    // --- 3. 渲染函式 ---
+    // --- 3. 渲染與功能 ---
     function render() {
-        // 渲染金幣
+        if (!userData) return;
+
         const goldDisplay = document.getElementById('goldText');
         if (goldDisplay) goldDisplay.innerText = Math.floor(currentBalance).toLocaleString();
 
-        // 1. 渲染陣容
         const deckContainer = document.getElementById('deckContainer');
         if (deckContainer) {
             deckContainer.innerHTML = userData.deck.map((id, index) => {
@@ -280,7 +292,6 @@
             }).join('');
         }
 
-        // 2. 渲染庫存
         const inventorySection = document.getElementById('inventorySection');
         if (inventorySection) {
             inventorySection.innerHTML = ALL_DICES.map(dice => {
@@ -303,10 +314,9 @@
         }
     }
 
-    // --- 4. 功能函式 ---
     function saveData() {
         localStorage.setItem('dice_game_data', JSON.stringify(userData));
-        localStorage.setItem('sicbo_balance', currentBalance); // 同步儲存餘額
+        localStorage.setItem('sicbo_balance', currentBalance);
     }
 
     function openUpgradeUI(id) {
