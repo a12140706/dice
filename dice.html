@@ -147,59 +147,73 @@
     let selectedInventoryId = null; 
     let tempUpgradeId = null;
 
-    function render() {
-        document.getElementById('goldText').innerText = Math.floor(currentBalance).toLocaleString();
+   function render() {
+        try {
+            const goldDisplay = document.getElementById('goldText');
+            if (goldDisplay) goldDisplay.innerText = Math.floor(currentBalance).toLocaleString();
 
-        // 1. 渲染出戰陣容
-        const deckHTML = userData.deck.map((id, index) => {
-            const dice = ALL_DICES.find(d => d.id === id) || ALL_DICES[0];
-            const q = QUALITIES[dice.quality];
-            const lv = userData.diceLevels[id] || 1;
-            const isTarget = selectedInventoryId !== null;
-            
-            return `
-                <div onclick="selectDeckSlot(${index})" 
-                     class="w-14 h-14 rounded-lg flex flex-col items-center justify-center font-black shadow-lg border-2 transition-all 
-                     ${dice.quality === 'mythic' ? 'q-mythic' : ''} ${isTarget ? 'deck-slot-highlight border-blue-400' : 'border-transparent'}" 
-                     style="background-color: ${dice.baseColor}; color: #fff; border-color: ${q.color}">
-                    <div class="text-[10px] leading-none">${dice.name}</div>
-                    <div class="text-[8px] mt-1 bg-black/30 px-1 rounded">Lv.${lv}</div>
-                </div>`;
-        }).join('');
-        document.getElementById('deckContainer').innerHTML = deckHTML;
+            // 1. 渲染出戰陣容
+            const deckContainer = document.getElementById('deckContainer');
+            if (deckContainer) {
+                const deckHTML = userData.deck.map((id, index) => {
+                    // 增加防錯處理：如果 ID 找不到，給予一個預設顯示
+                    const dice = ALL_DICES.find(d => d.id === id);
+                    if (!dice) return `<div class="w-14 h-14 bg-slate-800 rounded-lg border-2 border-dashed border-slate-600"></div>`;
+                    
+                    const q = QUALITIES[dice.quality] || QUALITIES.common;
+                    const lv = userData.diceLevels[id] || 1;
+                    const isTarget = selectedInventoryId !== null;
+                    
+                    return `
+                        <div onclick="selectDeckSlot(${index})" 
+                             class="w-14 h-14 rounded-lg flex flex-col items-center justify-center font-black shadow-lg border-2 transition-all 
+                             ${dice.quality === 'mythic' ? 'q-mythic' : ''} ${isTarget ? 'deck-slot-highlight border-blue-400' : 'border-transparent'}" 
+                             style="background-color: ${dice.baseColor}; color: #fff; border-color: ${q.color}">
+                            <div class="text-[10px] leading-none">${dice.name}</div>
+                            <div class="text-[8px] mt-1 bg-black/30 px-1 rounded">Lv.${lv}</div>
+                        </div>`;
+                }).join('');
+                deckContainer.innerHTML = deckHTML;
+            }
 
-        // 2. 渲染庫存
-        const invHTML = ALL_DICES.map(dice => {
-            const count = userData.inventory[dice.id] || 0;
-            const lv = userData.diceLevels[dice.id] || 1;
-            const q = QUALITIES[dice.quality];
-            const isSelected = selectedInventoryId === dice.id;
-            const hasDice = userData.inventory[dice.id] !== undefined;
-            
-            const req = UPGRADE_CONFIG[lv] || [999, 999999];
-            const progress = Math.min((count / req[0]) * 100, 100);
-            const canUpgrade = count >= req[0] && currentBalance >= req[1];
+            // 2. 渲染庫存
+            const inventorySection = document.getElementById('inventorySection');
+            if (inventorySection) {
+                const invHTML = ALL_DICES.map(dice => {
+                    const count = userData.inventory[dice.id] || 0;
+                    const lv = userData.diceLevels[dice.id] || 1;
+                    const q = QUALITIES[dice.quality] || QUALITIES.common;
+                    const isSelected = selectedInventoryId === dice.id;
+                    const hasDice = userData.inventory[dice.id] !== undefined;
+                    
+                    const req = UPGRADE_CONFIG[lv] || [999, 999999];
+                    const progress = Math.min((count / req[0]) * 100, 100);
+                    const canUpgrade = count >= req[0] && currentBalance >= req[1];
 
-            return `
-                <div onclick="openUpgradeUI('${dice.id}')" 
-                     class="bg-slate-800 p-2 rounded-xl text-center border-2 transition-all dice-card relative
-                     ${isSelected ? 'selected-dice border-blue-500' : (hasDice ? 'border-slate-700' : 'border-slate-800 opacity-30 pointer-events-none')}">
-                    
-                    ${canUpgrade ? '<div class="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50"></div>' : ''}
-                    
-                    <div class="w-12 h-12 mx-auto mb-1 rounded-lg flex items-center justify-center font-bold ${dice.quality === 'mythic' ? 'q-mythic' : ''}" 
-                         style="background-color: ${dice.baseColor}; color: #fff; border: 2px solid ${q.color}">${dice.name}</div>
-                    
-                    <div class="text-[10px] font-bold text-slate-300">Lv.${lv}</div>
-                    
-                    <div class="w-full bg-slate-900 h-1.5 rounded-full mt-1 overflow-hidden border border-slate-700">
-                        <div class="h-full ${canUpgrade ? 'bg-green-500' : 'bg-blue-500'}" style="width: ${progress}%"></div>
-                    </div>
-                    <div class="text-[8px] mt-1 text-slate-400">${count}/${req[0]}</div>
-                </div>`;
-        }).join('');
-        document.getElementById('inventorySection').innerHTML = invHTML;
-        saveData();
+                    return `
+                        <div onclick="openUpgradeUI('${dice.id}')" 
+                             class="bg-slate-800 p-2 rounded-xl text-center border-2 transition-all dice-card relative
+                             ${isSelected ? 'selected-dice border-blue-500' : (hasDice ? 'border-slate-700' : 'border-slate-800 opacity-30 pointer-events-none')}">
+                            
+                            ${canUpgrade ? '<div class="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50"></div>' : ''}
+                            
+                            <div class="w-12 h-12 mx-auto mb-1 rounded-lg flex items-center justify-center font-bold ${dice.quality === 'mythic' ? 'q-mythic' : ''}" 
+                                 style="background-color: ${dice.baseColor}; color: #fff; border: 2px solid ${q.color}">${dice.name}</div>
+                            
+                            <div class="text-[10px] font-bold text-slate-300">Lv.${lv}</div>
+                            
+                            <div class="w-full bg-slate-900 h-1.5 rounded-full mt-1 overflow-hidden border border-slate-700">
+                                <div class="h-full ${canUpgrade ? 'bg-green-500' : 'bg-blue-500'}" style="width: ${progress}%"></div>
+                            </div>
+                            <div class="text-[8px] mt-1 text-slate-400">${count}/${req[0]}</div>
+                        </div>`;
+                }).join('');
+                inventorySection.innerHTML = invHTML;
+            }
+            saveData();
+        } catch (e) {
+            console.error("渲染出錯了！錯誤訊息：", e);
+        }
     }
 
     function openUpgradeUI(id) {
