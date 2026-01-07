@@ -1,34 +1,104 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>骰子戰爭</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #0f172a; color: white; font-family: sans-serif; overflow: hidden; height: 100vh; }
-        .dice-card { transition: transform 0.1s; position: relative; cursor: pointer; }
-        .dice-card:active { transform: scale(0.95); }
-        .tab-active { border-bottom: 4px solid #3b82f6; color: #3b82f6; }
-        .scroll-hide::-webkit-scrollbar { display: none; }
-        
-        .q-mythic { background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff); background-size: 200% 200%; animation: rainbow 3s linear infinite; }
-        @keyframes rainbow { 0% {background-position: 0% 50%;} 50% {background-position: 100% 50%;} 100% {background-position: 0% 50%;} }
-        
+        body {
+            background-color: #0f172a;
+            color: white;
+            font-family: sans-serif;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .dice-card {
+            transition: transform 0.1s;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .dice-card:active {
+            transform: scale(0.95);
+        }
+
+        .tab-active {
+            border-bottom: 4px solid #3b82f6;
+            color: #3b82f6;
+        }
+
+        .scroll-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        .q-mythic {
+            background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff);
+            background-size: 200% 200%;
+            animation: rainbow 3s linear infinite;
+        }
+
+        @keyframes rainbow {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
         /* 選取狀態特效 */
-        .selected-dice { 
-    outline: 4px solid #3b82f6; 
-    box-shadow: 0 0 15px #3b82f6; 
-    transform: scale(1.05); 
-    z-index: 10; 
-}
-        .deck-slot-highlight { animation: pulse 1.5s infinite; border-color: #3b82f6 !important; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-        
-        @keyframes popup { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-        .animate-popup { animation: popup 0.3s ease-out forwards; }
+        .selected-dice {
+            outline: 4px solid #3b82f6;
+            box-shadow: 0 0 15px #3b82f6;
+            transform: scale(1.05);
+            z-index: 10;
+        }
+
+        .deck-slot-highlight {
+            animation: pulse 1.5s infinite;
+            border-color: #3b82f6 !important;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes popup {
+            0% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .animate-popup {
+            animation: popup 0.3s ease-out forwards;
+        }
     </style>
 </head>
+
 <body class="p-4 flex flex-col">
 
     <div class="flex justify-between items-center mb-6 bg-slate-800 p-3 rounded-xl shadow-lg border border-slate-700">
@@ -46,23 +116,27 @@
     <div class="mb-6">
         <h2 class="text-lg font-bold mb-3 flex justify-between items-center px-1">
             <span>陣容</span>
-            <span id="deckStatus" class="text-[10px] text-blue-300 bg-blue-900/50 px-2 py-1 rounded-full uppercase">Battle Deck</span>
+            <span id="deckStatus"
+                class="text-[10px] text-blue-300 bg-blue-900/50 px-2 py-1 rounded-full uppercase">Battle Deck</span>
         </h2>
-        <div id="deckContainer" class="flex justify-between gap-2 bg-slate-900 p-4 rounded-2xl border-2 border-slate-700">
-            </div>
+        <div id="deckContainer"
+            class="flex justify-between gap-2 bg-slate-900 p-4 rounded-2xl border-2 border-slate-700">
+        </div>
     </div>
 
     <div class="flex mb-4 border-b border-slate-700">
-        <button onclick="switchTab('inventory')" id="tab-inventory" class="flex-1 py-2 font-bold tab-active">我的骰子</button>
+        <button onclick="switchTab('inventory')" id="tab-inventory"
+            class="flex-1 py-2 font-bold tab-active">我的骰子</button>
         <button onclick="switchTab('shop')" id="tab-shop" class="flex-1 py-2 font-bold text-slate-400">商店抽卡</button>
     </div>
 
     <div class="flex-1 overflow-y-auto scroll-hide pb-24">
         <div id="inventorySection" class="grid grid-cols-3 gap-3">
-            </div>
+        </div>
 
         <div id="shopSection" class="hidden">
-            <div class="bg-gradient-to-b from-slate-800 to-slate-900 p-8 rounded-3xl text-center border-2 border-yellow-600/30">
+            <div
+                class="bg-gradient-to-b from-slate-800 to-slate-900 p-8 rounded-3xl text-center border-2 border-yellow-600/30">
                 <div class="text-6xl mb-4">🔮</div>
                 <h3 class="text-2xl font-bold mb-2">抽卡</h3>
                 <p class="text-slate-400 text-sm mb-8">隨機獲得 5 張骰子</p>
@@ -72,7 +146,8 @@
     </div>
 
     <div class="fixed bottom-6 left-0 w-full px-6">
-        <button onclick="startBattle()" class="w-full bg-blue-600 py-4 rounded-2xl font-bold text-xl shadow-xl active:scale-95 transition-all">進入戰鬥</button>
+        <button onclick="startBattle()"
+            class="w-full bg-blue-600 py-4 rounded-2xl font-bold text-xl shadow-xl active:scale-95 transition-all">進入戰鬥</button>
     </div>
 
     <div id="rewardOverlay" class="fixed inset-0 bg-black/90 hidden z-50 flex items-center justify-center p-6">
@@ -84,11 +159,14 @@
     </div>
 
     <div id="upgradeOverlay" class="fixed inset-0 bg-black/90 hidden z-50 flex items-center justify-center p-6">
-        <div id="upgradeCard" class="bg-slate-800 w-full max-w-sm rounded-3xl p-6 border border-slate-600 animate-popup text-center">
-            <div id="u-icon" class="w-20 h-20 mx-auto rounded-2xl flex items-center justify-center text-2xl font-black mb-4 border-4 shadow-2xl"></div>
+        <div id="upgradeCard"
+            class="bg-slate-800 w-full max-w-sm rounded-3xl p-6 border border-slate-600 animate-popup text-center">
+            <div id="u-icon"
+                class="w-20 h-20 mx-auto rounded-2xl flex items-center justify-center text-2xl font-black mb-4 border-4 shadow-2xl">
+            </div>
             <h3 id="u-name" class="text-2xl font-bold mb-1"></h3>
             <p id="u-quality" class="text-xs mb-4 uppercase tracking-widest"></p>
-            
+
             <div class="grid grid-cols-2 gap-4 mb-6">
                 <div class="bg-slate-900 p-3 rounded-2xl border border-slate-700">
                     <div class="text-slate-400 text-[10px]">當前等級</div>
@@ -101,70 +179,94 @@
             </div>
 
             <div class="flex gap-2 mb-4">
-                <button id="btn-equip" onclick="confirmEquip()" class="flex-1 bg-blue-600 py-3 rounded-xl font-bold">裝備出戰</button>
-                <button id="btn-upgrade" onclick="confirmUpgrade()" class="flex-1 bg-green-600 py-3 rounded-xl font-bold disabled:opacity-50 disabled:grayscale">升級</button>
+                <button id="btn-equip" onclick="confirmEquip()"
+                    class="flex-1 bg-blue-600 py-3 rounded-xl font-bold">裝備出戰</button>
+                <button id="btn-upgrade" onclick="confirmUpgrade()"
+                    class="flex-1 bg-green-600 py-3 rounded-xl font-bold disabled:opacity-50 disabled:grayscale">升級</button>
             </div>
             <button onclick="closeUpgradeUI()" class="text-slate-500 text-sm">返回</button>
         </div>
     </div>
 
     <script>
-    // --- 1. 基礎資料定義 ---
-    // --- 1. 基礎資料定義 ---
-    const QUALITIES = {
-        common: { name: '普通', color: '#ffffff', textColor: '#000', chance: 0.5 },
-        rare: { name: '稀有', color: '#3b82f6', textColor: '#fff', chance: 0.3 },
-        epic: { name: '史詩', color: '#a855f7', textColor: '#fff', chance: 0.15 },
-        legend: { name: '傳說', color: '#eab308', textColor: '#000', chance: 0.04 },
-        mythic: { name: '神話', color: 'mythic', textColor: '#fff', chance: 0.01 }
-    };
+        // --- 1. 基礎資料定義 ---
+        // --- 1. 基礎資料定義 ---
+        const QUALITIES = {
+            common: { name: '普通', color: '#ffffff', textColor: '#000', chance: 0.5 },
+            rare: { name: '稀有', color: '#3b82f6', textColor: '#fff', chance: 0.3 },
+            epic: { name: '史詩', color: '#a855f7', textColor: '#fff', chance: 0.15 },
+            legend: { name: '傳說', color: '#eab308', textColor: '#000', chance: 0.04 },
+            mythic: { name: '神話', color: 'mythic', textColor: '#fff', chance: 0.01 }
+        };
 
-    const ALL_DICES = [
-        { id: 'fire', name: '火', quality: 'common', baseColor: '#ef4444', stats: { atk: 15, speed: 50, effect: '範圍濺射' }, grow: { atk: 5, speed: -1 } },
-        { id: 'wind', name: '風', quality: 'common', baseColor: '#10b981', stats: { atk: 10, speed: 20, effect: '極速射擊' }, grow: { atk: 3, speed: -2 } },
-        { id: 'ice', name: '冰', quality: 'rare', baseColor: '#3b82f6', stats: { atk: 12, speed: 45, effect: '緩速 20%' }, grow: { atk: 4, speed: -0.5 } },
-        { id: 'electric', name: '電', quality: 'rare', baseColor: '#f59e0b', stats: { atk: 8, speed: 40, effect: '連鎖閃電' }, grow: { atk: 3, speed: -1 } },
-        { id: 'poison', name: '毒', quality: 'epic', baseColor: '#8b5cf6', stats: { atk: 5, speed: 60, effect: '持續中毒' }, grow: { atk: 2, speed: -1 } },
-        { id: 'growth', name: '成長', quality: 'legend', baseColor: '#f472b6', stats: { atk: 10, speed: 50, effect: '15秒後隨機升星' }, grow: { atk: 5, speed: -1 } },
-        { id: 'sun', name: '太陽', quality: 'legend', baseColor: '#fbbf24', stats: { atk: 30, speed: 55, effect: '數量為1/4/9時變形' }, grow: { atk: 15, speed: -0.5 } },
-        { id: 'galaxy', name: '銀河', quality: 'mythic', baseColor: '#1e293b', stats: { atk: 50, speed: 80, effect: '黑洞百分比傷害' }, grow: { atk: 30, speed: -1 } }
-    ];
+        const ALL_DICES = [
+            { id: 'fire', name: '火', quality: 'common', baseColor: '#ef4444', stats: { atk: 15, speed: 50, effect: '範圍濺射' }, grow: { atk: 5, speed: -1 } },
+            { id: 'wind', name: '風', quality: 'common', baseColor: '#10b981', stats: { atk: 10, speed: 20, effect: '極速射擊' }, grow: { atk: 3, speed: -2 } },
+            { id: 'ice', name: '冰', quality: 'rare', baseColor: '#3b82f6', stats: { atk: 12, speed: 45, effect: '緩速 20%' }, grow: { atk: 4, speed: -0.5 } },
+            { id: 'electric', name: '電', quality: 'rare', baseColor: '#f59e0b', stats: { atk: 8, speed: 40, effect: '連鎖閃電' }, grow: { atk: 3, speed: -1 } },
+            { id: 'poison', name: '毒', quality: 'epic', baseColor: '#8b5cf6', stats: { atk: 5, speed: 60, effect: '持續中毒' }, grow: { atk: 2, speed: -1 } },
+            { id: 'growth', name: '成長', quality: 'legend', baseColor: '#f472b6', stats: { atk: 10, speed: 50, effect: '15秒後隨機升星' }, grow: { atk: 5, speed: -1 } },
+            { id: 'sun', name: '太陽', quality: 'legend', baseColor: '#fbbf24', stats: { atk: 30, speed: 55, effect: '數量為1/4/9時變形' }, grow: { atk: 15, speed: -0.5 } },
+            { id: 'galaxy', name: '銀河', quality: 'mythic', baseColor: '#1e293b', stats: { atk: 50, speed: 80, effect: '黑洞百分比傷害' }, grow: { atk: 30, speed: -1 } }
+        ];
 
-    // --- 2. 資料載入 ---
-    let currentBalance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
-    let userData = JSON.parse(localStorage.getItem('dice_game_data')) || {
-        deck: ['fire', 'wind', 'ice', 'electric', 'poison'],
-        inventory: { 'fire': 1, 'wind': 1, 'ice': 1, 'electric': 1, 'poison': 1 },
-        diceLevels: { 'fire': 1, 'wind': 1, 'ice': 1, 'electric': 1, 'poison': 1, 'sun': 1, 'growth': 1, 'galaxy': 1 }
-    };
+        // --- 2. 資料載入 ---
+        let rawData = localStorage.getItem('dice_game_data');
+        let currentBalance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
+        let userData = JSON.parse(localStorage.getItem('dice_game_data')) || {
+            deck: ['fire', 'wind', 'ice', 'electric', 'poison'],
+            inventory: { 'fire': 1, 'wind': 1, 'ice': 1, 'electric': 1, 'poison': 1 },
+            diceLevels: { 'fire': 1, 'wind': 1, 'ice': 1, 'electric': 1, 'poison': 1, 'sun': 1, 'growth': 1, 'galaxy': 1 }
+        };
 
-    const UPGRADE_CONFIG = {
-        1: [5, 50000], 2: [10, 100000], 3: [20, 200000], 4: [50, 500000],
-        5: [100, 1000000], 6: [200, 5000000], 7: [500, 10000000], 8: [800, 50000000],
-        9: [1000, 100000000], 10: [1200, 500000000]
-    };
+        const UPGRADE_CONFIG = {
+            1: [5, 50000], 2: [10, 100000], 3: [20, 200000], 4: [50, 500000],
+            5: [100, 1000000], 6: [200, 5000000], 7: [500, 10000000], 8: [800, 50000000],
+            9: [1000, 100000000], 10: [1200, 500000000]
+        };
+        if (!rawData) {
+            // 只有在完全沒有資料時，才初始化新手禮包
+            userData = {
+                deck: ['fire', 'wind', 'ice', 'electric', 'poison'],
+                inventory: { 'fire': 1, 'wind': 1, 'ice': 1, 'electric': 1, 'poison': 1 },
+                diceLevels: { 'fire': 1, 'wind': 1, 'ice': 1, 'electric': 1, 'poison': 1 }
+            };
+            // 立即存檔一次，確保之後 rawData 就有值了
+            localStorage.setItem('dice_game_data', JSON.stringify(userData));
+        } else {
+            userData = JSON.parse(rawData);
+        }
 
-    let selectedInventoryId = null; 
-    let tempUpgradeId = null;
+        // --- 自動補洞機制（重要） ---
+        // 這裡不給碎片，只確保每個 ID 在物件中都存在，避免 render 時讀到 undefined 崩潰
+        ALL_DICES.forEach(d => {
+            if (userData.inventory[d.id] === undefined) userData.inventory[d.id] = 0;
+            if (userData.diceLevels[d.id] === undefined) userData.diceLevels[d.id] = 1;
+        });
+        let selectedInventoryId = null;
+        let tempUpgradeId = null;
 
-   function render() {
-        try {
-            const goldDisplay = document.getElementById('goldText');
-            if (goldDisplay) goldDisplay.innerText = Math.floor(currentBalance).toLocaleString();
+        function render() {
+            try {
+                userData.deck = userData.deck.map(id => {
+                    return ALL_DICES.find(d => d.id === id) ? id : 'fire';
+                });
+                const goldDisplay = document.getElementById('goldText');
+                if (goldDisplay) goldDisplay.innerText = Math.floor(currentBalance).toLocaleString();
 
-            // 1. 渲染出戰陣容
-            const deckContainer = document.getElementById('deckContainer');
-            if (deckContainer) {
-                const deckHTML = userData.deck.map((id, index) => {
-                    // 增加防錯處理：如果 ID 找不到，給予一個預設顯示
-                    const dice = ALL_DICES.find(d => d.id === id);
-                    if (!dice) return `<div class="w-14 h-14 bg-slate-800 rounded-lg border-2 border-dashed border-slate-600"></div>`;
-                    
-                    const q = QUALITIES[dice.quality] || QUALITIES.common;
-                    const lv = userData.diceLevels[id] || 1;
-                    const isTarget = selectedInventoryId !== null;
-                    
-                    return `
+                // 1. 渲染出戰陣容
+                const deckContainer = document.getElementById('deckContainer');
+                if (deckContainer) {
+                    const deckHTML = userData.deck.map((id, index) => {
+                        // 增加防錯處理：如果 ID 找不到，給予一個預設顯示
+                        const dice = ALL_DICES.find(d => d.id === id);
+                        if (!dice) return `<div class="w-14 h-14 bg-slate-800 rounded-lg border-2 border-dashed border-slate-600"></div>`;
+
+                        const q = QUALITIES[dice.quality] || QUALITIES.common;
+                        const lv = userData.diceLevels[id] || 1;
+                        const isTarget = selectedInventoryId !== null;
+
+                        return `
                         <div onclick="selectDeckSlot(${index})" 
                              class="w-14 h-14 rounded-lg flex flex-col items-center justify-center font-black shadow-lg border-2 transition-all 
                              ${dice.quality === 'mythic' ? 'q-mythic' : ''} ${isTarget ? 'deck-slot-highlight border-blue-400' : 'border-transparent'}" 
@@ -172,25 +274,25 @@
                             <div class="text-[10px] leading-none">${dice.name}</div>
                             <div class="text-[8px] mt-1 bg-black/30 px-1 rounded">Lv.${lv}</div>
                         </div>`;
-                }).join('');
-                deckContainer.innerHTML = deckHTML;
-            }
+                    }).join('');
+                    deckContainer.innerHTML = deckHTML;
+                }
 
-            // 2. 渲染庫存
-            const inventorySection = document.getElementById('inventorySection');
-            if (inventorySection) {
-                const invHTML = ALL_DICES.map(dice => {
-                    const count = userData.inventory[dice.id] || 0;
-                    const lv = userData.diceLevels[dice.id] || 1;
-                    const q = QUALITIES[dice.quality] || QUALITIES.common;
-                    const isSelected = selectedInventoryId === dice.id;
-                    const hasDice = userData.inventory[dice.id] !== undefined;
-                    
-                    const req = UPGRADE_CONFIG[lv] || [999, 999999];
-                    const progress = Math.min((count / req[0]) * 100, 100);
-                    const canUpgrade = count >= req[0] && currentBalance >= req[1];
+                // 2. 渲染庫存
+                const inventorySection = document.getElementById('inventorySection');
+                if (inventorySection) {
+                    const invHTML = ALL_DICES.map(dice => {
+                        const count = userData.inventory[dice.id] || 0;
+                        const lv = userData.diceLevels[dice.id] || 1;
+                        const q = QUALITIES[dice.quality] || QUALITIES.common;
+                        const isSelected = selectedInventoryId === dice.id;
+                        const hasDice = userData.inventory[dice.id] !== undefined;
 
-                    return `
+                        const req = UPGRADE_CONFIG[lv] || [999, 999999];
+                        const progress = Math.min((count / req[0]) * 100, 100);
+                        const canUpgrade = count >= req[0] && currentBalance >= req[1];
+
+                        return `
                         <div onclick="openUpgradeUI('${dice.id}')" 
                              class="bg-slate-800 p-2 rounded-xl text-center border-2 transition-all dice-card relative
                              ${isSelected ? 'selected-dice border-blue-500' : (hasDice ? 'border-slate-700' : 'border-slate-800 opacity-30 pointer-events-none')}">
@@ -207,150 +309,153 @@
                             </div>
                             <div class="text-[8px] mt-1 text-slate-400">${count}/${req[0]}</div>
                         </div>`;
-                }).join('');
-                inventorySection.innerHTML = invHTML;
+                    }).join('');
+                    inventorySection.innerHTML = invHTML;
+                }
+                saveData();
+            } catch (e) {
+                console.error("渲染出錯了！錯誤訊息：", e);
             }
-            saveData();
-        } catch (e) {
-            console.error("渲染出錯了！錯誤訊息：", e);
         }
-    }
 
-    function openUpgradeUI(id) {
-        tempUpgradeId = id;
-        const dice = ALL_DICES.find(d => d.id === id);
-        const q = QUALITIES[dice.quality];
-        const lv = userData.diceLevels[id] || 1;
-        const count = userData.inventory[id] || 0;
-        const req = UPGRADE_CONFIG[lv] || [0, 0];
+        function openUpgradeUI(id) {
+            tempUpgradeId = id;
+            const dice = ALL_DICES.find(d => d.id === id);
+            const q = QUALITIES[dice.quality];
+            const lv = userData.diceLevels[id] || 1;
+            const count = userData.inventory[id] || 0;
+            const req = UPGRADE_CONFIG[lv] || [0, 0];
 
-        const curAtk = dice.stats.atk + (lv - 1) * dice.grow.atk;
-        const nextAtk = dice.stats.atk + lv * dice.grow.atk;
-        const curSpd = dice.stats.speed + (lv - 1) * dice.grow.speed;
-        const nextSpd = dice.stats.speed + lv * dice.grow.speed;
+            const curAtk = dice.stats.atk + (lv - 1) * dice.grow.atk;
+            const nextAtk = dice.stats.atk + lv * dice.grow.atk;
+            const curSpd = dice.stats.speed + (lv - 1) * dice.grow.speed;
+            const nextSpd = dice.stats.speed + lv * dice.grow.speed;
 
-        document.getElementById('u-name').innerText = dice.name + " 骰子";
-        document.getElementById('u-quality').innerText = `${q.name} | ${dice.stats.effect}`;
-        document.getElementById('u-lv-now').innerText = `Lv. ${lv}`;
-        
-        document.getElementById('u-atk').innerHTML = `
+            document.getElementById('u-name').innerText = dice.name + " 骰子";
+            document.getElementById('u-quality').innerText = `${q.name} | ${dice.stats.effect}`;
+            document.getElementById('u-lv-now').innerText = `Lv. ${lv}`;
+
+            document.getElementById('u-atk').innerHTML = `
             <div class="text-xs text-slate-400">基礎攻擊</div>
             <div class="text-lg font-bold text-green-400">${curAtk} → ${nextAtk}</div>
             <div class="text-xs text-slate-400 mt-2">攻擊間隔</div>
             <div class="text-lg font-bold text-blue-400">${curSpd} → ${nextSpd}</div>
         `;
-        
-        const upgradeBtn = document.getElementById('btn-upgrade');
-        const canAfford = count >= req[0] && currentBalance >= req[1];
-        upgradeBtn.disabled = !canAfford || lv >= 10;
-        upgradeBtn.innerText = lv >= 10 ? '已滿級' : `升級 (${req[1].toLocaleString()} 💰)`;
-        
-        document.getElementById('upgradeOverlay').classList.remove('hidden');
-    }
 
-    function confirmUpgrade() {
-        if (!tempUpgradeId) return;
-        const lv = userData.diceLevels[tempUpgradeId] || 1;
-        const req = UPGRADE_CONFIG[lv];
-        if (!req) return;
+            const upgradeBtn = document.getElementById('btn-upgrade');
+            const canAfford = count >= req[0] && currentBalance >= req[1];
+            upgradeBtn.disabled = !canAfford || lv >= 10;
+            upgradeBtn.innerText = lv >= 10 ? '已滿級' : `升級 (${req[1].toLocaleString()} 💰)`;
 
-        const currentCount = userData.inventory[tempUpgradeId] || 0;
-        if (currentCount >= req[0] && currentBalance >= req[1]) {
-            currentBalance -= req[1];
-            userData.inventory[tempUpgradeId] -= req[0];
-            userData.diceLevels[tempUpgradeId] = lv + 1;
-            
-            localStorage.setItem('sicbo_balance', currentBalance);
-            saveData();
-            render();
-            openUpgradeUI(tempUpgradeId);
+            document.getElementById('upgradeOverlay').classList.remove('hidden');
         }
-    }
 
-    function confirmEquip() {
-        if (!tempUpgradeId) return;
-        selectedInventoryId = tempUpgradeId;
-        closeUpgradeUI();
-        render();
-        // 提示玩家
-        const status = document.getElementById('deckStatus');
-        status.innerText = "請選擇上方位置替換";
-        status.classList.add('text-yellow-400');
-    }
+        function confirmUpgrade() {
+            if (!tempUpgradeId) return;
+            const lv = userData.diceLevels[tempUpgradeId] || 1;
+            const req = UPGRADE_CONFIG[lv];
+            if (!req) return;
 
-    function selectDeckSlot(index) {
-        if (!selectedInventoryId) return;
-        if (userData.deck.includes(selectedInventoryId)) {
-            selectedInventoryId = null;
-            render();
-            return;
-        }
-        userData.deck[index] = selectedInventoryId;
-        selectedInventoryId = null;
-        document.getElementById('deckStatus').innerText = "Battle Deck";
-        document.getElementById('deckStatus').classList.remove('text-yellow-400');
-        render();
-    }
+            const currentCount = userData.inventory[tempUpgradeId] || 0;
+            if (currentCount >= req[0] && currentBalance >= req[1]) {
+                currentBalance -= req[1];
+                userData.inventory[tempUpgradeId] -= req[0];
+                userData.diceLevels[tempUpgradeId] = lv + 1;
 
-    function buyBox() {
-        const boxPrice = 50000;
-        if (currentBalance < boxPrice) return;
-        
-        currentBalance -= boxPrice;
-        localStorage.setItem('sicbo_balance', currentBalance);
-        
-        let rewards = [];
-        for(let i=0; i<5; i++) {
-            const rand = Math.random();
-            let selectedQ = 'common';
-            let cum = 0;
-            for (const [key, q] of Object.entries(QUALITIES)) {
-                cum += q.chance;
-                if (rand < cum) { selectedQ = key; break; }
+                localStorage.setItem('sicbo_balance', currentBalance);
+                saveData();
+                render();
+                openUpgradeUI(tempUpgradeId);
             }
-            const possibleDices = ALL_DICES.filter(d => d.quality === selectedQ);
-            const dice = possibleDices[Math.floor(Math.random() * possibleDices.length)] || ALL_DICES[0];
-            
-            userData.inventory[dice.id] = (userData.inventory[dice.id] || 0) + 1;
-            rewards.push(dice);
         }
-        showRewardUI(rewards);
-        render();
-    }
 
-    function showRewardUI(dices) {
-        const list = document.getElementById('rewardList');
-        list.innerHTML = dices.map(d => {
-            const q = QUALITIES[d.quality];
-            return `<div class="text-center">
+        function confirmEquip() {
+            if (!tempUpgradeId) return;
+            selectedInventoryId = tempUpgradeId;
+            closeUpgradeUI();
+            render();
+            // 提示玩家
+            const status = document.getElementById('deckStatus');
+            status.innerText = "請選擇上方位置替換";
+            status.classList.add('text-yellow-400');
+        }
+
+        function selectDeckSlot(index) {
+            if (!selectedInventoryId) return;
+            if (userData.deck.includes(selectedInventoryId)) {
+                selectedInventoryId = null;
+                render();
+                return;
+            }
+            userData.deck[index] = selectedInventoryId;
+            selectedInventoryId = null;
+            document.getElementById('deckStatus').innerText = "Battle Deck";
+            document.getElementById('deckStatus').classList.remove('text-yellow-400');
+            render();
+        }
+
+        function buyBox() {
+            const boxPrice = 50000;
+            if (currentBalance < boxPrice) return;
+
+            currentBalance -= boxPrice;
+            localStorage.setItem('sicbo_balance', currentBalance);
+
+            let rewards = [];
+            for (let i = 0; i < 5; i++) {
+                const rand = Math.random();
+                let selectedQ = 'common';
+                let cum = 0;
+                for (const [key, q] of Object.entries(QUALITIES)) {
+                    cum += q.chance;
+                    if (rand < cum) { selectedQ = key; break; }
+                }
+                const possibleDices = ALL_DICES.filter(d => d.quality === selectedQ);
+                const dice = possibleDices[Math.floor(Math.random() * possibleDices.length)] || ALL_DICES[0];
+
+                userData.inventory[dice.id] = (userData.inventory[dice.id] || 0) + 1;
+                rewards.push(dice);
+            }
+            showRewardUI(rewards);
+            render();
+        }
+
+        function showRewardUI(dices) {
+            const list = document.getElementById('rewardList');
+            list.innerHTML = dices.map(d => {
+                const q = QUALITIES[d.quality];
+                return `<div class="text-center">
                 <div class="w-12 h-12 rounded-lg flex items-center justify-center font-black mx-auto mb-1" 
                      style="background-color: ${d.baseColor}; color: #fff; border: 2px solid ${q.color}">${d.name}</div>
                 <div class="text-[10px]" style="color: ${q.color}">${q.name}</div>
             </div>`;
-        }).join('');
-        document.getElementById('rewardOverlay').classList.remove('hidden');
-    }
+            }).join('');
+            document.getElementById('rewardOverlay').classList.remove('hidden');
+        }
 
-    function closeReward() { document.getElementById('rewardOverlay').classList.add('hidden'); }
-    function closeUpgradeUI() { document.getElementById('upgradeOverlay').classList.add('hidden'); tempUpgradeId = null; }
-    
-    function switchTab(tab) {
-        document.getElementById('inventorySection').classList.toggle('hidden', tab !== 'inventory');
-        document.getElementById('shopSection').classList.toggle('hidden', tab !== 'shop');
-        document.getElementById('tab-inventory').classList.toggle('tab-active', tab === 'inventory');
-        document.getElementById('tab-shop').classList.toggle('tab-active', tab === 'shop');
-    }
+        function closeReward() { document.getElementById('rewardOverlay').classList.add('hidden'); }
+        function closeUpgradeUI() { document.getElementById('upgradeOverlay').classList.add('hidden'); tempUpgradeId = null; }
 
-    function saveData() { 
-        localStorage.setItem('dice_game_data', JSON.stringify(userData)); 
-    }
+        function switchTab(tab) {
+            document.getElementById('inventorySection').classList.toggle('hidden', tab !== 'inventory');
+            document.getElementById('shopSection').classList.toggle('hidden', tab !== 'shop');
+            document.getElementById('tab-inventory').classList.toggle('tab-active', tab === 'inventory');
+            document.getElementById('tab-shop').classList.toggle('tab-active', tab === 'shop');
+        }
 
-    function startBattle() { 
-        saveData();
-        window.location.href = 'dice_battle.html'; 
-    }
+        function saveData() {
+            localStorage.setItem('dice_game_data', JSON.stringify(userData));
+        }
 
-    render();
-</script>
+        function startBattle() {
+            saveData();
+            window.location.href = 'dice_battle.html';
+        }
+
+        window.onload = function () {
+            render();
+        };
+    </script>
 </body>
+
 </html>
