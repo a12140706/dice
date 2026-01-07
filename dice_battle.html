@@ -113,22 +113,21 @@
         mythic: { name: '神話', color: '#ff00ff', textColor: '#fff' }
     };
 
+    // 確保這裡的 baseColor 與大廳一致
     const ALL_DICES = [
-        { id: 'fire', name: '火', quality: 'common' },
-        { id: 'wind', name: '風', quality: 'common' },
-        { id: 'ice', name: '冰', quality: 'rare' },
-        { id: 'electric', name: '電', quality: 'rare' },
-        { id: 'poison', name: '毒', quality: 'epic' },
-        { id: 'growth', name: '成長', quality: 'legend' },
-        { id: 'sun', name: '太陽', quality: 'legend' },
-        { id: 'galaxy', name: '銀河', quality: 'mythic' }
+        { id: 'fire', name: '火', quality: 'common', baseColor: '#ef4444' },
+        { id: 'wind', name: '風', quality: 'common', baseColor: '#10b981' },
+        { id: 'ice', name: '冰', quality: 'rare', baseColor: '#3b82f6' },
+        { id: 'electric', name: '電', quality: 'rare', baseColor: '#f59e0b' },
+        { id: 'poison', name: '毒', quality: 'epic', baseColor: '#8b5cf6' },
+        { id: 'growth', name: '成長', quality: 'legend', baseColor: '#f472b6' },
+        { id: 'sun', name: '太陽', quality: 'legend', baseColor: '#fbbf24' },
+        { id: 'galaxy', name: '銀河', quality: 'mythic', baseColor: '#1e293b' }
     ];
 
     const BOSS_TYPES = {
         'CRUSHER': {
-            name: '粉碎者',
-            color: '#ff4444',
-            skillInterval: 300,
+            name: '粉碎者', color: '#ff4444', skillInterval: 300,
             onSkill: (boss) => {
                 const occupied = grid.slots.filter(s => s.dice && !s.isLocked);
                 if (occupied.length > 0) {
@@ -139,9 +138,7 @@
             }
         },
         'SNAKE': {
-            name: '噴射者',
-            color: '#22c55e',
-            skillInterval: 240,
+            name: '噴射者', color: '#22c55e', skillInterval: 240,
             onSkill: (boss) => {
                 enemies.forEach(e => e.speed *= 1.5);
                 setTimeout(() => { enemies.forEach(e => e.speed /= 1.5); }, 2000);
@@ -150,7 +147,6 @@
     };
 
     // --- 2. 遊戲狀態與變數 ---
-    // 從 localStorage 抓取陣容，若無則給預設值
     const savedData = JSON.parse(localStorage.getItem('dice_game_data')) || { deck: ['fire', 'wind', 'ice', 'electric', 'poison'] };
     const deckData = savedData.deck;
 
@@ -203,9 +199,7 @@
             grid.slots.push({
                 x: grid.padding + c * (grid.slotSize + grid.padding),
                 y: startY + r * (grid.slotSize + grid.padding),
-                dice: null,
-                isLocked: false,
-                isBeingDragged: false
+                dice: null, isLocked: false, isBeingDragged: false
             });
         }
     }
@@ -213,11 +207,7 @@
     function initPath(canvas) {
         const margin = 40;
         const top = 100, bottom = canvas.height * 0.45, left = margin, right = canvas.width - margin;
-        path = [
-            { x: left, y: top }, { x: right, y: top },
-            { x: right, y: bottom }, { x: left, y: bottom },
-            { x: left, y: top + 10 }
-        ];
+        path = [{ x: left, y: top }, { x: right, y: top }, { x: right, y: bottom }, { x: left, y: bottom }, { x: left, y: top + 10 }];
     }
 
     function setupTouchEvents(canvas) {
@@ -250,8 +240,12 @@
             if (targetSlot && targetSlot !== drag.fromSlot) {
                 if (targetSlot.dice && targetSlot.dice.id === drag.dice.id && targetSlot.dice.lv === drag.dice.lv && targetSlot.dice.lv < 7) {
                     const newId = deckData[Math.floor(Math.random() * deckData.length)];
-                    const diceBase = ALL_DICES.find(d => d.id === newId);
-                    targetSlot.dice = { id: newId, lv: drag.dice.lv + 1, color: QUALITIES[diceBase.quality].color, textColor: QUALITIES[diceBase.quality].textColor };
+                    const db = ALL_DICES.find(d => d.id === newId);
+                    targetSlot.dice = { 
+                        id: newId, lv: drag.dice.lv + 1, 
+                        color: db.baseColor,
+                        qualityColor: QUALITIES[db.quality].color
+                    };
                     drag.fromSlot.dice = null;
                 } else if (!targetSlot.dice) {
                     targetSlot.dice = drag.dice;
@@ -272,7 +266,11 @@
         const targetSlot = emptySlots[Math.floor(Math.random() * emptySlots.length)];
         const diceId = deckData[Math.floor(Math.random() * deckData.length)];
         const db = ALL_DICES.find(d => d.id === diceId);
-        targetSlot.dice = { id: diceId, lv: 1, color: QUALITIES[db.quality].color, textColor: QUALITIES[db.quality].textColor };
+        targetSlot.dice = { 
+            id: diceId, lv: 1, 
+            color: db.baseColor,
+            qualityColor: QUALITIES[db.quality].color
+        };
         updateUI();
     }
 
@@ -307,7 +305,6 @@
             speed: 0.7, rewardSp: 200 + battleState.wave * 10, isBoss: true,
             bossType: typeKey, skillTimer: 0, size: 50, color: config.color
         });
-        console.log(`警告：Boss ${config.name} 出現！`);
     }
 
     function updateWave() {
@@ -384,7 +381,10 @@
                 e.pathIndex++;
                 if (e.pathIndex >= path.length) {
                     battleState.hp--; enemies.splice(i, 1); updateUI();
-                    if (battleState.hp <= 0) { alert("遊戲結束！"); location.reload(); }
+                    if (battleState.hp <= 0) { 
+                        alert("戰敗！即將返回大廳"); 
+                        window.location.href = 'dice.html'; // 跳回大廳
+                    }
                 }
             } else { e.x += (dx / dist) * e.speed; e.y += (dy / dist) * e.speed; }
         }
@@ -394,10 +394,11 @@
         document.getElementById('powerUpBar').innerHTML = deckData.map(id => {
             const d = ALL_DICES.find(dice => dice.id === id);
             const s = powerUpState[id], cost = s.baseCost + (s.level - 1) * s.costStep, isMax = s.level >= 5;
+            const qColor = QUALITIES[d.quality].color;
             return `
                 <div onclick="upgradeDice('${id}')" class="min-w-[85px] p-2 rounded-xl text-center border ${isMax ? 'bg-slate-700 opacity-80' : 'bg-slate-800 border-slate-700'} active:scale-95 transition-all">
                     <div class="text-[9px] ${isMax ? 'text-yellow-500' : 'text-slate-500'}">Lv.${s.level}</div>
-                    <div class="font-bold text-sm" style="color:${QUALITIES[d.quality].color}">${d.name}</div>
+                    <div class="font-bold text-sm" style="color:${d.baseColor}">${d.name}</div>
                     <div class="text-[10px] text-yellow-500">${isMax ? 'MAX' : cost + ' SP'}</div>
                 </div>`;
         }).join('');
@@ -430,19 +431,32 @@
             grid.slots.forEach(slot => {
                 ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
                 drawRoundedRect(ctx, slot.x, slot.y, grid.slotSize, grid.slotSize, 10); ctx.fill();
+                
                 if (slot.dice && !slot.isBeingDragged) {
+                    // 1. 繪製品質外框 (使用 qualityColor)
+                    ctx.strokeStyle = slot.dice.qualityColor || '#fff';
+                    ctx.lineWidth = 3;
+                    drawRoundedRect(ctx, slot.x + 4, slot.y + 4, grid.slotSize - 8, grid.slotSize - 8, 8);
+                    ctx.stroke();
+
+                    // 2. 繪製骰子本體 (使用屬性 baseColor)
                     ctx.fillStyle = slot.dice.color;
-                    drawRoundedRect(ctx, slot.x+5, slot.y+5, grid.slotSize-10, grid.slotSize-10, 8); ctx.fill();
-                    ctx.fillStyle = slot.dice.textColor; ctx.font = "bold 20px Arial"; ctx.textAlign = "center";
+                    drawRoundedRect(ctx, slot.x + 6, slot.y + 6, grid.slotSize - 12, grid.slotSize - 12, 6);
+                    ctx.fill();
+
+                    // 3. 點數文字 (統一白色確保可讀性)
+                    ctx.fillStyle = "#fff"; 
+                    ctx.font = "bold 20px Arial"; ctx.textAlign = "center";
                     ctx.fillText(slot.dice.lv, slot.x+grid.slotSize/2, slot.y+grid.slotSize/2+7);
-                    if (slot.isLocked) { ctx.fillStyle = "rgba(0,0,0,0.6)"; drawRoundedRect(ctx, slot.x+5, slot.y+5, grid.slotSize-10, grid.slotSize-10, 8); ctx.fill(); }
+                    
+                    if (slot.isLocked) { ctx.fillStyle = "rgba(0,0,0,0.7)"; drawRoundedRect(ctx, slot.x+5, slot.y+5, grid.slotSize-10, grid.slotSize-10, 8); ctx.fill(); }
                 }
             });
 
             if (drag.isDragging) {
                 ctx.globalAlpha = 0.7; ctx.fillStyle = drag.dice.color;
                 drawRoundedRect(ctx, drag.currentX - grid.slotSize/2, drag.currentY - grid.slotSize/2, grid.slotSize, grid.slotSize, 10); ctx.fill();
-                ctx.globalAlpha = 1; ctx.fillStyle = drag.dice.textColor;
+                ctx.globalAlpha = 1; ctx.fillStyle = "#fff";
                 ctx.fillText(drag.dice.lv, drag.currentX, drag.currentY+7);
             }
             requestAnimationFrame(frame);
