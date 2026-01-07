@@ -300,11 +300,27 @@
       currentMessage = text;
       messageTime = Date.now();
     }
+// --- 儲存選好的卡片 ---
+function saveSelectedCards(cardIndices) {
+  // 這裡存的是卡片在 testCards 陣列中的索引
+  localStorage.setItem('last_selected_cards', JSON.stringify(cardIndices));
+}
 
+// --- 讀取並裝載卡片 ---
+function loadSelectedCards() {
+  const saved = localStorage.getItem('last_selected_cards');
+  if (saved) {
+    const cardIndices = JSON.parse(saved);
+    // 這裡可以根據索引直接裝配你的戰鬥卡槽
+    console.log("已自動裝載上次的卡片:", cardIndices);
+    return cardIndices;
+  }
+  return [0, 1, 2, 3, 4]; // 如果沒紀錄，就給預設的前五張
+}
     // 繪製UI
     function drawUI() {
-      const padding = 20;
-      const fontSize = 16;
+      const paddingX = 40; // 增加水平邊距，避開手機螢幕邊緣
+  const paddingY = 50;
       ctx.font = `${fontSize}px Arial`;
       ctx.fillStyle = '#ffffff';
       ctx.strokeStyle = '#000000';
@@ -319,6 +335,8 @@
       ];
       
       info.forEach((text, i) => {
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 3;
         ctx.strokeText(text, padding, padding + (i * 25));
         ctx.fillText(text, padding, padding + (i * 25));
       });
@@ -465,34 +483,36 @@
     }
 
     // 繪製英雄
-    function drawHero() {
-      // 攻擊範圍圈
-      ctx.strokeStyle = 'rgba(139, 92, 246, 0.3)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(testHero.x, testHero.y, testHero.range, 0, Math.PI * 2);
-      ctx.stroke();
-      
-      // 英雄本體
-      if (testHero.image.complete) {
-        ctx.drawImage(testHero.image, testHero.x - 30, testHero.y - 30, 60, 60);
-      } else {
-        ctx.fillStyle = '#3b82f6';
-        ctx.beginPath();
-        ctx.arc(testHero.x, testHero.y, 30, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      
-      // 等級顯示
-      ctx.fillStyle = '#fbbf24';
-      ctx.font = 'bold 14px Arial';
-      ctx.textAlign = 'center';
-      ctx.strokeStyle = '#000000';
-      ctx.lineWidth = 3;
-      ctx.strokeText(`Lv.${gameState.heroLevel}`, testHero.x, testHero.y - 45);
-      ctx.fillText(`Lv.${gameState.heroLevel}`, testHero.x, testHero.y - 45);
-      ctx.textAlign = 'left';
-    }
+   function drawHero() {
+  // 1. 範圍圈 (確保這行有跑，所以你看得到圈圈)
+  ctx.strokeStyle = 'rgba(139, 92, 246, 0.5)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(testHero.x, testHero.y, testHero.range, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // 2. 英雄本體 (修正這裡的 else 判定)
+  // 加入 naturalWidth 的檢查，確保圖片是真的抓到檔案才畫
+  if (testHero.image.src && testHero.image.complete && testHero.image.naturalWidth > 0) {
+    ctx.drawImage(testHero.image, testHero.x - 30, testHero.y - 30, 60, 60);
+  } else {
+    // 【測試用替代方案】
+    // 如果沒有圖片，就畫一個亮黃色的正方形 (功能性標示)
+    ctx.fillStyle = '#fbbf24'; 
+    ctx.fillRect(testHero.x - 25, testHero.y - 25, 50, 50);
+    
+    // 加個白邊框，讓它在黑底上更明顯
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(testHero.x - 25, testHero.y - 25, 50, 50);
+    
+    // 寫上 HERO 字樣
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 14px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('HERO', testHero.x, testHero.y + 5);
+  }
+}
 
     // 遊戲主循環
     let lastTime = Date.now();
