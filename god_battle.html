@@ -42,8 +42,8 @@
     const testHero = {
       id: 'knight',
       name: '聖騎士',
-      x: 400,
-      y: 500,
+     x: config.canvasWidth / 2, // 放在螢幕中間
+      y: config.canvasHeight - 200,
       attack: 50,
       attackSpeed: 1.0, // 每秒攻擊次數
       range: 150,
@@ -502,6 +502,7 @@
       lastTime = currentTime;
       
       // 清空畫面
+      ctx.fillStyle = '#000000';
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
       // 能量產生 (靈魂囚籠)
