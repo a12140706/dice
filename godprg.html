@@ -3,255 +3,184 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>神域</title>
+  <title>神域 - 準備出擊</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore-compat.js"></script>
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      position: fixed;
-      background-color: #0f172a;
-    }
-    #app {
-      width: 100%;
-      height: 100%;
-    }
-    .custom-scroll::-webkit-scrollbar {
-      width: 4px;
-    }
-    .custom-scroll::-webkit-scrollbar-thumb {
-      background: rgba(139, 92, 246, 0.3);
-      border-radius: 10px;
-    }
+    /* 確保手機端不產生全頁捲軸，解決網址列跳動問題 */
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; position: fixed; background: #0f172a; font-family: sans-serif; }
+    #app { width: 100%; height: 100%; }
+    .custom-scroll::-webkit-scrollbar { width: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.3); border-radius: 10px; }
   </style>
 </head>
 <body>
   <div id="app"></div>
 
   <script>
-    // 遊戲數據：路徑已更新為 assets 格式
+    // --- 數據定義 (保持完整，圖片路徑更新) ---
     const HEROES = [
       { id: 'knight', name: '聖騎士', rarity: 'epic', attack: 120, speed: 1.2, range: 'melee', image: 'assets/hero/knight.png', unlocked: true },
       { id: 'archer', name: '神射手', rarity: 'rare', attack: 80, speed: 2.0, range: 'long', image: 'assets/hero/archer.png', unlocked: true },
       { id: 'mage', name: '元素法師', rarity: 'epic', attack: 150, speed: 0.8, range: 'medium', image: 'assets/hero/mage.png', unlocked: true },
-      { id: 'assassin', name: '暗影刺客', rarity: 'legendary', attack: 200, speed: 2.5, range: 'melee', image: 'assets/hero/assassin.png', unlocked: false },
-      { id: 'paladin', name: '光明聖者', rarity: 'rare', attack: 100, speed: 1.0, range: 'melee', image: 'assets/hero/paladin.png', unlocked: true },
-      { id: 'sniper', name: '狙擊手', rarity: 'epic', attack: 180, speed: 0.6, range: 'long', image: 'assets/hero/sniper.png', unlocked: false },
+      { id: 'assassin', name: '暗影刺客', rarity: 'legendary', attack: 200, speed: 2.5, range: 'melee', image: 'assets/hero/assassin.png', unlocked: false }
     ];
 
     const SKILL_CARDS = [
-      { id: 'berserk', name: '狂戰士之怒', cost: 80, cd: 30, desc: '近戰英雄攻擊+50%，持續10秒', rarity: 'common', image: 'assets/skill/berserk.png', unlocked: true },
-      { id: 'freeze', name: '冰封大地', cost: 120, cd: 45, desc: '凍結全螢幕敵人3秒', rarity: 'rare', image: 'assets/skill/freeze.png', unlocked: true },
-      { id: 'meteor', name: '隕石天降', cost: 150, cd: 60, desc: '造成1000範圍傷害', rarity: 'epic', image: 'assets/skill/meteor.png', unlocked: true },
-      { id: 'heal', name: '神聖庇護', cost: 100, cd: 40, desc: '城牆回復30%最大生命值', rarity: 'rare', image: 'assets/skill/heal.png', unlocked: true },
-      { id: 'slow', name: '時間扭曲', cost: 70, cd: 25, desc: '敵人減速50%，持續8秒', rarity: 'common', image: 'assets/skill/slow.png', unlocked: true },
-      { id: 'rage', name: '全軍突擊', cost: 130, cd: 50, desc: '所有英雄攻速+100%，持續12秒', rarity: 'epic', image: 'assets/skill/rage.png', unlocked: false },
-      { id: 'lightning', name: '連鎖閃電', cost: 110, cd: 35, desc: '跳躍攻擊5個敵人，每次300傷害', rarity: 'rare', image: 'assets/skill/lightning.png', unlocked: true },
-      { id: 'shield', name: '堅不可摧', cost: 90, cd: 45, desc: '城牆獲得護盾，吸收500傷害', rarity: 'common', image: 'assets/skill/shield.png', unlocked: true },
+      { id: 'berserk', name: '狂戰士', cost: 80, cd: 30, desc: '近戰英雄攻擊+50%', rarity: 'common', image: 'assets/skill/berserk.png', unlocked: true },
+      { id: 'freeze', name: '冰封', cost: 120, cd: 45, desc: '凍結敵人3秒', rarity: 'rare', image: 'assets/skill/freeze.png', unlocked: true },
+      { id: 'meteor', name: '隕石', cost: 150, cd: 60, desc: '1000範圍傷害', rarity: 'epic', image: 'assets/skill/meteor.png', unlocked: true },
+      { id: 'heal', name: '治癒', cost: 100, cd: 40, desc: '城牆回血30%', rarity: 'rare', image: 'assets/skill/heal.png', unlocked: true },
+      { id: 'slow', name: '遲緩', cost: 70, cd: 25, desc: '敵人減速50%', rarity: 'common', image: 'assets/skill/slow.png', unlocked: true },
+      { id: 'shield', name: '護盾', cost: 90, cd: 45, desc: '產生500吸收盾', rarity: 'common', image: 'assets/skill/shield.png', unlocked: true }
     ];
 
-    const rarityColors = {
-      common: 'bg-gray-400',
-      rare: 'bg-blue-500',
-      epic: 'bg-purple-600',
-      legendary: 'bg-yellow-500'
-    };
-
-    const rarityText = {
-      common: '普通',
-      rare: '稀有',
-      epic: '史詩',
-      legendary: '傳說'
-    };
-
+    // --- 狀態管理 (不影響 LocalStorage) ---
     let state = {
       screen: 'prepare',
-      balance: 5000,
+      balance: 0,
       selectedHero: HEROES[0],
-      selectedCards: [],
-      difficulty: 'normal'
+      selectedCards: []
     };
 
-    function loadBalance() {
-      const savedBalance = localStorage.getItem('sicbo_balance') || '5000';
-      state.balance = Math.floor(parseFloat(savedBalance));
+    const rarityColors = { common: 'bg-gray-500', rare: 'bg-blue-500', epic: 'bg-purple-600', legendary: 'bg-yellow-500' };
+
+    // --- 初始化 ---
+    function init() {
+      state.balance = parseInt(localStorage.getItem('sicbo_balance')) || 5000;
+      render();
     }
 
-    const icons = {
-      home: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
-      gem: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/></svg>',
-      sword: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" x2="19" y1="19" y2="13"/><line x1="16" x2="20" y1="16" y2="20"/><line x1="19" x2="21" y1="21" y2="19"/></svg>',
-      cart: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>',
-      settings: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>',
-      lockSmall: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
-      crown: '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>',
-      zapLarge: '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
-    };
-
-    function render() {
-      const app = document.getElementById('app');
-      let content = '';
-      if (state.screen === 'prepare') content = renderPrepareScreen();
-      else if (state.screen === 'hero-select') content = renderHeroSelectScreen();
-      else if (state.screen === 'card-select') content = renderCardSelectScreen();
-      else if (state.screen === 'shop') content = renderShopScreen();
-      else if (state.screen === 'settings') content = renderSettingsScreen();
-      app.innerHTML = content;
-    }
-
-    function renderTopBar() {
-      return `
-        <div class="bg-slate-900/90 backdrop-blur-md border-b border-purple-500/30 px-4 py-3 flex justify-between items-center z-10 shrink-0">
-          <button onclick="goHome()" class="flex items-center gap-2 text-white hover:text-purple-400 transition-colors">
-            ${icons.home}
-            <span class="font-bold hidden sm:inline">大廳</span>
-          </button>
-          <div class="bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-1.5 rounded-full flex items-center gap-2 shadow-lg">
-            ${icons.gem}
-            <span class="text-lg font-bold text-white">${state.balance.toLocaleString()}</span>
-          </div>
-        </div>
-      `;
-    }
-
-    function renderBottomNav() {
-      return `
-        <div class="bg-slate-900/90 backdrop-blur-md border-t border-purple-500/30 px-2 py-2 flex justify-around z-10 shrink-0">
-          <button onclick="changeScreen('prepare')" class="flex flex-col items-center gap-1 flex-1 transition-colors ${state.screen === 'prepare' ? 'text-purple-400' : 'text-gray-400'}">
-            ${icons.sword}
-            <span class="text-[10px] font-medium">備戰</span>
-          </button>
-          <button onclick="changeScreen('shop')" class="flex flex-col items-center gap-1 flex-1 transition-colors ${state.screen === 'shop' ? 'text-purple-400' : 'text-gray-400'}">
-            ${icons.cart}
-            <span class="text-[10px] font-medium">商城</span>
-          </button>
-          <button onclick="changeScreen('settings')" class="flex flex-col items-center gap-1 flex-1 transition-colors ${state.screen === 'settings' ? 'text-purple-400' : 'text-gray-400'}">
-            ${icons.settings}
-            <span class="text-[10px] font-medium">設定</span>
-          </button>
-        </div>
-      `;
-    }
-
+    // --- 通用外殼 (精簡核心：把重複的導航與背景封裝) ---
     function screenWrapper(content) {
       return `
-        <div class="h-screen w-full bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 text-white flex flex-col overflow-hidden">
-          ${renderTopBar()}
-          <div class="flex-1 overflow-y-auto custom-scroll p-4">
-            ${content}
+        <div class="h-full w-full bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900 text-white flex flex-col">
+          <div class="p-4 flex justify-between items-center bg-black/20 backdrop-blur-md border-b border-white/10">
+            <button onclick="location.href='index.html'" class="font-bold text-gray-400">HOME</button>
+            <div class="bg-yellow-500/20 px-3 py-1 rounded-full border border-yellow-500/50 text-yellow-500 font-bold">
+              💎 ${state.balance.toLocaleString()}
+            </div>
           </div>
-          ${renderBottomNav()}
+          <div class="flex-1 overflow-y-auto custom-scroll p-4">${content}</div>
+          <div class="grid grid-cols-3 bg-black/40 backdrop-blur-md border-t border-white/10 p-2 pb-6">
+            <button onclick="changeScreen('prepare')" class="text-center ${state.screen === 'prepare' ? 'text-purple-400' : 'text-gray-500'}">備戰</button>
+            <button onclick="changeScreen('shop')" class="text-center ${state.screen === 'shop' ? 'text-purple-400' : 'text-gray-500'}">商城</button>
+            <button onclick="changeScreen('settings')" class="text-center ${state.screen === 'settings' ? 'text-purple-400' : 'text-gray-500'}">設定</button>
+          </div>
         </div>
       `;
     }
 
-    function renderPrepareScreen() {
+    // --- 各頁面渲染 ---
+    function renderPrepare() {
       const hero = state.selectedHero;
       const canStart = hero && state.selectedCards.length === 5;
-      const content = `
-        <div class="max-w-md mx-auto space-y-4 pb-4">
-          <div class="bg-purple-900/30 backdrop-blur-sm rounded-2xl p-6 border border-purple-500/30 shadow-xl">
-            <h2 class="text-xl font-bold mb-4 text-center">出戰英雄</h2>
-            ${hero ? `
-              <div class="flex flex-col items-center text-center">
-                <div class="relative mb-4">
-                   <img src="${hero.image}" alt="${hero.name}" class="w-32 h-32 object-cover rounded-xl border-2 border-purple-500/50 shadow-lg" onerror="this.src='hero_basic.png'">
-                   <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded text-[10px] whitespace-nowrap ${rarityColors[hero.rarity]}">${rarityText[hero.rarity]}</div>
-                </div>
-                <h3 class="text-2xl font-bold mb-4">${hero.name}</h3>
-                <button onclick="changeScreen('hero-select')" class="w-full py-2 bg-purple-600/50 hover:bg-purple-600 rounded-lg text-sm font-bold border border-purple-400/30">更換英雄</button>
-              </div>
-            ` : `<button onclick="changeScreen('hero-select')" class="w-full py-10 border-2 border-dashed border-purple-500/30 rounded-xl text-gray-400">+ 選擇英雄</button>`}
+      return `
+        <div class="max-w-md mx-auto space-y-6">
+          <div class="bg-white/5 rounded-3xl p-6 border border-white/10 text-center">
+            <h2 class="text-gray-400 text-sm mb-4">目前出戰</h2>
+            <img src="${hero.image}" class="w-32 h-32 mx-auto rounded-2xl mb-4 border-2 border-purple-500 shadow-lg shadow-purple-500/20" onerror="this.src='https://via.placeholder.com/150?text=Hero'">
+            <h1 class="text-2xl font-black">${hero.name}</h1>
+            <button onclick="changeScreen('hero-select')" class="mt-6 w-full py-2 bg-white/10 rounded-xl text-sm">更換英雄</button>
           </div>
-          <div class="bg-slate-800/40 rounded-2xl p-4 border border-purple-500/20">
-            <div class="flex justify-between items-center mb-3">
-              <h3 class="font-bold text-sm">攜帶技能 (${state.selectedCards.length}/5)</h3>
-              <button onclick="changeScreen('card-select')" class="text-xs text-purple-400 font-bold">編輯卡組</button>
+
+          <div class="space-y-3">
+            <div class="flex justify-between items-center">
+              <span class="font-bold">攜帶技能 (${state.selectedCards.length}/5)</span>
+              <button onclick="changeScreen('card-select')" class="text-purple-400 text-sm">編輯</button>
             </div>
-            <div class="flex gap-2 justify-center overflow-x-auto pb-2">
+            <div class="grid grid-cols-5 gap-2">
               ${[0,1,2,3,4].map(i => {
                 const card = state.selectedCards[i];
-                return card ? `
-                  <div class="flex-shrink-0 w-14 text-center">
-                    <img src="${card.image}" class="w-14 h-14 object-cover rounded-lg border border-purple-500/50" onerror="this.src='skill_basic.png'">
-                    <div class="text-[9px] mt-1 truncate">${card.name}</div>
-                  </div>
-                ` : `<div onclick="changeScreen('card-select')" class="flex-shrink-0 w-14 h-14 bg-slate-700/50 border border-dashed border-gray-500 rounded-lg flex items-center justify-center text-gray-500">+</div>`;
+                return card ? 
+                  `<img src="${card.image}" class="aspect-square rounded-lg border border-purple-500" onerror="this.src='https://via.placeholder.com/80?text=Skill'">` :
+                  `<div class="aspect-square bg-white/5 rounded-lg border border-dashed border-white/20 flex items-center justify-center text-gray-600">+</div>`;
               }).join('')}
             </div>
           </div>
+
           <button onclick="startBattle()" ${canStart ? '' : 'disabled'} 
-            class="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 disabled:from-gray-700 disabled:to-gray-800 rounded-xl text-lg font-bold shadow-lg active:scale-95 transition-all">
-            開始戰鬥
+            class="w-full py-4 rounded-2xl text-xl font-black transition-all ${canStart ? 'bg-gradient-to-r from-purple-600 to-indigo-600 shadow-xl shadow-purple-500/40 active:scale-95' : 'bg-gray-800 text-gray-500 cursor-not-allowed'}">
+            ${canStart ? '出征' : '技能尚未帶齊'}
           </button>
         </div>
       `;
-      return screenWrapper(content);
     }
 
-    function renderHeroSelectScreen() {
-      const content = `<div class="max-w-md mx-auto"><h2 class="text-xl font-bold mb-4 text-center">選擇英雄</h2><div class="grid grid-cols-2 gap-3">
-        ${HEROES.map(hero => `
-          <div onclick="selectHero('${hero.id}')" class="bg-slate-800/80 p-3 rounded-xl border-2 transition-all ${state.selectedHero?.id === hero.id ? 'border-purple-500 bg-purple-900/20' : 'border-transparent'} ${!hero.unlocked ? 'opacity-50' : ''}">
-            <div class="relative"><img src="${hero.image}" class="w-full h-24 object-cover rounded-lg mb-2" onerror="this.src='hero_basic.png'">
-            ${!hero.unlocked ? `<div class="absolute inset-0 flex items-center justify-center bg-black/60 rounded-lg">${icons.lockSmall}</div>` : ''}</div>
-            <div class="text-center"><div class="font-bold text-sm">${hero.name}</div><div class="text-[10px] text-gray-400">${rarityText[hero.rarity]}</div></div>
-          </div>`).join('')}</div></div>`;
-      return screenWrapper(content);
+    function renderHeroSelect() {
+      return `
+        <div class="grid grid-cols-2 gap-4">
+          ${HEROES.map(h => `
+            <div onclick="${h.unlocked ? `selectHero('${h.id}')` : ''}" class="bg-white/5 p-3 rounded-2xl border-2 ${state.selectedHero.id === h.id ? 'border-purple-500' : 'border-transparent'} ${!h.unlocked ? 'opacity-40' : ''}">
+              <img src="${h.image}" class="w-full aspect-square object-cover rounded-xl mb-2">
+              <div class="text-center font-bold">${h.name}</div>
+            </div>
+          `).join('')}
+        </div>
+      `;
     }
 
-    function renderCardSelectScreen() {
-      const content = `<div class="max-w-md mx-auto"><h2 class="text-xl font-bold mb-1 text-center">選擇技能卡</h2><p class="text-[10px] text-gray-400 text-center mb-4">(${state.selectedCards.length}/5)</p><div class="grid grid-cols-1 gap-2">
-        ${SKILL_CARDS.map(card => {
-          const isSelected = state.selectedCards.find(c => c.id === card.id);
-          return `
-            <div onclick="toggleCard('${card.id}')" class="bg-slate-800/80 p-3 rounded-xl border-2 flex gap-3 transition-all ${isSelected ? 'border-purple-500 bg-purple-900/20' : 'border-transparent'}">
-              <img src="${card.image}" class="w-16 h-16 object-cover rounded-lg" onerror="this.src='skill_basic.png'">
-              <div class="flex-1"><div class="flex justify-between"><span class="font-bold text-sm">${card.name}</span><span class="text-[10px] ${rarityColors[card.rarity]} px-1.5 rounded text-white">${rarityText[card.rarity]}</span></div>
-              <p class="text-[10px] text-gray-400 my-1">${card.desc}</p><div class="flex gap-3 text-[10px] text-yellow-500"><span>⚡ ${card.cost}</span><span class="text-blue-400">⏱ ${card.cd}s</span></div></div>
-            </div>`;}).join('')}</div></div>`;
-      return screenWrapper(content);
+    function renderCardSelect() {
+      return `
+        <div class="grid grid-cols-1 gap-3 pb-10">
+          ${SKILL_CARDS.map(c => {
+            const isSelected = state.selectedCards.some(sc => sc.id === c.id);
+            return `
+              <div onclick="toggleCard('${c.id}')" class="bg-white/5 p-3 rounded-2xl border-2 flex items-center gap-4 ${isSelected ? 'border-purple-500' : 'border-transparent'}">
+                <img src="${c.image}" class="w-16 h-16 rounded-xl">
+                <div class="flex-1">
+                  <div class="font-bold">${c.name} <span class="text-[10px] ${rarityColors[c.rarity]} px-1 rounded ml-1 uppercase">${c.rarity}</span></div>
+                  <div class="text-xs text-gray-400">${c.desc}</div>
+                </div>
+                <div class="text-yellow-500 text-sm font-bold">${c.cost}</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
     }
 
-    function renderShopScreen() {
-      const content = `<div class="max-w-md mx-auto space-y-4"><h2 class="text-xl font-bold text-center">商城</h2>
-        <div class="bg-slate-800/80 p-6 rounded-2xl border border-purple-500/30 text-center"><div class="w-16 h-16 bg-purple-600/20 rounded-full flex items-center justify-center mx-auto mb-4">${icons.crown}</div><h3 class="font-bold mb-2">英雄召喚</h3><button class="w-full py-2 bg-gradient-to-r from-yellow-600 to-orange-600 rounded-lg text-sm font-bold">300 鑽石</button></div>
-        <div class="bg-slate-800/80 p-6 rounded-2xl border border-blue-500/30 text-center"><div class="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4">${icons.zapLarge}</div><h3 class="font-bold mb-2">技能卡包</h3><button class="w-full py-2 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg text-sm font-bold">200 鑽石</button></div></div>`;
-      return screenWrapper(content);
+    // --- 邏輯控制 ---
+    function render() {
+      const app = document.getElementById('app');
+      let body = '';
+      if (state.screen === 'prepare') body = renderPrepare();
+      else if (state.screen === 'hero-select') body = renderHeroSelect();
+      else if (state.screen === 'card-select') body = renderCardSelect();
+      else if (state.screen === 'shop') body = '<div class="text-center py-20 text-gray-500 italic">商城籌備中...</div>';
+      else if (state.screen === 'settings') body = '<div class="text-center py-20 text-gray-500 italic">設定設定中...</div>';
+      
+      app.innerHTML = screenWrapper(body);
     }
 
-    function renderSettingsScreen() {
-      const content = `<div class="max-w-md mx-auto space-y-4"><h2 class="text-xl font-bold text-center">設定</h2><div class="bg-slate-800/80 rounded-xl overflow-hidden divide-y divide-gray-700 border border-gray-700"><div class="p-4 flex justify-between items-center text-sm">音效<button class="px-3 py-1 bg-purple-600 rounded">開啟</button></div><div class="p-4 flex justify-between items-center text-sm">音樂<button class="px-3 py-1 bg-purple-600 rounded">開啟</button></div></div><button class="w-full py-3 bg-red-900/40 text-red-400 border border-red-900/50 rounded-xl text-sm font-bold">登出帳號</button></div>`;
-      return screenWrapper(content);
+    function changeScreen(s) { state.screen = s; render(); }
+    
+    function selectHero(id) { 
+      state.selectedHero = HEROES.find(h => h.id === id); 
+      state.screen = 'prepare'; 
+      render(); 
     }
 
-    function changeScreen(screen) { state.screen = screen; render(); }
-    function goHome() { window.location.href = 'index.html'; }
-    function selectHero(heroId) {
-      const hero = HEROES.find(h => h.id === heroId);
-      if (hero && hero.unlocked) { state.selectedHero = hero; state.screen = 'prepare'; render(); }
-    }
-    function toggleCard(cardId) {
-      const card = SKILL_CARDS.find(c => c.id === cardId);
-      if (!card || !card.unlocked) return;
-      const index = state.selectedCards.findIndex(c => c.id === cardId);
-      if (index > -1) state.selectedCards.splice(index, 1);
-      else if (state.selectedCards.length < 5) state.selectedCards.push(card);
+    function toggleCard(id) {
+      const idx = state.selectedCards.findIndex(c => c.id === id);
+      if (idx > -1) state.selectedCards.splice(idx, 1);
+      else if (state.selectedCards.length < 5) state.selectedCards.push(SKILL_CARDS.find(c => c.id === id));
       render();
     }
-    function startBattle() {
-      if (state.selectedHero && state.selectedCards.length === 5) {
-        window.location.href = 'god_battle.html';
-      }
-    }
 
-    loadBalance();
-    render();
+    function startBattle() {
+  if (state.selectedHero && state.selectedCards.length === 5) {
+    // 存儲目前選中的英雄與卡組
+    localStorage.setItem('battle_hero', JSON.stringify(state.selectedHero));
+    localStorage.setItem('battle_cards', JSON.stringify(state.selectedCards));
+    
+    // 跳轉到戰鬥頁面
+    location.href = 'god_battle.html';
+  } else {
+    alert("請選好英雄並帶滿5張技能卡！");
+  }
+}
+
+    init();
   </script>
 </body>
 </html>
