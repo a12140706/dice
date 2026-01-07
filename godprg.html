@@ -2,42 +2,38 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>神域</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore-compat.js"></script>
   <style>
-    body {
+    /* 強制鎖定視窗大小，防止橡皮筋效果與捲軸 */
+    html, body {
       margin: 0;
       padding: 0;
+      width: 100%;
+      height: 100%;
       overflow: hidden;
+      position: fixed; /* 防止手機瀏覽器網址列伸縮導致的抖動 */
+    }
+    #app {
+      width: 100%;
+      height: 100%;
+    }
+    /* 客製化捲動條，讓畫面更精簡 */
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(139, 92, 246, 0.3);
+      border-radius: 10px;
     }
   </style>
 </head>
-<body>
+<body class="bg-slate-900">
   <div id="app"></div>
 
   <script>
-    // Firebase 配置
-    const _k = ["AIzaSyDSRfVA", "uWCWCUd1NJop", "J6wHvsqsAM4UzJA"];
-
-    const firebaseConfig = {
-      apiKey: _k.join(''),
-      authDomain: "game-80d68.firebaseapp.com",
-      projectId: "game-80d68",
-      storageBucket: "game-80d68.firebasestorage.app",
-      messagingSenderId: "636332967920",
-      appId: "1:636332967920:web:29e5600daf4db0ab613f35",
-      measurementId: "G-MJZ4PGEHSQ"
-    };
-
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
-    const db = firebase.firestore();
-
-    // 遊戲數據
+    // 遊戲數據 (保持不變)
     const HEROES = [
       { id: 'knight', name: '聖騎士', rarity: 'epic', attack: 120, speed: 1.2, range: 'melee', image: 'hero_basic.png', unlocked: true },
       { id: 'archer', name: '神射手', rarity: 'rare', attack: 80, speed: 2.0, range: 'long', image: 'hero_basic.png', unlocked: true },
@@ -82,20 +78,13 @@
       playerCount: 1
     };
 
-    // 載入餘額
+    // 載入餘額 (根據要求保留 localStorage)
     function loadBalance() {
       const savedBalance = localStorage.getItem('sicbo_balance') || '5000';
       state.balance = Math.floor(parseFloat(savedBalance));
     }
 
-    // 更新餘額顯示
-    function updateBalance(newBalance) {
-      state.balance = newBalance;
-      localStorage.setItem('sicbo_balance', newBalance.toString());
-      render();
-    }
-
-    // SVG 圖標
+    // SVG 圖標 (保持不變)
     const icons = {
       home: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
       gem: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/></svg>',
@@ -109,38 +98,29 @@
       zapLarge: '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
     };
 
-    // 渲染函數
     function render() {
       const app = document.getElementById('app');
+      let content = '';
+
+      if (state.screen === 'prepare') content = renderPrepareScreen();
+      else if (state.screen === 'hero-select') content = renderHeroSelectScreen();
+      else if (state.screen === 'card-select') content = renderCardSelectScreen();
+      else if (state.screen === 'shop') content = renderShopScreen();
+      else if (state.screen === 'settings') content = renderSettingsScreen();
       
-      if (state.screen === 'prepare') {
-        app.innerHTML = renderPrepareScreen();
-      } else if (state.screen === 'hero-select') {
-        app.innerHTML = renderHeroSelectScreen();
-      } else if (state.screen === 'card-select') {
-        app.innerHTML = renderCardSelectScreen();
-      } else if (state.screen === 'shop') {
-        app.innerHTML = renderShopScreen();
-      } else if (state.screen === 'settings') {
-        app.innerHTML = renderSettingsScreen();
-      }
-      
-      attachEventListeners();
+      app.innerHTML = content;
     }
 
     function renderTopBar() {
       return `
-        <div class="bg-slate-900/80 backdrop-blur-sm border-b border-purple-500/30 px-6 py-4 flex justify-between items-center">
+        <div class="bg-slate-900/90 backdrop-blur-md border-b border-purple-500/30 px-4 py-3 flex justify-between items-center z-10">
           <button onclick="goHome()" class="flex items-center gap-2 text-white hover:text-purple-400 transition-colors">
             ${icons.home}
-            <span class="font-bold">回大廳</span>
+            <span class="font-bold hidden sm:inline">大廳</span>
           </button>
-          
-          <div class="flex items-center gap-6">
-            <div class="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2 rounded-full flex items-center gap-2 shadow-lg">
-              ${icons.gem}
-              <span class="text-xl font-bold text-white">${state.balance.toLocaleString()}</span>
-            </div>
+          <div class="bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-1.5 rounded-full flex items-center gap-2 shadow-lg">
+            ${icons.gem}
+            <span class="text-lg font-bold text-white">${state.balance.toLocaleString()}</span>
           </div>
         </div>
       `;
@@ -148,21 +128,32 @@
 
     function renderBottomNav() {
       return `
-        <div class="bg-slate-900/80 backdrop-blur-sm border-t border-purple-500/30 px-6 py-4 flex justify-around">
-          <button onclick="changeScreen('prepare')" class="flex flex-col items-center gap-1 transition-colors ${state.screen === 'prepare' ? 'text-purple-400' : 'text-gray-400 hover:text-white'}">
+        <div class="bg-slate-900/90 backdrop-blur-md border-t border-purple-500/30 px-2 py-2 flex justify-around z-10">
+          <button onclick="changeScreen('prepare')" class="flex flex-col items-center gap-1 flex-1 transition-colors ${state.screen === 'prepare' ? 'text-purple-400' : 'text-gray-400'}">
             ${icons.sword}
-            <span class="text-sm font-medium">備戰</span>
+            <span class="text-[10px] font-medium">備戰</span>
           </button>
-          
-          <button onclick="changeScreen('shop')" class="flex flex-col items-center gap-1 transition-colors ${state.screen === 'shop' ? 'text-purple-400' : 'text-gray-400 hover:text-white'}">
+          <button onclick="changeScreen('shop')" class="flex flex-col items-center gap-1 flex-1 transition-colors ${state.screen === 'shop' ? 'text-purple-400' : 'text-gray-400'}">
             ${icons.cart}
-            <span class="text-sm font-medium">商城</span>
+            <span class="text-[10px] font-medium">商城</span>
           </button>
-          
-          <button onclick="changeScreen('settings')" class="flex flex-col items-center gap-1 transition-colors ${state.screen === 'settings' ? 'text-purple-400' : 'text-gray-400 hover:text-white'}">
+          <button onclick="changeScreen('settings')" class="flex flex-col items-center gap-1 flex-1 transition-colors ${state.screen === 'settings' ? 'text-purple-400' : 'text-gray-400'}">
             ${icons.settings}
-            <span class="text-sm font-medium">設定</span>
+            <span class="text-[10px] font-medium">設定</span>
           </button>
+        </div>
+      `;
+    }
+
+    // 將所有畫面包裝在一個滿屏且不溢出的容器中
+    function screenWrapper(content) {
+      return `
+        <div class="h-screen w-full bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 text-white flex flex-col overflow-hidden">
+          ${renderTopBar()}
+          <div class="flex-1 overflow-y-auto custom-scroll p-4">
+            ${content}
+          </div>
+          ${renderBottomNav()}
         </div>
       `;
     }
@@ -171,370 +162,194 @@
       const hero = state.selectedHero;
       const canStart = hero && state.selectedCards.length === 5;
       
-      return `
-        <div class="h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white flex flex-col">
-          ${renderTopBar()}
-          
-          <div class="flex-1 overflow-y-auto p-6">
-            <!-- 隊長英雄展示區 -->
-            <div class="max-w-4xl mx-auto mb-6">
-              <div class="bg-gradient-to-br from-purple-900/50 to-pink-900/50 backdrop-blur-sm rounded-2xl p-8 border-2 border-purple-500/30 shadow-2xl">
-                <h2 class="text-2xl font-bold mb-6 text-center">出戰英雄</h2>
-                
-                ${hero ? `
-                  <div class="flex items-center gap-8">
-                    <img src="${hero.image}" alt="${hero.name}" class="w-48 h-48 object-cover rounded-xl border-4 border-purple-500/50">
-                    
-                    <div class="flex-1">
-                      <div class="flex items-center gap-3 mb-4">
-                        <h3 class="text-4xl font-bold">${hero.name}</h3>
-                        <span class="px-3 py-1 rounded-full text-sm ${rarityColors[hero.rarity]}">${rarityText[hero.rarity]}</span>
-                      </div>
-                      
-                      <div class="grid grid-cols-3 gap-4 mb-4">
-                        <div class="bg-slate-800/50 p-3 rounded-lg">
-                          <div class="text-sm text-gray-400 mb-1">攻擊力</div>
-                          <div class="text-2xl font-bold text-red-400">${hero.attack}</div>
-                        </div>
-                        <div class="bg-slate-800/50 p-3 rounded-lg">
-                          <div class="text-sm text-gray-400 mb-1">攻擊速度</div>
-                          <div class="text-2xl font-bold text-yellow-400">${hero.speed}</div>
-                        </div>
-                        <div class="bg-slate-800/50 p-3 rounded-lg">
-                          <div class="text-sm text-gray-400 mb-1">攻擊距離</div>
-                          <div class="text-2xl font-bold text-blue-400">${hero.range === 'melee' ? '近戰' : hero.range === 'medium' ? '中距' : '遠程'}</div>
-                        </div>
-                      </div>
-                      
-                      <button onclick="changeScreen('hero-select')" class="w-full py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-bold transition-colors">
-                        更換英雄
-                      </button>
-                    </div>
-                  </div>
-                ` : `
-                  <button onclick="changeScreen('hero-select')" class="w-full py-12 bg-slate-800/50 hover:bg-slate-700/50 rounded-xl border-2 border-dashed border-purple-500/50 transition-colors">
-                    <div class="text-6xl mb-4">+</div>
-                    <div class="text-xl">選擇英雄</div>
-                  </button>
-                `}
-              </div>
-            </div>
-
-            <!-- 技能卡展示區 -->
-            <div class="max-w-4xl mx-auto mb-6">
-              <div class="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-500/30">
-                <div class="flex justify-between items-center mb-4">
-                  <h3 class="text-xl font-bold">攜帶技能卡 (${state.selectedCards.length}/5)</h3>
-                  <button onclick="changeScreen('card-select')" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm font-bold transition-colors">
-                    編輯卡組
-                  </button>
+      const content = `
+        <div class="max-w-md mx-auto space-y-4 pb-4">
+          <div class="bg-purple-900/30 backdrop-blur-sm rounded-2xl p-6 border border-purple-500/30 shadow-xl">
+            <h2 class="text-xl font-bold mb-4 text-center">出戰英雄</h2>
+            ${hero ? `
+              <div class="flex flex-col items-center">
+                <div class="relative mb-4">
+                   <img src="${hero.image}" class="w-32 h-32 object-cover rounded-xl border-2 border-purple-500/50 shadow-lg shadow-purple-500/20">
+                   <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded text-[10px] whitespace-nowrap ${rarityColors[hero.rarity]}">${rarityText[hero.rarity]}</div>
                 </div>
+                <h3 class="text-2xl font-bold mb-4">${hero.name}</h3>
                 
-                ${state.selectedCards.length > 0 ? `
-                  <div class="grid grid-cols-5 gap-3">
-                    ${state.selectedCards.map(card => `
-                      <div class="bg-slate-700 p-3 rounded-lg">
-                        <img src="${card.image}" alt="${card.name}" class="w-full h-20 object-cover rounded mb-2">
-                        <div class="text-center mb-2">
-                          <div class="inline-block px-2 py-0.5 rounded text-xs mb-1 ${rarityColors[card.rarity]}">${rarityText[card.rarity]}</div>
-                        </div>
-                        <div class="text-sm font-bold text-center mb-2">${card.name}</div>
-                        <div class="text-xs text-gray-400 text-center">
-                          <div>⚡ ${card.cost}</div>
-                          <div>⏱ ${card.cd}s</div>
-                        </div>
-                      </div>
-                    `).join('')}
+                <button onclick="changeScreen('hero-select')" class="w-full py-2 bg-purple-600/50 hover:bg-purple-600 rounded-lg text-sm font-bold border border-purple-400/30 transition-all">更換英雄</button>
+              </div>
+            ` : `<button onclick="changeScreen('hero-select')" class="w-full py-10 border-2 border-dashed border-purple-500/30 rounded-xl text-gray-400">+ 選擇英雄</button>`}
+          </div>
+
+          <div class="bg-slate-800/40 rounded-2xl p-4 border border-purple-500/20">
+            <div class="flex justify-between items-center mb-3">
+              <h3 class="font-bold text-sm">攜帶技能 (${state.selectedCards.length}/5)</h3>
+              <button onclick="changeScreen('card-select')" class="text-xs text-purple-400 font-bold">編輯卡組</button>
+            </div>
+            <div class="flex gap-2 justify-center overflow-x-auto pb-2">
+              ${[0,1,2,3,4].map(i => {
+                const card = state.selectedCards[i];
+                return card ? `
+                  <div class="flex-shrink-0 w-14 text-center">
+                    <img src="${card.image}" class="w-14 h-14 object-cover rounded-lg border border-purple-500/50">
+                    <div class="text-[9px] mt-1 truncate">${card.name}</div>
                   </div>
                 ` : `
-                  <div class="text-center py-8 text-gray-400">
-                    ${icons.zap}
-                    <p class="mt-2">尚未選擇技能卡</p>
-                  </div>
-                `}
-              </div>
-            </div>
-
-            <!-- 開始戰鬥按鈕 -->
-            <div class="max-w-4xl mx-auto">
-              <button 
-                onclick="startBattle()" 
-                ${canStart ? '' : 'disabled'} 
-                class="w-full py-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed rounded-xl text-2xl font-bold transition-all transform hover:scale-105 disabled:hover:scale-100 shadow-2xl flex items-center justify-center gap-3"
-              >
-                ${icons.sword}
-                開始戰鬥
-                ${icons.sword}
-              </button>
-              
-              ${!canStart ? `
-                <p class="text-center text-yellow-400 mt-3 text-sm">
-                  ${!hero ? '⚠ 請先選擇隊長英雄' : '⚠ 請選擇 5 張技能卡'}
-                </p>
-              ` : ''}
+                  <div onclick="changeScreen('card-select')" class="flex-shrink-0 w-14 h-14 bg-slate-700/50 border border-dashed border-gray-500 rounded-lg flex items-center justify-center text-gray-500">+</div>
+                `;
+              }).join('')}
             </div>
           </div>
-          
-          ${renderBottomNav()}
+
+          <button onclick="startBattle()" ${canStart ? '' : 'disabled'} 
+            class="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 disabled:from-gray-700 disabled:to-gray-800 rounded-xl text-lg font-bold shadow-lg shadow-purple-900/40 active:scale-95 transition-all">
+            開始戰鬥
+          </button>
+          ${!canStart ? `<p class="text-center text-xs text-yellow-500/80">⚠ 請完成英雄與技能選擇</p>` : ''}
         </div>
       `;
+      return screenWrapper(content);
     }
 
     function renderHeroSelectScreen() {
-      return `
-        <div class="h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white flex flex-col">
-          ${renderTopBar()}
-          
-          <div class="flex-1 overflow-y-auto p-6">
-            <div class="max-w-6xl mx-auto">
-              <h2 class="text-3xl font-bold mb-6 text-center">選擇隊長英雄</h2>
-              
-              <div class="grid grid-cols-2 md:grid-cols-3 gap-6 mb-6">
-                ${HEROES.map(hero => `
-                  <div 
-                    onclick="selectHero('${hero.id}')" 
-                    class="bg-slate-800 p-6 rounded-xl transition-all transform hover:scale-105 border-2 ${
-                      state.selectedHero?.id === hero.id ? 'border-purple-500 shadow-xl shadow-purple-500/50' : 
-                      hero.unlocked ? 'border-transparent cursor-pointer hover:border-purple-400' : 
-                      'border-gray-700 opacity-50 cursor-not-allowed'
-                    }"
-                  >
-                    <div class="relative">
-                      ${!hero.unlocked ? `<div class="absolute inset-0 flex items-center justify-center bg-black/60 rounded-lg">${icons.lock}</div>` : ''}
-                      <img src="${hero.image}" alt="${hero.name}" class="w-full h-40 object-cover rounded-lg mb-4">
-                    </div>
-                    
-                    <h3 class="text-xl font-bold text-center mb-2">${hero.name}</h3>
-                    <div class="text-xs text-center mb-3 px-2 py-1 rounded ${rarityColors[hero.rarity]}">${rarityText[hero.rarity]}</div>
-                    
-                    <div class="space-y-1 text-sm text-gray-300">
-                      <div class="flex justify-between">
-                        <span>攻擊:</span>
-                        <span class="text-red-400">${hero.attack}</span>
-                      </div>
-                      <div class="flex justify-between">
-                        <span>攻速:</span>
-                        <span class="text-yellow-400">${hero.speed}</span>
-                      </div>
-                      <div class="flex justify-between">
-                        <span>距離:</span>
-                        <span class="text-blue-400">${hero.range === 'melee' ? '近戰' : hero.range === 'medium' ? '中距' : '遠程'}</span>
-                      </div>
-                    </div>
-                  </div>
-                `).join('')}
+      const content = `
+        <div class="max-w-md mx-auto">
+          <h2 class="text-xl font-bold mb-4 text-center">選擇英雄</h2>
+          <div class="grid grid-cols-2 gap-3">
+            ${HEROES.map(hero => `
+              <div onclick="selectHero('${hero.id}')" 
+                class="bg-slate-800/80 p-3 rounded-xl border-2 transition-all ${state.selectedHero?.id === hero.id ? 'border-purple-500 bg-purple-900/20' : 'border-transparent'} ${!hero.unlocked ? 'opacity-50' : ''}">
+                <div class="relative">
+                  <img src="${hero.image}" class="w-full h-24 object-cover rounded-lg mb-2">
+                  ${!hero.unlocked ? `<div class="absolute inset-0 flex items-center justify-center bg-black/60 rounded-lg">${icons.lockSmall}</div>` : ''}
+                </div>
+                <div class="text-center">
+                  <div class="font-bold text-sm">${hero.name}</div>
+                  <div class="text-[10px] text-gray-400">${rarityText[hero.rarity]}</div>
+                </div>
               </div>
-            </div>
+            `).join('')}
           </div>
-          
-          ${renderBottomNav()}
         </div>
       `;
+      return screenWrapper(content);
     }
 
     function renderCardSelectScreen() {
-      return `
-        <div class="h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white flex flex-col">
-          ${renderTopBar()}
-          
-          <div class="flex-1 overflow-y-auto p-6">
-            <div class="max-w-6xl mx-auto">
-              <h2 class="text-3xl font-bold mb-6 text-center">選擇技能卡 (${state.selectedCards.length}/5)</h2>
-              
-              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                ${SKILL_CARDS.map(card => {
-                  const isSelected = state.selectedCards.find(c => c.id === card.id);
-                  const isDisabled = (!isSelected && state.selectedCards.length >= 5) || !card.unlocked;
-                  
-                  return `
-                    <div 
-                      onclick="toggleCard('${card.id}')" 
-                      class="bg-slate-800 p-5 rounded-xl transition-all border-2 relative ${
-                        isSelected ? 'border-purple-500 shadow-lg shadow-purple-500/50' : 
-                        isDisabled ? 'border-gray-700 opacity-50 cursor-not-allowed' : 
-                        'border-transparent cursor-pointer hover:border-purple-400'
-                      }"
-                    >
-                      ${!card.unlocked ? `<div class="absolute top-3 right-3">${icons.lockSmall}</div>` : ''}
-                      
-                      <img src="${card.image}" alt="${card.name}" class="w-full h-32 object-cover rounded-lg mb-3">
-                      
-                      <div class="flex justify-between items-start mb-3">
-                        <h3 class="text-lg font-bold">${card.name}</h3>
-                        <div class="text-xs px-2 py-1 rounded ${rarityColors[card.rarity]}">${rarityText[card.rarity]}</div>
-                      </div>
-                      
-                      <p class="text-sm text-gray-300 mb-3 min-h-[40px]">${card.desc}</p>
-                      
-                      <div class="flex justify-between text-sm">
-                        <span class="text-yellow-400">⚡ ${card.cost} 能量</span>
-                        <span class="text-blue-400">⏱ ${card.cd}s CD</span>
-                      </div>
-                      
-                      ${isSelected ? '<div class="absolute top-2 left-2 bg-purple-600 rounded-full w-6 h-6 flex items-center justify-center"><span class="text-xs font-bold">✓</span></div>' : ''}
+      const content = `
+        <div class="max-w-md mx-auto">
+          <h2 class="text-xl font-bold mb-1 text-center">選擇技能卡</h2>
+          <p class="text-[10px] text-gray-400 text-center mb-4">點擊卡片加入或移除 (${state.selectedCards.length}/5)</p>
+          <div class="grid grid-cols-1 gap-2">
+            ${SKILL_CARDS.map(card => {
+              const isSelected = state.selectedCards.find(c => c.id === card.id);
+              return `
+                <div onclick="toggleCard('${card.id}')" 
+                  class="bg-slate-800/80 p-3 rounded-xl border-2 flex gap-3 transition-all ${isSelected ? 'border-purple-500 bg-purple-900/20' : 'border-transparent'}">
+                  <img src="${card.image}" class="w-16 h-16 object-cover rounded-lg">
+                  <div class="flex-1">
+                    <div class="flex justify-between">
+                      <span class="font-bold text-sm">${card.name}</span>
+                      <span class="text-[10px] ${rarityColors[card.rarity]} px-1.5 rounded text-white">${rarityText[card.rarity]}</span>
                     </div>
-                  `;
-                }).join('')}
-              </div>
-            </div>
+                    <p class="text-[10px] text-gray-400 my-1">${card.desc}</p>
+                    <div class="flex gap-3 text-[10px] text-yellow-500">
+                      <span>⚡ ${card.cost}</span>
+                      <span class="text-blue-400">⏱ ${card.cd}s</span>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
           </div>
-          
-          ${renderBottomNav()}
         </div>
       `;
+      return screenWrapper(content);
     }
 
     function renderShopScreen() {
-  return `
-    <div class="h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white flex flex-col">
-      ${renderTopBar()}
-      
-      <div class="flex-1 overflow-y-auto p-6">
-        <div class="max-w-6xl mx-auto">
-          <h2 class="text-3xl font-bold mb-6 text-center">商城</h2>
-          
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="bg-slate-800 p-8 rounded-xl border border-purple-500/30">
-              ${icons.crown}
-              <h3 class="text-2xl font-bold text-center mb-4 mt-4">英雄召喚</h3>
-              <p class="text-gray-300 text-center mb-6">消耗鑽石抽取新英雄</p>
-              <button class="w-full py-3 bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 rounded-lg font-bold">
-                單抽 - 300 鑽石
-              </button>
-            </div>
-
-            <div class="bg-slate-800 p-8 rounded-xl border border-purple-500/30">
-              ${icons.zapLarge}
-              <h3 class="text-2xl font-bold text-center mb-4 mt-4">技能卡包</h3>
-              <p class="text-gray-300 text-center mb-6">解鎖更多技能卡</p>
-              <button class="w-full py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 rounded-lg font-bold">
-                購買卡包 - 200 鑽石
-              </button>
-            </div>
+      const content = `
+        <div class="max-w-md mx-auto space-y-4">
+          <h2 class="text-xl font-bold text-center">商城</h2>
+          <div class="bg-slate-800/80 p-6 rounded-2xl border border-purple-500/30 text-center">
+             <div class="w-16 h-16 bg-purple-600/20 rounded-full flex items-center justify-center mx-auto mb-4">${icons.crown}</div>
+             <h3 class="font-bold mb-2">英雄召喚</h3>
+             <p class="text-xs text-gray-400 mb-4">獲得傳說英雄的唯一機會</p>
+             <button class="w-full py-2 bg-gradient-to-r from-yellow-600 to-orange-600 rounded-lg text-sm font-bold shadow-lg">300 鑽石</button>
           </div>
-          
-          <div class="mt-8 text-center text-gray-400">
-            <p>商城功能開發中...</p>
+          <div class="bg-slate-800/80 p-6 rounded-2xl border border-blue-500/30 text-center">
+             <div class="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4">${icons.zapLarge}</div>
+             <h3 class="font-bold mb-2">技能卡包</h3>
+             <p class="text-xs text-gray-400 mb-4">擴展你的戰術組合</p>
+             <button class="w-full py-2 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg text-sm font-bold shadow-lg">200 鑽石</button>
           </div>
         </div>
-      </div>
-      
-      ${renderBottomNav()}
-    </div>
-  `;
-}
+      `;
+      return screenWrapper(content);
+    }
 
-function renderSettingsScreen() {
-  return `
-    <div class="h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white flex flex-col">
-      ${renderTopBar()}
-      
-      <div class="flex-1 overflow-y-auto p-6">
-        <div class="max-w-4xl mx-auto">
-          <h2 class="text-3xl font-bold mb-6 text-center">設定</h2>
-          
-          <div class="space-y-4">
-            <div class="bg-slate-800 p-6 rounded-xl border border-purple-500/30">
-              <h3 class="text-xl font-bold mb-4">遊戲設定</h3>
-              <div class="space-y-3">
-                <div class="flex justify-between items-center">
-                  <span>音效</span>
-                  <button class="px-4 py-2 bg-purple-600 rounded-lg">開啟</button>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span>音樂</span>
-                  <button class="px-4 py-2 bg-purple-600 rounded-lg">開啟</button>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span>畫質</span>
-                  <button class="px-4 py-2 bg-purple-600 rounded-lg">高</button>
-                </div>
-              </div>
+    function renderSettingsScreen() {
+      const content = `
+        <div class="max-w-md mx-auto space-y-4">
+          <h2 class="text-xl font-bold text-center">設定</h2>
+          <div class="bg-slate-800/80 rounded-xl overflow-hidden divide-y divide-gray-700 border border-gray-700">
+            <div class="p-4 flex justify-between items-center">
+              <span class="text-sm">音效音量</span>
+              <input type="range" class="w-24">
             </div>
-
-            <div class="bg-slate-800 p-6 rounded-xl border border-purple-500/30">
-              <h3 class="text-xl font-bold mb-4">帳號</h3>
-              <div class="space-y-3">
-                <div class="flex justify-between items-center">
-                  <span>玩家ID</span>
-                  <span class="text-gray-400">PLAYER_12345</span>
-                </div>
-                <button class="w-full py-2 bg-red-600 hover:bg-red-700 rounded-lg">
-                  登出
-                </button>
-              </div>
+            <div class="p-4 flex justify-between items-center">
+              <span class="text-sm">背景音樂</span>
+              <input type="checkbox" checked>
             </div>
-
-            <div class="bg-slate-800 p-6 rounded-xl border border-purple-500/30">
-              <h3 class="text-xl font-bold mb-4">關於</h3>
-              <p class="text-gray-400">版本: 1.0.0</p>
-              <p class="text-gray-400 mt-2">© 2025 魂之守衛</p>
+            <div class="p-4 flex justify-between items-center">
+              <span class="text-sm">畫質</span>
+              <select class="bg-slate-700 text-xs p-1 rounded"><option>高</option><option>中</option></select>
             </div>
           </div>
+          <button class="w-full py-3 bg-red-900/40 text-red-400 border border-red-900/50 rounded-xl text-sm font-bold">登出帳號</button>
         </div>
-      </div>
-      
-      ${renderBottomNav()}
-    </div>
-  `;
-}
+      `;
+      return screenWrapper(content);
+    }
 
-// 事件處理函數
-function changeScreen(screen) {
-  state.screen = screen;
-  render();
-}
+    // 功能邏輯
+    function changeScreen(screen) {
+      state.screen = screen;
+      render();
+    }
 
-function goHome() {
-  window.location.href = 'index.html'; // 或你的首頁連結
-}
+    function goHome() {
+      console.log('回到首頁');
+    }
 
-function selectHero(heroId) {
-  const hero = HEROES.find(h => h.id === heroId);
-  if (hero && hero.unlocked) {
-    state.selectedHero = hero;
-    state.screen = 'prepare';
+    function selectHero(heroId) {
+      const hero = HEROES.find(h => h.id === heroId);
+      if (hero && hero.unlocked) {
+        state.selectedHero = hero;
+        state.screen = 'prepare';
+        render();
+      }
+    }
+
+    function toggleCard(cardId) {
+      const card = SKILL_CARDS.find(c => c.id === cardId);
+      if (!card || !card.unlocked) return;
+      const index = state.selectedCards.findIndex(c => c.id === cardId);
+      if (index > -1) {
+        state.selectedCards.splice(index, 1);
+      } else if (state.selectedCards.length < 5) {
+        state.selectedCards.push(card);
+      }
+      render();
+    }
+
+    function startBattle() {
+      if (state.selectedHero && state.selectedCards.length === 5) {
+        window.location.href = 'god_battle.html';
+      }
+    }
+
+    // 初始化
+    loadBalance();
     render();
-  }
-}
-
-function toggleCard(cardId) {
-  const card = SKILL_CARDS.find(c => c.id === cardId);
-  if (!card || !card.unlocked) return;
-  
-  const isSelected = state.selectedCards.find(c => c.id === cardId);
-  
-  if (isSelected) {
-    state.selectedCards = state.selectedCards.filter(c => c.id !== cardId);
-  } else if (state.selectedCards.length < 5) {
-    state.selectedCards.push(card);
-  }
-  
-  render();
-}
-
-function startBattle() {
-  if (!state.selectedHero) {
-    alert('請先選擇隊長英雄!');
-    return;
-  }
-  if (state.selectedCards.length !== 5) {
-    alert('請選擇 5 張技能卡!');
-    return;
-  }
-  
-  alert('準備進入戰鬥!\n\n隊長: ' + state.selectedHero.name + '\n技能卡: ' + state.selectedCards.map(c => c.name).join(', '));
-  // TODO: 跳轉到戰鬥畫面
-  window.location.href = 'god_battle.html';
-}
-
-function attachEventListeners() {
-  // 事件監聽已通過 onclick 內聯綁定
-}
-
-// 初始化
-loadBalance();
-render();
   </script>
 </body>
 </html>
