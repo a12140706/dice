@@ -1,0 +1,109 @@
+/* 魂之守衛 - 通用樣式 */
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: 'Arial', 'Microsoft JhengHei', sans-serif;
+}
+
+/* 戰鬥畫面 Canvas */
+#battleCanvas {
+  display: block;
+  background: linear-gradient(to bottom, #1e1b4b 0%, #312e81 50%, #4c1d95 100%);
+}
+
+/* 如果需要其他頁面的樣式也可以加在這裡 */
+
+/* 載入動畫 */
+.loading {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+/* 通用按鈕樣式 */
+.game-button {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+.game-button:hover {
+  transform: scale(1.05);
+}
+
+.game-button:active {
+  transform: scale(0.95);
+}
+
+/* 技能卡樣式 (如果需要在HTML中使用) */
+.skill-card {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.skill-card.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.skill-card.available {
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(139, 92, 246, 0.9);
+  }
+}
+
+/* 訊息提示 */
+.message-toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: #fbbf24;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: bold;
+  z-index: 1000;
+  animation: fadeInOut 2s ease-in-out;
+}
+
+@keyframes fadeInOut {
+  0%, 100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  10%, 90% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+  }
+}
+
+/* 圖片載入失敗時的佔位符 */
+img[src*="hero_basic.png"],
+img[src*="enemy_basic.png"],
+img[src*="skill_basic.png"] {
+  image-rendering: pixelated; /* 像素風格 */
+}
