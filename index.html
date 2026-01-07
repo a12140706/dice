@@ -1657,31 +1657,38 @@
 
   <div class="header">
     <div class="logo-area" style="text-align: center; margin: 15px 0;">
-  <button onclick="openWishModal()" style="background: linear-gradient(135deg, #6a11cb, #2575fc); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 10px 20px; border-radius: 25px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
-    <span>🌌</span>許願池
-  </button>
-</div>
-
-<div id="wishModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200000; align-items: center; justify-content: center; font-family: sans-serif;">
-  <div style="width: 85%; max-width: 350px; background: #1e1e1e; border: 2px solid #2575fc; border-radius: 20px; padding: 25px; box-sizing: border-box;">
-    <h3 style="color: #2575fc; margin-top: 0; text-align: center;">🌠 許下你的願望</h3>
-    <p style="font-size: 12px; color: #aaa; text-align: center;">投錢許願</p>
-    
-    <select id="wishType" style="width: 100%; padding: 10px; border-radius: 10px; background: #333; color: white; border: 1px solid #444; margin-bottom: 15px;">
-      <option value="new_game">想要新遊戲</option>
-      <option value="bug_report">BUG 回饋</option>
-      <option value="suggestion">建議</option>
-      <option value="other">其他</option>
-    </select>
-
-    <textarea id="wishContent" placeholder="請輸入內容..." style="width: 100%; height: 120px; padding: 12px; border-radius: 10px; background: #333; color: white; border: 1px solid #444; box-sizing: border-box; font-size: 14px; resize: none;"></textarea>
-
-    <div style="display: flex; gap: 10px; margin-top: 20px;">
-      <button onclick="closeWishModal()" style="flex: 1; padding: 12px; border-radius: 10px; border: none; background: #444; color: white;">取消</button>
-      <button id="submitWishBtn" onclick="submitWish()" style="flex: 1; padding: 12px; border-radius: 10px; border: none; background: #2575fc; color: white; font-weight: bold;">傳送願望</button>
+      <button onclick="openWishModal()"
+        style="background: linear-gradient(135deg, #6a11cb, #2575fc); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 10px 20px; border-radius: 25px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+        <span>🌌</span>許願池
+      </button>
     </div>
-  </div>
-</div>
+
+    <div id="wishModal"
+      style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200000; align-items: center; justify-content: center; font-family: sans-serif;">
+      <div
+        style="width: 85%; max-width: 350px; background: #1e1e1e; border: 2px solid #2575fc; border-radius: 20px; padding: 25px; box-sizing: border-box;">
+        <h3 style="color: #2575fc; margin-top: 0; text-align: center;">🌠 許下你的願望</h3>
+        <p style="font-size: 12px; color: #aaa; text-align: center;">投錢許願</p>
+
+        <select id="wishType"
+          style="width: 100%; padding: 10px; border-radius: 10px; background: #333; color: white; border: 1px solid #444; margin-bottom: 15px;">
+          <option value="new_game">想要新遊戲</option>
+          <option value="bug_report">BUG 回饋</option>
+          <option value="suggestion">建議</option>
+          <option value="other">其他</option>
+        </select>
+
+        <textarea id="wishContent" placeholder="請輸入內容..."
+          style="width: 100%; height: 120px; padding: 12px; border-radius: 10px; background: #333; color: white; border: 1px solid #444; box-sizing: border-box; font-size: 14px; resize: none;"></textarea>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button onclick="closeWishModal()"
+            style="flex: 1; padding: 12px; border-radius: 10px; border: none; background: #444; color: white;">取消</button>
+          <button id="submitWishBtn" onclick="submitWish()"
+            style="flex: 1; padding: 12px; border-radius: 10px; border: none; background: #2575fc; color: white; font-weight: bold;">傳送願望</button>
+        </div>
+      </div>
+    </div>
     <div style="color:var(--gold); font-size:13px; cursor:pointer; text-decoration:underline;" onclick="openShop()">🏪商城
     </div>
     <div style="color:#ff4757; font-size:13px; cursor:pointer; text-decoration:underline; font-weight:bold;"
@@ -1775,7 +1782,7 @@
           <div class="game-title">刮刮樂</div>
         </div>
       </a>
-      <a href="#" class="game-card">
+      <a href="godprg.html" class="game-card">
         <div class="game-img" style="background: linear-gradient(45deg, #ff00cc, #0015ff);">⚔️</div>
         <div class="game-info">
           <div class="game-title">開發中</div>
@@ -1882,50 +1889,50 @@
 
     function openModal() { document.getElementById('depositModal').style.display = 'flex'; }
     function closeModal() { document.getElementById('depositModal').style.display = 'none'; }
-// 開啟許願池
-function openWishModal() {
-    document.getElementById('wishModal').style.display = 'flex';
-}
+    // 開啟許願池
+    function openWishModal() {
+      document.getElementById('wishModal').style.display = 'flex';
+    }
 
-// 關閉許願池
-function closeWishModal() {
-    document.getElementById('wishModal').style.display = 'none';
-    document.getElementById('wishContent').value = ''; // 清空內容
-}
+    // 關閉許願池
+    function closeWishModal() {
+      document.getElementById('wishModal').style.display = 'none';
+      document.getElementById('wishContent').value = ''; // 清空內容
+    }
 
-// 提交願望到 Firebase
-async function submitWish() {
-    const type = document.getElementById('wishType').value;
-    const content = document.getElementById('wishContent').value.trim();
-    const playerId = localStorage.getItem('player_id') || 'guest';
-    const playerName = localStorage.getItem('player_name') || '無名氏';
-    const btn = document.getElementById('submitWishBtn');
+    // 提交願望到 Firebase
+    async function submitWish() {
+      const type = document.getElementById('wishType').value;
+      const content = document.getElementById('wishContent').value.trim();
+      const playerId = localStorage.getItem('player_id') || 'guest';
+      const playerName = localStorage.getItem('player_name') || '無名氏';
+      const btn = document.getElementById('submitWishBtn');
 
-    if (!content) return alert("內容不能是空的喔！");
+      if (!content) return alert("內容不能是空的喔！");
 
-    btn.disabled = true;
-    btn.textContent = "傳送中...";
+      btn.disabled = true;
+      btn.textContent = "傳送中...";
 
-    try {
+      try {
         await db.collection("wishes").add({
-            type: type,
-            content: content,
-            uid: playerId,
-            nickname: playerName,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            status: "pending" // 預設為待處理
+          type: type,
+          content: content,
+          uid: playerId,
+          nickname: playerName,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          status: "pending" // 預設為待處理
         });
 
         alert("🚀 願望已傳達！");
         closeWishModal();
-    } catch (e) {
+      } catch (e) {
         console.error("許願失敗:", e);
         alert("稍後再試。");
-    } finally {
+      } finally {
         btn.disabled = false;
         btn.textContent = "傳送願望";
+      }
     }
-}
     /**
  * 使用 Firebase ID 登入引繼
  */
@@ -2503,10 +2510,8 @@ async function submitWish() {
           localStorage.setItem('player_name', cloudData.name);
 
           // 只要雲端錢不等於本地，引繼時會以雲端為主
-          if (cloudBal !== undefined && cloudBal > localBal) {
+          if (cloudBal !== undefined) {
             localStorage.setItem('sicbo_balance', cloudBal);
-          } else if (cloudBal !== undefined && localBal > cloudBal) {
-            await db.collection("users").doc(playerId).update({ balance: localBal });
           }
 
           // --- 3. 渲染 UI 顯示 (你原本的邏輯) ---
@@ -2624,11 +2629,11 @@ async function submitWish() {
       }
     }
     // 開啟貓咪神殿頁面
-   async function openPetTemple() {
-    const playerId = localStorage.getItem('player_id');
-    if (!playerId) return alert("請先登入遊戲！");
+    async function openPetTemple() {
+      const playerId = localStorage.getItem('player_id');
+      if (!playerId) return alert("請先登入遊戲！");
 
-    try {
+      try {
         const doc = await db.collection("users").doc(playerId).get();
         if (!doc.exists) return;
         const userData = doc.data();
@@ -2648,11 +2653,11 @@ async function submitWish() {
         let petNameHTML = '';
 
         if (currentPetObj && currentPetObj.img) {
-            petDisplayHTML = `<img src="assets/pet/${currentPetObj.img}" style="width:220px; filter: drop-shadow(0 0 20px gold);">`;
-            petNameHTML = `✨ ${currentPetObj.name}`;
+          petDisplayHTML = `<img src="assets/pet/${currentPetObj.img}" style="width:220px; filter: drop-shadow(0 0 20px gold);">`;
+          petNameHTML = `✨ ${currentPetObj.name}`;
         } else {
-            petDisplayHTML = `<div style="width:180px; height:180px; border:2px dashed #888; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#ccc; background:rgba(0,0,0,0.3);">尚未領養貓咪</div>`;
-            petNameHTML = `請於下方領養貓咪`;
+          petDisplayHTML = `<div style="width:180px; height:180px; border:2px dashed #888; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#ccc; background:rgba(0,0,0,0.3);">尚未領養貓咪</div>`;
+          petNameHTML = `請於下方領養貓咪`;
         }
 
         const bgPath = `assets/pet/${currentBgObj?.img || "bg_basic.jpg"}`;
@@ -2704,65 +2709,65 @@ async function submitWish() {
 
         // 【修正 3】將 togglePetMenu 的邏輯包裹在 try-catch 裡，防止報錯導致按鈕死掉
         window.togglePetMenu = function (type) {
-            try {
-                const drawer = document.getElementById('pet-menu-drawer');
-                const title = document.getElementById('menu-title');
-                const content = document.getElementById('menu-content');
+          try {
+            const drawer = document.getElementById('pet-menu-drawer');
+            const title = document.getElementById('menu-title');
+            const content = document.getElementById('menu-content');
 
-                if (drawer.style.display === 'block' && drawer.dataset.type === type) {
-                    drawer.style.display = 'none';
-                    return;
-                }
-                drawer.dataset.type = type;
-                content.innerHTML = '';
+            if (drawer.style.display === 'block' && drawer.dataset.type === type) {
+              drawer.style.display = 'none';
+              return;
+            }
+            drawer.dataset.type = type;
+            content.innerHTML = '';
 
-                if (type === 'adopt') {
-                    title.innerText = "🐾 選擇夥伴";
-                    content.innerHTML = PET_TEMPLE_DATA.pets.map(p => {
-                        const isOwned = unlockedPets.includes(p.id);
-                        const isEquipped = currentPetId === p.id;
-                        return `
+            if (type === 'adopt') {
+              title.innerText = "🐾 選擇夥伴";
+              content.innerHTML = PET_TEMPLE_DATA.pets.map(p => {
+                const isOwned = unlockedPets.includes(p.id);
+                const isEquipped = currentPetId === p.id;
+                return `
                         <div style="min-width:130px; background:#333; padding:15px; border-radius:12px; border:${isEquipped ? '2px solid gold' : '1px solid #555'}; text-align:center;">
                             <img src="assets/pet/${p.img}" onerror="this.src='assets/pet/basic.png'" style="width:80px; height:80px; object-fit:contain; margin-bottom:10px;">
                             <div style="font-size:12px; margin-bottom:10px;">${p.name}</div>
-                            ${isOwned ? 
-                                `<button onclick="actionPet('equip','${p.id}')" style="width:100%; background:${isEquipped ? '#444' : '#666'}; border:none; border-radius:5px; color:white; padding:8px 5px;">${isEquipped ? '使用中' : '裝備'}</button>` : 
-                                `<button onclick="actionPet('buy','${p.id}',${p.price})" style="width:100%; background:#c0392b; border:none; border-radius:5px; color:white; padding:8px 5px; font-size:10px;">💎${(p.price / 100000000).toLocaleString()}億</button>`
-                            }
+                            ${isOwned ?
+                    `<button onclick="actionPet('equip','${p.id}')" style="width:100%; background:${isEquipped ? '#444' : '#666'}; border:none; border-radius:5px; color:white; padding:8px 5px;">${isEquipped ? '使用中' : '裝備'}</button>` :
+                    `<button onclick="actionPet('buy','${p.id}',${p.price})" style="width:100%; background:#c0392b; border:none; border-radius:5px; color:white; padding:8px 5px; font-size:10px;">💎${(p.price / 100000000).toLocaleString()}億</button>`
+                  }
                         </div>`;
-                    }).join('');
-                } else {
-                    title.innerText = "🖼️ 選擇裝潢";
-                    content.innerHTML = PET_TEMPLE_DATA.backgrounds.map(bg => {
-                        const isOwned = unlockedBgs.includes(bg.id);
-                        const isEquipped = currentBgId === bg.id;
-                        return `
+              }).join('');
+            } else {
+              title.innerText = "🖼️ 選擇裝潢";
+              content.innerHTML = PET_TEMPLE_DATA.backgrounds.map(bg => {
+                const isOwned = unlockedBgs.includes(bg.id);
+                const isEquipped = currentBgId === bg.id;
+                return `
                         <div style="min-width:130px; background:#333; padding:15px; border-radius:12px; border:${isEquipped ? '2px solid #3498db' : '1px solid #555'}; text-align:center;">
                             <img src="assets/pet/${bg.img}" onerror="this.src='assets/pet/bg-basic.jpg'" style="width:100%; height:60px; object-fit:cover; border-radius:5px; margin-bottom:10px;">
                             <div style="font-size:12px; margin-bottom:10px;">${bg.name}</div>
-                            ${isOwned ? 
-                                `<button onclick="actionBg('equip','${bg.id}')" style="width:100%; background:${isEquipped ? '#444' : '#666'}; border:none; border-radius:5px; color:white; padding:8px 5px;">${isEquipped ? '套用中' : '更換'}</button>` : 
-                                `<button onclick="actionBg('buy','${bg.id}',${bg.price})" style="width:100%; background:#2980b9; border:none; border-radius:5px; color:white; padding:8px 5px; font-size:10px;">💎${(bg.price / 100000000).toLocaleString()}億</button>`
-                            }
+                            ${isOwned ?
+                    `<button onclick="actionBg('equip','${bg.id}')" style="width:100%; background:${isEquipped ? '#444' : '#666'}; border:none; border-radius:5px; color:white; padding:8px 5px;">${isEquipped ? '套用中' : '更換'}</button>` :
+                    `<button onclick="actionBg('buy','${bg.id}',${bg.price})" style="width:100%; background:#2980b9; border:none; border-radius:5px; color:white; padding:8px 5px; font-size:10px;">💎${(bg.price / 100000000).toLocaleString()}億</button>`
+                  }
                         </div>`;
-                    }).join('');
-                }
-                drawer.style.display = 'block';
-            } catch (err) {
-                console.error("切換選單出錯:", err);
+              }).join('');
             }
+            drawer.style.display = 'block';
+          } catch (err) {
+            console.error("切換選單出錯:", err);
+          }
         };
 
-    } catch (e) {
+      } catch (e) {
         console.error("初始化神殿出錯:", e);
+      }
     }
-}
     // 處理貓咪 購買/裝備
-   async function actionPet(type, id, price) {
-    const playerId = localStorage.getItem('player_id');
-    if (!playerId) return;
+    async function actionPet(type, id, price) {
+      const playerId = localStorage.getItem('player_id');
+      if (!playerId) return;
 
-    try {
+      try {
         const userRef = db.collection("users").doc(playerId);
         const doc = await userRef.get();
         if (!doc.exists) return;
@@ -2777,17 +2782,17 @@ async function submitWish() {
         if (!petSys.current_pet_id) petSys.current_pet_id = "";
 
         if (type === 'buy') {
-            if (balance < price) return alert("餘額不足！再贏一點吧");
-            
-            // 為了防止手機連點，這裡加上簡單的確認
-            if (!confirm(`要花費 💎 ${(price / 100000000).toLocaleString()}億 領養嗎？`)) return;
-            
-            balance -= price;
-            
-            // 再次檢查是否已擁有，避免重複推入陣列
-            if (!petSys.unlocked_pets.includes(id)) {
-                petSys.unlocked_pets.push(id);
-            }
+          if (balance < price) return alert("餘額不足！再贏一點吧");
+
+          // 為了防止手機連點，這裡加上簡單的確認
+          if (!confirm(`要花費 💎 ${(price / 100000000).toLocaleString()}億 領養嗎？`)) return;
+
+          balance -= price;
+
+          // 再次檢查是否已擁有，避免重複推入陣列
+          if (!petSys.unlocked_pets.includes(id)) {
+            petSys.unlocked_pets.push(id);
+          }
         }
 
         // 不論是購買還是更換，都更新當前使用的 ID
@@ -2795,8 +2800,8 @@ async function submitWish() {
 
         // 寫回資料庫
         await userRef.update({
-            balance: balance,
-            pet_system: petSys
+          balance: balance,
+          pet_system: petSys
         });
 
         // 同步本地快取與 UI
@@ -2806,44 +2811,44 @@ async function submitWish() {
         // 關閉舊頁面並重開，確保看到最新的貓咪
         const overlay = document.getElementById('pet-temple-overlay');
         if (overlay) overlay.remove();
-        
+
         // 重新開啟神殿頁面
         openPetTemple();
 
-    } catch (e) {
+      } catch (e) {
         console.error("領養操作失敗:", e);
         alert("失敗，請回報");
+      }
     }
-}
 
     // 處理背景 購買/更換
-   async function actionBg(type, id, price) {
-    const playerId = localStorage.getItem('player_id');
-    if (!playerId) return;
+    async function actionBg(type, id, price) {
+      const playerId = localStorage.getItem('player_id');
+      if (!playerId) return;
 
-    try {
+      try {
         const userRef = db.collection("users").doc(playerId);
         const doc = await userRef.get();
         if (!doc.exists) return;
 
         let userData = doc.data();
         let balance = userData.balance || 0;
-        
+
         // 【核心修正】與你的資料庫截圖完全對齊
         let petSys = userData.pet_system || {};
-        if (!petSys.unlocked_bgs) petSys.unlocked_bgs = ["bg_default"]; 
+        if (!petSys.unlocked_bgs) petSys.unlocked_bgs = ["bg_default"];
         if (!petSys.current_bg_id) petSys.current_bg_id = "bg_default";
 
         if (type === 'buy') {
-            if (balance < price) return alert("錢不夠裝潢喔！");
-            if (!confirm(`要花費 💎 ${(price / 100000000).toLocaleString()}億 購買此裝潢嗎？`)) return;
-            
-            balance -= price;
-            
-            // 確保 unlocked_bgs 是一個陣列後再操作
-            if (!petSys.unlocked_bgs.includes(id)) {
-                petSys.unlocked_bgs.push(id);
-            }
+          if (balance < price) return alert("錢不夠裝潢喔！");
+          if (!confirm(`要花費 💎 ${(price / 100000000).toLocaleString()}億 購買此裝潢嗎？`)) return;
+
+          balance -= price;
+
+          // 確保 unlocked_bgs 是一個陣列後再操作
+          if (!petSys.unlocked_bgs.includes(id)) {
+            petSys.unlocked_bgs.push(id);
+          }
         }
 
         // 更新當前使用的背景 ID
@@ -2851,8 +2856,8 @@ async function submitWish() {
 
         // 寫回資料庫
         await userRef.update({
-            balance: balance,
-            pet_system: petSys
+          balance: balance,
+          pet_system: petSys
         });
 
         // 更新本地餘額
@@ -2864,33 +2869,33 @@ async function submitWish() {
         const overlay = document.getElementById('pet-temple-overlay');
 
         if (overlay && bgObj) {
-            // 更換背景圖
-            overlay.style.backgroundImage = `url('assets/pet/${bgObj.img}')`;
+          // 更換背景圖
+          overlay.style.backgroundImage = `url('assets/pet/${bgObj.img}')`;
 
-            // 更新畫面上方的餘額 (修正選擇器，確保能抓到餘額 div)
-            const balanceDivs = overlay.querySelectorAll('div');
-            for (let div of balanceDivs) {
-                if (div.innerText.includes('💎')) {
-                    div.innerHTML = `💎 ${Math.floor(balance).toLocaleString()}`;
-                    break;
-                }
+          // 更新畫面上方的餘額 (修正選擇器，確保能抓到餘額 div)
+          const balanceDivs = overlay.querySelectorAll('div');
+          for (let div of balanceDivs) {
+            if (div.innerText.includes('💎')) {
+              div.innerHTML = `💎 ${Math.floor(balance).toLocaleString()}`;
+              break;
             }
+          }
 
-            // 關閉選單
-            const drawer = document.getElementById('pet-menu-drawer');
-            if (drawer) drawer.style.display = 'none';
+          // 關閉選單
+          const drawer = document.getElementById('pet-menu-drawer');
+          if (drawer) drawer.style.display = 'none';
 
-            if (typeof showWinToast === 'function') showWinToast("🎨 神殿裝潢更新成功！");
+          if (typeof showWinToast === 'function') showWinToast("🎨 神殿裝潢更新成功！");
         } else {
-            // 如果 DOM 不在，就重開神殿
-            openPetTemple();
+          // 如果 DOM 不在，就重開神殿
+          openPetTemple();
         }
 
-    } catch (e) {
+      } catch (e) {
         console.error("背景操作失敗詳細原因:", e);
         alert("失敗，請回報");
+      }
     }
-}
 
     window.onload = function () {
       updateMainBalance();

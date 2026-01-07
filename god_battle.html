@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>神域-戰鬥</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="battleCanvas"></canvas>
+
+  <script>
+    // 遊戲配置
+    const config = {
+      canvasWidth: window.innerWidth,
+      canvasHeight: window.innerHeight,
+      enemySpeed: 1,
+      heroAttackRange: 200,
+      waveDelay: 10000, // 10秒一波
+    };
+
+    // 遊戲狀態
+    const gameState = {
+      wave: 1,
+      maxWave: 20,
+      wallHP: 1000,
+      maxWallHP: 1000,
+      souls: 0,
+      energy: 0,
+      cageLevel: 0,
+      heroLevel: 1,
+      wallLevel: 1,
+      killCount: 0,
+      isPaused: false,
+      gameTime: 0,
+      nextWaveTime: 10000,
+      waveInterval: 10000
+    };
+
+    // 測試用英雄數據
+    const testHero = {
+      id: 'knight',
+      name: '聖騎士',
+      x: 400,
+      y: 500,
+      attack: 50,
+      attackSpeed: 1.0, // 每秒攻擊次數
+      range: 150,
+      lastAttackTime: 0,
+      skillCooldown: 0,
+      maxSkillCooldown: 5000,
+      image: new Image()
+    };
+    testHero.image.src = 'hero_basic.png';
+
+    // 測試用技能卡
+    const testCards = [
+      { id: 'berserk', name: '狂戰士之怒', cost: 80, cd: 30000, lastUse: -30000, image: new Image() },
+      { id: 'freeze', name: '冰封大地', cost: 120, cd: 45000, lastUse: -45000, image: new Image() },
+      { id: 'meteor', name: '隕石天降', cost: 150, cd: 60000, lastUse: -60000, image: new Image() },
+      { id: 'heal', name: '神聖庇護', cost: 100, cd: 40000, lastUse: -40000, image: new Image() },
+      { id: 'slow', name: '時間扭曲', cost: 70, cd: 25000, lastUse: -25000, image: new Image() }
+    ];
+    testCards.forEach(card => card.image.src = 'skill_basic.png');
+
+    // 敵人陣列
+    let enemies = [];
+    let projectiles = [];
+    let floatingTexts = [];
+
+    // Canvas 設定
+    const canvas = document.getElementById('battleCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = config.canvasWidth;
+    canvas.height = config.canvasHeight;
+
+    // 敵人類別
+    class Enemy {
+      constructor(wave) {
+        this.x = Math.random() * (canvas.width - 100) + 50;
+        this.y = -50;
+        this.hp = 50 + (wave * 10);
+        this.maxHp = this.hp;
+        this.speed = 0.5 + (wave * 0.05);
+        this.radius = 20;
+        this.reward = 5 + wave;
+        this.image = new Image();
+        this.image.src = 'enemy_basic.png'; // 怪物圖片
+      }
+
+      update(deltaTime) {
+        this.y += this.speed * (deltaTime / 16);
+        
+        // 到達底部扣血
+        if (this.y > canvas.height - 150) {
+          gameState.wallHP -= 10;
+          return false; // 移除敵人
+        }
+        
+        return true;
+      }
+
+      draw() {
+        // 敵人本體 - 優先顯示圖片
+        if (this.image.complete && this.image.naturalWidth > 0) {
+          ctx.drawImage(this.image, this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2);
+        } else {
+          // 圖片未載入則顯示圓形
+          ctx.fillStyle = '#ef4444';
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        // 血條
+        const barWidth = 40;
+        const barHeight = 5;
+        const hpPercent = this.hp / this.maxHp;
+        
+        ctx.fillStyle = '#1f2937';
+        ctx.fillRect(this.x - barWidth/2, this.y - this.radius - 10, barWidth, barHeight);
+        
+        ctx.fillStyle = '#22c55e';
+        ctx.fillRect(this.x - barWidth/2, this.y - this.radius - 10, barWidth * hpPercent, barHeight);
+      }
+
+      takeDamage(damage) {
+        this.hp -= damage;
+        
+        // 顯示傷害數字
+        floatingTexts.push({
+          x: this.x,
+          y: this.y,
+          text: Math.floor(damage),
+          alpha: 1,
+          dy: -2
+        });
+        
+        return this.hp <= 0;
+      }
+    }
+
+    // 彈道類別
+    class Projectile {
+      constructor(startX, startY, target) {
+        this.x = startX;
+        this.y = startY;
+        this.target = target;
+        this.speed = 8;
+        this.damage = testHero.attack * (1 + (gameState.heroLevel - 1) * 0.2);
+      }
+
+      update() {
+        if (!this.target || this.target.hp <= 0) return false;
+        
+        const dx = this.target.x - this.x;
+        const dy = this.target.y - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        
+        if (dist < 10) {
+          // 命中
+          const killed = this.target.takeDamage(this.damage);
+          if (killed) {
+            gameState.souls += this.target.reward;
+            gameState.killCount++;
+          }
+          return false;
+        }
+        
+        this.x += (dx / dist) * this.speed;
+        this.y += (dy / dist) * this.speed;
+        
+        return true;
+      }
+
+      draw() {
+        ctx.fillStyle = '#fbbf24';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // 生成敵人波次
+    function spawnWave(wave) {
+      const enemyCount = 5 + (wave * 2);
+      for (let i = 0; i < enemyCount; i++) {
+        setTimeout(() => {
+          enemies.push(new Enemy(wave));
+        }, i * 500); // 每0.5秒生成一個
+      }
+    }
+
+    // 英雄攻擊
+    function heroAttack(currentTime) {
+      const attackInterval = 1000 / testHero.attackSpeed;
+      
+      if (currentTime - testHero.lastAttackTime < attackInterval) return;
+      
+      // 尋找範圍內最近的敵人
+      let nearestEnemy = null;
+      let minDist = testHero.range;
+      
+      enemies.forEach(enemy => {
+        const dx = enemy.x - testHero.x;
+        const dy = enemy.y - testHero.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        
+        if (dist < minDist) {
+          minDist = dist;
+          nearestEnemy = enemy;
+        }
+      });
+      
+      if (nearestEnemy) {
+        projectiles.push(new Projectile(testHero.x, testHero.y, nearestEnemy));
+        testHero.lastAttackTime = currentTime;
+      }
+    }
+
+    // 使用技能卡
+    function useSkillCard(cardIndex) {
+      const card = testCards[cardIndex];
+      const currentTime = Date.now();
+      
+      if (gameState.energy < card.cost) {
+        showMessage('能量不足!');
+        return;
+      }
+      
+      if (currentTime - card.lastUse < card.cd) {
+        showMessage('技能冷卻中!');
+        return;
+      }
+      
+      gameState.energy -= card.cost;
+      card.lastUse = currentTime;
+      
+      // 簡單的技能效果
+      if (card.id === 'berserk') {
+        showMessage('狂戰士之怒！攻擊力提升!');
+        testHero.attack *= 1.5;
+        setTimeout(() => testHero.attack /= 1.5, 10000);
+      } else if (card.id === 'freeze') {
+        showMessage('冰封大地！');
+        enemies.forEach(e => {
+          e.speed *= 0.1;
+          setTimeout(() => e.speed *= 10, 3000);
+        });
+      } else if (card.id === 'meteor') {
+        showMessage('隕石天降！');
+        enemies.forEach(e => e.takeDamage(200));
+      } else if (card.id === 'heal') {
+        showMessage('神聖庇護！');
+        gameState.wallHP = Math.min(gameState.wallHP + gameState.maxWallHP * 0.3, gameState.maxWallHP);
+      } else if (card.id === 'slow') {
+        showMessage('時間扭曲！');
+        enemies.forEach(e => {
+          e.speed *= 0.5;
+          setTimeout(() => e.speed *= 2, 8000);
+        });
+      }
+    }
+
+    // 升級功能
+    function upgradeHero() {
+      const cost = 100 * gameState.heroLevel;
+      if (gameState.souls >= cost) {
+        gameState.souls -= cost;
+        gameState.heroLevel++;
+        showMessage(`英雄升級至 Lv.${gameState.heroLevel}!`);
+      }
+    }
+
+    function upgradeWall() {
+      const cost = 100 * gameState.wallLevel;
+      if (gameState.souls >= cost) {
+        gameState.souls -= cost;
+        gameState.wallLevel++;
+        gameState.wallHP = Math.min(gameState.wallHP + gameState.maxWallHP * 0.1, gameState.maxWallHP);
+        gameState.maxWallHP += 50;
+        showMessage(`城牆升級至 Lv.${gameState.wallLevel}!`);
+      }
+    }
+
+    function upgradeCage() {
+      const cost = 150 * (gameState.cageLevel + 1);
+      if (gameState.souls >= cost) {
+        gameState.souls -= cost;
+        gameState.cageLevel++;
+        showMessage(`靈魂囚籠升級至 Lv.${gameState.cageLevel}!`);
+      }
+    }
+
+    // 顯示訊息
+    let currentMessage = '';
+    let messageTime = 0;
+    function showMessage(text) {
+      currentMessage = text;
+      messageTime = Date.now();
+    }
+
+    // 繪製UI
+    function drawUI() {
+      const padding = 20;
+      const fontSize = 16;
+      ctx.font = `${fontSize}px Arial`;
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 3;
+      
+      // 左上角資訊
+      const info = [
+        `波次: ${gameState.wave}/${gameState.maxWave}`,
+        `擊殺: ${gameState.killCount}`,
+        `靈魂: ${Math.floor(gameState.souls)}`,
+        `能量: ${Math.floor(gameState.energy)}`
+      ];
+      
+      info.forEach((text, i) => {
+        ctx.strokeText(text, padding, padding + (i * 25));
+        ctx.fillText(text, padding, padding + (i * 25));
+      });
+      
+      // 城牆血量 (底部中央偏上)
+      const wallBarWidth = 400;
+      const wallBarHeight = 30;
+      const wallBarX = (canvas.width - wallBarWidth) / 2;
+      const wallBarY = canvas.height - 180;
+      
+      ctx.fillStyle = '#1f2937';
+      ctx.fillRect(wallBarX, wallBarY, wallBarWidth, wallBarHeight);
+      
+      const wallHpPercent = gameState.wallHP / gameState.maxWallHP;
+      ctx.fillStyle = wallHpPercent > 0.3 ? '#22c55e' : '#ef4444';
+      ctx.fillRect(wallBarX, wallBarY, wallBarWidth * wallHpPercent, wallBarHeight);
+      
+      ctx.strokeStyle = '#ffffff';
+      ctx.strokeRect(wallBarX, wallBarY, wallBarWidth, wallBarHeight);
+      
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 16px Arial';
+      ctx.strokeText(`城牆 ${Math.floor(gameState.wallHP)}/${gameState.maxWallHP}`, canvas.width / 2, wallBarY + 20);
+      ctx.fillText(`城牆 ${Math.floor(gameState.wallHP)}/${gameState.maxWallHP}`, canvas.width / 2, wallBarY + 20);
+      ctx.textAlign = 'left';
+      
+      // 技能卡 (底部)
+      const cardSize = 80;
+      const cardSpacing = 10;
+      const totalCardWidth = (cardSize + cardSpacing) * testCards.length - cardSpacing;
+      const cardStartX = (canvas.width - totalCardWidth) / 2;
+      const cardY = canvas.height - cardSize - 20;
+      
+      testCards.forEach((card, i) => {
+        const x = cardStartX + i * (cardSize + cardSpacing);
+        const currentTime = Date.now();
+        const cdRemaining = Math.max(0, card.cd - (currentTime - card.lastUse));
+        const canUse = gameState.energy >= card.cost && cdRemaining === 0;
+        
+        // 卡片背景
+        ctx.fillStyle = canUse ? '#7c3aed' : '#4b5563';
+        ctx.fillRect(x, cardY, cardSize, cardSize);
+        
+        // 卡片圖片
+        ctx.globalAlpha = canUse ? 1 : 0.5;
+        if (card.image.complete) {
+          ctx.drawImage(card.image, x + 5, cardY + 5, cardSize - 10, cardSize - 10);
+        }
+        ctx.globalAlpha = 1;
+        
+        // 冷卻遮罩
+        if (cdRemaining > 0) {
+          const cdPercent = cdRemaining / card.cd;
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+          ctx.fillRect(x, cardY + cardSize * (1 - cdPercent), cardSize, cardSize * cdPercent);
+          
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 20px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText(Math.ceil(cdRemaining / 1000), x + cardSize / 2, cardY + cardSize / 2 + 7);
+          ctx.textAlign = 'left';
+        }
+        
+        // 能量消耗
+        ctx.fillStyle = '#fbbf24';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${card.cost}⚡`, x + cardSize / 2, cardY + cardSize - 5);
+        
+        // 邊框
+        ctx.strokeStyle = canUse ? '#a78bfa' : '#6b7280';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, cardY, cardSize, cardSize);
+        
+        ctx.textAlign = 'left';
+      });
+      
+      // 升級按鈕 (右側)
+      const btnWidth = 120;
+      const btnHeight = 40;
+      const btnX = canvas.width - btnWidth - 20;
+      let btnY = 120;
+      
+      // 升級英雄
+      ctx.fillStyle = gameState.souls >= 100 * gameState.heroLevel ? '#8b5cf6' : '#4b5563';
+      ctx.fillRect(btnX, btnY, btnWidth, btnHeight);
+      ctx.strokeStyle = '#ffffff';
+      ctx.strokeRect(btnX, btnY, btnWidth, btnHeight);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '14px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(`升級英雄`, btnX + btnWidth / 2, btnY + 18);
+      ctx.fillText(`${100 * gameState.heroLevel} 靈魂`, btnX + btnWidth / 2, btnY + 32);
+      
+      // 升級城牆
+      btnY += 50;
+      ctx.fillStyle = gameState.souls >= 100 * gameState.wallLevel ? '#8b5cf6' : '#4b5563';
+      ctx.fillRect(btnX, btnY, btnWidth, btnHeight);
+      ctx.strokeRect(btnX, btnY, btnWidth, btnHeight);
+      ctx.fillText(`升級城牆`, btnX + btnWidth / 2, btnY + 18);
+      ctx.fillText(`${100 * gameState.wallLevel} 靈魂`, btnX + btnWidth / 2, btnY + 32);
+      
+      // 升級囚籠
+      btnY += 50;
+      ctx.fillStyle = gameState.souls >= 150 * (gameState.cageLevel + 1) ? '#8b5cf6' : '#4b5563';
+      ctx.fillRect(btnX, btnY, btnWidth, btnHeight);
+      ctx.strokeRect(btnX, btnY, btnWidth, btnHeight);
+      ctx.fillText(`升級囚籠`, btnX + btnWidth / 2, btnY + 18);
+      ctx.fillText(`${150 * (gameState.cageLevel + 1)} 靈魂`, btnX + btnWidth / 2, btnY + 32);
+      
+      ctx.textAlign = 'left';
+      
+      // 顯示訊息
+      if (Date.now() - messageTime < 2000) {
+        ctx.font = 'bold 24px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#fbbf24';
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 4;
+        ctx.strokeText(currentMessage, canvas.width / 2, 100);
+        ctx.fillText(currentMessage, canvas.width / 2, 100);
+        ctx.textAlign = 'left';
+      }
+      
+      // 漂浮傷害數字
+      floatingTexts = floatingTexts.filter(ft => {
+        ft.y += ft.dy;
+        ft.alpha -= 0.02;
+        
+        if (ft.alpha > 0) {
+          ctx.globalAlpha = ft.alpha;
+          ctx.font = 'bold 20px Arial';
+          ctx.fillStyle = '#ff6b6b';
+          ctx.strokeStyle = '#000000';
+          ctx.lineWidth = 3;
+          ctx.strokeText(ft.text, ft.x, ft.y);
+          ctx.fillText(ft.text, ft.x, ft.y);
+          ctx.globalAlpha = 1;
+          return true;
+        }
+        return false;
+      });
+    }
+
+    // 繪製英雄
+    function drawHero() {
+      // 攻擊範圍圈
+      ctx.strokeStyle = 'rgba(139, 92, 246, 0.3)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(testHero.x, testHero.y, testHero.range, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // 英雄本體
+      if (testHero.image.complete) {
+        ctx.drawImage(testHero.image, testHero.x - 30, testHero.y - 30, 60, 60);
+      } else {
+        ctx.fillStyle = '#3b82f6';
+        ctx.beginPath();
+        ctx.arc(testHero.x, testHero.y, 30, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      // 等級顯示
+      ctx.fillStyle = '#fbbf24';
+      ctx.font = 'bold 14px Arial';
+      ctx.textAlign = 'center';
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 3;
+      ctx.strokeText(`Lv.${gameState.heroLevel}`, testHero.x, testHero.y - 45);
+      ctx.fillText(`Lv.${gameState.heroLevel}`, testHero.x, testHero.y - 45);
+      ctx.textAlign = 'left';
+    }
+
+    // 遊戲主循環
+    let lastTime = Date.now();
+    function gameLoop() {
+      const currentTime = Date.now();
+      const deltaTime = currentTime - lastTime;
+      lastTime = currentTime;
+      
+      // 清空畫面
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // 能量產生 (靈魂囚籠)
+      gameState.energy += (1 + gameState.cageLevel * 2) * (deltaTime / 1000);
+      
+      // 波次管理
+      gameState.gameTime += deltaTime;
+      if (enemies.length === 0 && gameState.gameTime >= gameState.nextWaveTime && gameState.wave <= gameState.maxWave) {
+        spawnWave(gameState.wave);
+        gameState.wave++;
+        gameState.nextWaveTime += gameState.waveInterval;
+        showMessage(`第 ${gameState.wave - 1} 波來襲!`);
+      }
+      
+      // 更新敵人
+      enemies = enemies.filter(enemy => enemy.update(deltaTime));
+      
+      // 更新彈道
+      projectiles = projectiles.filter(proj => proj.update());
+      
+      // 英雄攻擊
+      heroAttack(currentTime);
+      
+      // 繪製
+      drawHero();
+      enemies.forEach(enemy => enemy.draw());
+      projectiles.forEach(proj => proj.draw());
+      drawUI();
+      
+      // 檢查遊戲結束
+      if (gameState.wallHP <= 0) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.font = 'bold 48px Arial';
+        ctx.fillStyle = '#ef4444';
+        ctx.textAlign = 'center';
+        ctx.fillText('遊戲失敗!', canvas.width / 2, canvas.height / 2);
+        ctx.font = 'bold 24px Arial';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(`存活至第 ${gameState.wave - 1} 波`, canvas.width / 2, canvas.height / 2 + 50);
+        return;
+      }
+      
+      if (gameState.wave > gameState.maxWave && enemies.length === 0) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.font = 'bold 48px Arial';
+        ctx.fillStyle = '#22c55e';
+        ctx.textAlign = 'center';
+        ctx.fillText('勝利!', canvas.width / 2, canvas.height / 2);
+        return;
+      }
+      
+      requestAnimationFrame(gameLoop);
+    }
+
+    // 點擊事件
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      // 檢查技能卡點擊
+      const cardSize = 80;
+      const cardSpacing = 10;
+      const totalCardWidth = (cardSize + cardSpacing) * testCards.length - cardSpacing;
+      const cardStartX = (canvas.width - totalCardWidth) / 2;
+      const cardY = canvas.height - cardSize - 20;
+      
+      testCards.forEach((card, i) => {
+        const cardX = cardStartX + i * (cardSize + cardSpacing);
+        if (x >= cardX && x <= cardX + cardSize && y >= cardY && y <= cardY + cardSize) {
+          useSkillCard(i);
+        }
+      });
+      
+      // 檢查升級按鈕
+      const btnWidth = 120;
+      const btnHeight = 40;
+      const btnX = canvas.width - btnWidth - 20;
+      
+      if (x >= btnX && x <= btnX + btnWidth) {
+        if (y >= 120 && y <= 120 + btnHeight) upgradeHero();
+        else if (y >= 170 && y <= 170 + btnHeight) upgradeWall();
+        else if (y >= 220 && y <= 220 + btnHeight) upgradeCage();
+      }
+    });
+
+    // 鍵盤快捷鍵
+    document.addEventListener('keydown', (e) => {
+      if (e.key >= '1' && e.key <= '5') {
+        const index = parseInt(e.key) - 1;
+        if (index < testCards.length) {
+          useSkillCard(index);
+        }
+      }
+    });
+
+    // 開始遊戲
+    showMessage('準備戰鬥!');
+    setTimeout(() => {
+      spawnWave(gameState.wave);
+      gameState.wave++;
+      gameLoop();
+    }, 2000);
+  </script>
+</body>
+</html>
