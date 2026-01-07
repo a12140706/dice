@@ -106,6 +106,9 @@
             <span class="text-yellow-400 font-bold text-lg">💎</span>
             <span id="goldText" class="font-mono text-xl text-yellow-500 font-bold">0</span>
         </div>
+         <div>
+        <p>版本V1.0.1</p>
+    </div> 
         <a href="index.html" style="text-decoration:none;">
             <button
                 style="background:none; border:1px solid #777; color:#ccc; border-radius:5px; padding:5px 12px; font-size:14px; font-weight:bold;">🏠
@@ -129,9 +132,7 @@
             class="flex-1 py-2 font-bold tab-active">我的骰子</button>
         <button onclick="switchTab('shop')" id="tab-shop" class="flex-1 py-2 font-bold text-slate-400">商店抽卡</button>
     </div>
-    <div>
-        <p>版本V1.0.0</p>
-    </div>  
+    
 
     <div class="flex-1 overflow-y-auto scroll-hide pb-24">
         <div id="inventorySection" class="grid grid-cols-3 gap-3">
@@ -250,76 +251,53 @@
         let tempUpgradeId = null;
 
         function render() {
-            try {
-                userData.deck = userData.deck.map(id => {
-                    return ALL_DICES.find(d => d.id === id) ? id : 'fire';
-                });
-                const goldDisplay = document.getElementById('goldText');
-                if (goldDisplay) goldDisplay.innerText = Math.floor(currentBalance).toLocaleString();
+    // 金幣顯示
+    const goldDisplay = document.getElementById('goldText');
+    if (goldDisplay) goldDisplay.innerText = Math.floor(currentBalance).toLocaleString();
 
-                // 1. 渲染出戰陣容
-                const deckContainer = document.getElementById('deckContainer');
-                if (deckContainer) {
-                    const deckHTML = userData.deck.map((id, index) => {
-                        // 增加防錯處理：如果 ID 找不到，給予一個預設顯示
-                        const dice = ALL_DICES.find(d => d.id === id);
-                        if (!dice) return `<div class="w-14 h-14 bg-slate-800 rounded-lg border-2 border-dashed border-slate-600"></div>`;
+    // 1. 渲染出戰陣容
+    const deckContainer = document.getElementById('deckContainer');
+    if (deckContainer) {
+        deckContainer.innerHTML = userData.deck.map((id, index) => {
+            const dice = ALL_DICES.find(d => d.id === id);
+            if (!dice) return `<div class="w-14 h-14 bg-slate-800 rounded-lg border-2 border-dashed border-slate-600"></div>`;
+            
+            const q = QUALITIES[dice.quality] || QUALITIES.common;
+            const lv = userData.diceLevels[id] || 1;
+            
+            return `
+                <div onclick="selectDeckSlot(${index})" 
+                     class="w-14 h-14 rounded-lg flex flex-col items-center justify-center font-black shadow-lg border-2 transition-all" 
+                     style="background-color: ${dice.baseColor}; color: #fff; border-color: ${q.color}">
+                    <div class="text-[10px]">${dice.name}</div>
+                    <div class="text-[8px] mt-1 bg-black/30 px-1 rounded">Lv.${lv}</div>
+                </div>`;
+        }).join('');
+    }
 
-                        const q = QUALITIES[dice.quality] || QUALITIES.common;
-                        const lv = userData.diceLevels[id] || 1;
-                        const isTarget = selectedInventoryId !== null;
+    // 2. 渲染庫存 (重點修復：只要在 deck 裡或數量 > 0 都要顯示)
+    const inventorySection = document.getElementById('inventorySection');
+    if (inventorySection) {
+        inventorySection.innerHTML = ALL_DICES.map(dice => {
+            const count = userData.inventory[dice.id] || 0;
+            const lv = userData.diceLevels[dice.id] || 1;
+            const q = QUALITIES[dice.quality] || QUALITIES.common;
+            
+            // 只要玩家擁有這顆骰子（庫存有或陣容有）
+            const hasDice = count > 0 || userData.deck.includes(dice.id);
 
-                        return `
-                        <div onclick="selectDeckSlot(${index})" 
-                             class="w-14 h-14 rounded-lg flex flex-col items-center justify-center font-black shadow-lg border-2 transition-all 
-                             ${dice.quality === 'mythic' ? 'q-mythic' : ''} ${isTarget ? 'deck-slot-highlight border-blue-400' : 'border-transparent'}" 
-                             style="background-color: ${dice.baseColor}; color: #fff; border-color: ${q.color}">
-                            <div class="text-[10px] leading-none">${dice.name}</div>
-                            <div class="text-[8px] mt-1 bg-black/30 px-1 rounded">Lv.${lv}</div>
-                        </div>`;
-                    }).join('');
-                    deckContainer.innerHTML = deckHTML;
-                }
-
-                // 2. 渲染庫存
-                const inventorySection = document.getElementById('inventorySection');
-                if (inventorySection) {
-                    const invHTML = ALL_DICES.map(dice => {
-                        const count = userData.inventory[dice.id] || 0;
-                        const lv = userData.diceLevels[dice.id] || 1;
-                        const q = QUALITIES[dice.quality] || QUALITIES.common;
-                        const isSelected = selectedInventoryId === dice.id;
-                        const hasDice = userData.inventory[dice.id] !== undefined;
-
-                        const req = UPGRADE_CONFIG[lv] || [999, 999999];
-                        const progress = Math.min((count / req[0]) * 100, 100);
-                        const canUpgrade = count >= req[0] && currentBalance >= req[1];
-
-                        return `
-                        <div onclick="openUpgradeUI('${dice.id}')" 
-                             class="bg-slate-800 p-2 rounded-xl text-center border-2 transition-all dice-card relative
-                             ${isSelected ? 'selected-dice border-blue-500' : (hasDice ? 'border-slate-700' : 'border-slate-800 opacity-30 pointer-events-none')}">
-                            
-                            ${canUpgrade ? '<div class="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50"></div>' : ''}
-                            
-                            <div class="w-12 h-12 mx-auto mb-1 rounded-lg flex items-center justify-center font-bold ${dice.quality === 'mythic' ? 'q-mythic' : ''}" 
-                                 style="background-color: ${dice.baseColor}; color: #fff; border: 2px solid ${q.color}">${dice.name}</div>
-                            
-                            <div class="text-[10px] font-bold text-slate-300">Lv.${lv}</div>
-                            
-                            <div class="w-full bg-slate-900 h-1.5 rounded-full mt-1 overflow-hidden border border-slate-700">
-                                <div class="h-full ${canUpgrade ? 'bg-green-500' : 'bg-blue-500'}" style="width: ${progress}%"></div>
-                            </div>
-                            <div class="text-[8px] mt-1 text-slate-400">${count}/${req[0]}</div>
-                        </div>`;
-                    }).join('');
-                    inventorySection.innerHTML = invHTML;
-                }
-                saveData();
-            } catch (e) {
-                console.error("渲染出錯了！錯誤訊息：", e);
-            }
-        }
+            return `
+                <div onclick="${hasDice ? `openUpgradeUI('${dice.id}')` : ''}" 
+                     class="bg-slate-800 p-2 rounded-xl text-center border-2 transition-all dice-card 
+                     ${hasDice ? 'border-slate-700' : 'opacity-20 grayscale pointer-events-none'}">
+                    <div class="w-12 h-12 mx-auto mb-1 rounded-lg flex items-center justify-center font-bold" 
+                         style="background-color: ${dice.baseColor}; color: #fff; border: 2px solid ${q.color}">${dice.name}</div>
+                    <div class="text-[10px]">Lv.${lv}</div>
+                    <div class="text-[8px] text-slate-400">${count} 碎片</div>
+                </div>`;
+        }).join('');
+    }
+}
 
         function openUpgradeUI(id) {
             tempUpgradeId = id;

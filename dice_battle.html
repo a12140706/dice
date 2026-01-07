@@ -231,7 +231,7 @@
         const db = ALL_DICES.find(d => d.id === diceId);
 
         targetSlot.dice = { id: diceId, lv: 1, color: db.baseColor, qualityColor: QUALITIES[db.quality].color };
-        updateUI();
+        //updateUI();
     }
 
     function updateCombat() {
