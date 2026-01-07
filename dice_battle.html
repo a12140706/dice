@@ -8,12 +8,27 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
-            background-color: #020617;
-            color: white;
-            overflow: hidden;
-            font-family: sans-serif;
-        }
-
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        width: 100vw;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        background-color: #020617;
+    }
+#footer-controls {
+        flex-shrink: 0;
+        padding: 16px;
+        padding-bottom: 24px; /* 手機安全距離 */
+        background: rgba(15, 23, 42, 0.9);
+        border-top: 1px solid rgba(51, 65, 85, 0.5);
+    }
+    #canvas-container {
+        flex-grow: 1;
+        position: relative;
+        width: 100%;
+    }
         #gameCanvas {
             background: radial-gradient(circle, #1e293b 0%, #020617 100%);
             touch-action: none;
@@ -49,32 +64,22 @@
 
 <body class="flex flex-col h-screen">
 
-    <div class="p-3 flex justify-between items-center bg-slate-900/50">
-        <div class="flex items-center gap-2">
-            <span class="text-red-500">❤️</span>
-            <span id="hpText" class="font-bold">3</span>
+    <div id="header-info" class="p-3 flex justify-between items-center bg-slate-900/50">
+        <div class="flex items-center gap-4">
+            <span class="text-red-500 font-bold">HP: <span id="hpText">3</span></span>
+            <span class="text-blue-400 font-bold">SP: <span id="spText">100</span></span>
         </div>
-        <div class="text-center">
-            <div class="text-[10px] text-slate-400 uppercase tracking-widest">Wave</div>
-            <div id="waveText" class="text-xl font-black">1</div>
-        </div>
-        <div class="flex items-center gap-2 text-yellow-500">
-            <span id="spText" class="font-mono font-bold">100</span>
-            <span class="text-xs font-bold">SP</span>
-        </div>
+        <div class="text-slate-400 font-bold">WAVE: <span id="waveText">1</span></div>
     </div>
 
-    <div class="flex-1 relative">
+    <div id="canvas-container">
         <canvas id="gameCanvas"></canvas>
     </div>
 
-    <div class="glass-panel p-4 pb-8">
-        <div class="flex gap-2 mb-4 overflow-x-auto pb-2 scroll-hide" id="powerUpBar">
-        </div>
-
-        <button onclick="summonDice()"
-            class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 py-4 rounded-2xl font-bold text-xl shadow-lg energy-glow active:scale-95 transition-transform">
-            召喚 (<span id="summonCostText">10</span> SP)
+    <div id="footer-controls">
+        <div id="powerUpBar" class="flex gap-2 overflow-x-auto pb-4 mb-2"></div>
+        <button onclick="summonDice()" class="w-full py-4 bg-blue-600 rounded-xl font-black text-xl shadow-lg active:scale-95 transition-all">
+            召喚骰子 (<span id="summonCostText">10</span> SP)
         </button>
     </div>
 
@@ -177,10 +182,14 @@
         initGame();
     }
 
-    function initGame() {
+   function initGame() {
         const canvas = document.getElementById('gameCanvas');
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
+        const container = document.getElementById('canvas-container');
+        
+        // 修正 Canvas 解析度：根據容器的實際渲染尺寸設定
+        canvas.width = container.offsetWidth;
+        canvas.height = container.offsetHeight;
+        
         initGrid(canvas);
         initPath(canvas);
         setupTouchEvents(canvas);
@@ -189,17 +198,20 @@
         startRenderLoop();
     }
 
-   function initGrid(canvas) {
-        grid.slotSize = (canvas.width - (grid.cols + 1) * grid.padding) / grid.cols;
+    function initGrid(canvas) {
+        // 設定左右保留 30px 安全距離，避免被螢幕吃掉
+        const sideMargin = 30;
+        grid.slotSize = (canvas.width - (grid.cols + 1) * grid.padding - (sideMargin * 2)) / grid.cols;
         
-        // 骰子盤起始 Y 座標 (畫面中間偏下)
-        grid.y = canvas.height * 0.45; 
-        // 骰子盤總高度 = 列數 * (格子 + 間距) + 頂部間距
-        grid.h = grid.rows * (grid.slotSize + grid.padding) + grid.padding;
+        const totalGridHeight = grid.rows * (grid.slotSize + grid.padding);
         
-        // 實際的物理邊界
-        grid.left = grid.padding;
-        grid.right = canvas.width - grid.padding;
+        // y 座標設為畫布中間偏上，留給下方更多空間
+        grid.y = (canvas.height * 0.45) - (totalGridHeight / 2);
+        grid.h = totalGridHeight;
+        
+        // 記錄物理座標
+        grid.left = sideMargin + grid.padding;
+        grid.right = canvas.width - sideMargin - grid.padding;
         grid.top = grid.y;
         grid.bottom = grid.y + grid.h;
 
@@ -214,20 +226,21 @@
             });
         }
     }
+
     function initPath(canvas) {
-        const offset = 20; // 與骰子盤的距離
+        // 怪物路徑距離骰子盤邊緣 15px
+        const offset = 15;
         const L = grid.left - offset;
         const R = grid.right + offset;
         const T = grid.top - offset;
         const B = grid.bottom + offset;
 
-        // 定義路徑：左上 -> 右上 -> 右下 -> 左下 -> 回到起點附近
         path = [
-            { x: L, y: T }, // 點 0
-            { x: R, y: T }, // 點 1
-            { x: R, y: B }, // 點 2
-            { x: L, y: B }, // 點 3
-            { x: L, y: T + 5 } // 點 4 (稍微偏移避免與點 0 完全重疊)
+            { x: L, y: T }, // 左上 (起點)
+            { x: R, y: T }, // 右上
+            { x: R, y: B }, // 右下
+            { x: L, y: B }, // 左下
+            { x: L, y: T + 10 } // 終點 (稍微錯開避免重疊)
         ];
     }
 
