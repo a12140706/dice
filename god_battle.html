@@ -503,7 +503,7 @@
       
       // 清空畫面
       ctx.fillStyle = '#000000';
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
       
       // 能量產生 (靈魂囚籠)
       gameState.energy += (1 + gameState.cageLevel * 2) * (deltaTime / 1000);
