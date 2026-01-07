@@ -74,51 +74,55 @@
     </style>
 </head>
 
-<body class="flex flex-col h-screen">
+<body class="bg-slate-950 flex justify-center"> <div class="w-full max-w-[500px] h-screen flex flex-col bg-slate-900 shadow-2xl relative overflow-hidden">
 
-    <div id="header-info" class="p-3 flex justify-between items-center bg-slate-900/50">
-        <div class="flex items-center gap-4">
-            <span class="text-red-500 font-bold">HP: <span id="hpText">3</span></span>
-            <span class="text-blue-400 font-bold">SP: <span id="spText">100</span></span>
+        <div id="header-info" class="p-3 flex justify-between items-center bg-slate-900/80 border-b border-slate-800">
+            <div class="flex items-center gap-4">
+                <span class="text-red-500 font-bold">HP: <span id="hpText">3</span></span>
+                <span class="text-blue-400 font-bold">SP: <span id="spText">100</span></span>
+            </div>
+            <div class="text-slate-400 font-bold text-sm">WAVE: <span id="waveText">1</span></div>
         </div>
-        <div class="text-slate-400 font-bold">WAVE: <span id="waveText">1</span></div>
-    </div>
 
-    <div id="canvas-container">
-        <canvas id="gameCanvas"></canvas>
-    </div>
+        <div id="canvas-container" class="flex-1 relative overflow-hidden">
+            <canvas id="gameCanvas" class="w-full h-full block"></canvas>
+        </div>
 
-    <div id="footer-controls">
-        <div id="powerUpBar" class="flex gap-2 overflow-x-auto pb-4 mb-2"></div>
-        <button onclick="summonDice()"
-            class="w-full py-4 bg-blue-600 rounded-xl font-black text-xl shadow-lg active:scale-95 transition-all">
-            召喚骰子 (<span id="summonCostText">10</span> SP)
-        </button>
-    </div>
+        <div id="footer-controls" class="p-3 bg-slate-900/90 border-t border-slate-800">
+            
+            <div class="flex flex-nowrap justify-between gap-1.5 mb-4">
+                <div id="powerUpButtons" class="contents">
+                    </div>
+            </div>
 
-    <div id="difficultyOverlay" class="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-6">
-        <div class="w-full max-w-sm">
-            <h2
-                class="text-center text-2xl font-black mb-8 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-                選擇戰鬥難度</h2>
-            <div class="space-y-4">
-                <button onclick="startGame('normal')"
-                    class="diff-card w-full bg-slate-800 p-4 rounded-2xl flex justify-between items-center border-slate-700">
-                    <span class="font-bold text-lg">簡單模式</span>
-                    <span class="text-xs text-green-400 bg-green-900/30 px-2 py-1 rounded">1x 獎勵</span>
-                </button>
-                <button onclick="startGame('hard')"
-                    class="diff-card w-full bg-slate-800 p-4 rounded-2xl flex justify-between items-center border-blue-500/50">
-                    <span class="font-bold text-lg">困難模式</span>
-                    <span class="text-xs text-blue-400 bg-blue-900/30 px-2 py-1 rounded">2.5x 獎勵</span>
-                </button>
-                <button onclick="startGame('hell')"
-                    class="diff-card w-full bg-slate-800 p-4 rounded-2xl flex justify-between items-center border-red-500/50">
-                    <span class="font-bold text-lg text-red-500">地獄模式</span>
-                    <span class="text-xs text-red-400 bg-red-900/30 px-2 py-1 rounded">6x 獎勵</span>
-                </button>
+            <button onclick="summonDice()"
+                class="w-full py-4 bg-blue-600 rounded-xl font-black text-xl shadow-lg active:scale-95 transition-all text-white">
+                召喚骰子 (<span id="summonCostText">10</span> SP)
+            </button>
+        </div>
+
+        <div id="difficultyOverlay" class="absolute inset-0 z-50 bg-black/95 flex items-center justify-center p-6">
+            <div class="w-full max-w-xs">
+                <h2 class="text-center text-2xl font-black mb-8 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+                    選擇戰鬥難度
+                </h2>
+                <div class="space-y-4">
+                    <button onclick="startGame('normal')" class="w-full bg-slate-800 p-4 rounded-2xl flex justify-between items-center border border-slate-700 active:bg-slate-700">
+                        <span class="font-bold text-lg text-white">簡單模式</span>
+                        <span class="text-[10px] text-green-400 bg-green-900/30 px-2 py-1 rounded">1x 獎勵</span>
+                    </button>
+                    <button onclick="startGame('hard')" class="w-full bg-slate-800 p-4 rounded-2xl flex justify-between items-center border border-blue-500/50 active:bg-slate-700">
+                        <span class="font-bold text-lg text-white">困難模式</span>
+                        <span class="text-[10px] text-blue-400 bg-blue-900/30 px-2 py-1 rounded">2.5x 獎勵</span>
+                    </button>
+                    <button onclick="startGame('hell')" class="w-full bg-slate-800 p-4 rounded-2xl flex justify-between items-center border border-red-500/50 active:bg-slate-700">
+                        <span class="font-bold text-lg text-red-500">地獄模式</span>
+                        <span class="text-[10px] text-red-400 bg-red-900/30 px-2 py-1 rounded">6x 獎勵</span>
+                    </button>
+                </div>
             </div>
         </div>
+
     </div>
 
     <script>
@@ -231,7 +235,7 @@
         const db = ALL_DICES.find(d => d.id === diceId);
 
         targetSlot.dice = { id: diceId, lv: 1, color: db.baseColor, qualityColor: QUALITIES[db.quality].color };
-        //updateUI();
+        updateUI();
     }
 
     function updateCombat() {
