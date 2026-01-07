@@ -33,15 +33,19 @@
 
     <div class="flex justify-between items-center mb-6 bg-slate-800 p-3 rounded-xl shadow-lg border border-slate-700">
         <div class="flex items-center gap-2">
-            <span class="text-yellow-400 font-bold text-lg">💰</span>
+            <span class="text-yellow-400 font-bold text-lg">💎</span>
             <span id="goldText" class="font-mono text-xl text-yellow-500 font-bold">0</span>
         </div>
-        <div id="msgTip" class="text-xs text-slate-400 font-bold">點擊庫存骰子可進行替換</div>
+        <a href="index.html" style="text-decoration:none;">
+            <button
+                style="background:none; border:1px solid #777; color:#ccc; border-radius:5px; padding:5px 12px; font-size:14px; font-weight:bold;">🏠
+                回大廳</button>
+        </a>
     </div>
 
     <div class="mb-6">
         <h2 class="text-lg font-bold mb-3 flex justify-between items-center px-1">
-            <span>出戰陣容</span>
+            <span>陣容</span>
             <span id="deckStatus" class="text-[10px] text-blue-300 bg-blue-900/50 px-2 py-1 rounded-full uppercase">Battle Deck</span>
         </h2>
         <div id="deckContainer" class="flex justify-between gap-2 bg-slate-900 p-4 rounded-2xl border-2 border-slate-700">
@@ -60,8 +64,8 @@
         <div id="shopSection" class="hidden">
             <div class="bg-gradient-to-b from-slate-800 to-slate-900 p-8 rounded-3xl text-center border-2 border-yellow-600/30">
                 <div class="text-6xl mb-4">🔮</div>
-                <h3 class="text-2xl font-bold mb-2">神諭召喚</h3>
-                <p class="text-slate-400 text-sm mb-8">隨機獲得 5 張骰子卡片</p>
+                <h3 class="text-2xl font-bold mb-2">抽卡</h3>
+                <p class="text-slate-400 text-sm mb-8">隨機獲得 5 張骰子</p>
                 <button onclick="buyBox()" class="w-full bg-indigo-600 py-4 rounded-2xl font-bold">500 💰 召喚</button>
             </div>
         </div>
@@ -80,163 +84,172 @@
     </div>
 
     <script>
-        const QUALITIES = {
-            common: { name: '普通', color: '#ffffff', textColor: '#000', chance: 0.6 },
-            rare: { name: '稀有', color: '#3b82f6', textColor: '#fff', chance: 0.25 },
-            epic: { name: '史詩', color: '#a855f7', textColor: '#fff', chance: 0.1 },
-            legend: { name: '傳說', color: '#eab308', textColor: '#000', chance: 0.04 },
-            mythic: { name: '神話', color: 'mythic', textColor: '#fff', chance: 0.01 }
-        };
+    // --- 1. 基礎資料定義 ---
+    const QUALITIES = {
+        common: { name: '普通', color: '#ffffff', textColor: '#000', chance: 0.5 },
+        rare: { name: '稀有', color: '#3b82f6', textColor: '#fff', chance: 0.3 },
+        epic: { name: '史詩', color: '#a855f7', textColor: '#fff', chance: 0.15 },
+        legend: { name: '傳說', color: '#eab308', textColor: '#000', chance: 0.04 },
+        mythic: { name: '神話', color: '#ff00ff', textColor: '#fff', chance: 0.01 }
+    };
 
-        const ALL_DICES = [
-            { id: 'fire', name: '火', quality: 'common' },
-            { id: 'wind', name: '風', quality: 'common' },
-            { id: 'ice', name: '冰', quality: 'rare' },
-            { id: 'electric', name: '電', quality: 'rare' },
-            { id: 'poison', name: '毒', quality: 'epic' },
-            { id: 'growth', name: '成長', quality: 'legend' },
-            { id: 'sun', name: '太陽', quality: 'legend' },
-            { id: 'galaxy', name: '銀河', quality: 'mythic' }
-        ];
+    const ALL_DICES = [
+        { id: 'fire', name: '火', quality: 'common', baseColor: '#ef4444' }, 
+        { id: 'wind', name: '風', quality: 'common', baseColor: '#10b981' }, 
+        { id: 'ice', name: '冰', quality: 'rare', baseColor: '#3b82f6' },    
+        { id: 'electric', name: '電', quality: 'rare', baseColor: '#f59e0b' }, 
+        { id: 'poison', name: '毒', quality: 'epic', baseColor: '#8b5cf6' },   
+        { id: 'growth', name: '成長', quality: 'legend', baseColor: '#f472b6' }, 
+        { id: 'sun', name: '太陽', quality: 'legend', baseColor: '#fbbf24' },  
+        { id: 'galaxy', name: '銀河', quality: 'mythic', baseColor: '#1e293b' } 
+    ];
 
-        let currentBalance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
-        let userData = JSON.parse(localStorage.getItem('dice_game_data')) || {
-            deck: ['fire', 'wind', 'ice', 'electric', 'poison'],
-            inventory: { 'fire': 1, 'wind': 1, 'ice': 1, 'electric': 1, 'poison': 1 }
-        };
+    // --- 2. 資料載入 (不修改 localStorage 鍵名) ---
+    let currentBalance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
+    let userData = JSON.parse(localStorage.getItem('dice_game_data')) || {
+        deck: ['fire', 'wind', 'ice', 'electric', 'poison'],
+        inventory: { 'fire': 1, 'wind': 1, 'ice': 1, 'electric': 1, 'poison': 1 }
+    };
 
-        let selectedInventoryId = null; // 紀錄當前選中要更換的骰子
+    let selectedInventoryId = null; 
 
-        function render() {
-            document.getElementById('goldText').innerText = Math.floor(currentBalance).toLocaleString();
+    function render() {
+        document.getElementById('goldText').innerText = Math.floor(currentBalance).toLocaleString();
 
-            // 渲染出戰陣容
-            const deckHTML = userData.deck.map((id, index) => {
-                const dice = ALL_DICES.find(d => d.id === id) || ALL_DICES[0];
-                const q = QUALITIES[dice.quality];
-                const isMythic = q.color === 'mythic';
-                const highlightClass = selectedInventoryId ? 'deck-slot-highlight border-blue-500' : '';
-                
-                return `
-                    <div onclick="selectDeckSlot(${index})" class="w-12 h-12 rounded-lg flex items-center justify-center font-black shadow-inner border-2 border-transparent transition-all ${isMythic ? 'q-mythic' : ''} ${highlightClass}" 
-                         style="${!isMythic ? `background-color: ${q.color}` : ''}; color: ${q.textColor}">
-                        ${dice.name}
-                    </div>
-                `;
-            }).join('');
-            document.getElementById('deckContainer').innerHTML = deckHTML;
-
-            // 渲染庫存
-            const invHTML = ALL_DICES.map(dice => {
-                const count = userData.inventory[dice.id] || 0;
-                const q = QUALITIES[dice.quality];
-                const isSelected = selectedInventoryId === dice.id;
-                const canSelect = count > 0;
-                
-                return `
-                    <div onclick="selectInventoryDice('${dice.id}')" 
-                         class="bg-slate-800 p-2 rounded-xl text-center border-2 transition-all dice-card 
-                         ${isSelected ? 'selected-dice border-blue-500' : (canSelect ? 'border-slate-700' : 'border-slate-800 opacity-30 pointer-events-none')}">
-                        <div class="w-12 h-12 mx-auto mb-2 rounded-lg flex items-center justify-center font-bold ${q.color === 'mythic' ? 'q-mythic' : ''}" 
-                             style="${q.color !== 'mythic' ? `background-color: ${q.color}` : ''}; color: ${q.textColor}">${dice.name}</div>
-                        <div class="text-[10px] font-bold text-slate-300">${dice.name}骰子</div>
-                        <div class="text-[9px] text-slate-500">${q.name} | ${count}</div>
-                    </div>
-                `;
-            }).join('');
-            document.getElementById('inventorySection').innerHTML = invHTML;
-            saveData();
-        }
-
-        // 選擇庫存骰子
-        function selectInventoryDice(id) {
-            if (selectedInventoryId === id) {
-                selectedInventoryId = null; // 取消選取
-                toast('已取消替換');
-            } else {
-                selectedInventoryId = id;
-                toast('請選擇上方陣容位置進行替換');
-            }
-            render();
-        }
-
-        // 選擇陣容位置進行替換
-        function selectDeckSlot(index) {
-            if (!selectedInventoryId) {
-                toast('請先從下方選擇一顆骰子');
-                return;
-            }
+        // 渲染出戰陣容
+        const deckHTML = userData.deck.map((id, index) => {
+            const dice = ALL_DICES.find(d => d.id === id) || ALL_DICES[0];
+            const q = QUALITIES[dice.quality];
+            const isMythic = dice.quality === 'mythic';
+            const highlightClass = selectedInventoryId ? 'deck-slot-highlight border-blue-400' : 'border-transparent';
             
-            // 檢查是否重複
-            if (userData.deck.includes(selectedInventoryId)) {
-                toast('陣容中已存在此骰子');
-                selectedInventoryId = null;
-                render();
-                return;
-            }
+            // 修正：底色使用 dice.baseColor，邊框使用 q.color (品質色)
+            return `
+                <div onclick="selectDeckSlot(${index})" 
+                     class="w-12 h-12 rounded-lg flex items-center justify-center font-black shadow-lg border-2 transition-all ${isMythic ? 'q-mythic' : ''} ${highlightClass}" 
+                     style="background-color: ${dice.baseColor}; color: #fff; border-color: ${q.color}">
+                    ${dice.name}
+                </div>
+            `;
+        }).join('');
+        document.getElementById('deckContainer').innerHTML = deckHTML;
 
-            userData.deck[index] = selectedInventoryId;
+        // 渲染庫存
+        const invHTML = ALL_DICES.map(dice => {
+            const count = userData.inventory[dice.id] || 0;
+            const q = QUALITIES[dice.quality];
+            const isSelected = selectedInventoryId === dice.id;
+            const canSelect = count > 0;
+            
+            return `
+                <div onclick="selectInventoryDice('${dice.id}')" 
+                     class="bg-slate-800 p-2 rounded-xl text-center border-2 transition-all dice-card 
+                     ${isSelected ? 'selected-dice border-blue-500 scale-105' : (canSelect ? 'border-slate-700' : 'border-slate-800 opacity-30 pointer-events-none')}">
+                    <div class="w-12 h-12 mx-auto mb-2 rounded-lg flex items-center justify-center font-bold ${dice.quality === 'mythic' ? 'q-mythic' : ''}" 
+                         style="background-color: ${dice.baseColor}; color: #fff; border: 2px solid ${q.color}">${dice.name}</div>
+                    <div class="text-[10px] font-bold text-slate-300">${dice.name}骰子</div>
+                    <div class="text-[9px]" style="color: ${q.color}">${q.name} | 持有: ${count}</div>
+                </div>
+            `;
+        }).join('');
+        document.getElementById('inventorySection').innerHTML = invHTML;
+        saveData();
+    }
+
+    function selectInventoryDice(id) {
+        if (selectedInventoryId === id) {
             selectedInventoryId = null;
-            toast('替換成功！');
-            render();
+            toast('已取消替換');
+        } else {
+            selectedInventoryId = id;
+            toast('請選擇上方陣容位置進行替換');
         }
-
-        function toast(m) { 
-            const el = document.getElementById('msgTip'); 
-            el.innerText = m; 
-            el.classList.add('text-blue-400');
-            setTimeout(() => {
-                el.innerText = '點擊庫存骰子可進行替換';
-                el.classList.remove('text-blue-400');
-            }, 2000); 
-        }
-
-        // 抽卡與切換功能保持不變...
-        function buyBox() {
-            if (currentBalance < 500) { toast('餘額不足！'); return; }
-            currentBalance -= 500;
-            localStorage.setItem('sicbo_balance', currentBalance);
-            let rewards = [];
-            for(let i=0; i<5; i++) {
-                const rand = Math.random();
-                let selectedQ = 'common';
-                let cum = 0;
-                for (const [key, q] of Object.entries(QUALITIES)) {
-                    cum += q.chance;
-                    if (rand < cum) { selectedQ = key; break; }
-                }
-                const possibleDices = ALL_DICES.filter(d => d.quality === selectedQ);
-                const dice = possibleDices[Math.floor(Math.random() * possibleDices.length)] || ALL_DICES[0];
-                userData.inventory[dice.id] = (userData.inventory[dice.id] || 0) + 1;
-                rewards.push(dice);
-            }
-            showRewardUI(rewards);
-            render();
-        }
-
-        function showRewardUI(dices) {
-            const list = document.getElementById('rewardList');
-            list.innerHTML = dices.map(d => {
-                const q = QUALITIES[d.quality];
-                return `<div class="text-center">
-                    <div class="w-12 h-12 rounded-lg flex items-center justify-center font-black mx-auto mb-1 ${q.color === 'mythic' ? 'q-mythic' : ''}" style="${q.color !== 'mythic' ? `background-color: ${q.color}` : ''}; color: ${q.textColor}">${d.name}</div>
-                    <div class="text-[10px] text-slate-400">${q.name}</div>
-                </div>`;
-            }).join('');
-            document.getElementById('rewardOverlay').classList.remove('hidden');
-        }
-
-        function closeReward() { document.getElementById('rewardOverlay').classList.add('hidden'); }
-        function switchTab(tab) {
-            document.getElementById('inventorySection').classList.toggle('hidden', tab !== 'inventory');
-            document.getElementById('shopSection').classList.toggle('hidden', tab !== 'shop');
-            document.getElementById('tab-inventory').classList.toggle('tab-active', tab === 'inventory');
-            document.getElementById('tab-shop').classList.toggle('tab-active', tab === 'shop');
-        }
-        function saveData() { localStorage.setItem('dice_game_data', JSON.stringify(userData)); }
-        function startBattle() { toast('戰鬥系統開發中...'); }
-
         render();
-    </script>
+    }
+
+    function selectDeckSlot(index) {
+        if (!selectedInventoryId) {
+            toast('請先從下方選擇一顆骰子');
+            return;
+        }
+        if (userData.deck.includes(selectedInventoryId)) {
+            toast('陣容中已存在此骰子');
+            selectedInventoryId = null;
+            render();
+            return;
+        }
+        userData.deck[index] = selectedInventoryId;
+        selectedInventoryId = null;
+        toast('替換成功！');
+        render();
+    }
+
+    function toast(m) { 
+        const el = document.getElementById('msgTip'); 
+        if(!el) return;
+        el.innerText = m; 
+        el.classList.add('text-blue-400');
+        setTimeout(() => {
+            el.innerText = '點擊庫存骰子可進行替換';
+            el.classList.remove('text-blue-400');
+        }, 2000); 
+    }
+
+    function buyBox() {
+        if (currentBalance < 500) { toast('餘額不足！'); return; }
+        currentBalance -= 500;
+        localStorage.setItem('sicbo_balance', currentBalance);
+        let rewards = [];
+        for(let i=0; i<5; i++) {
+            const rand = Math.random();
+            let selectedQ = 'common';
+            let cum = 0;
+            for (const [key, q] of Object.entries(QUALITIES)) {
+                cum += q.chance;
+                if (rand < cum) { selectedQ = key; break; }
+            }
+            const possibleDices = ALL_DICES.filter(d => d.quality === selectedQ);
+            const dice = possibleDices[Math.floor(Math.random() * possibleDices.length)] || ALL_DICES[0];
+            userData.inventory[dice.id] = (userData.inventory[dice.id] || 0) + 1;
+            rewards.push(dice);
+        }
+        showRewardUI(rewards);
+        render();
+    }
+
+    function showRewardUI(dices) {
+        const list = document.getElementById('rewardList');
+        list.innerHTML = dices.map(d => {
+            const q = QUALITIES[d.quality];
+            return `<div class="text-center">
+                <div class="w-12 h-12 rounded-lg flex items-center justify-center font-black mx-auto mb-1" 
+                     style="background-color: ${d.baseColor}; color: #fff; border: 2px solid ${q.color}">${d.name}</div>
+                <div class="text-[10px]" style="color: ${q.color}">${q.name}</div>
+            </div>`;
+        }).join('');
+        document.getElementById('rewardOverlay').classList.remove('hidden');
+    }
+
+    function closeReward() { document.getElementById('rewardOverlay').classList.add('hidden'); }
+    
+    function switchTab(tab) {
+        document.getElementById('inventorySection').classList.toggle('hidden', tab !== 'inventory');
+        document.getElementById('shopSection').classList.toggle('hidden', tab !== 'shop');
+        document.getElementById('tab-inventory').classList.toggle('tab-active', tab === 'inventory');
+        document.getElementById('tab-shop').classList.toggle('tab-active', tab === 'shop');
+    }
+
+    function saveData() { 
+        localStorage.setItem('dice_game_data', JSON.stringify(userData)); 
+    }
+
+    // 修正：點擊開始戰鬥跳轉到戰鬥頁面
+    function startBattle() { 
+        saveData(); // 確保陣容已儲存
+        window.location.href = 'dice_battle.html'; 
+    }
+
+    render();
+</script>
 </body>
 </html>
