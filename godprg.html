@@ -5,21 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>神域</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore-compat.js"></script>
   <style>
-    /* 強制鎖定視窗大小，防止橡皮筋效果與捲軸 */
     html, body {
       margin: 0;
       padding: 0;
       width: 100%;
       height: 100%;
       overflow: hidden;
-      position: fixed; /* 防止手機瀏覽器網址列伸縮導致的抖動 */
+      position: fixed;
+      background-color: #0f172a;
     }
     #app {
       width: 100%;
       height: 100%;
     }
-    /* 客製化捲動條，讓畫面更精簡 */
     .custom-scroll::-webkit-scrollbar {
       width: 4px;
     }
@@ -29,29 +30,29 @@
     }
   </style>
 </head>
-<body class="bg-slate-900">
+<body>
   <div id="app"></div>
 
   <script>
-    // 遊戲數據 (保持不變)
+    // 遊戲數據：路徑已更新為 assets 格式
     const HEROES = [
-      { id: 'knight', name: '聖騎士', rarity: 'epic', attack: 120, speed: 1.2, range: 'melee', image: 'hero_basic.png', unlocked: true },
-      { id: 'archer', name: '神射手', rarity: 'rare', attack: 80, speed: 2.0, range: 'long', image: 'hero_basic.png', unlocked: true },
-      { id: 'mage', name: '元素法師', rarity: 'epic', attack: 150, speed: 0.8, range: 'medium', image: 'hero_basic.png', unlocked: true },
-      { id: 'assassin', name: '暗影刺客', rarity: 'legendary', attack: 200, speed: 2.5, range: 'melee', image: 'hero_basic.png', unlocked: false },
-      { id: 'paladin', name: '光明聖者', rarity: 'rare', attack: 100, speed: 1.0, range: 'melee', image: 'hero_basic.png', unlocked: true },
-      { id: 'sniper', name: '狙擊手', rarity: 'epic', attack: 180, speed: 0.6, range: 'long', image: 'hero_basic.png', unlocked: false },
+      { id: 'knight', name: '聖騎士', rarity: 'epic', attack: 120, speed: 1.2, range: 'melee', image: 'assets/hero/knight.png', unlocked: true },
+      { id: 'archer', name: '神射手', rarity: 'rare', attack: 80, speed: 2.0, range: 'long', image: 'assets/hero/archer.png', unlocked: true },
+      { id: 'mage', name: '元素法師', rarity: 'epic', attack: 150, speed: 0.8, range: 'medium', image: 'assets/hero/mage.png', unlocked: true },
+      { id: 'assassin', name: '暗影刺客', rarity: 'legendary', attack: 200, speed: 2.5, range: 'melee', image: 'assets/hero/assassin.png', unlocked: false },
+      { id: 'paladin', name: '光明聖者', rarity: 'rare', attack: 100, speed: 1.0, range: 'melee', image: 'assets/hero/paladin.png', unlocked: true },
+      { id: 'sniper', name: '狙擊手', rarity: 'epic', attack: 180, speed: 0.6, range: 'long', image: 'assets/hero/sniper.png', unlocked: false },
     ];
 
     const SKILL_CARDS = [
-      { id: 'berserk', name: '狂戰士之怒', cost: 80, cd: 30, desc: '近戰英雄攻擊+50%，持續10秒', rarity: 'common', image: 'skill_basic.png', unlocked: true },
-      { id: 'freeze', name: '冰封大地', cost: 120, cd: 45, desc: '凍結全螢幕敵人3秒', rarity: 'rare', image: 'skill_basic.png', unlocked: true },
-      { id: 'meteor', name: '隕石天降', cost: 150, cd: 60, desc: '造成1000範圍傷害', rarity: 'epic', image: 'skill_basic.png', unlocked: true },
-      { id: 'heal', name: '神聖庇護', cost: 100, cd: 40, desc: '城牆回復30%最大生命值', rarity: 'rare', image: 'skill_basic.png', unlocked: true },
-      { id: 'slow', name: '時間扭曲', cost: 70, cd: 25, desc: '敵人減速50%，持續8秒', rarity: 'common', image: 'skill_basic.png', unlocked: true },
-      { id: 'rage', name: '全軍突擊', cost: 130, cd: 50, desc: '所有英雄攻速+100%，持續12秒', rarity: 'epic', image: 'skill_basic.png', unlocked: false },
-      { id: 'lightning', name: '連鎖閃電', cost: 110, cd: 35, desc: '跳躍攻擊5個敵人，每次300傷害', rarity: 'rare', image: 'skill_basic.png', unlocked: true },
-      { id: 'shield', name: '堅不可摧', cost: 90, cd: 45, desc: '城牆獲得護盾，吸收500傷害', rarity: 'common', image: 'skill_basic.png', unlocked: true },
+      { id: 'berserk', name: '狂戰士之怒', cost: 80, cd: 30, desc: '近戰英雄攻擊+50%，持續10秒', rarity: 'common', image: 'assets/skill/berserk.png', unlocked: true },
+      { id: 'freeze', name: '冰封大地', cost: 120, cd: 45, desc: '凍結全螢幕敵人3秒', rarity: 'rare', image: 'assets/skill/freeze.png', unlocked: true },
+      { id: 'meteor', name: '隕石天降', cost: 150, cd: 60, desc: '造成1000範圍傷害', rarity: 'epic', image: 'assets/skill/meteor.png', unlocked: true },
+      { id: 'heal', name: '神聖庇護', cost: 100, cd: 40, desc: '城牆回復30%最大生命值', rarity: 'rare', image: 'assets/skill/heal.png', unlocked: true },
+      { id: 'slow', name: '時間扭曲', cost: 70, cd: 25, desc: '敵人減速50%，持續8秒', rarity: 'common', image: 'assets/skill/slow.png', unlocked: true },
+      { id: 'rage', name: '全軍突擊', cost: 130, cd: 50, desc: '所有英雄攻速+100%，持續12秒', rarity: 'epic', image: 'assets/skill/rage.png', unlocked: false },
+      { id: 'lightning', name: '連鎖閃電', cost: 110, cd: 35, desc: '跳躍攻擊5個敵人，每次300傷害', rarity: 'rare', image: 'assets/skill/lightning.png', unlocked: true },
+      { id: 'shield', name: '堅不可摧', cost: 90, cd: 45, desc: '城牆獲得護盾，吸收500傷害', rarity: 'common', image: 'assets/skill/shield.png', unlocked: true },
     ];
 
     const rarityColors = {
@@ -68,32 +69,26 @@
       legendary: '傳說'
     };
 
-    // 應用狀態
     let state = {
       screen: 'prepare',
       balance: 5000,
       selectedHero: HEROES[0],
       selectedCards: [],
-      difficulty: 'normal',
-      playerCount: 1
+      difficulty: 'normal'
     };
 
-    // 載入餘額 (根據要求保留 localStorage)
     function loadBalance() {
       const savedBalance = localStorage.getItem('sicbo_balance') || '5000';
       state.balance = Math.floor(parseFloat(savedBalance));
     }
 
-    // SVG 圖標 (保持不變)
     const icons = {
       home: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
       gem: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/></svg>',
       sword: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" x2="19" y1="19" y2="13"/><line x1="16" x2="20" y1="16" y2="20"/><line x1="19" x2="21" y1="21" y2="19"/></svg>',
       cart: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>',
       settings: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>',
-      lock: '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
       lockSmall: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
-      zap: '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
       crown: '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>',
       zapLarge: '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
     };
@@ -101,19 +96,17 @@
     function render() {
       const app = document.getElementById('app');
       let content = '';
-
       if (state.screen === 'prepare') content = renderPrepareScreen();
       else if (state.screen === 'hero-select') content = renderHeroSelectScreen();
       else if (state.screen === 'card-select') content = renderCardSelectScreen();
       else if (state.screen === 'shop') content = renderShopScreen();
       else if (state.screen === 'settings') content = renderSettingsScreen();
-      
       app.innerHTML = content;
     }
 
     function renderTopBar() {
       return `
-        <div class="bg-slate-900/90 backdrop-blur-md border-b border-purple-500/30 px-4 py-3 flex justify-between items-center z-10">
+        <div class="bg-slate-900/90 backdrop-blur-md border-b border-purple-500/30 px-4 py-3 flex justify-between items-center z-10 shrink-0">
           <button onclick="goHome()" class="flex items-center gap-2 text-white hover:text-purple-400 transition-colors">
             ${icons.home}
             <span class="font-bold hidden sm:inline">大廳</span>
@@ -128,7 +121,7 @@
 
     function renderBottomNav() {
       return `
-        <div class="bg-slate-900/90 backdrop-blur-md border-t border-purple-500/30 px-2 py-2 flex justify-around z-10">
+        <div class="bg-slate-900/90 backdrop-blur-md border-t border-purple-500/30 px-2 py-2 flex justify-around z-10 shrink-0">
           <button onclick="changeScreen('prepare')" class="flex flex-col items-center gap-1 flex-1 transition-colors ${state.screen === 'prepare' ? 'text-purple-400' : 'text-gray-400'}">
             ${icons.sword}
             <span class="text-[10px] font-medium">備戰</span>
@@ -145,7 +138,6 @@
       `;
     }
 
-    // 將所有畫面包裝在一個滿屏且不溢出的容器中
     function screenWrapper(content) {
       return `
         <div class="h-screen w-full bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 text-white flex flex-col overflow-hidden">
@@ -161,24 +153,21 @@
     function renderPrepareScreen() {
       const hero = state.selectedHero;
       const canStart = hero && state.selectedCards.length === 5;
-      
       const content = `
         <div class="max-w-md mx-auto space-y-4 pb-4">
           <div class="bg-purple-900/30 backdrop-blur-sm rounded-2xl p-6 border border-purple-500/30 shadow-xl">
             <h2 class="text-xl font-bold mb-4 text-center">出戰英雄</h2>
             ${hero ? `
-              <div class="flex flex-col items-center">
+              <div class="flex flex-col items-center text-center">
                 <div class="relative mb-4">
-                   <img src="${hero.image}" class="w-32 h-32 object-cover rounded-xl border-2 border-purple-500/50 shadow-lg shadow-purple-500/20">
+                   <img src="${hero.image}" alt="${hero.name}" class="w-32 h-32 object-cover rounded-xl border-2 border-purple-500/50 shadow-lg" onerror="this.src='hero_basic.png'">
                    <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded text-[10px] whitespace-nowrap ${rarityColors[hero.rarity]}">${rarityText[hero.rarity]}</div>
                 </div>
                 <h3 class="text-2xl font-bold mb-4">${hero.name}</h3>
-                
-                <button onclick="changeScreen('hero-select')" class="w-full py-2 bg-purple-600/50 hover:bg-purple-600 rounded-lg text-sm font-bold border border-purple-400/30 transition-all">更換英雄</button>
+                <button onclick="changeScreen('hero-select')" class="w-full py-2 bg-purple-600/50 hover:bg-purple-600 rounded-lg text-sm font-bold border border-purple-400/30">更換英雄</button>
               </div>
             ` : `<button onclick="changeScreen('hero-select')" class="w-full py-10 border-2 border-dashed border-purple-500/30 rounded-xl text-gray-400">+ 選擇英雄</button>`}
           </div>
-
           <div class="bg-slate-800/40 rounded-2xl p-4 border border-purple-500/20">
             <div class="flex justify-between items-center mb-3">
               <h3 class="font-bold text-sm">攜帶技能 (${state.selectedCards.length}/5)</h3>
@@ -189,165 +178,78 @@
                 const card = state.selectedCards[i];
                 return card ? `
                   <div class="flex-shrink-0 w-14 text-center">
-                    <img src="${card.image}" class="w-14 h-14 object-cover rounded-lg border border-purple-500/50">
+                    <img src="${card.image}" class="w-14 h-14 object-cover rounded-lg border border-purple-500/50" onerror="this.src='skill_basic.png'">
                     <div class="text-[9px] mt-1 truncate">${card.name}</div>
                   </div>
-                ` : `
-                  <div onclick="changeScreen('card-select')" class="flex-shrink-0 w-14 h-14 bg-slate-700/50 border border-dashed border-gray-500 rounded-lg flex items-center justify-center text-gray-500">+</div>
-                `;
+                ` : `<div onclick="changeScreen('card-select')" class="flex-shrink-0 w-14 h-14 bg-slate-700/50 border border-dashed border-gray-500 rounded-lg flex items-center justify-center text-gray-500">+</div>`;
               }).join('')}
             </div>
           </div>
-
           <button onclick="startBattle()" ${canStart ? '' : 'disabled'} 
-            class="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 disabled:from-gray-700 disabled:to-gray-800 rounded-xl text-lg font-bold shadow-lg shadow-purple-900/40 active:scale-95 transition-all">
+            class="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 disabled:from-gray-700 disabled:to-gray-800 rounded-xl text-lg font-bold shadow-lg active:scale-95 transition-all">
             開始戰鬥
           </button>
-          ${!canStart ? `<p class="text-center text-xs text-yellow-500/80">⚠ 請完成英雄與技能選擇</p>` : ''}
         </div>
       `;
       return screenWrapper(content);
     }
 
     function renderHeroSelectScreen() {
-      const content = `
-        <div class="max-w-md mx-auto">
-          <h2 class="text-xl font-bold mb-4 text-center">選擇英雄</h2>
-          <div class="grid grid-cols-2 gap-3">
-            ${HEROES.map(hero => `
-              <div onclick="selectHero('${hero.id}')" 
-                class="bg-slate-800/80 p-3 rounded-xl border-2 transition-all ${state.selectedHero?.id === hero.id ? 'border-purple-500 bg-purple-900/20' : 'border-transparent'} ${!hero.unlocked ? 'opacity-50' : ''}">
-                <div class="relative">
-                  <img src="${hero.image}" class="w-full h-24 object-cover rounded-lg mb-2">
-                  ${!hero.unlocked ? `<div class="absolute inset-0 flex items-center justify-center bg-black/60 rounded-lg">${icons.lockSmall}</div>` : ''}
-                </div>
-                <div class="text-center">
-                  <div class="font-bold text-sm">${hero.name}</div>
-                  <div class="text-[10px] text-gray-400">${rarityText[hero.rarity]}</div>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      `;
+      const content = `<div class="max-w-md mx-auto"><h2 class="text-xl font-bold mb-4 text-center">選擇英雄</h2><div class="grid grid-cols-2 gap-3">
+        ${HEROES.map(hero => `
+          <div onclick="selectHero('${hero.id}')" class="bg-slate-800/80 p-3 rounded-xl border-2 transition-all ${state.selectedHero?.id === hero.id ? 'border-purple-500 bg-purple-900/20' : 'border-transparent'} ${!hero.unlocked ? 'opacity-50' : ''}">
+            <div class="relative"><img src="${hero.image}" class="w-full h-24 object-cover rounded-lg mb-2" onerror="this.src='hero_basic.png'">
+            ${!hero.unlocked ? `<div class="absolute inset-0 flex items-center justify-center bg-black/60 rounded-lg">${icons.lockSmall}</div>` : ''}</div>
+            <div class="text-center"><div class="font-bold text-sm">${hero.name}</div><div class="text-[10px] text-gray-400">${rarityText[hero.rarity]}</div></div>
+          </div>`).join('')}</div></div>`;
       return screenWrapper(content);
     }
 
     function renderCardSelectScreen() {
-      const content = `
-        <div class="max-w-md mx-auto">
-          <h2 class="text-xl font-bold mb-1 text-center">選擇技能卡</h2>
-          <p class="text-[10px] text-gray-400 text-center mb-4">點擊卡片加入或移除 (${state.selectedCards.length}/5)</p>
-          <div class="grid grid-cols-1 gap-2">
-            ${SKILL_CARDS.map(card => {
-              const isSelected = state.selectedCards.find(c => c.id === card.id);
-              return `
-                <div onclick="toggleCard('${card.id}')" 
-                  class="bg-slate-800/80 p-3 rounded-xl border-2 flex gap-3 transition-all ${isSelected ? 'border-purple-500 bg-purple-900/20' : 'border-transparent'}">
-                  <img src="${card.image}" class="w-16 h-16 object-cover rounded-lg">
-                  <div class="flex-1">
-                    <div class="flex justify-between">
-                      <span class="font-bold text-sm">${card.name}</span>
-                      <span class="text-[10px] ${rarityColors[card.rarity]} px-1.5 rounded text-white">${rarityText[card.rarity]}</span>
-                    </div>
-                    <p class="text-[10px] text-gray-400 my-1">${card.desc}</p>
-                    <div class="flex gap-3 text-[10px] text-yellow-500">
-                      <span>⚡ ${card.cost}</span>
-                      <span class="text-blue-400">⏱ ${card.cd}s</span>
-                    </div>
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        </div>
-      `;
+      const content = `<div class="max-w-md mx-auto"><h2 class="text-xl font-bold mb-1 text-center">選擇技能卡</h2><p class="text-[10px] text-gray-400 text-center mb-4">(${state.selectedCards.length}/5)</p><div class="grid grid-cols-1 gap-2">
+        ${SKILL_CARDS.map(card => {
+          const isSelected = state.selectedCards.find(c => c.id === card.id);
+          return `
+            <div onclick="toggleCard('${card.id}')" class="bg-slate-800/80 p-3 rounded-xl border-2 flex gap-3 transition-all ${isSelected ? 'border-purple-500 bg-purple-900/20' : 'border-transparent'}">
+              <img src="${card.image}" class="w-16 h-16 object-cover rounded-lg" onerror="this.src='skill_basic.png'">
+              <div class="flex-1"><div class="flex justify-between"><span class="font-bold text-sm">${card.name}</span><span class="text-[10px] ${rarityColors[card.rarity]} px-1.5 rounded text-white">${rarityText[card.rarity]}</span></div>
+              <p class="text-[10px] text-gray-400 my-1">${card.desc}</p><div class="flex gap-3 text-[10px] text-yellow-500"><span>⚡ ${card.cost}</span><span class="text-blue-400">⏱ ${card.cd}s</span></div></div>
+            </div>`;}).join('')}</div></div>`;
       return screenWrapper(content);
     }
 
     function renderShopScreen() {
-      const content = `
-        <div class="max-w-md mx-auto space-y-4">
-          <h2 class="text-xl font-bold text-center">商城</h2>
-          <div class="bg-slate-800/80 p-6 rounded-2xl border border-purple-500/30 text-center">
-             <div class="w-16 h-16 bg-purple-600/20 rounded-full flex items-center justify-center mx-auto mb-4">${icons.crown}</div>
-             <h3 class="font-bold mb-2">英雄召喚</h3>
-             <p class="text-xs text-gray-400 mb-4">獲得傳說英雄的唯一機會</p>
-             <button class="w-full py-2 bg-gradient-to-r from-yellow-600 to-orange-600 rounded-lg text-sm font-bold shadow-lg">300 鑽石</button>
-          </div>
-          <div class="bg-slate-800/80 p-6 rounded-2xl border border-blue-500/30 text-center">
-             <div class="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4">${icons.zapLarge}</div>
-             <h3 class="font-bold mb-2">技能卡包</h3>
-             <p class="text-xs text-gray-400 mb-4">擴展你的戰術組合</p>
-             <button class="w-full py-2 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg text-sm font-bold shadow-lg">200 鑽石</button>
-          </div>
-        </div>
-      `;
+      const content = `<div class="max-w-md mx-auto space-y-4"><h2 class="text-xl font-bold text-center">商城</h2>
+        <div class="bg-slate-800/80 p-6 rounded-2xl border border-purple-500/30 text-center"><div class="w-16 h-16 bg-purple-600/20 rounded-full flex items-center justify-center mx-auto mb-4">${icons.crown}</div><h3 class="font-bold mb-2">英雄召喚</h3><button class="w-full py-2 bg-gradient-to-r from-yellow-600 to-orange-600 rounded-lg text-sm font-bold">300 鑽石</button></div>
+        <div class="bg-slate-800/80 p-6 rounded-2xl border border-blue-500/30 text-center"><div class="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4">${icons.zapLarge}</div><h3 class="font-bold mb-2">技能卡包</h3><button class="w-full py-2 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg text-sm font-bold">200 鑽石</button></div></div>`;
       return screenWrapper(content);
     }
 
     function renderSettingsScreen() {
-      const content = `
-        <div class="max-w-md mx-auto space-y-4">
-          <h2 class="text-xl font-bold text-center">設定</h2>
-          <div class="bg-slate-800/80 rounded-xl overflow-hidden divide-y divide-gray-700 border border-gray-700">
-            <div class="p-4 flex justify-between items-center">
-              <span class="text-sm">音效音量</span>
-              <input type="range" class="w-24">
-            </div>
-            <div class="p-4 flex justify-between items-center">
-              <span class="text-sm">背景音樂</span>
-              <input type="checkbox" checked>
-            </div>
-            <div class="p-4 flex justify-between items-center">
-              <span class="text-sm">畫質</span>
-              <select class="bg-slate-700 text-xs p-1 rounded"><option>高</option><option>中</option></select>
-            </div>
-          </div>
-          <button class="w-full py-3 bg-red-900/40 text-red-400 border border-red-900/50 rounded-xl text-sm font-bold">登出帳號</button>
-        </div>
-      `;
+      const content = `<div class="max-w-md mx-auto space-y-4"><h2 class="text-xl font-bold text-center">設定</h2><div class="bg-slate-800/80 rounded-xl overflow-hidden divide-y divide-gray-700 border border-gray-700"><div class="p-4 flex justify-between items-center text-sm">音效<button class="px-3 py-1 bg-purple-600 rounded">開啟</button></div><div class="p-4 flex justify-between items-center text-sm">音樂<button class="px-3 py-1 bg-purple-600 rounded">開啟</button></div></div><button class="w-full py-3 bg-red-900/40 text-red-400 border border-red-900/50 rounded-xl text-sm font-bold">登出帳號</button></div>`;
       return screenWrapper(content);
     }
 
-    // 功能邏輯
-    function changeScreen(screen) {
-      state.screen = screen;
-      render();
-    }
-
-    function goHome() {
-      console.log('回到首頁');
-    }
-
+    function changeScreen(screen) { state.screen = screen; render(); }
+    function goHome() { window.location.href = 'index.html'; }
     function selectHero(heroId) {
       const hero = HEROES.find(h => h.id === heroId);
-      if (hero && hero.unlocked) {
-        state.selectedHero = hero;
-        state.screen = 'prepare';
-        render();
-      }
+      if (hero && hero.unlocked) { state.selectedHero = hero; state.screen = 'prepare'; render(); }
     }
-
     function toggleCard(cardId) {
       const card = SKILL_CARDS.find(c => c.id === cardId);
       if (!card || !card.unlocked) return;
       const index = state.selectedCards.findIndex(c => c.id === cardId);
-      if (index > -1) {
-        state.selectedCards.splice(index, 1);
-      } else if (state.selectedCards.length < 5) {
-        state.selectedCards.push(card);
-      }
+      if (index > -1) state.selectedCards.splice(index, 1);
+      else if (state.selectedCards.length < 5) state.selectedCards.push(card);
       render();
     }
-
     function startBattle() {
       if (state.selectedHero && state.selectedCards.length === 5) {
         window.location.href = 'god_battle.html';
       }
     }
 
-    // 初始化
     loadBalance();
     render();
   </script>
