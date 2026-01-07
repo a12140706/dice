@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>骰子戰爭 - 戰場</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #020617;
+            color: white;
+            overflow: hidden;
+            font-family: sans-serif;
+        }
+
+        #gameCanvas {
+            background: radial-gradient(circle, #1e293b 0%, #020617 100%);
+            touch-action: none;
+            width: 100%;
+            height: 100%;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 49, 0.8);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .diff-card {
+            transition: all 0.3s;
+            border: 2px solid transparent;
+            cursor: pointer;
+        }
+
+        .diff-card:active {
+            transform: scale(0.95);
+        }
+
+        .energy-glow {
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+        }
+
+        .scroll-hide::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+
+<body class="flex flex-col h-screen">
+
+    <div class="p-3 flex justify-between items-center bg-slate-900/50">
+        <div class="flex items-center gap-2">
+            <span class="text-red-500">❤️</span>
+            <span id="hpText" class="font-bold">3</span>
+        </div>
+        <div class="text-center">
+            <div class="text-[10px] text-slate-400 uppercase tracking-widest">Wave</div>
+            <div id="waveText" class="text-xl font-black">1</div>
+        </div>
+        <div class="flex items-center gap-2 text-yellow-500">
+            <span id="spText" class="font-mono font-bold">100</span>
+            <span class="text-xs font-bold">SP</span>
+        </div>
+    </div>
+
+    <div class="flex-1 relative">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <div class="glass-panel p-4 pb-8">
+        <div class="flex gap-2 mb-4 overflow-x-auto pb-2 scroll-hide" id="powerUpBar">
+        </div>
+
+        <button onclick="summonDice()"
+            class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 py-4 rounded-2xl font-bold text-xl shadow-lg energy-glow active:scale-95 transition-transform">
+            召喚 (<span id="summonCostText">10</span> SP)
+        </button>
+    </div>
+
+    <div id="difficultyOverlay" class="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-6">
+        <div class="w-full max-w-sm">
+            <h2
+                class="text-center text-2xl font-black mb-8 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+                選擇戰鬥難度</h2>
+            <div class="space-y-4">
+                <button onclick="startGame('normal')"
+                    class="diff-card w-full bg-slate-800 p-4 rounded-2xl flex justify-between items-center border-slate-700">
+                    <span class="font-bold text-lg">簡單模式</span>
+                    <span class="text-xs text-green-400 bg-green-900/30 px-2 py-1 rounded">1x 獎勵</span>
+                </button>
+                <button onclick="startGame('hard')"
+                    class="diff-card w-full bg-slate-800 p-4 rounded-2xl flex justify-between items-center border-blue-500/50">
+                    <span class="font-bold text-lg">困難模式</span>
+                    <span class="text-xs text-blue-400 bg-blue-900/30 px-2 py-1 rounded">2.5x 獎勵</span>
+                </button>
+                <button onclick="startGame('hell')"
+                    class="diff-card w-full bg-slate-800 p-4 rounded-2xl flex justify-between items-center border-red-500/50">
+                    <span class="font-bold text-lg text-red-500">地獄模式</span>
+                    <span class="text-xs text-red-400 bg-red-900/30 px-2 py-1 rounded">6x 獎勵</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // --- 1. 基礎資料定義 ---
+    const QUALITIES = {
+        common: { name: '普通', color: '#ffffff', textColor: '#000' },
+        rare: { name: '稀有', color: '#3b82f6', textColor: '#fff' },
+        epic: { name: '史詩', color: '#a855f7', textColor: '#fff' },
+        legend: { name: '傳說', color: '#eab308', textColor: '#000' },
+        mythic: { name: '神話', color: '#ff00ff', textColor: '#fff' }
+    };
+
+    const ALL_DICES = [
+        { id: 'fire', name: '火', quality: 'common' },
+        { id: 'wind', name: '風', quality: 'common' },
+        { id: 'ice', name: '冰', quality: 'rare' },
+        { id: 'electric', name: '電', quality: 'rare' },
+        { id: 'poison', name: '毒', quality: 'epic' },
+        { id: 'growth', name: '成長', quality: 'legend' },
+        { id: 'sun', name: '太陽', quality: 'legend' },
+        { id: 'galaxy', name: '銀河', quality: 'mythic' }
+    ];
+
+    const BOSS_TYPES = {
+        'CRUSHER': {
+            name: '粉碎者',
+            color: '#ff4444',
+            skillInterval: 300,
+            onSkill: (boss) => {
+                const occupied = grid.slots.filter(s => s.dice && !s.isLocked);
+                if (occupied.length > 0) {
+                    const target = occupied[Math.floor(Math.random() * occupied.length)];
+                    target.isLocked = true;
+                    setTimeout(() => { target.isLocked = false; }, 4000);
+                }
+            }
+        },
+        'SNAKE': {
+            name: '噴射者',
+            color: '#22c55e',
+            skillInterval: 240,
+            onSkill: (boss) => {
+                enemies.forEach(e => e.speed *= 1.5);
+                setTimeout(() => { enemies.forEach(e => e.speed /= 1.5); }, 2000);
+            }
+        }
+    };
+
+    // --- 2. 遊戲狀態與變數 ---
+    // 從 localStorage 抓取陣容，若無則給預設值
+    const savedData = JSON.parse(localStorage.getItem('dice_game_data')) || { deck: ['fire', 'wind', 'ice', 'electric', 'poison'] };
+    const deckData = savedData.deck;
+
+    let powerUpState = {};
+    deckData.forEach(id => {
+        powerUpState[id] = { level: 1, baseCost: 100, costStep: 100 };
+    });
+
+    let battleState = { hp: 3, sp: 100, wave: 1, summonCost: 10, difficulty: 'normal', isStarted: false };
+    let grid = { rows: 3, cols: 5, padding: 10, slotSize: 0, slots: [] };
+    let drag = { isDragging: false, fromSlot: null, currentX: 0, currentY: 0, dice: null };
+    let waveState = { totalEnemiesPerWave: 10, spawnedCount: 0, isWaiting: false, timer: 0 };
+    let projectiles = [];
+    let path = [];
+    let enemies = [];
+    const TICKS_PER_ATTACK = 60;
+
+    // --- 3. 核心函數 ---
+    function getPowerUpMultiplier(diceId) {
+        const lv = powerUpState[diceId]?.level || 1;
+        return 1 + (lv - 1) * 0.25;
+    }
+
+    function startGame(diff) {
+        battleState.difficulty = diff;
+        battleState.isStarted = true;
+        document.getElementById('difficultyOverlay').style.display = 'none';
+        initGame();
+    }
+
+    function initGame() {
+        const canvas = document.getElementById('gameCanvas');
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        initGrid(canvas);
+        initPath(canvas);
+        setupTouchEvents(canvas);
+        renderPowerUpBar();
+        updateUI();
+        startRenderLoop();
+    }
+
+    function initGrid(canvas) {
+        grid.slotSize = (canvas.width - (grid.cols + 1) * grid.padding) / grid.cols;
+        const startY = canvas.height * 0.55;
+        grid.slots = [];
+        for (let i = 0; i < grid.rows * grid.cols; i++) {
+            const r = Math.floor(i / grid.cols);
+            const c = i % grid.cols;
+            grid.slots.push({
+                x: grid.padding + c * (grid.slotSize + grid.padding),
+                y: startY + r * (grid.slotSize + grid.padding),
+                dice: null,
+                isLocked: false,
+                isBeingDragged: false
+            });
+        }
+    }
+
+    function initPath(canvas) {
+        const margin = 40;
+        const top = 100, bottom = canvas.height * 0.45, left = margin, right = canvas.width - margin;
+        path = [
+            { x: left, y: top }, { x: right, y: top },
+            { x: right, y: bottom }, { x: left, y: bottom },
+            { x: left, y: top + 10 }
+        ];
+    }
+
+    function setupTouchEvents(canvas) {
+        canvas.addEventListener('touchstart', (e) => {
+            const touch = e.touches[0], rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left, y = touch.clientY - rect.top;
+            grid.slots.forEach(slot => {
+                if (slot.dice && x > slot.x && x < slot.x + grid.slotSize && y > slot.y && y < slot.y + grid.slotSize) {
+                    drag.isDragging = true;
+                    drag.fromSlot = slot;
+                    drag.dice = { ...slot.dice };
+                    drag.currentX = x; drag.currentY = y;
+                    slot.isBeingDragged = true;
+                }
+            });
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (!drag.isDragging) return;
+            e.preventDefault();
+            const touch = e.touches[0], rect = canvas.getBoundingClientRect();
+            drag.currentX = touch.clientX - rect.left;
+            drag.currentY = touch.clientY - rect.top;
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', () => {
+            if (!drag.isDragging) return;
+            let targetSlot = grid.slots.find(s => drag.currentX > s.x && drag.currentX < s.x + grid.slotSize && drag.currentY > s.y && drag.currentY < s.y + grid.slotSize);
+
+            if (targetSlot && targetSlot !== drag.fromSlot) {
+                if (targetSlot.dice && targetSlot.dice.id === drag.dice.id && targetSlot.dice.lv === drag.dice.lv && targetSlot.dice.lv < 7) {
+                    const newId = deckData[Math.floor(Math.random() * deckData.length)];
+                    const diceBase = ALL_DICES.find(d => d.id === newId);
+                    targetSlot.dice = { id: newId, lv: drag.dice.lv + 1, color: QUALITIES[diceBase.quality].color, textColor: QUALITIES[diceBase.quality].textColor };
+                    drag.fromSlot.dice = null;
+                } else if (!targetSlot.dice) {
+                    targetSlot.dice = drag.dice;
+                    drag.fromSlot.dice = null;
+                }
+            }
+            drag.isDragging = false;
+            if (drag.fromSlot) drag.fromSlot.isBeingDragged = false;
+        });
+    }
+
+    function summonDice() {
+        if (battleState.sp < battleState.summonCost) return;
+        const emptySlots = grid.slots.filter(s => s.dice === null);
+        if (emptySlots.length === 0) return;
+        battleState.sp -= battleState.summonCost;
+        battleState.summonCost += 10;
+        const targetSlot = emptySlots[Math.floor(Math.random() * emptySlots.length)];
+        const diceId = deckData[Math.floor(Math.random() * deckData.length)];
+        const db = ALL_DICES.find(d => d.id === diceId);
+        targetSlot.dice = { id: diceId, lv: 1, color: QUALITIES[db.quality].color, textColor: QUALITIES[db.quality].textColor };
+        updateUI();
+    }
+
+    function upgradeDice(diceId) {
+        const s = powerUpState[diceId];
+        const cost = s.baseCost + (s.level - 1) * s.costStep;
+        if (battleState.sp >= cost && s.level < 5) {
+            battleState.sp -= cost;
+            s.level++;
+            updateUI();
+            renderPowerUpBar();
+        }
+    }
+
+    function spawnEnemy() {
+        let hpMult = (battleState.difficulty === 'hard' ? 2.5 : (battleState.difficulty === 'hell' ? 6 : 1));
+        const finalHp = 100 * hpMult * (1 + (battleState.wave - 1) * 0.2);
+        enemies.push({
+            x: path[0].x, y: path[0].y, pathIndex: 1, maxHp: finalHp, hp: finalHp,
+            speed: 1.5 + (battleState.difficulty === 'hell' ? 0.5 : 0),
+            rewardSp: 10 + battleState.wave, isBoss: false
+        });
+        waveState.spawnedCount++;
+    }
+
+    function spawnBoss() {
+        const typeKey = Object.keys(BOSS_TYPES)[Math.floor(Math.random() * 2)];
+        const config = BOSS_TYPES[typeKey];
+        const finalHp = 1000 * 20 * (1 + battleState.wave * 0.1);
+        enemies.push({
+            x: path[0].x, y: path[0].y, pathIndex: 1, maxHp: finalHp, hp: finalHp,
+            speed: 0.7, rewardSp: 200 + battleState.wave * 10, isBoss: true,
+            bossType: typeKey, skillTimer: 0, size: 50, color: config.color
+        });
+        console.log(`警告：Boss ${config.name} 出現！`);
+    }
+
+    function updateWave() {
+        if (!waveState.isWaiting) {
+            waveState.timer++;
+            if (waveState.timer >= 90) {
+                if (battleState.wave % 10 === 0 && waveState.spawnedCount === 0) {
+                    spawnBoss();
+                    waveState.spawnedCount = waveState.totalEnemiesPerWave;
+                } else if (waveState.spawnedCount < waveState.totalEnemiesPerWave) {
+                    spawnEnemy();
+                    waveState.timer = 0;
+                } else if (enemies.length === 0) {
+                    waveState.isWaiting = true;
+                    waveState.timer = 0;
+                }
+            }
+        } else {
+            waveState.timer++;
+            if (waveState.timer >= 180) {
+                battleState.wave++;
+                waveState.spawnedCount = 0;
+                waveState.totalEnemiesPerWave += 2;
+                waveState.isWaiting = false;
+                waveState.timer = 0;
+                updateUI();
+            }
+        }
+    }
+
+    function updateCombat() {
+        grid.slots.forEach(slot => {
+            if (slot.dice && !slot.isBeingDragged && !slot.isLocked) {
+                if (!slot.attackCooldown) slot.attackCooldown = 0;
+                slot.attackCooldown++;
+                const speedFactor = 1 + (slot.dice.lv - 1) * 0.2;
+                if (slot.attackCooldown >= TICKS_PER_ATTACK / speedFactor) {
+                    const target = [...enemies].sort((a, b) => b.pathIndex - a.pathIndex)[0];
+                    if (target) {
+                        const finalDamage = 10 * slot.dice.lv * getPowerUpMultiplier(slot.dice.id);
+                        projectiles.push({ x: slot.x + grid.slotSize / 2, y: slot.y + grid.slotSize / 2, target, color: slot.dice.color, speed: 7, damage: finalDamage });
+                        slot.attackCooldown = 0;
+                    }
+                }
+            }
+        });
+
+        for (let i = projectiles.length - 1; i >= 0; i--) {
+            let p = projectiles[i];
+            if (!enemies.includes(p.target)) { projectiles.splice(i, 1); continue; }
+            let dx = p.target.x - p.x, dy = p.target.y - p.y, dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 15) {
+                p.target.hp -= p.damage;
+                if (p.target.hp <= 0) {
+                    const idx = enemies.indexOf(p.target);
+                    if (idx > -1) { battleState.sp += p.target.rewardSp; enemies.splice(idx, 1); updateUI(); }
+                }
+                projectiles.splice(i, 1);
+            } else { p.x += (dx / dist) * p.speed; p.y += (dy / dist) * p.speed; }
+        }
+    }
+
+    function updateEnemies() {
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            let e = enemies[i];
+            if (e.isBoss) {
+                e.skillTimer++;
+                const cfg = BOSS_TYPES[e.bossType];
+                if (e.skillTimer >= cfg.skillInterval) { cfg.onSkill(e); e.skillTimer = 0; }
+            }
+            let target = path[e.pathIndex];
+            let dx = target.x - e.x, dy = target.y - e.y, dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < e.speed) {
+                e.pathIndex++;
+                if (e.pathIndex >= path.length) {
+                    battleState.hp--; enemies.splice(i, 1); updateUI();
+                    if (battleState.hp <= 0) { alert("遊戲結束！"); location.reload(); }
+                }
+            } else { e.x += (dx / dist) * e.speed; e.y += (dy / dist) * e.speed; }
+        }
+    }
+
+    function renderPowerUpBar() {
+        document.getElementById('powerUpBar').innerHTML = deckData.map(id => {
+            const d = ALL_DICES.find(dice => dice.id === id);
+            const s = powerUpState[id], cost = s.baseCost + (s.level - 1) * s.costStep, isMax = s.level >= 5;
+            return `
+                <div onclick="upgradeDice('${id}')" class="min-w-[85px] p-2 rounded-xl text-center border ${isMax ? 'bg-slate-700 opacity-80' : 'bg-slate-800 border-slate-700'} active:scale-95 transition-all">
+                    <div class="text-[9px] ${isMax ? 'text-yellow-500' : 'text-slate-500'}">Lv.${s.level}</div>
+                    <div class="font-bold text-sm" style="color:${QUALITIES[d.quality].color}">${d.name}</div>
+                    <div class="text-[10px] text-yellow-500">${isMax ? 'MAX' : cost + ' SP'}</div>
+                </div>`;
+        }).join('');
+    }
+
+    function updateUI() {
+        document.getElementById('spText').innerText = Math.floor(battleState.sp);
+        document.getElementById('summonCostText').innerText = battleState.summonCost;
+        document.getElementById('hpText').innerText = battleState.hp;
+        document.getElementById('waveText').innerText = battleState.wave;
+    }
+
+    function startRenderLoop() {
+        const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d');
+        function frame() {
+            if (!battleState.isStarted) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawPath(ctx);
+            updateEnemies(); updateWave(); updateCombat();
+            
+            projectiles.forEach(p => { ctx.beginPath(); ctx.fillStyle = p.color; ctx.arc(p.x, p.y, 4, 0, Math.PI * 2); ctx.fill(); });
+            enemies.forEach(e => {
+                const s = e.isBoss ? e.size : 20;
+                ctx.fillStyle = e.isBoss ? e.color : "#ef4444";
+                ctx.fillRect(e.x - s/2, e.y - s/2, s, s);
+                ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(e.x-15, e.y-(s/2+8), 30, 3);
+                ctx.fillStyle = "#22c55e"; ctx.fillRect(e.x-15, e.y-(s/2+8), (e.hp/e.maxHp)*30, 3);
+            });
+
+            grid.slots.forEach(slot => {
+                ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
+                drawRoundedRect(ctx, slot.x, slot.y, grid.slotSize, grid.slotSize, 10); ctx.fill();
+                if (slot.dice && !slot.isBeingDragged) {
+                    ctx.fillStyle = slot.dice.color;
+                    drawRoundedRect(ctx, slot.x+5, slot.y+5, grid.slotSize-10, grid.slotSize-10, 8); ctx.fill();
+                    ctx.fillStyle = slot.dice.textColor; ctx.font = "bold 20px Arial"; ctx.textAlign = "center";
+                    ctx.fillText(slot.dice.lv, slot.x+grid.slotSize/2, slot.y+grid.slotSize/2+7);
+                    if (slot.isLocked) { ctx.fillStyle = "rgba(0,0,0,0.6)"; drawRoundedRect(ctx, slot.x+5, slot.y+5, grid.slotSize-10, grid.slotSize-10, 8); ctx.fill(); }
+                }
+            });
+
+            if (drag.isDragging) {
+                ctx.globalAlpha = 0.7; ctx.fillStyle = drag.dice.color;
+                drawRoundedRect(ctx, drag.currentX - grid.slotSize/2, drag.currentY - grid.slotSize/2, grid.slotSize, grid.slotSize, 10); ctx.fill();
+                ctx.globalAlpha = 1; ctx.fillStyle = drag.dice.textColor;
+                ctx.fillText(drag.dice.lv, drag.currentX, drag.currentY+7);
+            }
+            requestAnimationFrame(frame);
+        }
+        frame();
+    }
+
+    function drawPath(ctx) {
+        ctx.strokeStyle = "rgba(59, 130, 246, 0.1)"; ctx.lineWidth = 30; ctx.lineJoin = "round";
+        ctx.beginPath(); ctx.moveTo(path[0].x, path[0].y);
+        path.forEach(p => ctx.lineTo(p.x, p.y)); ctx.stroke();
+    }
+
+    function drawRoundedRect(ctx, x, y, w, h, r) {
+        ctx.beginPath(); ctx.moveTo(x+r, y); ctx.lineTo(x+w-r, y); ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+        ctx.lineTo(x+w, y+h-r); ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h); ctx.lineTo(x+r, y+h);
+        ctx.quadraticCurveTo(x, y+h, x, y+h-r); ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y); ctx.closePath();
+    }
+</script>
+</body>
+
+</html>
