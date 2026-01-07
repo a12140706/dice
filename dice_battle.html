@@ -189,25 +189,46 @@
         startRenderLoop();
     }
 
-    function initGrid(canvas) {
+   function initGrid(canvas) {
         grid.slotSize = (canvas.width - (grid.cols + 1) * grid.padding) / grid.cols;
-        const startY = canvas.height * 0.55;
+        
+        // 骰子盤起始 Y 座標 (畫面中間偏下)
+        grid.y = canvas.height * 0.45; 
+        // 骰子盤總高度 = 列數 * (格子 + 間距) + 頂部間距
+        grid.h = grid.rows * (grid.slotSize + grid.padding) + grid.padding;
+        
+        // 實際的物理邊界
+        grid.left = grid.padding;
+        grid.right = canvas.width - grid.padding;
+        grid.top = grid.y;
+        grid.bottom = grid.y + grid.h;
+
         grid.slots = [];
         for (let i = 0; i < grid.rows * grid.cols; i++) {
             const r = Math.floor(i / grid.cols);
             const c = i % grid.cols;
             grid.slots.push({
-                x: grid.padding + c * (grid.slotSize + grid.padding),
-                y: startY + r * (grid.slotSize + grid.padding),
+                x: grid.left + c * (grid.slotSize + grid.padding),
+                y: grid.top + r * (grid.slotSize + grid.padding),
                 dice: null, isLocked: false, isBeingDragged: false
             });
         }
     }
-
     function initPath(canvas) {
-        const margin = 40;
-        const top = 100, bottom = canvas.height * 0.45, left = margin, right = canvas.width - margin;
-        path = [{ x: left, y: top }, { x: right, y: top }, { x: right, y: bottom }, { x: left, y: bottom }, { x: left, y: top + 10 }];
+        const offset = 20; // 與骰子盤的距離
+        const L = grid.left - offset;
+        const R = grid.right + offset;
+        const T = grid.top - offset;
+        const B = grid.bottom + offset;
+
+        // 定義路徑：左上 -> 右上 -> 右下 -> 左下 -> 回到起點附近
+        path = [
+            { x: L, y: T }, // 點 0
+            { x: R, y: T }, // 點 1
+            { x: R, y: B }, // 點 2
+            { x: L, y: B }, // 點 3
+            { x: L, y: T + 5 } // 點 4 (稍微偏移避免與點 0 完全重疊)
+        ];
     }
 
     function setupTouchEvents(canvas) {
@@ -286,12 +307,13 @@
     }
 
     function spawnEnemy() {
-        let hpMult = (battleState.difficulty === 'hard' ? 2.5 : (battleState.difficulty === 'hell' ? 6 : 1));
-        const finalHp = 100 * hpMult * (1 + (battleState.wave - 1) * 0.2);
+        let growthRate = (battleState.difficulty === 'hell' ? 0.5 : 0.35);
+        const finalHp = 100 * Math.pow(1 + growthRate, battleState.wave - 1);
         enemies.push({
-            x: path[0].x, y: path[0].y, pathIndex: 1, maxHp: finalHp, hp: finalHp,
-            speed: 1.5 + (battleState.difficulty === 'hell' ? 0.5 : 0),
-            rewardSp: 10 + battleState.wave, isBoss: false
+            x: path[0].x, y: path[0].y, pathIndex: 1, 
+            maxHp: finalHp, hp: finalHp, virtualHp: finalHp, // 預判專用
+            speed: 1.5 + (battleState.difficulty === 'hell' ? (battleState.wave * 0.05) : 0),
+            rewardSp: 10 + Math.floor(battleState.wave / 2), isBoss: false
         });
         waveState.spawnedCount++;
     }
@@ -299,10 +321,11 @@
     function spawnBoss() {
         const typeKey = Object.keys(BOSS_TYPES)[Math.floor(Math.random() * 2)];
         const config = BOSS_TYPES[typeKey];
-        const finalHp = 1000 * 20 * (1 + battleState.wave * 0.1);
+        const finalHp = 2000 * Math.pow(1.5, battleState.wave / 10);
         enemies.push({
-            x: path[0].x, y: path[0].y, pathIndex: 1, maxHp: finalHp, hp: finalHp,
-            speed: 0.7, rewardSp: 200 + battleState.wave * 10, isBoss: true,
+            x: path[0].x, y: path[0].y, pathIndex: 1, 
+            maxHp: finalHp, hp: finalHp, virtualHp: finalHp, // 預判專用
+            speed: 0.7, rewardSp: 150 + (battleState.wave * 5), isBoss: true,
             bossType: typeKey, skillTimer: 0, size: 50, color: config.color
         });
     }
@@ -335,17 +358,36 @@
         }
     }
 
-    function updateCombat() {
+  function updateCombat() {
         grid.slots.forEach(slot => {
             if (slot.dice && !slot.isBeingDragged && !slot.isLocked) {
                 if (!slot.attackCooldown) slot.attackCooldown = 0;
                 slot.attackCooldown++;
+                
                 const speedFactor = 1 + (slot.dice.lv - 1) * 0.2;
                 if (slot.attackCooldown >= TICKS_PER_ATTACK / speedFactor) {
-                    const target = [...enemies].sort((a, b) => b.pathIndex - a.pathIndex)[0];
+                    
+                    // --- 預判邏輯開始 ---
+                    // 1. 篩選出「還沒被預定打死」的怪 (virtualHp > 0)
+                    // 2. 依然依照路徑進度排序，打最前面的
+                    const availableEnemies = enemies.filter(e => (e.virtualHp === undefined ? e.hp : e.virtualHp) > 0);
+                    const target = availableEnemies.sort((a, b) => b.pathIndex - a.pathIndex)[0];
+
                     if (target) {
-                        const finalDamage = 10 * slot.dice.lv * getPowerUpMultiplier(slot.dice.id);
-                        projectiles.push({ x: slot.x + grid.slotSize / 2, y: slot.y + grid.slotSize / 2, target, color: slot.dice.color, speed: 7, damage: finalDamage });
+                        const finalDamage = 10 * slot.dice.lv * (1 + (powerUpState[slot.dice.id].level - 1) * 0.25);
+                        
+                        // 初始化 virtualHp 並扣除預期傷害
+                        if (target.virtualHp === undefined) target.virtualHp = target.hp;
+                        target.virtualHp -= finalDamage;
+
+                        projectiles.push({
+                            x: slot.x + grid.slotSize / 2,
+                            y: slot.y + grid.slotSize / 2,
+                            target: target,
+                            color: slot.dice.color,
+                            speed: 8,
+                            damage: finalDamage
+                        });
                         slot.attackCooldown = 0;
                     }
                 }
@@ -354,19 +396,41 @@
 
         for (let i = projectiles.length - 1; i >= 0; i--) {
             let p = projectiles[i];
-            if (!enemies.includes(p.target)) { projectiles.splice(i, 1); continue; }
+            
+            // 如果目標在飛行途中已經因為其他子彈「實際死亡」了
+            if (!enemies.includes(p.target)) {
+                projectiles.splice(i, 1);
+                continue;
+            }
+
             let dx = p.target.x - p.x, dy = p.target.y - p.y, dist = Math.sqrt(dx * dx + dy * dy);
+            
             if (dist < 15) {
+                // 實際扣血
                 p.target.hp -= p.damage;
+                
                 if (p.target.hp <= 0) {
                     const idx = enemies.indexOf(p.target);
-                    if (idx > -1) { battleState.sp += p.target.rewardSp; enemies.splice(idx, 1); updateUI(); }
+                    if (idx > -1) { 
+                        battleState.sp += p.target.rewardSp; 
+                        enemies.splice(idx, 1); 
+                        updateUI(); 
+                    }
                 }
                 projectiles.splice(i, 1);
-            } else { p.x += (dx / dist) * p.speed; p.y += (dy / dist) * p.speed; }
+            } else { 
+                p.x += (dx / dist) * p.speed; 
+                p.y += (dy / dist) * p.speed; 
+            }
         }
     }
 
+// 輔助函式：計算到下一個路徑點的距離
+function distToNext(e) {
+    const next = path[e.pathIndex];
+    if (!next) return 0;
+    return Math.sqrt((next.x - e.x)**2 + (next.y - e.y)**2);
+}
     function updateEnemies() {
         for (let i = enemies.length - 1; i >= 0; i--) {
             let e = enemies[i];
