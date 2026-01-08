@@ -140,12 +140,12 @@
     </button>
 </div>
     <script>
-        const QUALITIES = {
-            common: { name: '普通', color: '#ffffff' },
-            rare: { name: '稀有', color: '#3b82f6' },
-            epic: { name: '史詩', color: '#a855f7' },
-            legend: { name: '傳說', color: '#eab308' },
-            mythic: { name: '神話', color: '#ff00ff' }
+         const QUALITIES = {
+            common: { name: '普通', color: '#ffffff', chance: 0.60 },   // 60% 機率
+            rare: { name: '稀有', color: '#3b82f6', chance: 0.25 },   // 25% 機率
+            epic: { name: '史詩', color: '#a855f7', chance: 0.10 },   // 10% 機率
+            legend: { name: '傳說', color: '#eab308', chance: 0.04 },   // 4% 機率
+            mythic: { name: '神話', color: '#ff00ff', chance: 0.01 }    // 1% 機率
         };
 
         const ALL_DICES = [
