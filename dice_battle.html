@@ -18,18 +18,40 @@
             flex-direction: column;
             background-color: #020617;
         }
+.q-mythic {
+            background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff);
+            background-size: 200% 200%;
+            animation: rainbow 3s linear infinite;
+        }
 
+        @keyframes rainbow {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
         /* 太陽爆炸光圈 */
         .sun-explosion {
             position: absolute;
-            border: 2px solid #fb923c;
-            background: rgba(251, 146, 60, 0.2);
+            border: 3px solid #fb923c;
+            /* 加粗一點比較明顯 */
+            background: rgba(251, 146, 60, 0.3);
             border-radius: 50%;
             pointer-events: none;
-            /* 確保不影響點擊 */
             transform: translate(-50%, -50%);
+            /* 確保圓心對準怪物的 (x, y) */
             animation: sunExplode 0.4s ease-out forwards;
-            z-index: 50;
+            z-index: 100;
+            /* 確保大於 Canvas 的 z-index */
+            box-shadow: 0 0 15px orange;
+            /* 增加發光感 */
         }
 
         @keyframes sunExplode {
@@ -41,7 +63,6 @@
 
             100% {
                 width: 130px;
-                /* 剛好覆蓋 65*2 的範圍 */
                 height: 130px;
                 opacity: 0;
             }
@@ -553,17 +574,21 @@
             if (!target) return;
 
             if (dice.id === 'sun' && isSunActivated) {
-                // --- 1. 產生 CSS 爆炸特效 ---
-                const gameContainer = document.getElementById('gameContainer'); // 確保你有一個包住 Canvas 的容器
-                if (gameContainer) {
+                const container = document.getElementById('canvas-container'); // 修正 ID
+                if (container) {
                     const effect = document.createElement('div');
                     effect.className = 'sun-explosion';
-                    // 這裡的座標要根據你的 Canvas 縮放調整，假設是 1:1
-                    effect.style.left = target.x + 'px';
-                    effect.style.top = target.y + 'px';
-                    gameContainer.appendChild(effect);
 
-                    // 400ms 後自動移除，防止 DOM 累積過多
+                    // 修正：考慮到 Canvas 可能被 CSS 縮放過
+                    const rect = canvas.getBoundingClientRect();
+                    const scaleX = rect.width / canvas.width;
+                    const scaleY = rect.height / canvas.height;
+
+                    // 計算特效在容器內的精確像素位置
+                    effect.style.left = (target.x * scaleX) + 'px';
+                    effect.style.top = (target.y * scaleY) + 'px';
+
+                    container.appendChild(effect);
                     setTimeout(() => effect.remove(), 400);
                 }
 
