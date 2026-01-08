@@ -924,29 +924,37 @@
             });
         }
         function drawEffect(slot, color) {
-            // 取得中心點
+            // 1. 安全檢查：如果座標不是數字，直接跳過不畫，防止 Canvas 黑掉
+            if (isNaN(slot.x) || isNaN(slot.y) || !grid.slotSize) return;
+
             const centerX = slot.x + grid.slotSize / 2;
             const centerY = slot.y + grid.slotSize / 2;
             const radius = (grid.slotSize / 2) - 5;
 
-            // 使用正弦波做呼吸燈效果
+            // 檢查半徑是否合法
+            if (radius <= 0) return;
+
+            // 使用 Date.now() 配合波長控制呼吸燈
             const pulse = Math.sin(Date.now() / 200);
 
             ctx.save();
 
-            // 1. 畫外圈呼吸光環 (不使用 shadowBlur)
-            ctx.beginPath();
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 3;
-            ctx.globalAlpha = 0.4 + (pulse * 0.2); // 讓透明度隨時間變化，模擬發光感
-            ctx.arc(centerX, centerY, radius + 2, 0, Math.PI * 2);
-            ctx.stroke();
+            // 2. 徹底移除 shadowBlur (這是你手機卡住的主因)
+            // 3. 改用多重半透明圓環來模擬「發光」
 
-            // 2. 畫內圈主線
+            // 外層擴散環
             ctx.beginPath();
             ctx.strokeStyle = color;
             ctx.lineWidth = 2;
-            ctx.globalAlpha = 1.0;
+            ctx.globalAlpha = 0.2 + (pulse * 0.1); // 微弱閃爍
+            ctx.arc(centerX, centerY, radius + 4, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // 內層實心環
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.globalAlpha = 0.6;
             ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
             ctx.stroke();
 
