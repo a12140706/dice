@@ -19,6 +19,34 @@
             background-color: #020617;
         }
 
+        /* 太陽爆炸光圈 */
+        .sun-explosion {
+            position: absolute;
+            border: 2px solid #fb923c;
+            background: rgba(251, 146, 60, 0.2);
+            border-radius: 50%;
+            pointer-events: none;
+            /* 確保不影響點擊 */
+            transform: translate(-50%, -50%);
+            animation: sunExplode 0.4s ease-out forwards;
+            z-index: 50;
+        }
+
+        @keyframes sunExplode {
+            0% {
+                width: 0px;
+                height: 0px;
+                opacity: 1;
+            }
+
+            100% {
+                width: 130px;
+                /* 剛好覆蓋 65*2 的範圍 */
+                height: 130px;
+                opacity: 0;
+            }
+        }
+
         #header-info {
             flex-shrink: 0;
             /* 固定頭部高度 */
@@ -459,7 +487,7 @@
                     if (slot.attackCooldown >= spd) {
                         // 尋找目標
                         const target = enemies
-                            .filter(e => (e.virtualHp !== undefined ? e.virtualHp : e.hp) > 0)
+                            .filter(e => e.hp > 0 && (e.virtualHp !== undefined ? e.virtualHp : e.hp) > 0)
                             .sort((a, b) => b.pathIndex - a.pathIndex)[0];
 
                         if (target) {
@@ -523,21 +551,32 @@
         // 【發射端】處理：虛擬血量、太陽 AOE、產生子彈
         function executeAttack(dice, target, damage, startX, startY, isSunActivated) {
             if (!target) return;
-            if (target.virtualHp === undefined) target.virtualHp = target.hp;
-            target.virtualHp -= damage;
 
-            // 太陽發光：AOE 爆炸
             if (dice.id === 'sun' && isSunActivated) {
-                enemies.forEach(e => {
-                    // 使用簡單的絕對值差判斷，比 hypot 快很多
-                    const distX = Math.abs(e.x - target.x);
-                    const distY = Math.abs(e.y - target.y);
+                // --- 1. 產生 CSS 爆炸特效 ---
+                const gameContainer = document.getElementById('gameContainer'); // 確保你有一個包住 Canvas 的容器
+                if (gameContainer) {
+                    const effect = document.createElement('div');
+                    effect.className = 'sun-explosion';
+                    // 這裡的座標要根據你的 Canvas 縮放調整，假設是 1:1
+                    effect.style.left = target.x + 'px';
+                    effect.style.top = target.y + 'px';
+                    gameContainer.appendChild(effect);
 
-                    if (e.hp > 0 && distX < 60 && distY < 60) {
+                    // 400ms 後自動移除，防止 DOM 累積過多
+                    setTimeout(() => effect.remove(), 400);
+                }
+
+                // --- 2. 原本的 AOE 傷害邏輯 ---
+                const tx = target.x;
+                const ty = target.y;
+                enemies.forEach(e => {
+                    const dx = Math.abs(e.x - tx);
+                    const dy = Math.abs(e.y - ty);
+                    if (e.hp > 0 && dx < 65 && dy < 65) {
                         e.hp -= damage;
-                        e.virtualHp -= damage;
-                        // 限制數字數量，手機版必做
-                        if (damagePopups.length < 10) {
+                        e.virtualHp = e.hp;
+                        if (e === target && damagePopups.length < 10) {
                             damagePopups.push({ x: e.x, y: e.y, val: Math.floor(damage), life: 20 });
                         }
                     }
@@ -545,17 +584,15 @@
                 return;
             }
 
-            // 一般子彈
+            // --- 其他非 AOE 骰子（產生子彈）保持原樣 ---
+            if (target.virtualHp === undefined) target.virtualHp = target.hp;
+            target.virtualHp -= damage; // 只有子彈攻擊才需要「預扣」
+
             projectiles.push({
-                x: startX, y: startY,
-                target: target,
-                damage: damage,
-                diceId: dice.id,
-                color: dice.color,
-                speed: 12
+                x: startX, y: startY, target: target, damage: damage,
+                diceId: dice.id, color: dice.color, speed: 12
             });
         }
-
         // 【撞擊端】處理：單體傷害、功能性效果 (減速、中毒、傳送、連鎖)
         function applyHitEffect(p) {
             const target = p.target;
