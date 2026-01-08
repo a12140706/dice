@@ -412,7 +412,8 @@
 
         function updateCombat() {
             // 1. 提前計算全場太陽數量 (提升效能，避免在迴圈內重複計算)
-
+            const totalSunCount = 1;
+            const isSunActivated = true;
 
             // 2. 遍歷所有格子處理骰子邏輯
             grid.slots.forEach(slot => {
