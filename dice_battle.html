@@ -66,10 +66,27 @@
         }
 
         #canvas-container {
-            flex-grow: 1;
             position: relative;
+            /* 手機：100% 寬度 */
             width: 100%;
+
+            /* 平板與電腦優化： */
+            /* 這裡設定 max-width 為螢幕高度的 60%，能確保比例不會太寬 */
+            max-width: min(550px, 80vh);
+
+            /* 高度設定 */
+            height: 90vh;
+            /* 佔據螢幕高度的 90% */
+
+            /* 置中 */
+            margin: 0 auto;
+
+            flex-grow: 1;
             overflow: hidden;
+
+            /* 裝飾性：在較大螢幕上增加陰影感 */
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+            background: #000;
         }
 
         #gameCanvas {
@@ -558,7 +575,7 @@
             if (dice.id === 'sun' && isSunActivated) {
                 // --- 1. 產生 CSS 爆炸特效 ---
                 const gameContainer = document.getElementById('canvas-container'); // 確保你有一個包住 Canvas 的容器
-                if (gameContainer) {
+                /*if (gameContainer) {
                     const effect = document.createElement('div');
                     effect.className = 'sun-explosion';
 
@@ -577,8 +594,8 @@
 
                     gameContainer.appendChild(effect);
                     setTimeout(() => effect.remove(), 400);
-                }
-                /*if (gameContainer) {
+                }*/
+                if (gameContainer) {
                     const effect = document.createElement('div');
                     effect.className = 'sun-explosion';
                     // 這裡的座標要根據你的 Canvas 縮放調整，假設是 1:1
@@ -588,7 +605,7 @@
 
                     // 400ms 後自動移除，防止 DOM 累積過多
                     setTimeout(() => effect.remove(), 400);
-                }*/
+                }
 
                 // --- 2. 原本的 AOE 傷害邏輯 ---
                 const tx = target.x;
