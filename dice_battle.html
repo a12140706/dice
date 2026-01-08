@@ -411,9 +411,7 @@
         }
 
         function updateCombat() {
-            // 1. 提前計算全場太陽數量 (提升效能，避免在迴圈內重複計算)
-            const totalSunCount = 1;
-            const isSunActivated = true;
+            // 1. 提前計算全場太陽數量 (提升效能，避免在迴圈內重複計算
 
             // 2. 遍歷所有格子處理骰子邏輯
             grid.slots.forEach(slot => {
@@ -792,25 +790,24 @@
 
 
                 grid.slots.forEach(slot => {
-                    // 畫格子背景
+                    // 1. 畫格子背景 (獨立路徑)
+                    ctx.beginPath();
                     ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
                     drawRoundedRect(ctx, slot.x, slot.y, grid.slotSize, grid.slotSize, 10);
                     ctx.fill();
 
                     if (slot.dice && !slot.isBeingDragged) {
-                        // 使用外面宣告好的 ctx，絕對不要在裡面重新 getContext
-
-                        // 太陽特效
+                        // 2. 太陽特效 (必須先跑特效，且特效內部已經有 save/restore 和 beginPath)
                         if (slot.dice.id === 'sun' && isSunActivated) {
-                            drawEffect(slot, "orange");
+                            //drawEffect(slot, "orange");
                         }
 
-                        // 齒輪特效
+                        // 3. 齒輪特效
                         if (slot.dice.id === 'gear' && slot.dice.isPowered) {
                             drawEffect(slot, "#00ccff");
                         }
 
-                        // 畫骰子主體
+                        // 4. 畫骰子主體 (重要：renderDice 內部第一行必須是 ctx.beginPath())
                         renderDice(ctx, slot.x, slot.y, slot.dice, slot.isLocked);
                     }
                 });
