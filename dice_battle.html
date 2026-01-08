@@ -409,314 +409,216 @@
             enemies.push({ x: path[0].x, y: path[0].y, pathIndex: 1, maxHp: hp, hp, virtualHp: hp, speed: 0.8, rewardSp: 150, isBoss: true, bossType: type, skillTimer: 0, size: 50, color: BOSS_TYPES[type].color });
         }
 
-        function updateCombat() {
-            // A. 先計算全場太陽數量 (只需算一次，提升效能)
-            const totalSunCount = grid.slots.filter(s => s.dice && s.dice.id === 'sun').length;
-            const isSunActivated = [1, 4, 7].includes(totalSunCount);
+       function updateCombat() {
+    // 1. 提前計算全場太陽數量 (提升效能，避免在迴圈內重複計算)
+    const totalSunCount = grid.slots.filter(s => s.dice && s.dice.id === 'sun').length;
+    const isSunActivated = [1, 4, 7].includes(totalSunCount);
 
-            grid.slots.forEach(slot => {
-                // 基礎安全檢查
-                if (slot.dice && slot.dice.id && !slot.isBeingDragged && !slot.isLocked) {
-                    const db = ALL_DICES.find(d => d.id === slot.dice.id);
-                    if (!db) return;
+    // 2. 遍歷所有格子處理骰子邏輯
+    grid.slots.forEach(slot => {
+        // 基礎安全檢查：確保格子有骰子、沒被拖曳、且沒被鎖定
+        if (slot.dice && slot.dice.id && !slot.isBeingDragged && !slot.isLocked) {
+            const db = ALL_DICES.find(d => d.id === slot.dice.id);
+            if (!db) return;
 
-                    const pLv = userData.diceLevels[slot.dice.id] || 1;
-
-                    // --- 1. 攻速計算 ---
-                    // 使用你的 db 數值計算原始間隔
-                    let spd = Math.max(10, db.stats.speed + (pLv - 1) * db.grow.speed);
-
-                    // 太陽發光加速 1.5 倍 (已調低倍率以防卡死)
-                    if (slot.dice.id === 'sun' && isSunActivated) {
-                        spd /= 1.2;
-                    }
-
-                    // 【絕對保底】防止攻速變成 0 導致無限循環崩潰
-                    if (spd < 5) spd = 10;
-
-                    // --- 2. 處理成長骰子邏輯 ---
-                    if (slot.dice.id === 'growth') {
-                        if (!slot.dice.growthTimer) slot.dice.growthTimer = 0;
-                        slot.dice.growthTimer++;
-                        const targetSeconds = getDiceSpecialValue('growth');
-                        if (slot.dice.growthTimer >= targetSeconds * 60) {
-                            if (slot.dice.lv < 7) {
-                                const newId = userData.deck[Math.floor(Math.random() * userData.deck.length)];
-                                const newDb = ALL_DICES.find(d => d.id === newId);
-                                slot.dice = {
-                                    id: newId,
-                                    lv: slot.dice.lv + 1,
-                                    color: newDb.baseColor,
-                                    qualityColor: QUALITIES[newDb.quality].color,
-                                    growthTimer: 0,
-                                    attackCooldown: 0 // 重置冷卻
-                                };
-                                updateUI();
-                            }
-                        }
-                    }
-
-                    // --- 3. 攻擊觸發邏輯 ---
-                    slot.attackCooldown++;
-
-                    if (slot.attackCooldown >= spd) {
-                        // 優先攻擊最前方的怪 (使用虛擬血量過濾，防止幽靈子彈)
-                        const target = enemies
-                            .filter(e => (e.virtualHp !== undefined ? e.virtualHp : e.hp) > 0)
-                            .sort((a, b) => b.pathIndex - a.pathIndex)[0];
-
-                        if (target) {
-                            const powerUpLv = powerUpLevels[slot.dice.id] || 1;
-                            let dmg = (db.stats.atk + (pLv - 1) * db.grow.atk) * slot.dice.lv * (1 + (powerUpLv - 1) * 0.4);
-
-                            // 齒輪鄰近加成 (維持原邏輯)
-                            if (slot.dice.id === 'gear') {
-                                const idx = grid.slots.indexOf(slot);
-                                const col = idx % grid.cols;
-                                const row = Math.floor(idx / grid.cols);
-                                let neighbors = 0;
-                                grid.slots.forEach((s, sIdx) => {
-                                    if (s.dice && s.dice.id === 'gear' && s !== slot) {
-                                        let sCol = sIdx % grid.cols;
-                                        let sRow = Math.floor(sIdx / grid.cols);
-                                        if (Math.abs(sCol - col) + Math.abs(sRow - row) === 1) neighbors++;
-                                    }
-                                });
-                                slot.dice.isPowered = (neighbors > 0);
-                                dmg *= (1 + neighbors * 0.5);
-                            }
-
-                            // --- 關鍵：同步虛擬血量 ---
-                            if (target.virtualHp === undefined) target.virtualHp = target.hp;
-                            target.virtualHp -= dmg;
-
-                            projectiles.push({
-                                x: slot.x + grid.slotSize / 2,
-                                y: slot.y + grid.slotSize / 2,
-                                target: target,
-                                color: db.baseColor,
-                                speed: 10,
-                                damage: dmg,
-                                diceId: slot.dice.id,
-                                diceLv: slot.dice.lv
-                            });
-
-                            slot.attackCooldown = 0;
-                        } else {
-                            // 沒怪時停留在可攻擊狀態，不重置也不會瘋狂疊加
-                            slot.attackCooldown = spd;
-                        }
+            // --- A. 處理成長骰子邏輯 ---
+            if (slot.dice.id === 'growth') {
+                if (!slot.dice.growthTimer) slot.dice.growthTimer = 0;
+                slot.dice.growthTimer++;
+                
+                // 取得成長所需秒數 (例如 15 秒)
+                const targetSeconds = getDiceSpecialValue('growth');
+                if (slot.dice.growthTimer >= targetSeconds * 60) { // 假設 60 FPS
+                    if (slot.dice.lv < 7) {
+                        const newId = userData.deck[Math.floor(Math.random() * userData.deck.length)];
+                        const newDb = ALL_DICES.find(d => d.id === newId);
+                        
+                        // 升星轉化
+                        slot.dice = {
+                            id: newId,
+                            lv: slot.dice.lv + 1,
+                            color: newDb.baseColor,
+                            qualityColor: QUALITIES[newDb.quality].color,
+                            growthTimer: 0,
+                            attackCooldown: 0
+                        };
+                        updateUI(); // 骰子變身需要更新介面
                     }
                 }
-            });
+            }
 
-            // --- 4. 子彈移動與擊中判定 ---
-            for (let i = projectiles.length - 1; i >= 0; i--) {
-                let p = projectiles[i];
-                if (!enemies.includes(p.target)) { projectiles.splice(i, 1); continue; }
+            // --- B. 攻速計算與攻擊觸發 ---
+            const pLv = userData.diceLevels[slot.dice.id] || 1;
+            let spd = Math.max(10, db.stats.speed + (pLv - 1) * db.grow.speed);
 
-                let dx = p.target.x - p.x;
-                let dy = p.target.y - p.y;
-                let dist = Math.sqrt(dx * dx + dy * dy);
+            // 功能性優先：太陽發光時大幅加速
+            if (slot.dice.id === 'sun' && isSunActivated) {
+                spd /= 1.2; // 加速 50%
+            }
 
-                if (dist < 15) {
-                    applyHitEffect(p);
-                    projectiles.splice(i, 1);
+            // 防止攻速異常導致崩潰
+            if (spd < 5) spd = 20;
+
+            slot.attackCooldown = (slot.attackCooldown || 0) + 1;
+
+            if (slot.attackCooldown >= spd) {
+                // 尋找目標：優先攻擊路徑最前方的怪 (使用虛擬血量過濾，防止子彈鞭屍)
+                const target = enemies
+                    .filter(e => (e.virtualHp !== undefined ? e.virtualHp : e.hp) > 0)
+                    .sort((a, b) => b.pathIndex - a.pathIndex)[0];
+
+                if (target) {
+                    // 計算基礎傷害 (包含 PowerUp 等級加成)
+                    const powerUpLv = powerUpLevels[slot.dice.id] || 1;
+                    let dmg = (db.stats.atk + (pLv - 1) * db.grow.atk) * slot.dice.lv * (1 + (powerUpLv - 1) * 0.4);
+
+                    // 齒輪骰子鄰近加成邏輯
+                    if (slot.dice.id === 'gear') {
+                        const idx = grid.slots.indexOf(slot);
+                        const col = idx % grid.cols;
+                        const row = Math.floor(idx / grid.cols);
+                        let neighbors = 0;
+                        grid.slots.forEach((s, sIdx) => {
+                            if (s.dice && s.dice.id === 'gear' && s !== slot) {
+                                let sCol = sIdx % grid.cols;
+                                let sRow = Math.floor(sIdx / grid.cols);
+                                if (Math.abs(sCol - col) + Math.abs(sRow - row) === 1) neighbors++;
+                            }
+                        });
+                        dmg *= (1 + neighbors * 0.5); // 每個相鄰齒輪增加 50% 傷害
+                    }
+
+                    // 呼叫發射函式 (由其決定要產生子彈還是 AOE)
+                    executeAttack(
+                        slot.dice, 
+                        target, 
+                        dmg, 
+                        slot.x + grid.slotSize / 2, 
+                        slot.y + grid.slotSize / 2, 
+                        isSunActivated
+                    );
+
+                    slot.attackCooldown = 0;
                 } else {
-                    p.x += (dx / dist) * p.speed;
-                    p.y += (dy / dist) * p.speed;
+                    // 沒怪時，冷卻維持在可攻擊狀態，不重置
+                    slot.attackCooldown = spd;
                 }
             }
         }
+    });
+
+    // 3. 子彈移動與擊中判定 (獨立於骰子迴圈之外)
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+        let p = projectiles[i];
+        
+        // 如果目標死了或不存在，移除子彈
+        if (!enemies.includes(p.target) || p.target.hp <= 0) {
+            projectiles.splice(i, 1);
+            continue;
+        }
+
+        let dx = p.target.x - p.x;
+        let dy = p.target.y - p.y;
+        let dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < 15) {
+            // 擊中效果
+            applyHitEffect(p);
+            projectiles.splice(i, 1);
+        } else {
+            // 移動子彈
+            p.x += (dx / dist) * (p.speed || 10);
+            p.y += (dy / dist) * (p.speed || 10);
+        }
+    }
+}
         // 特殊骰子效果
-        function executeAttack(dice, target, damage, startX, startY) {
-            // 預扣虛擬血量，防止多個骰子同時攻擊同一隻快死的怪
-            target.virtualHp -= damage;
+       // 【發射端】處理：虛擬血量、太陽 AOE、產生子彈
+function executeAttack(dice, target, damage, startX, startY, isSunActivated) {
+    if (target.virtualHp === undefined) target.virtualHp = target.hp;
+    target.virtualHp -= damage;
 
-            // 根據骰子 ID 執行不同效果
-            switch (dice.id) {
-                case 'ice':
-                    target.speed = Math.max(0.5, 1.5 * 0.7); // 減速 30%
-                    clearTimeout(target.iceTimer);
-                    target.iceTimer = setTimeout(() => { target.speed = 1.5; }, 1000);
-                    break;
-
-                case 'lock':
-                    // 鎖定：20% 機率定身 1.5 秒
-                    if (Math.random() < 0.2) {
-                        const originalSpeed = target.speed;
-                        target.speed = 0;
-                        setTimeout(() => { target.speed = 1.5; }, 1500);
-                    }
-                    break;
-
-                case 'electric':
-                    // 連鎖攻擊：尋找附近的怪
-                    enemies.forEach(e => {
-                        let dist = Math.hypot(e.x - target.x, e.y - target.y);
-                        if (e !== target && dist < 100) {
-                            e.hp -= damage * 0.5;
-                            damagePopups.push({ x: e.x, y: e.y, val: Math.floor(damage * 0.5), life: 20 });
-                        }
-                    });
-                    break;
-
-                case 'poison':
-                    // 中毒：可疊加
-                    if (!target.poisonStacks) target.poisonStacks = 0;
-                    target.poisonStacks++;
-                    break;
-
-                case 'teleport':
-                    // 傳送：5% 機率將非 Boss 怪傳回起點
-                    if (Math.random() < 0.05 && !target.isBoss) {
-                        target.x = path[0].x;
-                        target.y = path[0].y;
-                        target.pathIndex = 1;
-                        return; // 傳送後不產生子彈
-                    }
-                    break;
-
-                case 'gear':
-                    // 齒輪：計算相鄰的齒輪數量增加傷害 (這部分通常在 damage 計算時處理，這裡做為提示)
-                    // 如果你在 updateCombat 已經算好 damage，這裡就直接走子彈邏輯
-                    break;
-
-                case 'sun':
-                    const sunCount = grid.slots.filter(s => s.dice && s.dice.id === 'sun').length;
-                    if ([1, 4, 7].includes(sunCount)) {
-                        // 範圍傷害 (AOE)
-                        enemies.forEach(e => {
-                            if (Math.hypot(e.x - target.x, e.y - target.y) < 65) {
-                                e.hp -= damage;
-                                damagePopups.push({ x: e.x, y: e.y, val: Math.floor(damage), life: 20 });
-                            }
-                        });
-                        return; // 太陽發光時直接爆炸，不產生普通子彈
-                    }
-                    break;
-
-                case 'galaxy':
-                    // 銀河黑洞：15% 機率觸發小範圍吸入與持續傷害
-                    if (Math.random() < 0.15) {
-                        enemies.forEach(e => {
-                            let d = Math.hypot(e.x - target.x, e.y - target.y);
-                            if (d < 80) {
-                                e.x += (target.x - e.x) * 0.3; // 微弱吸入感
-                                e.y += (target.y - e.y) * 0.3;
-                                e.hp -= damage * 0.2;
-                            }
-                        });
-                    }
-                    break;
-
-                case 'joker':
-                    // 小丑本身攻擊力極低，通常不具備特殊擊中效果
-                    break;
-            }
-
-            // 產生子彈 (使用傳入的起始座標)
-            projectiles.push({
-                x: startX,
-                y: startY,
-                fromDice: true,
-                target,
-                color: dice.color,
-                speed: 10,
-                damage: damage
-            });
-        }
-        function applyHitEffect(p) {
-            const target = p.target;
-            if (!target || target.hp <= 0) return;
-
-            // 1. 扣除主目標實際血量
-            target.hp -= p.damage;
-            // 傷害飄字
-            damagePopups.push({ x: target.x, y: target.y, val: Math.floor(p.damage), life: 30 });
-
-            const spec = getDiceSpecialValue(p.diceId);
-
-            switch (p.diceId) {
-                case 'ice':
-                    target.speed = Math.max(0.3, 1.5 * (1 - spec / 100));
-                    clearTimeout(target.iceTimer);
-                    target.iceTimer = setTimeout(() => { target.speed = 1.5; }, 1000);
-                    break;
-                case 'lock':
-                    if (Math.random() < 0.2) {
-                        target.speed = 0;
-                        setTimeout(() => { target.speed = 1.5; }, spec * 1000);
-                    }
-                    break;
-                case 'teleport':
-                    if (Math.random() < (spec / 100) && !target.isBoss) {
-                        target.x = path[0].x; target.y = path[0].y; target.pathIndex = 1;
-                    }
-                    break;
-                case 'electric':
-                    const chainBase = (p.diceLv * 10);
-                    enemies.forEach(e => {
-                        if (e !== target && e.hp > 0 && Math.hypot(e.x - target.x, e.y - target.y) < 100) {
-                            let chainDmg = (p.damage * 0.8) + chainBase;
-                            const pUpLv = powerUpLevels['electric'] || 1;
-                            chainDmg *= (1 + (pUpLv - 1) * 0.2);
-
-                            // 【修正】同步扣除虛擬血量，防止幽靈子彈
-                            e.hp -= chainDmg;
-                            e.virtualHp -= chainDmg;
-
-                            const displayVal = Math.ceil(chainDmg);
-                            if (displayVal > 0) {
-                                damagePopups.push({ x: e.x, y: e.y, val: displayVal, life: 20, color: "#fde047" });
-                            }
-                        }
-                    });
-                    break;
-                case 'sun':
-                    // 【優化】不要在這裡用 filter，改用全域判斷或傳入
-                    const totalSuns = grid.slots.filter(s => s.dice && s.dice.id === 'sun').length;
-                    if ([1, 4, 7].includes(totalSuns)) {
-                        enemies.forEach(e => {
-                            if (e !== target && e.hp > 0 && Math.hypot(e.x - target.x, e.y - target.y) < 65) {
-                                // 【修正】爆炸傷害也要扣 virtualHp
-                                e.hp -= p.damage;
-                                e.virtualHp -= p.damage;
-                                damagePopups.push({ x: e.x, y: e.y, val: Math.floor(p.damage), life: 15 });
-                            }
-                        });
-                    }
-                    break;
-                case 'galaxy':
-                    if (Math.random() < (spec / 100)) {
-                        enemies.forEach(e => {
-                            if (e !== target && e.hp > 0 && Math.hypot(e.x - target.x, e.y - target.y) < 80) {
-                                e.x += (target.x - e.x) * 0.3;
-                                e.y += (target.y - e.y) * 0.3;
-                                // 黑洞持續傷害也同步
-                                const bhDmg = p.damage * 0.2;
-                                e.hp -= bhDmg;
-                                e.virtualHp -= bhDmg;
-                            }
-                        });
-                    }
-                    break;
-                case 'poison':
-                    if (!target.poisonStacks) target.poisonStacks = 0;
-                    target.poisonStacks++;
-                    break;
-            }
-
-            // 最後統一檢查哪些怪死了（包含被濺射炸死的）
-            // 這裡我們倒著遍歷 enemies，安全移除死亡怪物
-            for (let i = enemies.length - 1; i >= 0; i--) {
-                if (enemies[i].hp <= 0) {
-                    battleState.sp += enemies[i].rewardSp || 10;
-                    enemies.splice(i, 1);
-                    updateUI(); // 只要有死人就更新一次 UI
+    // 太陽發光：直接 AOE 爆炸，不產生子彈 (效能最優)
+    if (dice.id === 'sun' && isSunActivated) {
+        enemies.forEach(e => {
+            if (e.hp > 0 && Math.hypot(e.x - target.x, e.y - target.y) < 65) {
+                e.hp -= damage;
+                e.virtualHp -= damage;
+                if (damagePopups.length < 15) { // 限制數字防卡
+                    damagePopups.push({ x: e.x, y: e.y, val: Math.floor(damage), life: 20 });
                 }
             }
+        });
+        return; // 直接結束，不跑下面的 push
+    }
+
+    // 其他骰子（或沒發光的太陽）：產生子彈，並把 ID 帶給子彈
+    projectiles.push({
+        x: startX, y: startY,
+        target: target,
+        damage: damage,
+        diceId: dice.id, // 讓 applyHitEffect 知道要觸發什麼效果
+        color: dice.color,
+        speed: 12
+    });
+}
+
+// 【撞擊端】處理：單體傷害、功能性效果 (減速、中毒、傳送、連鎖)
+function applyHitEffect(p) {
+    const target = p.target;
+    if (!target || target.hp <= 0) return;
+
+    // 1. 基礎傷害
+    target.hp -= p.damage;
+    if (damagePopups.length < 20) {
+        damagePopups.push({ x: target.x, y: target.y, val: Math.floor(p.damage), life: 30 });
+    }
+
+    // 2. 執行功能性效果
+    const spec = getDiceSpecialValue(p.diceId);
+    switch (p.diceId) {
+        case 'ice':
+            target.speed = Math.max(0.3, 1.5 * (1 - spec / 100));
+            clearTimeout(target.iceTimer);
+            target.iceTimer = setTimeout(() => { target.speed = 1.5; }, 1000);
+            break;
+        case 'lock':
+            if (Math.random() < 0.2) {
+                target.speed = 0;
+                setTimeout(() => { target.speed = 1.5; }, spec * 1000);
+            }
+            break;
+        case 'electric':
+            // 電力連鎖 (撞擊才跳電，視覺比較自然)
+            enemies.forEach(e => {
+                if (e !== target && e.hp > 0 && Math.hypot(e.x - target.x, e.y - target.y) < 100) {
+                    let chainDmg = p.damage * 0.5;
+                    e.hp -= chainDmg;
+                    e.virtualHp -= chainDmg;
+                    if (damagePopups.length < 10) {
+                        damagePopups.push({ x: e.x, y: e.y, val: Math.floor(chainDmg), life: 20, color: "#fde047" });
+                    }
+                }
+            });
+            break;
+        case 'poison':
+            target.poisonStacks = (target.poisonStacks || 0) + 1;
+            break;
+        case 'teleport':
+            if (Math.random() < (spec / 100) && !target.isBoss) {
+                target.x = path[0].x; target.y = path[0].y; target.pathIndex = 1;
+            }
+            break;
+    }
+
+    // 3. 統一清理死亡怪物 (移除 updateUI 避免頻繁重繪)
+    for (let i = enemies.length - 1; i >= 0; i--) {
+        if (enemies[i].hp <= 0) {
+            battleState.sp += enemies[i].rewardSp || 10;
+            enemies.splice(i, 1);
         }
+    }
+}
         function updateEnemies() {
             for (let i = enemies.length - 1; i >= 0; i--) {
                 let e = enemies[i];
