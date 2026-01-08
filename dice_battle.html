@@ -410,124 +410,124 @@
         }
 
         function updateCombat() {
-    // A. 先計算全場太陽數量 (只需算一次，提升效能)
-    const totalSunCount = grid.slots.filter(s => s.dice && s.dice.id === 'sun').length;
-    const isSunActivated = [1, 4, 7].includes(totalSunCount);
+            // A. 先計算全場太陽數量 (只需算一次，提升效能)
+            const totalSunCount = grid.slots.filter(s => s.dice && s.dice.id === 'sun').length;
+            const isSunActivated = [1, 4, 7].includes(totalSunCount);
 
-    grid.slots.forEach(slot => {
-        // 基礎安全檢查
-        if (slot.dice && slot.dice.id && !slot.isBeingDragged && !slot.isLocked) {
-            const db = ALL_DICES.find(d => d.id === slot.dice.id);
-            if (!db) return;
-            
-            const pLv = userData.diceLevels[slot.dice.id] || 1;
+            grid.slots.forEach(slot => {
+                // 基礎安全檢查
+                if (slot.dice && slot.dice.id && !slot.isBeingDragged && !slot.isLocked) {
+                    const db = ALL_DICES.find(d => d.id === slot.dice.id);
+                    if (!db) return;
 
-            // --- 1. 攻速計算 ---
-            // 使用你的 db 數值計算原始間隔
-            let spd = Math.max(10, db.stats.speed + (pLv - 1) * db.grow.speed);
-            
-            // 太陽發光加速 1.5 倍 (已調低倍率以防卡死)
-            if (slot.dice.id === 'sun' && isSunActivated) {
-                spd /= 1.2;
-            }
+                    const pLv = userData.diceLevels[slot.dice.id] || 1;
 
-            // 【絕對保底】防止攻速變成 0 導致無限循環崩潰
-            if (spd < 5) spd = 10;
+                    // --- 1. 攻速計算 ---
+                    // 使用你的 db 數值計算原始間隔
+                    let spd = Math.max(10, db.stats.speed + (pLv - 1) * db.grow.speed);
 
-            // --- 2. 處理成長骰子邏輯 ---
-            if (slot.dice.id === 'growth') {
-                if (!slot.dice.growthTimer) slot.dice.growthTimer = 0;
-                slot.dice.growthTimer++;
-                const targetSeconds = getDiceSpecialValue('growth');
-                if (slot.dice.growthTimer >= targetSeconds * 60) {
-                    if (slot.dice.lv < 7) {
-                        const newId = userData.deck[Math.floor(Math.random() * userData.deck.length)];
-                        const newDb = ALL_DICES.find(d => d.id === newId);
-                        slot.dice = {
-                            id: newId,
-                            lv: slot.dice.lv + 1,
-                            color: newDb.baseColor,
-                            qualityColor: QUALITIES[newDb.quality].color,
-                            growthTimer: 0,
-                            attackCooldown: 0 // 重置冷卻
-                        };
-                        updateUI();
+                    // 太陽發光加速 1.5 倍 (已調低倍率以防卡死)
+                    if (slot.dice.id === 'sun' && isSunActivated) {
+                        spd /= 1.2;
                     }
-                }
-            }
 
-            // --- 3. 攻擊觸發邏輯 ---
-            slot.attackCooldown++;
+                    // 【絕對保底】防止攻速變成 0 導致無限循環崩潰
+                    if (spd < 5) spd = 10;
 
-            if (slot.attackCooldown >= spd) {
-                // 優先攻擊最前方的怪 (使用虛擬血量過濾，防止幽靈子彈)
-                const target = enemies
-                    .filter(e => (e.virtualHp !== undefined ? e.virtualHp : e.hp) > 0)
-                    .sort((a, b) => b.pathIndex - a.pathIndex)[0];
-
-                if (target) {
-                    const powerUpLv = powerUpLevels[slot.dice.id] || 1;
-                    let dmg = (db.stats.atk + (pLv - 1) * db.grow.atk) * slot.dice.lv * (1 + (powerUpLv - 1) * 0.4);
-
-                    // 齒輪鄰近加成 (維持原邏輯)
-                    if (slot.dice.id === 'gear') {
-                        const idx = grid.slots.indexOf(slot);
-                        const col = idx % grid.cols;
-                        const row = Math.floor(idx / grid.cols);
-                        let neighbors = 0;
-                        grid.slots.forEach((s, sIdx) => {
-                            if (s.dice && s.dice.id === 'gear' && s !== slot) {
-                                let sCol = sIdx % grid.cols;
-                                let sRow = Math.floor(sIdx / grid.cols);
-                                if (Math.abs(sCol - col) + Math.abs(sRow - row) === 1) neighbors++;
+                    // --- 2. 處理成長骰子邏輯 ---
+                    if (slot.dice.id === 'growth') {
+                        if (!slot.dice.growthTimer) slot.dice.growthTimer = 0;
+                        slot.dice.growthTimer++;
+                        const targetSeconds = getDiceSpecialValue('growth');
+                        if (slot.dice.growthTimer >= targetSeconds * 60) {
+                            if (slot.dice.lv < 7) {
+                                const newId = userData.deck[Math.floor(Math.random() * userData.deck.length)];
+                                const newDb = ALL_DICES.find(d => d.id === newId);
+                                slot.dice = {
+                                    id: newId,
+                                    lv: slot.dice.lv + 1,
+                                    color: newDb.baseColor,
+                                    qualityColor: QUALITIES[newDb.quality].color,
+                                    growthTimer: 0,
+                                    attackCooldown: 0 // 重置冷卻
+                                };
+                                updateUI();
                             }
-                        });
-                        slot.dice.isPowered = (neighbors > 0);
-                        dmg *= (1 + neighbors * 0.5);
+                        }
                     }
 
-                    // --- 關鍵：同步虛擬血量 ---
-                    if (target.virtualHp === undefined) target.virtualHp = target.hp;
-                    target.virtualHp -= dmg;
+                    // --- 3. 攻擊觸發邏輯 ---
+                    slot.attackCooldown++;
 
-                    projectiles.push({
-                        x: slot.x + grid.slotSize / 2,
-                        y: slot.y + grid.slotSize / 2,
-                        target: target,
-                        color: db.baseColor,
-                        speed: 10,
-                        damage: dmg,
-                        diceId: slot.dice.id,
-                        diceLv: slot.dice.lv
-                    });
+                    if (slot.attackCooldown >= spd) {
+                        // 優先攻擊最前方的怪 (使用虛擬血量過濾，防止幽靈子彈)
+                        const target = enemies
+                            .filter(e => (e.virtualHp !== undefined ? e.virtualHp : e.hp) > 0)
+                            .sort((a, b) => b.pathIndex - a.pathIndex)[0];
 
-                    slot.attackCooldown = 0;
+                        if (target) {
+                            const powerUpLv = powerUpLevels[slot.dice.id] || 1;
+                            let dmg = (db.stats.atk + (pLv - 1) * db.grow.atk) * slot.dice.lv * (1 + (powerUpLv - 1) * 0.4);
+
+                            // 齒輪鄰近加成 (維持原邏輯)
+                            if (slot.dice.id === 'gear') {
+                                const idx = grid.slots.indexOf(slot);
+                                const col = idx % grid.cols;
+                                const row = Math.floor(idx / grid.cols);
+                                let neighbors = 0;
+                                grid.slots.forEach((s, sIdx) => {
+                                    if (s.dice && s.dice.id === 'gear' && s !== slot) {
+                                        let sCol = sIdx % grid.cols;
+                                        let sRow = Math.floor(sIdx / grid.cols);
+                                        if (Math.abs(sCol - col) + Math.abs(sRow - row) === 1) neighbors++;
+                                    }
+                                });
+                                slot.dice.isPowered = (neighbors > 0);
+                                dmg *= (1 + neighbors * 0.5);
+                            }
+
+                            // --- 關鍵：同步虛擬血量 ---
+                            if (target.virtualHp === undefined) target.virtualHp = target.hp;
+                            target.virtualHp -= dmg;
+
+                            projectiles.push({
+                                x: slot.x + grid.slotSize / 2,
+                                y: slot.y + grid.slotSize / 2,
+                                target: target,
+                                color: db.baseColor,
+                                speed: 10,
+                                damage: dmg,
+                                diceId: slot.dice.id,
+                                diceLv: slot.dice.lv
+                            });
+
+                            slot.attackCooldown = 0;
+                        } else {
+                            // 沒怪時停留在可攻擊狀態，不重置也不會瘋狂疊加
+                            slot.attackCooldown = spd;
+                        }
+                    }
+                }
+            });
+
+            // --- 4. 子彈移動與擊中判定 ---
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                let p = projectiles[i];
+                if (!enemies.includes(p.target)) { projectiles.splice(i, 1); continue; }
+
+                let dx = p.target.x - p.x;
+                let dy = p.target.y - p.y;
+                let dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < 15) {
+                    applyHitEffect(p);
+                    projectiles.splice(i, 1);
                 } else {
-                    // 沒怪時停留在可攻擊狀態，不重置也不會瘋狂疊加
-                    slot.attackCooldown = spd; 
+                    p.x += (dx / dist) * p.speed;
+                    p.y += (dy / dist) * p.speed;
                 }
             }
         }
-    });
-
-    // --- 4. 子彈移動與擊中判定 ---
-    for (let i = projectiles.length - 1; i >= 0; i--) {
-        let p = projectiles[i];
-        if (!enemies.includes(p.target)) { projectiles.splice(i, 1); continue; }
-
-        let dx = p.target.x - p.x;
-        let dy = p.target.y - p.y;
-        let dist = Math.sqrt(dx * dx + dy * dy);
-
-        if (dist < 15) {
-            applyHitEffect(p);
-            projectiles.splice(i, 1);
-        } else {
-            p.x += (dx / dist) * p.speed;
-            p.y += (dy / dist) * p.speed;
-        }
-    }
-}
         // 特殊骰子效果
         function executeAttack(dice, target, damage, startX, startY) {
             // 預扣虛擬血量，防止多個骰子同時攻擊同一隻快死的怪
@@ -627,96 +627,96 @@
             });
         }
         function applyHitEffect(p) {
-    const target = p.target;
-    if (!target || target.hp <= 0) return;
+            const target = p.target;
+            if (!target || target.hp <= 0) return;
 
-    // 1. 扣除主目標實際血量
-    target.hp -= p.damage;
-    // 傷害飄字
-    damagePopups.push({ x: target.x, y: target.y, val: Math.floor(p.damage), life: 30 });
+            // 1. 扣除主目標實際血量
+            target.hp -= p.damage;
+            // 傷害飄字
+            damagePopups.push({ x: target.x, y: target.y, val: Math.floor(p.damage), life: 30 });
 
-    const spec = getDiceSpecialValue(p.diceId);
+            const spec = getDiceSpecialValue(p.diceId);
 
-    switch (p.diceId) {
-        case 'ice':
-            target.speed = Math.max(0.3, 1.5 * (1 - spec / 100));
-            clearTimeout(target.iceTimer);
-            target.iceTimer = setTimeout(() => { target.speed = 1.5; }, 1000);
-            break;
-        case 'lock':
-            if (Math.random() < 0.2) {
-                target.speed = 0;
-                setTimeout(() => { target.speed = 1.5; }, spec * 1000);
-            }
-            break;
-        case 'teleport':
-            if (Math.random() < (spec / 100) && !target.isBoss) {
-                target.x = path[0].x; target.y = path[0].y; target.pathIndex = 1;
-            }
-            break;
-        case 'electric':
-            const chainBase = (p.diceLv * 10);
-            enemies.forEach(e => {
-                if (e !== target && e.hp > 0 && Math.hypot(e.x - target.x, e.y - target.y) < 100) {
-                    let chainDmg = (p.damage * 0.8) + chainBase;
-                    const pUpLv = powerUpLevels['electric'] || 1;
-                    chainDmg *= (1 + (pUpLv - 1) * 0.2);
-
-                    // 【修正】同步扣除虛擬血量，防止幽靈子彈
-                    e.hp -= chainDmg;
-                    e.virtualHp -= chainDmg; 
-
-                    const displayVal = Math.ceil(chainDmg);
-                    if (displayVal > 0) {
-                        damagePopups.push({ x: e.x, y: e.y, val: displayVal, life: 20, color: "#fde047" });
+            switch (p.diceId) {
+                case 'ice':
+                    target.speed = Math.max(0.3, 1.5 * (1 - spec / 100));
+                    clearTimeout(target.iceTimer);
+                    target.iceTimer = setTimeout(() => { target.speed = 1.5; }, 1000);
+                    break;
+                case 'lock':
+                    if (Math.random() < 0.2) {
+                        target.speed = 0;
+                        setTimeout(() => { target.speed = 1.5; }, spec * 1000);
                     }
+                    break;
+                case 'teleport':
+                    if (Math.random() < (spec / 100) && !target.isBoss) {
+                        target.x = path[0].x; target.y = path[0].y; target.pathIndex = 1;
+                    }
+                    break;
+                case 'electric':
+                    const chainBase = (p.diceLv * 10);
+                    enemies.forEach(e => {
+                        if (e !== target && e.hp > 0 && Math.hypot(e.x - target.x, e.y - target.y) < 100) {
+                            let chainDmg = (p.damage * 0.8) + chainBase;
+                            const pUpLv = powerUpLevels['electric'] || 1;
+                            chainDmg *= (1 + (pUpLv - 1) * 0.2);
+
+                            // 【修正】同步扣除虛擬血量，防止幽靈子彈
+                            e.hp -= chainDmg;
+                            e.virtualHp -= chainDmg;
+
+                            const displayVal = Math.ceil(chainDmg);
+                            if (displayVal > 0) {
+                                damagePopups.push({ x: e.x, y: e.y, val: displayVal, life: 20, color: "#fde047" });
+                            }
+                        }
+                    });
+                    break;
+                case 'sun':
+                    // 【優化】不要在這裡用 filter，改用全域判斷或傳入
+                    const totalSuns = grid.slots.filter(s => s.dice && s.dice.id === 'sun').length;
+                    if ([1, 4, 7].includes(totalSuns)) {
+                        enemies.forEach(e => {
+                            if (e !== target && e.hp > 0 && Math.hypot(e.x - target.x, e.y - target.y) < 65) {
+                                // 【修正】爆炸傷害也要扣 virtualHp
+                                e.hp -= p.damage;
+                                e.virtualHp -= p.damage;
+                                damagePopups.push({ x: e.x, y: e.y, val: Math.floor(p.damage), life: 15 });
+                            }
+                        });
+                    }
+                    break;
+                case 'galaxy':
+                    if (Math.random() < (spec / 100)) {
+                        enemies.forEach(e => {
+                            if (e !== target && e.hp > 0 && Math.hypot(e.x - target.x, e.y - target.y) < 80) {
+                                e.x += (target.x - e.x) * 0.3;
+                                e.y += (target.y - e.y) * 0.3;
+                                // 黑洞持續傷害也同步
+                                const bhDmg = p.damage * 0.2;
+                                e.hp -= bhDmg;
+                                e.virtualHp -= bhDmg;
+                            }
+                        });
+                    }
+                    break;
+                case 'poison':
+                    if (!target.poisonStacks) target.poisonStacks = 0;
+                    target.poisonStacks++;
+                    break;
+            }
+
+            // 最後統一檢查哪些怪死了（包含被濺射炸死的）
+            // 這裡我們倒著遍歷 enemies，安全移除死亡怪物
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                if (enemies[i].hp <= 0) {
+                    battleState.sp += enemies[i].rewardSp || 10;
+                    enemies.splice(i, 1);
+                    updateUI(); // 只要有死人就更新一次 UI
                 }
-            });
-            break;
-        case 'sun':
-            // 【優化】不要在這裡用 filter，改用全域判斷或傳入
-            const totalSuns = grid.slots.filter(s => s.dice && s.dice.id === 'sun').length;
-            if ([1, 4, 7].includes(totalSuns)) {
-                enemies.forEach(e => {
-                    if (e !== target && e.hp > 0 && Math.hypot(e.x - target.x, e.y - target.y) < 65) {
-                        // 【修正】爆炸傷害也要扣 virtualHp
-                        e.hp -= p.damage;
-                        e.virtualHp -= p.damage; 
-                        damagePopups.push({ x: e.x, y: e.y, val: Math.floor(p.damage), life: 15 });
-                    }
-                });
             }
-            break;
-        case 'galaxy':
-            if (Math.random() < (spec / 100)) {
-                enemies.forEach(e => {
-                    if (e !== target && e.hp > 0 && Math.hypot(e.x - target.x, e.y - target.y) < 80) {
-                        e.x += (target.x - e.x) * 0.3;
-                        e.y += (target.y - e.y) * 0.3;
-                        // 黑洞持續傷害也同步
-                        const bhDmg = p.damage * 0.2;
-                        e.hp -= bhDmg;
-                        e.virtualHp -= bhDmg;
-                    }
-                });
-            }
-            break;
-        case 'poison':
-            if (!target.poisonStacks) target.poisonStacks = 0;
-            target.poisonStacks++;
-            break;
-    }
-
-    // 最後統一檢查哪些怪死了（包含被濺射炸死的）
-    // 這裡我們倒著遍歷 enemies，安全移除死亡怪物
-    for (let i = enemies.length - 1; i >= 0; i--) {
-        if (enemies[i].hp <= 0) {
-            battleState.sp += enemies[i].rewardSp || 10;
-            enemies.splice(i, 1);
-            updateUI(); // 只要有死人就更新一次 UI
         }
-    }
-}
         function updateEnemies() {
             for (let i = enemies.length - 1; i >= 0; i--) {
                 let e = enemies[i];
@@ -795,6 +795,10 @@
             } else {
                 waveState.timer++;
                 if (waveState.timer >= 60) {
+                    if (battleState.wave >= 20) {
+                        handleGameOver(true); // 觸發勝利結算
+                        return; // 停止後續邏輯，防止遊戲繼續跑
+                    }
                     battleState.wave++; waveState.spawnedCount = 0; waveState.totalEnemiesPerWave += 6; waveState.isWaiting = false; waveState.timer = 0; updateUI();
                 }
             }
@@ -820,29 +824,67 @@
         }
 
         function startRenderLoop() {
-            const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d');
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+
             function frame() {
+                // 1. 如果遊戲沒開始或已結束，停止循環
                 if (!battleState.isStarted) return;
+
+                // 額外檢查：如果遊戲已經結算，就不要再畫了
+                const modal = document.getElementById('resultModal');
+                if (modal.style.display === 'flex') return;
+
                 frameCount++;
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                updateEnemies(); updateWave(); updateCombat();
 
-                ctx.strokeStyle = "rgba(59, 130, 246, 0.1)"; ctx.lineWidth = 30; ctx.lineJoin = "round"; ctx.beginPath();
-                ctx.moveTo(path[0].x, path[0].y); path.forEach(p => ctx.lineTo(p.x, p.y)); ctx.stroke();
+                // 邏輯更新
+                updateEnemies();
+                updateWave();
+                updateCombat();
 
-                projectiles.forEach(p => { ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI * 2); ctx.fill(); });
-                enemies.forEach(e => {
-                    const s = e.isBoss ? e.size : 20;
-                    ctx.fillStyle = e.isBoss ? e.color : "#ef4444"; ctx.fillRect(e.x - s / 2, e.y - s / 2, s, s);
-                    ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(e.x - 15, e.y - (s / 2 + 8), 30, 3);
-                    ctx.fillStyle = "#22c55e"; ctx.fillRect(e.x - 15, e.y - (s / 2 + 8), (e.hp / e.maxHp) * 30, 3);
+                // 畫路徑
+                ctx.strokeStyle = "rgba(59, 130, 246, 0.1)";
+                ctx.lineWidth = 30;
+                ctx.lineJoin = "round";
+                ctx.beginPath();
+                ctx.moveTo(path[0].x, path[0].y);
+                path.forEach(p => ctx.lineTo(p.x, p.y));
+                ctx.stroke();
+
+                // 畫子彈
+                projectiles.forEach(p => {
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                    ctx.fill();
                 });
 
+                // 畫敵人
+                enemies.forEach(e => {
+                    const s = e.isBoss ? e.size : 20;
+                    ctx.fillStyle = e.isBoss ? e.color : "#ef4444";
+                    ctx.fillRect(e.x - s / 2, e.y - s / 2, s, s);
+                    ctx.fillStyle = "rgba(0,0,0,0.5)";
+                    ctx.fillRect(e.x - 15, e.y - (s / 2 + 8), 30, 3);
+                    ctx.fillStyle = "#22c55e";
+                    ctx.fillRect(e.x - 15, e.y - (s / 2 + 8), (e.hp / e.maxHp) * 30, 3);
+                });
+
+                // 畫傷害字體
                 for (let i = damagePopups.length - 1; i >= 0; i--) {
                     let d = damagePopups[i];
-                    ctx.fillStyle = `rgba(255, 255, 255, ${d.life / 30})`; ctx.font = "bold 14px Arial"; ctx.fillText(d.val, d.x, d.y);
-                    d.y -= 1; d.life--; if (d.life <= 0) damagePopups.splice(i, 1);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${d.life / 30})`;
+                    ctx.font = "bold 14px Arial";
+                    ctx.fillText(d.val, d.x, d.y);
+                    d.y -= 1;
+                    d.life--;
+                    if (d.life <= 0) damagePopups.splice(i, 1);
                 }
+
+                // --- 優化：先在外面算好太陽數量，不要在格子迴圈裡算 ---
+                const totalSunCount = grid.slots.filter(s => s.dice && s.dice.id === 'sun').length;
+                const isSunActivated = [1, 4, 7].includes(totalSunCount);
 
                 grid.slots.forEach(slot => {
                     // 畫格子背景
@@ -851,17 +893,13 @@
                     ctx.fill();
 
                     if (slot.dice && !slot.isBeingDragged) {
-                        // --- 新增：視覺特效邏輯 ---
-                        const canvas = document.getElementById('gameCanvas');
-                        const ctx = canvas.getContext('2d');
+                        // 使用外面宣告好的 ctx，絕對不要在裡面重新 getContext
 
                         // 太陽特效
-                        if (slot.dice.id === 'sun') {
-                            const sunCount = grid.slots.filter(s => s.dice && s.dice.id === 'sun').length;
-                            if ([1, 4, 7].includes(sunCount)) {
-                                drawEffect(slot, "orange");
-                            }
+                        if (slot.dice.id === 'sun' && isSunActivated) {
+                            drawEffect(slot, "orange");
                         }
+
                         // 齒輪特效
                         if (slot.dice.id === 'gear' && slot.dice.isPowered) {
                             drawEffect(slot, "#00ccff");
@@ -872,12 +910,14 @@
                     }
                 });
 
-                if (drag.isDragging) renderDice(ctx, drag.currentX - grid.slotSize / 2, drag.currentY - grid.slotSize / 2, drag.dice, false);
+                if (drag.isDragging) {
+                    renderDice(ctx, drag.currentX - grid.slotSize / 2, drag.currentY - grid.slotSize / 2, drag.dice, false);
+                }
+
                 requestAnimationFrame(frame);
             }
             frame();
         }
-
         function renderDice(ctx, x, y, dice, isLocked) {
             ctx.strokeStyle = dice.qualityColor || '#fff'; ctx.lineWidth = 3;
             drawRoundedRect(ctx, x + 4, y + 4, grid.slotSize - 8, grid.slotSize - 8, 8); ctx.stroke();
@@ -927,7 +967,8 @@
 
                 if (targetSlot && targetSlot !== drag.fromSlot && targetSlot.dice) {
                     // --- 小丑骰子變身邏輯 ---
-                    if (drag.dice.id === 'joker' && drag.dice.lv === targetSlot.dice.lv) {
+                    // 修正點：加上 targetSlot.dice.id !== 'joker' 的判定
+                    if (drag.dice.id === 'joker' && drag.dice.lv === targetSlot.dice.lv && targetSlot.dice.id !== 'joker') {
                         const targetId = targetSlot.dice.id;
                         const db = ALL_DICES.find(d => d.id === targetId);
 
@@ -936,40 +977,41 @@
                             lv: drag.dice.lv,
                             color: db.baseColor,
                             qualityColor: QUALITIES[db.quality].color,
-                            growthTimer: 0 // 補上計時器防卡死
+                            growthTimer: 0,
+                            attackCooldown: 0 // 變身後重置攻擊冷卻，防止瞬間噴彈卡死
                         };
 
                         drag.isDragging = false;
                         drag.fromSlot.isBeingDragged = false;
                         updateUI();
-                        return;
+                        return; // 只有變身才在這裡 return
                     }
 
-                    // --- 一般合成邏輯 ---
+                    // --- 一般合成邏輯 (包含小丑碰小丑) ---
                     if (targetSlot.dice.id === drag.dice.id && targetSlot.dice.lv === drag.dice.lv && targetSlot.dice.lv < 7) {
                         const newId = userData.deck[Math.floor(Math.random() * userData.deck.length)];
                         const db = ALL_DICES.find(d => d.id === newId);
 
-                        // 修正點：確保合成後的新骰子屬性完整
                         targetSlot.dice = {
                             id: newId,
                             lv: drag.dice.lv + 1,
                             color: db.baseColor,
                             qualityColor: QUALITIES[db.quality].color,
-                            growthTimer: 0 // 補上計時器防卡死
+                            growthTimer: 0,
+                            attackCooldown: 0
                         };
                         drag.fromSlot.dice = null;
                     }
                 }
                 // 3. 如果是移到空位
                 else if (targetSlot && !targetSlot.dice) {
-                    // 修正點：使用拷貝而非引用，確保 growthTimer 隨行
                     targetSlot.dice = { ...drag.dice, growthTimer: drag.dice.growthTimer || 0 };
                     drag.fromSlot.dice = null;
                 }
 
+                // 統一重置狀態
                 drag.isDragging = false;
-                drag.fromSlot.isBeingDragged = false;
+                if (drag.fromSlot) drag.fromSlot.isBeingDragged = false;
                 updateUI();
             });
         }
