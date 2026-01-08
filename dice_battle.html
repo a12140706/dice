@@ -196,7 +196,7 @@
         let battleState = { hp: 3, sp: 100, wave: 1, summonCost: 10, difficulty: 'normal', isStarted: false };
         let powerUpLevels = {};
         userData.deck.forEach(id => { powerUpLevels[id] = 1; });
-
+let frameCount = 0;
         let grid = { rows: 3, cols: 5, padding: 10, slotSize: 0, slots: [], y: 0 };
         let drag = { isDragging: false, fromSlot: null, currentX: 0, currentY: 0, dice: null };
         let waveState = { totalEnemiesPerWave: 10, spawnedCount: 0, isWaiting: false, timer: 0 };
@@ -252,7 +252,7 @@
 
             // 存檔到 LocalStorage
             userData.tickets = (userData.tickets || 0) + earnedTickets;
-            localStorage.setItem('diceGame_userData', JSON.stringify(userData));
+            localStorage.setItem('dice_game_data', JSON.stringify(userData));
 
             // 顯示結算視窗
             showResultModal(isVictory, battleState.wave, earnedTickets);
@@ -354,7 +354,7 @@
                         const target = enemies.filter(e => (e.virtualHp || e.hp) > 0).sort((a, b) => b.pathIndex - a.pathIndex)[0];
 
                         if (target) {
-                            const powerUpLv = powerUpState[slot.dice.id]?.level || 1;
+                            const powerUpLv = powerUpLevels[slot.dice.id] || 1;
                             let dmg = (db.stats.atk + (pLv - 1) * db.grow.atk) * slot.dice.lv * (1 + (powerUpLv - 1) * 0.4);
 
                             // --- 3. 齒輪 (Gear) 傷害加成邏輯 ---
@@ -624,7 +624,7 @@
 
                         // 戰敗判斷
                         if (battleState.hp <= 0) {
-                            handleGameOver(); // 建議改用 function 處理結算，而不是直接 reload
+                            handleGameOver(false); // 建議改用 function 處理結算，而不是直接 reload
                             return;
                         }
                     }
@@ -684,6 +684,7 @@
             const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d');
             function frame() {
                 if (!battleState.isStarted) return;
+                frameCount++;
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 updateEnemies(); updateWave(); updateCombat();
 
