@@ -792,7 +792,15 @@
                     if (slot.dice && !slot.isBeingDragged) {
                         // 2. 太陽特效 (必須先跑特效，且特效內部已經有 save/restore 和 beginPath)
                         if (slot.dice.id === 'sun' && isSunActivated) {
-                            drawEffect(slot, "orange");
+                            // 在這裡直接寫繪圖指令，不要呼叫外面的 function，減少 stack 壓力
+                            ctx.save();
+                            ctx.beginPath(); // 關鍵！
+                            ctx.setLineDash([5, 5]); // 使用虛線，這在手機上反而有時能避開某些渲染 Bug
+                            ctx.strokeStyle = "orange";
+                            ctx.lineWidth = 3;
+                            ctx.strokeRect(slot.x + 4, slot.y + 4, grid.slotSize - 8, grid.slotSize - 8);
+                            ctx.setLineDash([]); // 恢復實線
+                            ctx.restore();
                         }
 
                         // 3. 齒輪特效
