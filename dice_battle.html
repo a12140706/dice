@@ -212,7 +212,7 @@
             {
                 id: 'sun', name: '太陽', quality: 'legend', baseColor: '#fbbf24',
                 stats: { atk: 25, speed: 55 }, grow: { atk: 12, speed: -0.5 },
-                special: { label: '濺射爆發', value: 100, unit: '%', grow: 20 }
+                special: { label: '濺射傷害', value: 100, unit: '%', grow: 20 }
             },
 
             // --- Mythic (神話) ---
@@ -823,12 +823,33 @@
             frame();
         }
         function renderDice(ctx, x, y, dice, isLocked) {
-            ctx.strokeStyle = dice.qualityColor || '#fff'; ctx.lineWidth = 3;
-            drawRoundedRect(ctx, x + 4, y + 4, grid.slotSize - 8, grid.slotSize - 8, 8); ctx.stroke();
-            ctx.fillStyle = dice.color; drawRoundedRect(ctx, x + 6, y + 6, grid.slotSize - 12, grid.slotSize - 12, 6); ctx.fill();
-            ctx.fillStyle = "#fff"; ctx.font = "bold 20px Arial"; ctx.textAlign = "center";
-            ctx.fillText(dice.lv, x + grid.slotSize / 2, y + grid.slotSize / 2 + 7);
-            if (isLocked) { ctx.fillStyle = "rgba(0,0,0,0.7)"; drawRoundedRect(ctx, x + 5, y + 5, grid.slotSize - 10, grid.slotSize - 10, 8); ctx.fill(); }
+            // 1. 畫外框
+            ctx.beginPath(); // 確保路徑重置
+            ctx.strokeStyle = dice.qualityColor || '#fff';
+            ctx.lineWidth = 3;
+            drawRoundedRect(ctx, x + 4, y + 4, grid.slotSize - 8, grid.slotSize - 8, 8);
+            ctx.stroke();
+
+            // 2. 畫填充背景
+            ctx.beginPath(); // 再次重置，確保填充不會連到外框
+            ctx.fillStyle = dice.color;
+            drawRoundedRect(ctx, x + 6, y + 6, grid.slotSize - 12, grid.slotSize - 12, 6);
+            ctx.fill();
+
+            // 3. 畫數字
+            ctx.fillStyle = "#fff";
+            ctx.font = "bold 20px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle"; // 讓對齊更準確
+            ctx.fillText(dice.lv, x + grid.slotSize / 2, y + grid.slotSize / 2);
+
+            // 4. 畫鎖定遮罩
+            if (isLocked) {
+                ctx.beginPath();
+                ctx.fillStyle = "rgba(0,0,0,0.7)";
+                drawRoundedRect(ctx, x + 5, y + 5, grid.slotSize - 10, grid.slotSize - 10, 8);
+                ctx.fill();
+            }
         }
 
         function drawRoundedRect(ctx, x, y, w, h, r) {
