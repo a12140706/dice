@@ -21,21 +21,34 @@
 
         /* 太陽爆炸光圈 */
         .sun-explosion {
-    position: absolute;
-    border: 3px solid #fb923c; /* 加粗一點比較明顯 */
-    background: rgba(251, 146, 60, 0.3);
-    border-radius: 50%;
-    pointer-events: none;
-    transform: translate(-50%, -50%); /* 確保圓心對準怪物的 (x, y) */
-    animation: sunExplode 0.4s ease-out forwards;
-    z-index: 100; /* 確保大於 Canvas 的 z-index */
-    box-shadow: 0 0 15px orange; /* 增加發光感 */
-}
+            position: absolute;
+            border: 3px solid #fb923c;
+            /* 加粗一點比較明顯 */
+            background: rgba(251, 146, 60, 0.3);
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            /* 確保圓心對準怪物的 (x, y) */
+            animation: sunExplode 0.4s ease-out forwards;
+            z-index: 100;
+            /* 確保大於 Canvas 的 z-index */
+            box-shadow: 0 0 15px orange;
+            /* 增加發光感 */
+        }
 
-@keyframes sunExplode {
-    0% { width: 0px; height: 0px; opacity: 1; }
-    100% { width: 130px; height: 130px; opacity: 0; }
-}
+        @keyframes sunExplode {
+            0% {
+                width: 0px;
+                height: 0px;
+                opacity: 1;
+            }
+
+            100% {
+                width: 130px;
+                height: 130px;
+                opacity: 0;
+            }
+        }
 
         #header-info {
             flex-shrink: 0;
@@ -548,12 +561,21 @@
                 if (gameContainer) {
                     const effect = document.createElement('div');
                     effect.className = 'sun-explosion';
-                    // 這裡的座標要根據你的 Canvas 縮放調整，假設是 1:1
-                    effect.style.left = target.x + 'px';
-                    effect.style.top = target.y + 'px';
-                    gameContainer.appendChild(effect);
 
-                    // 400ms 後自動移除，防止 DOM 累積過多
+                    // 1. 取得 Canvas 實際在螢幕上的尺寸
+                    const rect = canvas.getBoundingClientRect();
+
+                    // 2. 計算比例：顯示尺寸 / 原始畫布尺寸
+                    // 假設你的畫布原始寬度是 canvas.width (例如 400)
+                    const scaleX = rect.width / canvas.width;
+                    const scaleY = rect.height / canvas.height;
+
+                    // 3. 將畫布座標轉換為 CSS 像素位置
+                    // 並加上 offset 確保對齊 (如果有 padding 或 margin)
+                    effect.style.left = (target.x * scaleX) + 'px';
+                    effect.style.top = (target.y * scaleY) + 'px';
+
+                    gameContainer.appendChild(effect);
                     setTimeout(() => effect.remove(), 400);
                 }
 
