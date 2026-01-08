@@ -242,9 +242,13 @@
             }
         }
         function getDiceSpecialValue(diceId) {
+            if (!diceId) return 0; // 防呆
             const dice = ALL_DICES.find(d => d.id === diceId);
-            const lv = userData.diceLevels[diceId] || 1;
             if (!dice || !dice.special) return 0;
+
+            // 確保讀取不到等級時預設為 1
+            const lv = (userData.diceLevels && userData.diceLevels[diceId]) ? userData.diceLevels[diceId] : 1;
+
             // 公式：基礎值 + (等級-1) * 成長值
             return dice.special.value + (lv - 1) * dice.special.grow;
         }
@@ -314,7 +318,14 @@
             const diceId = userData.deck[Math.floor(Math.random() * userData.deck.length)];
             const db = ALL_DICES.find(d => d.id === diceId);
 
-            targetSlot.dice = { id: diceId, lv: 1, color: db.baseColor, qualityColor: QUALITIES[db.quality].color };
+            // 強制設定 lv 為 1，並加入成長計時器初始值
+            targetSlot.dice = {
+                id: diceId,
+                lv: 1,
+                color: db.baseColor,
+                qualityColor: QUALITIES[db.quality].color,
+                growthTimer: 0 // 新增：防止成長骰子邏輯報錯
+            };
             updateUI();
         }
 
@@ -342,8 +353,10 @@
 
         function updateCombat() {
             grid.slots.forEach(slot => {
-                if (slot.dice && !slot.isBeingDragged && !slot.isLocked) {
+                // 增加 slot.dice.id 的檢查
+                if (slot.dice && slot.dice.id && !slot.isBeingDragged && !slot.isLocked) {
                     const db = ALL_DICES.find(d => d.id === slot.dice.id);
+                    if (!db) return;
                     const pLv = userData.diceLevels[slot.dice.id] || 1;
 
                     // --- 1. 成長骰子邏輯 ---
@@ -387,7 +400,7 @@
                                 // 依據繼承比例（例如 80%）調整傷害
                                 dmg *= (getDiceSpecialValue('joker') / 100);
                             }
-                            // --- 3. 齒輪 (Gear) 傷害加成邏輯 ---
+
                             // --- 3. 齒輪 (Gear) 傷害加成邏輯 ---
                             if (slot.dice.id === 'gear') {
                                 const idx = grid.slots.indexOf(slot);
@@ -803,51 +816,48 @@
                 const x = touch.clientX - rect.left, y = touch.clientY - rect.top;
                 grid.slots.forEach(slot => {
                     if (slot.dice && x > slot.x && x < slot.x + grid.slotSize && y > slot.y && y < slot.y + grid.slotSize) {
-                        drag.isDragging = true; drag.fromSlot = slot; drag.dice = { ...slot.dice };
-                        drag.currentX = x; drag.currentY = y; slot.isBeingDragged = true;
+                        drag.isDragging = true;
+                        drag.fromSlot = slot;
+                        drag.dice = { ...slot.dice }; // 淺拷貝
+                        drag.currentX = x;
+                        drag.currentY = y;
+                        slot.isBeingDragged = true;
                     }
                 });
             });
+
             canvas.addEventListener('touchmove', (e) => {
-                if (!drag.isDragging) return; e.preventDefault();
+                if (!drag.isDragging) return;
+                e.preventDefault();
                 const touch = e.touches[0], rect = canvas.getBoundingClientRect();
-                drag.currentX = touch.clientX - rect.left; drag.currentY = touch.clientY - rect.top;
+                drag.currentX = touch.clientX - rect.left;
+                drag.currentY = touch.clientY - rect.top;
             }, { passive: false });
+
             canvas.addEventListener('touchend', () => {
                 if (!drag.isDragging) return;
 
-                // 1. 先找到目前手指放開的位置是對應哪個格子
                 let targetSlot = grid.slots.find(s =>
                     drag.currentX > s.x && drag.currentX < s.x + grid.slotSize &&
                     drag.currentY > s.y && drag.currentY < s.y + grid.slotSize
                 );
 
-                // 2. 如果有放到格子，且不是原本那個格子，且格子上有骰子
                 if (targetSlot && targetSlot !== drag.fromSlot && targetSlot.dice) {
-
                     // --- 小丑骰子變身邏輯 ---
                     if (drag.dice.id === 'joker' && drag.dice.lv === targetSlot.dice.lv) {
                         const targetId = targetSlot.dice.id;
                         const db = ALL_DICES.find(d => d.id === targetId);
 
-                        // 1. 將「起始位置」的小丑變成「目標位置」的骰子種類
-                        // 這裡維持原本邏輯，但確保所有必要屬性都寫入
                         drag.fromSlot.dice = {
                             id: targetId,
-                            lv: drag.dice.lv, // 維持原本小丑的星級
+                            lv: drag.dice.lv,
                             color: db.baseColor,
                             qualityColor: QUALITIES[db.quality].color,
-                            growthTimer: 0 // 重置成長時間（如果是變成成長骰子的話）
+                            growthTimer: 0 // 補上計時器防卡死
                         };
 
-                        // 2. 處理特殊變身：如果小丑變身成「另一個小丑」
-                        // (雖然通常不會發生，但為了邏輯嚴謹，如果是變身為小丑則不需要處理)
-
-                        // 3. 清除拖曳狀態
                         drag.isDragging = false;
                         drag.fromSlot.isBeingDragged = false;
-
-                        // 4. 強制重新整理 UI 與 戰鬥狀態 (確保新骰子能立即開火)
                         updateUI();
                         return;
                     }
@@ -856,17 +866,25 @@
                     if (targetSlot.dice.id === drag.dice.id && targetSlot.dice.lv === drag.dice.lv && targetSlot.dice.lv < 7) {
                         const newId = userData.deck[Math.floor(Math.random() * userData.deck.length)];
                         const db = ALL_DICES.find(d => d.id === newId);
-                        targetSlot.dice = { id: newId, lv: drag.dice.lv + 1, color: db.baseColor, qualityColor: QUALITIES[db.quality].color };
+
+                        // 修正點：確保合成後的新骰子屬性完整
+                        targetSlot.dice = {
+                            id: newId,
+                            lv: drag.dice.lv + 1,
+                            color: db.baseColor,
+                            qualityColor: QUALITIES[db.quality].color,
+                            growthTimer: 0 // 補上計時器防卡死
+                        };
                         drag.fromSlot.dice = null;
                     }
                 }
                 // 3. 如果是移到空位
                 else if (targetSlot && !targetSlot.dice) {
-                    targetSlot.dice = drag.dice;
+                    // 修正點：使用拷貝而非引用，確保 growthTimer 隨行
+                    targetSlot.dice = { ...drag.dice, growthTimer: drag.dice.growthTimer || 0 };
                     drag.fromSlot.dice = null;
                 }
 
-                // 歸位
                 drag.isDragging = false;
                 drag.fromSlot.isBeingDragged = false;
                 updateUI();
