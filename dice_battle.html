@@ -411,157 +411,150 @@
         }
 
         function updateCombat() {
-            // 1. 提前計算全場太陽數量 (提升效能，避免在迴圈內重複計算
+    // 確保全域變數存在，防止報錯
+    if (typeof isSunActivated === 'undefined') window.isSunActivated = false;
 
-            // 2. 遍歷所有格子處理骰子邏輯
-            grid.slots.forEach(slot => {
-                // 基礎安全檢查：確保格子有骰子、沒被拖曳、且沒被鎖定
-                if (slot.dice && slot.dice.id && !slot.isBeingDragged && !slot.isLocked) {
-                    const db = ALL_DICES.find(d => d.id === slot.dice.id);
-                    if (!db) return;
+    grid.slots.forEach(slot => {
+        if (slot.dice && slot.dice.id && !slot.isBeingDragged && !slot.isLocked) {
+            const db = ALL_DICES.find(d => d.id === slot.dice.id);
+            if (!db) return;
 
-                    // --- A. 處理成長骰子邏輯 ---
-                    if (slot.dice.id === 'growth') {
-                        if (!slot.dice.growthTimer) slot.dice.growthTimer = 0;
-                        slot.dice.growthTimer++;
-
-                        // 取得成長所需秒數 (例如 15 秒)
-                        const targetSeconds = getDiceSpecialValue('growth');
-                        if (slot.dice.growthTimer >= targetSeconds * 60) { // 假設 60 FPS
-                            if (slot.dice.lv < 7) {
-                                const newId = userData.deck[Math.floor(Math.random() * userData.deck.length)];
-                                const newDb = ALL_DICES.find(d => d.id === newId);
-
-                                // 升星轉化
-                                slot.dice = {
-                                    id: newId,
-                                    lv: slot.dice.lv + 1,
-                                    color: newDb.baseColor,
-                                    qualityColor: QUALITIES[newDb.quality].color,
-                                    growthTimer: 0,
-                                    attackCooldown: 0
-                                };
-                                updateUI(); // 骰子變身需要更新介面
-                                refreshSunState();
-                            }
-                        }
-                    }
-
-                    // --- B. 攻速計算與攻擊觸發 ---
-                    const pLv = userData.diceLevels[slot.dice.id] || 1;
-                    let spd = Math.max(10, db.stats.speed + (pLv - 1) * db.grow.speed);
-
-                    // 功能性優先：太陽發光時大幅加速
-                    if (slot.dice.id === 'sun' && isSunActivated) {
-                        spd /= 1.2; // 加速 50%
-                    }
-
-                    // 防止攻速異常導致崩潰
-                    if (spd < 5) spd = 20;
-
-                    slot.attackCooldown = (slot.attackCooldown || 0) + 1;
-
-                    if (slot.attackCooldown >= spd) {
-                        // 尋找目標：優先攻擊路徑最前方的怪 (使用虛擬血量過濾，防止子彈鞭屍)
-                        const target = enemies
-                            .filter(e => (e.virtualHp !== undefined ? e.virtualHp : e.hp) > 0)
-                            .sort((a, b) => b.pathIndex - a.pathIndex)[0];
-
-                        if (target) {
-                            // 計算基礎傷害 (包含 PowerUp 等級加成)
-                            const powerUpLv = powerUpLevels[slot.dice.id] || 1;
-                            let dmg = (db.stats.atk + (pLv - 1) * db.grow.atk) * slot.dice.lv * (1 + (powerUpLv - 1) * 0.4);
-
-                            // 齒輪骰子鄰近加成邏輯
-                            if (slot.dice.id === 'gear') {
-                                const idx = grid.slots.indexOf(slot);
-                                const col = idx % grid.cols;
-                                const row = Math.floor(idx / grid.cols);
-                                let neighbors = 0;
-                                grid.slots.forEach((s, sIdx) => {
-                                    if (s.dice && s.dice.id === 'gear' && s !== slot) {
-                                        let sCol = sIdx % grid.cols;
-                                        let sRow = Math.floor(sIdx / grid.cols);
-                                        if (Math.abs(sCol - col) + Math.abs(sRow - row) === 1) neighbors++;
-                                    }
-                                });
-                                dmg *= (1 + neighbors * 0.5); // 每個相鄰齒輪增加 50% 傷害
-                            }
-
-                            // 呼叫發射函式 (由其決定要產生子彈還是 AOE)
-                            executeAttack(
-                                slot.dice,
-                                target,
-                                dmg,
-                                slot.x + grid.slotSize / 2,
-                                slot.y + grid.slotSize / 2,
-                                isSunActivated
-                            );
-
-                            slot.attackCooldown = 0;
-                        } else {
-                            // 沒怪時，冷卻維持在可攻擊狀態，不重置
-                            slot.attackCooldown = spd;
-                        }
+            // --- A. 成長骰子邏輯 (保持原樣) ---
+            if (slot.dice.id === 'growth') {
+                if (!slot.dice.growthTimer) slot.dice.growthTimer = 0;
+                slot.dice.growthTimer++;
+                const targetSeconds = getDiceSpecialValue('growth');
+                if (slot.dice.growthTimer >= targetSeconds * 60) {
+                    if (slot.dice.lv < 7) {
+                        const newId = userData.deck[Math.floor(Math.random() * userData.deck.length)];
+                        const newDb = ALL_DICES.find(d => d.id === newId);
+                        slot.dice = {
+                            id: newId,
+                            lv: slot.dice.lv + 1,
+                            color: newDb.baseColor,
+                            qualityColor: QUALITIES[newDb.quality].color,
+                            growthTimer: 0,
+                            attackCooldown: 0
+                        };
+                        updateUI();
+                        refreshSunState();
                     }
                 }
-            });
+            }
 
-            // 3. 子彈移動與擊中判定 (獨立於骰子迴圈之外)
-            for (let i = projectiles.length - 1; i >= 0; i--) {
-                let p = projectiles[i];
+            // --- B. 攻速計算 ---
+            const pLv = userData.diceLevels[slot.dice.id] || 1;
+            let spd = Math.max(10, db.stats.speed + (pLv - 1) * db.grow.speed);
 
-                // 如果目標死了或不存在，移除子彈
-                if (!enemies.includes(p.target) || p.target.hp <= 0) {
-                    projectiles.splice(i, 1);
-                    continue;
-                }
+            // 太陽發光加速
+            if (slot.dice.id === 'sun' && isSunActivated) {
+                spd /= 1.5; // 加速感更明顯
+            }
 
-                let dx = p.target.x - p.x;
-                let dy = p.target.y - p.y;
-                let dist = Math.sqrt(dx * dx + dy * dy);
+            if (spd < 5) spd = 5;
 
-                if (dist < 15) {
-                    // 擊中效果
-                    applyHitEffect(p);
-                    projectiles.splice(i, 1);
+            // 攻擊冷卻累加
+            slot.attackCooldown = (slot.attackCooldown || 0) + 1;
+
+            if (slot.attackCooldown >= spd) {
+                // 尋找目標
+                const target = enemies
+                    .filter(e => (e.virtualHp !== undefined ? e.virtualHp : e.hp) > 0)
+                    .sort((a, b) => b.pathIndex - a.pathIndex)[0];
+
+                if (target) {
+                    const powerUpLv = powerUpLevels[slot.dice.id] || 1;
+                    let dmg = (db.stats.atk + (pLv - 1) * db.grow.atk) * slot.dice.lv * (1 + (powerUpLv - 1) * 0.4);
+
+                    // 齒輪加成
+                    if (slot.dice.id === 'gear') {
+                        const idx = grid.slots.indexOf(slot);
+                        const col = idx % grid.cols;
+                        const row = Math.floor(idx / grid.cols);
+                        let neighbors = 0;
+                        grid.slots.forEach((s, sIdx) => {
+                            if (s.dice && s.dice.id === 'gear' && s !== slot) {
+                                let sCol = sIdx % grid.cols;
+                                let sRow = Math.floor(sIdx / grid.cols);
+                                if (Math.abs(sCol - col) + Math.abs(sRow - row) === 1) neighbors++;
+                            }
+                        });
+                        dmg *= (1 + neighbors * 0.5);
+                    }
+
+                    // 執行攻擊
+                    executeAttack(
+                        slot.dice,
+                        target,
+                        dmg,
+                        slot.x + grid.slotSize / 2,
+                        slot.y + grid.slotSize / 2,
+                        isSunActivated // 這裡傳入發光狀態
+                    );
+
+                    slot.attackCooldown = 0;
                 } else {
-                    // 移動子彈
-                    p.x += (dx / dist) * (p.speed || 10);
-                    p.y += (dy / dist) * (p.speed || 10);
+                    slot.attackCooldown = spd; // 沒怪時待命
                 }
             }
         }
+    });
+
+    // 3. 子彈移動 (保持原樣)
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+        let p = projectiles[i];
+        if (!enemies.includes(p.target) || p.target.hp <= 0) {
+            projectiles.splice(i, 1);
+            continue;
+        }
+        let dx = p.target.x - p.x;
+        let dy = p.target.y - p.y;
+        let dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 15) {
+            applyHitEffect(p);
+            projectiles.splice(i, 1);
+        } else {
+            p.x += (dx / dist) * (p.speed || 10);
+            p.y += (dy / dist) * (p.speed || 10);
+        }
+    }
+}
         // 特殊骰子效果
         // 【發射端】處理：虛擬血量、太陽 AOE、產生子彈
         function executeAttack(dice, target, damage, startX, startY, isSunActivated) {
-            if (target.virtualHp === undefined) target.virtualHp = target.hp;
-            target.virtualHp -= damage;
+    if (!target) return;
+    if (target.virtualHp === undefined) target.virtualHp = target.hp;
+    target.virtualHp -= damage;
 
-            // 太陽發光：直接 AOE 爆炸，不產生子彈 (效能最優)
-            if (dice.id === 'sun' && isSunActivated) {
-                enemies.forEach(e => {
-                    if (e.hp > 0 && Math.hypot(e.x - target.x, e.y - target.y) < 65) {
-                        e.hp -= damage;
-                        e.virtualHp -= damage;
-                        if (damagePopups.length < 15) { // 限制數字防卡
-                            damagePopups.push({ x: e.x, y: e.y, val: Math.floor(damage), life: 20 });
-                        }
-                    }
-                });
-                return; // 直接結束，不跑下面的 push
+    // 太陽發光：AOE 爆炸
+    if (dice.id === 'sun' && isSunActivated) {
+        enemies.forEach(e => {
+            // 使用簡單的絕對值差判斷，比 hypot 快很多
+            const distX = Math.abs(e.x - target.x);
+            const distY = Math.abs(e.y - target.y);
+            
+            if (e.hp > 0 && distX < 60 && distY < 60) {
+                e.hp -= damage;
+                e.virtualHp -= damage;
+                // 限制數字數量，手機版必做
+                if (damagePopups.length < 10) { 
+                    damagePopups.push({ x: e.x, y: e.y, val: Math.floor(damage), life: 20 });
+                }
             }
+        });
+        return; 
+    }
 
-            // 其他骰子（或沒發光的太陽）：產生子彈，並把 ID 帶給子彈
-            projectiles.push({
-                x: startX, y: startY,
-                target: target,
-                damage: damage,
-                diceId: dice.id, // 讓 applyHitEffect 知道要觸發什麼效果
-                color: dice.color,
-                speed: 12
-            });
-        }
+    // 一般子彈
+    projectiles.push({
+        x: startX, y: startY,
+        target: target,
+        damage: damage,
+        diceId: dice.id,
+        color: dice.color,
+        speed: 12
+    });
+}
 
         // 【撞擊端】處理：單體傷害、功能性效果 (減速、中毒、傳送、連鎖)
         function applyHitEffect(p) {
@@ -799,7 +792,7 @@
                     if (slot.dice && !slot.isBeingDragged) {
                         // 2. 太陽特效 (必須先跑特效，且特效內部已經有 save/restore 和 beginPath)
                         if (slot.dice.id === 'sun' && isSunActivated) {
-                            //drawEffect(slot, "orange");
+                            drawEffect(slot, "orange");
                         }
 
                         // 3. 齒輪特效
@@ -943,42 +936,17 @@
             });
         }
         function drawEffect(slot, color) {
-            // 1. 安全檢查：如果座標不是數字，直接跳過不畫，防止 Canvas 黑掉
-            if (isNaN(slot.x) || isNaN(slot.y) || !grid.slotSize) return;
-
-            const centerX = slot.x + grid.slotSize / 2;
-            const centerY = slot.y + grid.slotSize / 2;
-            const radius = (grid.slotSize / 2) - 5;
-
-            // 檢查半徑是否合法
-            if (radius <= 0) return;
-
-            // 使用 Date.now() 配合波長控制呼吸燈
-            const pulse = Math.sin(Date.now() / 200);
-
-            ctx.save();
-
-            // 2. 徹底移除 shadowBlur (這是你手機卡住的主因)
-            // 3. 改用多重半透明圓環來模擬「發光」
-
-            // 外層擴散環
-            ctx.beginPath();
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 2;
-            ctx.globalAlpha = 0.2 + (pulse * 0.1); // 微弱閃爍
-            ctx.arc(centerX, centerY, radius + 4, 0, Math.PI * 2);
-            ctx.stroke();
-
-            // 內層實心環
-            ctx.beginPath();
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 3;
-            ctx.globalAlpha = 0.6;
-            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-            ctx.stroke();
-
-            ctx.restore();
-        }
+    if (!slot || isNaN(slot.x)) return;
+    
+    ctx.save();
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 4;
+    ctx.globalAlpha = 0.5;
+    // 改用畫方框，這對手機 GPU 壓力最小，且絕對不會出錯
+    ctx.strokeRect(slot.x + 2, slot.y + 2, grid.slotSize - 4, grid.slotSize - 4);
+    ctx.restore();
+}
     </script>
 </body>
 
