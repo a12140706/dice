@@ -578,6 +578,17 @@
                     gameContainer.appendChild(effect);
                     setTimeout(() => effect.remove(), 400);
                 }
+                /*if (gameContainer) {
+                    const effect = document.createElement('div');
+                    effect.className = 'sun-explosion';
+                    // 這裡的座標要根據你的 Canvas 縮放調整，假設是 1:1
+                    effect.style.left = target.x + 'px';
+                    effect.style.top = target.y + 'px';
+                    gameContainer.appendChild(effect);
+
+                    // 400ms 後自動移除，防止 DOM 累積過多
+                    setTimeout(() => effect.remove(), 400);
+                }*/
 
                 // --- 2. 原本的 AOE 傷害邏輯 ---
                 const tx = target.x;
