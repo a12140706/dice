@@ -122,25 +122,28 @@
         </div>
     </div>
 
-   <div id="resultModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; flex-direction:column; align-items:center; justify-content:center; color:white;">
-    
-    <h1 id="resTitle" style="font-size:40px; margin:10px 0;">戰績結算</h1>
-    
-    <div style="background:#1e293b; padding:20px; border-radius:15px; border:2px solid #3b82f6; text-align:center; min-width:250px;">
-        <p style="font-size:18px; margin:5px 0;">撐過波數：<span id="resWave" style="color:#facc15;">0</span> / 20</p>
-        <hr style="border:0; border-top:1px solid #475569; margin:15px 0;">
-        <p style="margin:5px 0;">獲得獎勵</p>
-        <div style="font-size:28px; font-weight:bold; color:#10b981; margin-top:10px;">
-            🎫 抽獎券 x <span id="resTickets">0</span>
-        </div>
-    </div>
+    <div id="resultModal"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; flex-direction:column; align-items:center; justify-content:center; color:white;">
 
-    <button onclick="location.href='dice.html'" style="margin-top:30px; padding:12px 35px; font-size:18px; background:#3b82f6; color:white; border:none; border-radius:8px; font-weight:bold;">
-        領取並回大廳
-    </button>
-</div>
+        <h1 id="resTitle" style="font-size:40px; margin:10px 0;">戰績結算</h1>
+
+        <div
+            style="background:#1e293b; padding:20px; border-radius:15px; border:2px solid #3b82f6; text-align:center; min-width:250px;">
+            <p style="font-size:18px; margin:5px 0;">撐過波數：<span id="resWave" style="color:#facc15;">0</span> / 20</p>
+            <hr style="border:0; border-top:1px solid #475569; margin:15px 0;">
+            <p style="margin:5px 0;">獲得獎勵</p>
+            <div style="font-size:28px; font-weight:bold; color:#10b981; margin-top:10px;">
+                🎫 抽獎券 x <span id="resTickets">0</span>
+            </div>
+        </div>
+
+        <button onclick="location.href='dice.html'"
+            style="margin-top:30px; padding:12px 35px; font-size:18px; background:#3b82f6; color:white; border:none; border-radius:8px; font-weight:bold;">
+            領取並回大廳
+        </button>
+    </div>
     <script>
-         const QUALITIES = {
+        const QUALITIES = {
             common: { name: '普通', color: '#ffffff', chance: 0.60 },   // 60% 機率
             rare: { name: '稀有', color: '#3b82f6', chance: 0.25 },   // 25% 機率
             epic: { name: '史詩', color: '#a855f7', chance: 0.10 },   // 10% 機率
@@ -157,7 +160,7 @@
             { id: 'poison', name: '毒', quality: 'common', baseColor: '#008000', stats: { atk: 6, speed: 45 }, grow: { atk: 2, speed: -1 } },
             // Rare
             { id: 'lock', name: '鎖定', quality: 'rare', baseColor: '#64748b', stats: { atk: 10, speed: 55 }, grow: { atk: 4, speed: -1 } },
-            
+
             // Epic
             { id: 'teleport', name: '傳送', quality: 'epic', baseColor: '#8b5cf6', stats: { atk: 5, speed: 65 }, grow: { atk: 2, speed: -1 } },
             { id: 'gear', name: '齒輪', quality: 'epic', baseColor: '#475569', stats: { atk: 12, speed: 50 }, grow: { atk: 6, speed: -1 } },
@@ -196,7 +199,7 @@
         let battleState = { hp: 3, sp: 100, wave: 1, summonCost: 10, difficulty: 'normal', isStarted: false };
         let powerUpLevels = {};
         userData.deck.forEach(id => { powerUpLevels[id] = 1; });
-let frameCount = 0;
+        let frameCount = 0;
         let grid = { rows: 3, cols: 5, padding: 10, slotSize: 0, slots: [], y: 0 };
         let drag = { isDragging: false, fromSlot: null, currentX: 0, currentY: 0, dice: null };
         let waveState = { totalEnemiesPerWave: 10, spawnedCount: 0, isWaiting: false, timer: 0 };
@@ -236,6 +239,28 @@ let frameCount = 0;
                     y: grid.y + r * (grid.slotSize + grid.padding),
                     dice: null, isLocked: false, isBeingDragged: false, attackCooldown: 0
                 });
+            }
+        }
+        function getDiceSpecialValue(diceId) {
+            const dice = ALL_DICES.find(d => d.id === diceId);
+            const lv = userData.diceLevels[diceId] || 1;
+            if (!dice || !dice.special) return 0;
+            // 公式：基礎值 + (等級-1) * 成長值
+            return dice.special.value + (lv - 1) * dice.special.grow;
+        }
+        function transformJoker(jokerDice, targetDice) {
+            const ratio = getDiceSpecialValue('joker') / 100; // 拿到 0.8, 0.82...
+
+            jokerDice.name = targetDice.name;
+            jokerDice.baseColor = targetDice.baseColor;
+
+            // 繼承攻擊力 (受比例影響)
+            jokerDice.atk = targetDice.atk * ratio;
+
+            // 如果複製的是成長骰子，時間要變長 (效率降低)
+            if (targetDice.id === 'growth') {
+                const targetTime = getDiceSpecialValue('growth');
+                jokerDice.timer = targetTime / ratio; // 例如 60 / 0.8 = 75秒
             }
         }
         function handleGameOver(isVictory) {
@@ -325,7 +350,9 @@ let frameCount = 0;
                     if (slot.dice.id === 'growth') {
                         if (!slot.dice.growthTimer) slot.dice.growthTimer = 0;
                         slot.dice.growthTimer++;
-                        if (slot.dice.growthTimer >= 1800) { // 30秒 (60fps)
+                        // 動態獲取成長時間（例如 60秒、58秒...）
+                        const targetSeconds = getDiceSpecialValue('growth');
+                        if (slot.dice.growthTimer >= targetSeconds * 60) { // 60fps
                             if (slot.dice.lv < 7) {
                                 const newId = userData.deck[Math.floor(Math.random() * userData.deck.length)];
                                 const newDb = ALL_DICES.find(d => d.id === newId);
@@ -356,7 +383,11 @@ let frameCount = 0;
                         if (target) {
                             const powerUpLv = powerUpLevels[slot.dice.id] || 1;
                             let dmg = (db.stats.atk + (pLv - 1) * db.grow.atk) * slot.dice.lv * (1 + (powerUpLv - 1) * 0.4);
-
+                            if (slot.dice.id === 'joker') {
+                                // 依據繼承比例（例如 80%）調整傷害
+                                dmg *= (getDiceSpecialValue('joker') / 100);
+                            }
+                            // --- 3. 齒輪 (Gear) 傷害加成邏輯 ---
                             // --- 3. 齒輪 (Gear) 傷害加成邏輯 ---
                             if (slot.dice.id === 'gear') {
                                 const idx = grid.slots.indexOf(slot);
@@ -368,13 +399,15 @@ let frameCount = 0;
                                     if (s.dice && s.dice.id === 'gear' && s !== slot) {
                                         let sCol = sIdx % grid.cols;
                                         let sRow = Math.floor(sIdx / grid.cols);
-                                        // 判斷是否在上下左右相鄰
                                         if (Math.abs(sCol - col) + Math.abs(sRow - row) === 1) {
                                             neighbors++;
                                         }
                                     }
                                 });
-                                dmg *= (1 + neighbors * 0.5); // 每連結一個齒輪增加 50% 傷害
+
+                                // 功能性標記：如果有鄰居，就標記為強化狀態，用於繪製特效
+                                slot.dice.isPowered = (neighbors > 0);
+                                dmg *= (1 + neighbors * 0.5);
                             }
 
                             target.virtualHp -= dmg;
@@ -518,34 +551,42 @@ let frameCount = 0;
             // 顯示傷害字體
             damagePopups.push({ x: target.x, y: target.y, val: Math.floor(p.damage), life: 30 });
 
+            // 獲取該骰子的功能性數值 (例如減速%、秒數、機率等)
+            const spec = getDiceSpecialValue(p.diceId);
+
             switch (p.diceId) {
                 case 'ice':
-                    target.speed = Math.max(0.5, 1.5 * 0.7);
+                    // spec 為減速百分比 (例如 30%)，計算剩餘速度
+                    target.speed = Math.max(0.3, 1.5 * (1 - spec / 100));
                     clearTimeout(target.iceTimer);
                     target.iceTimer = setTimeout(() => { target.speed = 1.5; }, 1000);
                     break;
                 case 'lock':
+                    // spec 為定身秒數 (例如 1.5, 1.8...)
                     if (Math.random() < 0.2) {
-                        const oldSpd = target.speed; target.speed = 0;
-                        setTimeout(() => { target.speed = 1.5; }, 1500);
+                        target.speed = 0;
+                        setTimeout(() => { target.speed = 1.5; }, spec * 1000);
                     }
                     break;
                 case 'teleport':
-                    if (Math.random() < 0.05 && !target.isBoss) {
+                    // spec 為傳送機率 (例如 5, 8, 10...)
+                    if (Math.random() < (spec / 100) && !target.isBoss) {
                         target.x = path[0].x; target.y = path[0].y; target.pathIndex = 1;
                     }
                     break;
                 case 'electric':
+                    // spec 為連鎖傷害比例 (例如 50, 55...)
                     enemies.forEach(e => {
                         if (e !== target && Math.hypot(e.x - target.x, e.y - target.y) < 100) {
-                            e.hp -= p.damage * 0.5;
-                            damagePopups.push({ x: e.x, y: e.y, val: Math.floor(p.damage * 0.5), life: 20 });
+                            e.hp -= p.damage * (spec / 100);
+                            damagePopups.push({ x: e.x, y: e.y, val: Math.floor(p.damage * (spec / 100)), life: 20 });
                         }
                     });
                     break;
                 case 'sun':
                     const sunCount = grid.slots.filter(s => s.dice && s.dice.id === 'sun').length;
                     if ([1, 4, 7].includes(sunCount)) {
+                        // 太陽發光時，spec 可定義爆炸範圍或額外係數
                         enemies.forEach(e => {
                             if (e !== target && Math.hypot(e.x - target.x, e.y - target.y) < 65) {
                                 e.hp -= p.damage;
@@ -554,7 +595,8 @@ let frameCount = 0;
                     }
                     break;
                 case 'galaxy':
-                    if (Math.random() < 0.15) {
+                    // spec 為吸入機率或強度
+                    if (Math.random() < (spec / 100)) {
                         enemies.forEach(e => {
                             if (Math.hypot(e.x - target.x, e.y - target.y) < 80) {
                                 e.x += (target.x - e.x) * 0.3;
@@ -565,6 +607,7 @@ let frameCount = 0;
                     }
                     break;
                 case 'poison':
+                    // spec 為中毒傷害加成
                     if (!target.poisonStacks) target.poisonStacks = 0;
                     target.poisonStacks++;
                     break;
@@ -706,8 +749,31 @@ let frameCount = 0;
                 }
 
                 grid.slots.forEach(slot => {
-                    ctx.fillStyle = "rgba(255, 255, 255, 0.05)"; drawRoundedRect(ctx, slot.x, slot.y, grid.slotSize, grid.slotSize, 10); ctx.fill();
-                    if (slot.dice && !slot.isBeingDragged) renderDice(ctx, slot.x, slot.y, slot.dice, slot.isLocked);
+                    // 畫格子背景
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
+                    drawRoundedRect(ctx, slot.x, slot.y, grid.slotSize, grid.slotSize, 10);
+                    ctx.fill();
+
+                    if (slot.dice && !slot.isBeingDragged) {
+                        // --- 新增：視覺特效邏輯 ---
+                        const canvas = document.getElementById('gameCanvas');
+                        const ctx = canvas.getContext('2d');
+
+                        // 太陽特效
+                        if (slot.dice.id === 'sun') {
+                            const sunCount = grid.slots.filter(s => s.dice && s.dice.id === 'sun').length;
+                            if ([1, 4, 7].includes(sunCount)) {
+                                drawEffect(slot, "orange");
+                            }
+                        }
+                        // 齒輪特效
+                        if (slot.dice.id === 'gear' && slot.dice.isPowered) {
+                            drawEffect(slot, "#00ccff");
+                        }
+
+                        // 畫骰子主體
+                        renderDice(ctx, slot.x, slot.y, slot.dice, slot.isLocked);
+                    }
                 });
 
                 if (drag.isDragging) renderDice(ctx, drag.currentX - grid.slotSize / 2, drag.currentY - grid.slotSize / 2, drag.dice, false);
@@ -764,19 +830,25 @@ let frameCount = 0;
                         const targetId = targetSlot.dice.id;
                         const db = ALL_DICES.find(d => d.id === targetId);
 
-                        // 將「起始位置」的小丑變成「目標位置」的骰子種類
+                        // 1. 將「起始位置」的小丑變成「目標位置」的骰子種類
+                        // 這裡維持原本邏輯，但確保所有必要屬性都寫入
                         drag.fromSlot.dice = {
                             id: targetId,
-                            lv: drag.dice.lv,
+                            lv: drag.dice.lv, // 維持原本小丑的星級
                             color: db.baseColor,
                             qualityColor: QUALITIES[db.quality].color,
-                            growthTimer: 0 // 重置成長時間
+                            growthTimer: 0 // 重置成長時間（如果是變成成長骰子的話）
                         };
 
-                        // 變身完成，結束觸發
+                        // 2. 處理特殊變身：如果小丑變身成「另一個小丑」
+                        // (雖然通常不會發生，但為了邏輯嚴謹，如果是變身為小丑則不需要處理)
+
+                        // 3. 清除拖曳狀態
                         drag.isDragging = false;
                         drag.fromSlot.isBeingDragged = false;
-                        updateUI(); // 記得更新 UI
+
+                        // 4. 強制重新整理 UI 與 戰鬥狀態 (確保新骰子能立即開火)
+                        updateUI();
                         return;
                     }
 
@@ -799,6 +871,20 @@ let frameCount = 0;
                 drag.fromSlot.isBeingDragged = false;
                 updateUI();
             });
+        }
+        function drawEffect(slot, color) {
+            ctx.save();
+            ctx.beginPath();
+            const pulse = Math.sin(Date.now() / 200) * 5;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 4;
+            ctx.shadowBlur = 10 + pulse;
+            ctx.shadowColor = color;
+            const centerX = slot.x + grid.slotSize / 2;
+            const centerY = slot.y + grid.slotSize / 2;
+            ctx.arc(centerX, centerY, (grid.slotSize / 2) - 5, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
         }
     </script>
 </body>
