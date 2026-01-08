@@ -787,15 +787,15 @@
         function updateWave() {
             if (!waveState.isWaiting) {
                 waveState.timer++;
-                if (waveState.timer >= 60) {
+                if (waveState.timer >= 30) {
                     if (battleState.wave % 10 === 0 && waveState.spawnedCount === 0) { spawnBoss(); waveState.spawnedCount = waveState.totalEnemiesPerWave; }
                     else if (waveState.spawnedCount < waveState.totalEnemiesPerWave) { spawnEnemy(); waveState.spawnedCount++; waveState.timer = 0; }
                     else if (enemies.length === 0) { waveState.isWaiting = true; waveState.timer = 0; }
                 }
             } else {
                 waveState.timer++;
-                if (waveState.timer >= 120) {
-                    battleState.wave++; waveState.spawnedCount = 0; waveState.totalEnemiesPerWave += 2; waveState.isWaiting = false; waveState.timer = 0; updateUI();
+                if (waveState.timer >= 60) {
+                    battleState.wave++; waveState.spawnedCount = 0; waveState.totalEnemiesPerWave += 6; waveState.isWaiting = false; waveState.timer = 0; updateUI();
                 }
             }
         }
