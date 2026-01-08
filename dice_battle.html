@@ -152,24 +152,75 @@
         };
 
         const ALL_DICES = [
-            // Common
-            { id: 'fire', name: '火', quality: 'common', baseColor: '#ef4444', stats: { atk: 15, speed: 50 }, grow: { atk: 5, speed: -1 } },
-            { id: 'wind', name: '風', quality: 'common', baseColor: '#10b981', stats: { atk: 10, speed: 20 }, grow: { atk: 3, speed: -2 } },
-            { id: 'ice', name: '冰', quality: 'common', baseColor: '#3b82f6', stats: { atk: 8, speed: 60 }, grow: { atk: 2, speed: -1 } },
-            { id: 'electric', name: '電', quality: 'common', baseColor: '#f59e0b', stats: { atk: 7, speed: 40 }, grow: { atk: 2, speed: -1 } },
-            { id: 'poison', name: '毒', quality: 'common', baseColor: '#008000', stats: { atk: 6, speed: 45 }, grow: { atk: 2, speed: -1 } },
-            // Rare
-            { id: 'lock', name: '鎖定', quality: 'rare', baseColor: '#64748b', stats: { atk: 10, speed: 55 }, grow: { atk: 4, speed: -1 } },
+            // --- Common (普通) ---
+            {
+                id: 'fire', name: '火', quality: 'common', baseColor: '#ef4444',
+                stats: { atk: 15, speed: 50 }, grow: { atk: 5, speed: -1 },
+                special: { label: '濺射範圍', value: 1.0, unit: '格', grow: 0.1 }
+            },
+            {
+                id: 'wind', name: '風', quality: 'common', baseColor: '#10b981',
+                stats: { atk: 10, speed: 20 }, grow: { atk: 3, speed: -2 },
+                special: { label: '連擊機率', value: 10, unit: '%', grow: 3 }
+            },
+            {
+                id: 'ice', name: '冰', quality: 'common', baseColor: '#3b82f6',
+                stats: { atk: 8, speed: 60 }, grow: { atk: 2, speed: -1 },
+                special: { label: '緩速效果', value: 15, unit: '%', grow: 5 }
+            },
+            {
+                id: 'electric', name: '電', quality: 'common', baseColor: '#f59e0b',
+                stats: { atk: 7, speed: 40 }, grow: { atk: 2, speed: -1 },
+                special: { label: '連鎖目標', value: 3, unit: '體', grow: 1 }
+            },
+            {
+                id: 'poison', name: '毒', quality: 'common', baseColor: '#008000',
+                stats: { atk: 6, speed: 45 }, grow: { atk: 2, speed: -1 },
+                special: { label: '中毒傷害', value: 5, unit: 'pt', grow: 3 }
+            },
 
-            // Epic
-            { id: 'teleport', name: '傳送', quality: 'epic', baseColor: '#8b5cf6', stats: { atk: 5, speed: 65 }, grow: { atk: 2, speed: -1 } },
-            { id: 'gear', name: '齒輪', quality: 'epic', baseColor: '#475569', stats: { atk: 12, speed: 50 }, grow: { atk: 6, speed: -1 } },
-            // Legend
-            { id: 'joker', name: '小丑', quality: 'legend', baseColor: '#f87171', stats: { atk: 5, speed: 50 }, grow: { atk: 1, speed: 0 } },
-            { id: 'growth', name: '成長', quality: 'legend', baseColor: '#f472b6', stats: { atk: 10, speed: 50 }, grow: { atk: 5, speed: -1 } },
-            { id: 'sun', name: '太陽', quality: 'legend', baseColor: '#fbbf24', stats: { atk: 25, speed: 55 }, grow: { atk: 12, speed: -0.5 } },
-            // Mythic
-            { id: 'galaxy', name: '銀河', quality: 'mythic', baseColor: '#6366f1', stats: { atk: 40, speed: 45 }, grow: { atk: 20, speed: -1 } }
+            // --- Rare (稀有) ---
+            {
+                id: 'lock', name: '鎖定', quality: 'rare', baseColor: '#64748b',
+                stats: { atk: 10, speed: 55 }, grow: { atk: 4, speed: -1 },
+                special: { label: '禁錮時長', value: 0.5, unit: '秒', grow: 0.2 }
+            },
+
+            // --- Epic (史詩) ---
+            {
+                id: 'teleport', name: '傳送', quality: 'epic', baseColor: '#8b5cf6',
+                stats: { atk: 5, speed: 65 }, grow: { atk: 2, speed: -1 },
+                special: { label: '傳送回終點', value: 5, unit: '%', grow: 2 }
+            },
+            {
+                id: 'gear', name: '齒輪', quality: 'epic', baseColor: '#475569',
+                stats: { atk: 12, speed: 50 }, grow: { atk: 6, speed: -1 },
+                special: { label: '連結加成', value: 10, unit: '%', grow: 5 }
+            },
+
+            // --- Legend (傳說) ---
+            {
+                id: 'joker', name: '小丑', quality: 'legend', baseColor: '#f87171',
+                stats: { atk: 5, speed: 50 }, grow: { atk: 1, speed: 0 },
+                special: { label: '繼承比例', value: 80, unit: '%', grow: 2 }
+            },
+            {
+                id: 'growth', name: '成長', quality: 'legend', baseColor: '#f472b6',
+                stats: { atk: 10, speed: 50 }, grow: { atk: 5, speed: -1 },
+                special: { label: '成長時間', value: 60, unit: '秒', grow: -2 }
+            },
+            {
+                id: 'sun', name: '太陽', quality: 'legend', baseColor: '#fbbf24',
+                stats: { atk: 25, speed: 55 }, grow: { atk: 12, speed: -0.5 },
+                special: { label: '濺射爆發', value: 100, unit: '%', grow: 20 }
+            },
+
+            // --- Mythic (神話) ---
+            {
+                id: 'galaxy', name: '銀河', quality: 'mythic', baseColor: '#6366f1',
+                stats: { atk: 40, speed: 45 }, grow: { atk: 20, speed: -1 },
+                special: { label: '黑洞吞噬', value: 1, unit: '%', grow: 0.5 }
+            }
         ];
 
         const BOSS_TYPES = {
@@ -242,18 +293,18 @@
             }
         }
         function getDiceSpecialValue(diceId) {
-    if (!diceId) return 0;
-    const dice = ALL_DICES.find(d => d.id === diceId);
-    if (!dice || !dice.special) return 0;
+            if (!diceId) return 0;
+            const dice = ALL_DICES.find(d => d.id === diceId);
+            if (!dice || !dice.special) return 0;
 
-    const lv = (userData.diceLevels && userData.diceLevels[diceId]) ? userData.diceLevels[diceId] : 1;
+            const lv = (userData.diceLevels && userData.diceLevels[diceId]) ? userData.diceLevels[diceId] : 1;
 
-    // 加上 || 0 確保如果資料表沒寫 value 或 grow，不會變成 NaN
-    const base = dice.special.value || 0;
-    const grow = dice.special.grow || 0;
+            // 加上 || 0 確保如果資料表沒寫 value 或 grow，不會變成 NaN
+            const base = dice.special.value || 0;
+            const grow = dice.special.grow || 0;
 
-    return base + (lv - 1) * grow;
-}
+            return base + (lv - 1) * grow;
+        }
         function transformJoker(jokerDice, targetDice) {
             const ratio = getDiceSpecialValue('joker') / 100; // 拿到 0.8, 0.82...
 
@@ -599,11 +650,35 @@
                     }
                     break;
                 case 'electric':
-                    // spec 為連鎖傷害比例 (例如 50, 55...)
+                    // 獲取雷電的特殊數值 (假設 spec 現在代表一個更強的加成係數)
+                    // 修正點：即使 p.damage 很低，我們也給予一個基於等級的保底連鎖傷
+                    const chainBase = (p.diceLv * 10); // 每一星等提供 20 點基礎電擊傷
+
                     enemies.forEach(e => {
+                        // 連鎖範圍維持 100
                         if (e !== target && Math.hypot(e.x - target.x, e.y - target.y) < 100) {
-                            e.hp -= p.damage * (spec / 100);
-                            damagePopups.push({ x: e.x, y: e.y, val: Math.floor(p.damage * (spec / 100)), life: 20 });
+
+                            // 新算法：主彈傷害的 150% + 星等保底傷害
+                            // 這樣就算主彈傷害只有 5，1 星雷電也能打出 (5*1.5 + 20) = 27 點連鎖傷
+                            let chainDmg = (p.damage * 0.8) + chainBase;
+
+                            // PowerUp 等級加成 (如果有連動到 powerUpLevels)
+                            const pUpLv = powerUpLevels['electric'] || 1;
+                            chainDmg *= (1 + (pUpLv - 1) * 0.2);
+
+                            e.hp -= chainDmg;
+
+                            // 顯示傷害：雷電連鎖通常用 Math.ceil，讓數字看起來比較大
+                            const displayVal = Math.ceil(chainDmg);
+                            if (displayVal > 0) {
+                                damagePopups.push({
+                                    x: e.x,
+                                    y: e.y,
+                                    val: displayVal,
+                                    life: 20,
+                                    color: "#fde047" // 給予黃色字體，更有雷電感
+                                });
+                            }
                         }
                     });
                     break;
