@@ -119,7 +119,7 @@
             <span class="text-yellow-400 font-bold text-lg">💎</span>
             <span id="goldText" class="font-mono text-xl text-yellow-500 font-bold">0</span>
         </div>
-        <p class="text-[10px] text-slate-500">版本V0.2.7</p>
+        <p class="text-[10px] text-slate-500">版本V0.2.8</p>
         <a href="index.html" class="no-underline">
             <button
                 class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded-lg text-xs font-bold border border-slate-500 transition-colors">
@@ -436,8 +436,10 @@
             if (!data) {
                 data = {
                     deck: ['fire', 'wind', 'ice', 'electric', 'poison'],
-                    inventory: { 'fire': 1, 'wind': 1, 'ice': 1, 'electric': 1, 'poison': 1 },
-                    diceLevels: { 'fire': 1, 'wind': 1, 'ice': 1, 'electric': 1, 'poison': 1 }
+                    diceLevels: { 'fire': 1, 'wind': 1, 'ice': 1, 'electric': 1, 'poison': 1 },
+                    tickets: 0,
+                    unlockLevel: 1, // 新增：紀錄歷史最高層數
+                    maxWave: 0
                 };
                 localStorage.setItem('dice_game_data', JSON.stringify(data));
             }
@@ -463,48 +465,48 @@
             9: [1000, 100000000], 10: [1200, 500000000]
         };
         function drawDiceStars(ctx, x, y, size, stars, diceColor) {
-    ctx.save();
-    // 關鍵：先重置矩陣，確保座標系統是乾淨的 1:1
-    ctx.setTransform(1, 0, 0, 1, 0, 0); 
-    
-    // 移動到指定位置 (x, y)
-    ctx.translate(x, y);
+            ctx.save();
+            // 關鍵：先重置矩陣，確保座標系統是乾淨的 1:1
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-    if (stars >= 7) {
-        ctx.fillStyle = "#fbbf24";
-        ctx.font = `bold ${size * 0.7}px Arial`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText("★", size / 2, size / 2 + size * 0.05);
-        ctx.restore();
-        return;
-    }
+            // 移動到指定位置 (x, y)
+            ctx.translate(x, y);
 
-    // 根據你之前的要求，未來要處理攻擊特效，這裡我們先確保點點顏色正確
-    ctx.fillStyle = diceColor || "#333";
-    const dotSize = size * 0.07;
-    const p = size * 0.22;
-    const m = size / 2;
-    const l = p, r = size - p;
-    const t = p, b = size - p;
+            if (stars >= 7) {
+                ctx.fillStyle = "#fbbf24";
+                ctx.font = `bold ${size * 0.7}px Arial`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText("★", size / 2, size / 2 + size * 0.05);
+                ctx.restore();
+                return;
+            }
 
-    let dots = [];
-    if (stars === 1) dots = [[m, m]];
-    else if (stars === 2) dots = [[l, t], [r, b]];
-    else if (stars === 3) dots = [[l, t], [m, m], [r, b]];
-    else if (stars === 4) dots = [[l, t], [r, t], [l, b], [r, b]];
-    else if (stars === 5) dots = [[l, t], [r, t], [m, m], [l, b], [r, b]];
-    else if (stars === 6) dots = [[l, t], [r, t], [l, m], [r, m], [l, b], [r, b]];
+            // 根據你之前的要求，未來要處理攻擊特效，這裡我們先確保點點顏色正確
+            ctx.fillStyle = diceColor || "#333";
+            const dotSize = size * 0.07;
+            const p = size * 0.22;
+            const m = size / 2;
+            const l = p, r = size - p;
+            const t = p, b = size - p;
 
-    dots.forEach(dot => {
-        ctx.beginPath();
-        // 因為 translate(x, y) 了，所以這裡維持用相對座標即可
-        ctx.arc(dot[0], dot[1], dotSize, 0, Math.PI * 2);
-        ctx.fill();
-    });
+            let dots = [];
+            if (stars === 1) dots = [[m, m]];
+            else if (stars === 2) dots = [[l, t], [r, b]];
+            else if (stars === 3) dots = [[l, t], [m, m], [r, b]];
+            else if (stars === 4) dots = [[l, t], [r, t], [l, b], [r, b]];
+            else if (stars === 5) dots = [[l, t], [r, t], [m, m], [l, b], [r, b]];
+            else if (stars === 6) dots = [[l, t], [r, t], [l, m], [r, m], [l, b], [r, b]];
 
-    ctx.restore();
-}
+            dots.forEach(dot => {
+                ctx.beginPath();
+                // 因為 translate(x, y) 了，所以這裡維持用相對座標即可
+                ctx.arc(dot[0], dot[1], dotSize, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            ctx.restore();
+        }
         function drawDiceFeature(ctx, x, y, size, pattern, diceColor) {
             if (!pattern || !diceColor) return;
 
