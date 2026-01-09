@@ -428,43 +428,43 @@
         }
 
         function summonDice() {
-    if (battleState.sp < battleState.summonCost) return;
-    const emptySlots = grid.slots.filter(s => s.dice === null);
-    if (emptySlots.length === 0) return;
+            if (battleState.sp < battleState.summonCost) return;
+            const emptySlots = grid.slots.filter(s => s.dice === null);
+            if (emptySlots.length === 0) return;
 
-    battleState.sp -= battleState.summonCost;
-    battleState.summonCost += 10;
+            battleState.sp -= battleState.summonCost;
+            battleState.summonCost += 10;
 
-    const targetSlot = emptySlots[Math.floor(Math.random() * emptySlots.length)];
-    const diceId = userData.deck[Math.floor(Math.random() * userData.deck.length)];
-    const db = ALL_DICES.find(d => d.id === diceId);
+            const targetSlot = emptySlots[Math.floor(Math.random() * emptySlots.length)];
+            const diceId = userData.deck[Math.floor(Math.random() * userData.deck.length)];
+            const db = ALL_DICES.find(d => d.id === diceId);
 
-    // 確保 slot 狀態乾淨
-    targetSlot.isLocked = false;
-    targetSlot.isBeingDragged = false;
-    targetSlot.attackCooldown = 0; // 重置該位置的冷卻
+            // 確保 slot 狀態乾淨
+            targetSlot.isLocked = false;
+            targetSlot.isBeingDragged = false;
+            targetSlot.attackCooldown = 0; // 重置該位置的冷卻
 
-    // 完整的骰子資料物件
-    targetSlot.dice = {
-        id: diceId,
-        lv: 1, 
-        baseColor: db.baseColor, // 必須新增這行！
-        color: db.baseColor,     // 兼容舊邏輯
-        pattern: db.pattern || diceId, // 確保有圖騰資訊
-        qualityColor: QUALITIES[db.quality].color,
-        growthTimer: 0,
-        isPowered: false
-    };
+            // 完整的骰子資料物件
+            targetSlot.dice = {
+                id: diceId,
+                lv: 1,
+                baseColor: db.baseColor, // 必須新增這行！
+                color: db.baseColor,     // 兼容舊邏輯
+                pattern: db.pattern || diceId, // 確保有圖騰資訊
+                qualityColor: QUALITIES[db.quality].color,
+                growthTimer: 0,
+                isPowered: false
+            };
 
-    // 如果 slot 物件本身沒有 x, y 像素值，要在這裡計算給 updateCombat 用
-    if (targetSlot.x === undefined) {
-        targetSlot.x = targetSlot.col * grid.slotSize;
-        targetSlot.y = targetSlot.row * grid.slotSize;
-    }
+            // 如果 slot 物件本身沒有 x, y 像素值，要在這裡計算給 updateCombat 用
+            if (targetSlot.x === undefined) {
+                targetSlot.x = targetSlot.col * grid.slotSize;
+                targetSlot.y = targetSlot.row * grid.slotSize;
+            }
 
-    updateUI();
-    if (typeof refreshSunState === 'function') refreshSunState();
-}
+            updateUI();
+            if (typeof refreshSunState === 'function') refreshSunState();
+        }
 
         function powerUpDice(id) {
             const lv = powerUpLevels[id] || 1;
@@ -477,12 +477,12 @@
         }
 
         function spawnEnemy() {
-            const level = userData.unlockLevel; // 目前關卡
-            const wave = battleState.wave;      // 目前層數 (1-20)
+            // 確保從 userData 抓取，若為 undefined 則保底為 1
+            const level = Number(userData.unlockLevel) || 1;
+            const wave = Number(battleState.wave) || 1;
 
-            // 基礎 HP * (關卡難度加成) * (層數加成)
-            // 每關難度提升 50%，每層提升 10%
-            const hp = 100 * Math.pow(1.2, level - 1) * Math.pow(1.05, wave - 1);
+            // 基礎 HP 計算，加入 Math.max 確保不會有 0 血怪
+            const hp = Math.max(1, 100 * Math.pow(1.2, level - 1) * Math.pow(1.05, wave - 1));
 
             enemies.push({
                 x: path[0].x,
@@ -490,8 +490,8 @@
                 pathIndex: 1,
                 maxHp: hp,
                 hp: hp,
-                virtualHp: hp,
-                speed: 1.5, // 越高關移動越快
+                virtualHp: hp, // 同步虛擬血量
+                speed: 1.5,
                 rewardSp: 10 + (wave * 2),
                 isBoss: false
             });
@@ -635,26 +635,6 @@
             if (dice.id === 'sun' && isSunActivated) {
                 // --- 1. 產生 CSS 爆炸特效 ---
                 const gameContainer = document.getElementById('canvas-container'); // 確保你有一個包住 Canvas 的容器
-                /*if (gameContainer) {
-                    const effect = document.createElement('div');
-                    effect.className = 'sun-explosion';
-
-                    // 1. 取得 Canvas 實際在螢幕上的尺寸
-                    const rect = canvas.getBoundingClientRect();
-
-                    // 2. 計算比例：顯示尺寸 / 原始畫布尺寸
-                    // 假設你的畫布原始寬度是 canvas.width (例如 400)
-                    const scaleX = rect.width / canvas.width;
-                    const scaleY = rect.height / canvas.height;
-
-                    // 3. 將畫布座標轉換為 CSS 像素位置
-                    // 並加上 offset 確保對齊 (如果有 padding 或 margin)
-                    effect.style.left = (target.x * scaleX) + 'px';
-                    effect.style.top = (target.y * scaleY) + 'px';
-
-                    gameContainer.appendChild(effect);
-                    setTimeout(() => effect.remove(), 400);
-                }*/
                 if (gameContainer) {
                     const effect = document.createElement('div');
                     effect.className = 'sun-explosion';
