@@ -33,17 +33,21 @@
         .scroll-hide::-webkit-scrollbar {
             display: none;
         }
-/* 讓底部選單更像手機 App */
-.fixed.bottom-0 {
-    padding-bottom: env(safe-area-inset-bottom, 12px); /* 適配 iPhone 底線 */
-    backdrop-filter: blur(10px); /* 毛玻璃效果 */
-    background: rgba(15, 23, 42, 0.95);
-}
 
-/* 隱藏滾動條但保持滾動 */
-.scroll-hide::-webkit-scrollbar {
-    display: none;
-}
+        /* 讓底部選單更像手機 App */
+        .fixed.bottom-0 {
+            padding-bottom: env(safe-area-inset-bottom, 12px);
+            /* 適配 iPhone 底線 */
+            backdrop-filter: blur(10px);
+            /* 毛玻璃效果 */
+            background: rgba(15, 23, 42, 0.95);
+        }
+
+        /* 隱藏滾動條但保持滾動 */
+        .scroll-hide::-webkit-scrollbar {
+            display: none;
+        }
+
         .q-mythic {
             background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff);
             background-size: 200% 200%;
@@ -109,90 +113,170 @@
     </style>
 </head>
 
-<body class="p-4 flex flex-col h-screen"> <div class="flex justify-between items-center mb-4 bg-slate-800 p-3 rounded-xl shadow-lg border border-slate-700">
+<body class="p-4 flex flex-col h-screen">
+    <div class="flex justify-between items-center mb-4 bg-slate-800 p-3 rounded-xl shadow-lg border border-slate-700">
         <div class="flex items-center gap-2">
             <span class="text-yellow-400 font-bold text-lg">💎</span>
             <span id="goldText" class="font-mono text-xl text-yellow-500 font-bold">0</span>
         </div>
         <p class="text-[10px] text-slate-500">版本V0.2.0</p>
         <a href="index.html" class="no-underline">
-                <button class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded-lg text-xs font-bold border border-slate-500 transition-colors">
-                    🏠 大廳
-                </button>
-            </a>
+            <button
+                class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded-lg text-xs font-bold border border-slate-500 transition-colors">
+                🏠 大廳
+            </button>
+        </a>
     </div>
 
     <div class="flex-1 overflow-y-auto pb-24" id="main-content">
-        
-        <div id="page-shop" class="hidden">
-            <h2 class="text-xl font-bold mb-4">商店抽卡</h2>
-            <div class="bg-gradient-to-b from-slate-800 to-slate-900 p-6 rounded-3xl text-center border-2 border-yellow-600/30">
-                <div class="text-6xl mb-2">🔮</div>
-                <h3 class="text-2xl font-bold mb-1">骰子召喚</h3>
-                <p class="text-slate-400 text-sm mb-6">隨機獲得英雄骰子</p>
-                <button onclick="buyBox(10)" class="w-full bg-indigo-600 py-4 rounded-2xl font-bold mb-3 active:scale-95 transition-transform">10 連抽 (10萬 💎)</button>
-                <button onclick="buyBox(100)" class="w-full bg-gradient-to-r from-purple-600 to-indigo-700 py-4 rounded-2xl font-bold active:scale-95 transition-transform">💯 百連抽 (100萬 💎)</button>
+
+        <div id="page-shop" class="hidden space-y-6">
+            <h2 class="text-xl font-bold px-1 text-white">英雄召喚</h2>
+
+            <div
+                class="bg-gradient-to-br from-indigo-900 to-slate-900 p-5 rounded-3xl border-2 border-indigo-500/50 shadow-xl relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 text-7xl opacity-10 rotate-12">⭐</div>
+
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 class="text-xl font-black text-indigo-300">功能型特選池</h3>
+                        <p class="text-[10px] text-indigo-400 opacity-80 uppercase tracking-tighter">Special Support
+                            Summon</p>
+                    </div>
+                    <div
+                        class="bg-indigo-950/80 px-3 py-1 rounded-full border border-indigo-500 flex items-center gap-1">
+                        <span class="text-xs">🎟️</span>
+                        <span id="shopTicketText" class="font-mono text-sm font-bold text-white">0</span>
+                    </div>
+                </div>
+
+                <div class="text-center py-4">
+                    <div class="text-5xl mb-2">🎫</div>
+                    <p class="text-slate-300 text-xs mb-4">本池獲取「功能型」英雄機率提升 20%</p>
+                </div>
+
+                <button onclick="buySpecialBox(1)"
+                    class="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-2xl font-bold active:scale-95 transition-all shadow-[0_4px_0_0_#4338ca]">
+                    🎟️ 消耗 1 張票券召喚
+                </button>
             </div>
+
+            <div
+                class="bg-gradient-to-br from-slate-800 to-slate-900 p-5 rounded-3xl border-2 border-slate-700 shadow-xl relative overflow-hidden">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 class="text-xl font-black text-yellow-500">一般召喚</h3>
+                        <p class="text-[10px] text-slate-500 uppercase">Standard Summon</p>
+                    </div>
+                    <div class="bg-slate-950/80 px-3 py-1 rounded-full border border-slate-700 flex items-center gap-1">
+                        <span class="text-xs">💎</span>
+                        <span id="shopGoldText" class="font-mono text-sm font-bold text-yellow-500">0</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="buyBox(10)"
+                        class="bg-slate-700 py-4 rounded-2xl font-bold active:scale-95 transition-all flex flex-col items-center">
+                        <span class="text-sm">10 連抽</span>
+                        <span class="text-[10px] text-yellow-500">10萬 💎</span>
+                    </button>
+                    <button onclick="buyBox(100)"
+                        class="bg-slate-700 py-4 rounded-2xl font-bold active:scale-95 transition-all flex flex-col items-center border border-yellow-500/30">
+                        <span class="text-sm">100 連抽</span>
+                        <span class="text-[10px] text-yellow-500">100萬 💎</span>
+                    </button>
+                </div>
+            </div>
+
         </div>
 
         <div id="page-battle" class="space-y-6">
-    <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-700 shadow-inner">
-        <div class="flex justify-between items-center mb-3">
-            <p class="text-[10px] text-blue-400 font-bold uppercase tracking-wider">Battle Deck</p>
-            <button onclick="showPage('inventory')" class="text-[10px] text-slate-400 bg-slate-800 px-2 py-1 rounded-md">修改</button>
+            <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-700 shadow-inner">
+                <div class="flex justify-between items-center mb-3">
+                    <p class="text-[10px] text-blue-400 font-bold uppercase tracking-wider">Battle Deck</p>
+                    <button onclick="showPage('inventory')"
+                        class="text-[10px] text-slate-400 bg-slate-800 px-2 py-1 rounded-md">修改</button>
+                </div>
+                <div id="deckContainer" class="flex justify-between gap-2"></div>
+            </div>
+
+            <h2 class="text-xl font-bold px-1 text-white">選擇戰鬥模式</h2>
+
+            <div class="grid grid-cols-1 gap-4">
+                <button onclick="startBattle()"
+                    class="relative overflow-hidden group bg-gradient-to-r from-blue-600 to-blue-800 p-5 rounded-2xl text-left shadow-lg active:scale-95 transition-all">
+                    <div class="relative z-10">
+                        <h3 class="text-xl font-black mb-1">冒險闖關</h3>
+                        <p class="text-blue-100 text-xs opacity-80">挑戰關卡</p>
+                    </div>
+                    <span
+                        class="absolute right-4 bottom-2 text-6xl opacity-20 group-hover:scale-110 transition-transform">🗺️</span>
+                </button>
+
+                <button onclick="alert('PVP模式即將開放！')"
+                    class="relative overflow-hidden group bg-gradient-to-r from-red-600 to-red-800 p-5 rounded-2xl text-left shadow-lg active:scale-95 transition-all opacity-80">
+                    <div class="relative z-10">
+                        <h3 class="text-xl font-black mb-1">對戰</h3>
+                        <p class="text-red-100 text-xs opacity-80">即時競技</p>
+                    </div>
+                    <span class="absolute right-4 bottom-2 text-6xl opacity-20">⚔️</span>
+                    <div
+                        class="absolute top-2 right-2 bg-black/50 px-2 py-0.5 rounded text-[10px] font-bold text-white">
+                        SOON</div>
+                </button>
+
+                <button onclick="alert('合作模式即將開放！')"
+                    class="relative overflow-hidden group bg-gradient-to-r from-emerald-600 to-emerald-800 p-5 rounded-2xl text-left shadow-lg active:scale-95 transition-all opacity-80">
+                    <div class="relative z-10">
+                        <h3 class="text-xl font-black mb-1">共同合作</h3>
+                        <p class="text-emerald-100 text-xs opacity-80">聯手防守，抵禦敵軍</p>
+                    </div>
+                    <span class="absolute right-4 bottom-2 text-6xl opacity-20">🤝</span>
+                    <div
+                        class="absolute top-2 right-2 bg-black/50 px-2 py-0.5 rounded text-[10px] font-bold text-white">
+                        SOON</div>
+                </button>
+            </div>
         </div>
-        <div id="deckContainer" class="flex justify-between gap-2"></div>
-    </div>
 
-    <h2 class="text-xl font-bold px-1 text-white">選擇戰鬥模式</h2>
-
-    <div class="grid grid-cols-1 gap-4">
-        <button onclick="startBattle()" class="relative overflow-hidden group bg-gradient-to-r from-blue-600 to-blue-800 p-5 rounded-2xl text-left shadow-lg active:scale-95 transition-all">
-            <div class="relative z-10">
-                <h3 class="text-xl font-black mb-1">冒險闖關</h3>
-                <p class="text-blue-100 text-xs opacity-80">挑戰關卡</p>
+        <div id="page-inventory" class="hidden space-y-6">
+            <div
+                class="bg-slate-900 p-4 rounded-3xl border-2 border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.2)]">
+                <div class="flex justify-between items-center mb-3 px-1">
+                    <h3 class="text-sm font-bold text-blue-400 uppercase tracking-widest">出戰陣容</h3>
+                    <span class="text-[10px] text-slate-500">點擊下方骰子可更換</span>
+                </div>
+                <div id="inventoryDeckContainer" class="flex justify-between gap-2">
+                </div>
             </div>
-            <span class="absolute right-4 bottom-2 text-6xl opacity-20 group-hover:scale-110 transition-transform">🗺️</span>
-        </button>
 
-        <button onclick="alert('PVP模式即將開放！')" class="relative overflow-hidden group bg-gradient-to-r from-red-600 to-red-800 p-5 rounded-2xl text-left shadow-lg active:scale-95 transition-all opacity-80">
-            <div class="relative z-10">
-                <h3 class="text-xl font-black mb-1">對戰</h3>
-                <p class="text-red-100 text-xs opacity-80">即時競技</p>
+            <div>
+                <h2 class="text-lg font-bold mb-3 flex items-center gap-2 px-1">
+                    <span>我的骰子庫</span>
+                    <span id="diceCount" class="text-xs font-normal text-slate-500">(0/0)</span>
+                </h2>
+                <div id="inventorySection" class="grid grid-cols-3 gap-3 pb-10">
+                </div>
             </div>
-            <span class="absolute right-4 bottom-2 text-6xl opacity-20">⚔️</span>
-            <div class="absolute top-2 right-2 bg-black/50 px-2 py-0.5 rounded text-[10px] font-bold text-white">SOON</div>
-        </button>
-
-        <button onclick="alert('合作模式即將開放！')" class="relative overflow-hidden group bg-gradient-to-r from-emerald-600 to-emerald-800 p-5 rounded-2xl text-left shadow-lg active:scale-95 transition-all opacity-80">
-            <div class="relative z-10">
-                <h3 class="text-xl font-black mb-1">共同合作</h3>
-                <p class="text-emerald-100 text-xs opacity-80">聯手防守，抵禦敵軍</p>
-            </div>
-            <span class="absolute right-4 bottom-2 text-6xl opacity-20">🤝</span>
-            <div class="absolute top-2 right-2 bg-black/50 px-2 py-0.5 rounded text-[10px] font-bold text-white">SOON</div>
-        </button>
-    </div>
-</div>
-
-        <div id="page-inventory" class="hidden">
-            <h2 class="text-xl font-bold mb-4 px-1">我的骰子庫</h2>
-            <div id="inventorySection" class="grid grid-cols-3 gap-3"></div>
         </div>
     </div>
 
-    <div class="fixed bottom-0 left-0 w-full bg-slate-900 border-t border-slate-700 px-6 py-3 flex justify-between items-center z-40">
-        <button onclick="showPage('shop')" id="nav-shop" class="flex flex-col items-center gap-1 text-slate-400 transition-colors">
+    <div
+        class="fixed bottom-0 left-0 w-full bg-slate-900 border-t border-slate-700 px-6 py-3 flex justify-between items-center z-40">
+        <button onclick="showPage('shop')" id="nav-shop"
+            class="flex flex-col items-center gap-1 text-slate-400 transition-colors">
             <span class="text-2xl">🛒</span>
             <span class="text-[10px] font-bold">商店</span>
         </button>
-        
-        <button onclick="showPage('battle')" id="nav-battle" class="flex flex-col items-center gap-1 text-blue-400 transition-colors">
+
+        <button onclick="showPage('battle')" id="nav-battle"
+            class="flex flex-col items-center gap-1 text-blue-400 transition-colors">
             <span class="text-3xl">⚔️</span>
             <span class="text-[10px] font-bold">戰鬥</span>
         </button>
 
-        <button onclick="showPage('inventory')" id="nav-inventory" class="flex flex-col items-center gap-1 text-slate-400 transition-colors">
+        <button onclick="showPage('inventory')" id="nav-inventory"
+            class="flex flex-col items-center gap-1 text-slate-400 transition-colors">
             <span class="text-2xl">🎲</span>
             <span class="text-[10px] font-bold">備戰</span>
         </button>
@@ -223,6 +307,19 @@
                 <div class="bg-slate-900 p-3 rounded-2xl border border-slate-700">
                     <div class="text-slate-400 text-[10px]">攻擊力</div>
                     <div id="u-atk" class="text-xl font-bold text-green-400"></div>
+                </div>
+            </div>
+            <div class="bg-slate-900/50 p-4 rounded-2xl border border-slate-700 mb-6">
+                <div class="flex justify-around items-center">
+                    <div class="text-center">
+                        <div class="text-[10px] text-slate-500 mb-1 uppercase">所需碎片</div>
+                        <div id="u-req-fragments" class="font-bold text-sm"></div>
+                    </div>
+                    <div class="h-8 w-[1px] bg-slate-700"></div>
+                    <div class="text-center">
+                        <div class="text-[10px] text-slate-500 mb-1 uppercase">所需鑽石</div>
+                        <div id="u-req-gold" class="font-bold text-sm text-yellow-500"></div>
+                    </div>
                 </div>
             </div>
 
@@ -370,30 +467,47 @@
         function render() {
             if (!userData) return;
 
+            // 1. 更新金幣
             const goldDisplay = document.getElementById('goldText');
             if (goldDisplay) goldDisplay.innerText = Math.floor(currentBalance).toLocaleString();
+            const shopGoldText = document.getElementById('shopGoldText');
+            if (shopGoldText) shopGoldText.innerText = Math.floor(currentBalance).toLocaleString();
 
-            const deckContainer = document.getElementById('deckContainer');
-            if (deckContainer) {
-                deckContainer.innerHTML = userData.deck.map((id, index) => {
-                    const dice = ALL_DICES.find(d => d.id === id);
-                    if (!dice) return `<div class="w-14 h-14 bg-slate-800 rounded-lg border-2 border-dashed border-slate-600"></div>`;
+            // 2. 更新抽獎券數量 (這就是你要的！)
+            const tickets = userData.tickets || 0; // 從 userData 取得數量，若無則設為 0
 
-                    const q = QUALITIES[dice.quality] || QUALITIES.common;
-                    const lv = userData.diceLevels[id] || 1;
-                    const isReplacing = selectedInventoryId !== null;
-
-                    return `
-                    <div onclick="selectDeckSlot(${index})" 
-                        class="w-14 h-14 rounded-lg flex flex-col items-center justify-center font-black shadow-lg border-2 transition-all 
-                        ${dice.quality === 'mythic' ? 'q-mythic' : ''} ${isReplacing ? 'deck-slot-highlight' : ''}" 
-                        style="background-color: ${dice.baseColor}; color: #fff; border-color: ${q.color}">
-                        <div class="text-[10px] leading-none">${dice.name}</div>
-                        <div class="text-[8px] mt-1 bg-black/30 px-1 rounded">Lv.${lv}</div>
-                    </div>`;
-                }).join('');
+            // 更新商店特殊池旁邊顯示的票券數量
+            const shopTicketDisplay = document.getElementById('shopTicketText');
+            if (shopTicketDisplay) {
+                shopTicketDisplay.innerText = tickets.toLocaleString();
             }
+            // 2. 產生成員清單的 HTML (共用邏輯)
+            const deckHtml = userData.deck.map((id, index) => {
+                const dice = ALL_DICES.find(d => d.id === id);
+                if (!dice) return `<div class="w-14 h-14 bg-slate-800 rounded-lg border-2 border-dashed border-slate-600"></div>`;
 
+                const q = QUALITIES[dice.quality] || QUALITIES.common;
+                const lv = userData.diceLevels[id] || 1;
+                const isReplacing = selectedInventoryId !== null;
+
+                return `
+        <div onclick="selectDeckSlot(${index})" 
+            class="w-14 h-14 rounded-lg flex flex-col items-center justify-center font-black shadow-lg border-2 transition-all 
+            ${dice.quality === 'mythic' ? 'q-mythic' : ''} ${isReplacing ? 'deck-slot-highlight' : ''}" 
+            style="background-color: ${dice.baseColor}; color: #fff; border-color: ${q.color}">
+            <div class="text-[10px] leading-none">${dice.name}</div>
+            <div class="text-[8px] mt-1 bg-black/30 px-1 rounded">Lv.${lv}</div>
+        </div>`;
+            }).join('');
+
+            // --- 同步更新兩個容器 ---
+            const deckContainer = document.getElementById('deckContainer'); // 戰鬥頁面
+            if (deckContainer) deckContainer.innerHTML = deckHtml;
+
+            const inventoryDeckContainer = document.getElementById('inventoryDeckContainer'); // 備戰頁面
+            if (inventoryDeckContainer) inventoryDeckContainer.innerHTML = deckHtml;
+
+            // 3. 更新骰子倉庫 (保持原樣)
             const inventorySection = document.getElementById('inventorySection');
             if (inventorySection) {
                 inventorySection.innerHTML = ALL_DICES.map(dice => {
@@ -404,14 +518,14 @@
                     const isSelected = selectedInventoryId === dice.id;
 
                     return `
-                    <div onclick="${isOwned ? `openUpgradeUI('${dice.id}')` : ''}" 
-                        class="bg-slate-800 p-2 rounded-xl text-center border-2 transition-all dice-card 
-                        ${isSelected ? 'selected-dice' : (isOwned ? 'border-slate-700' : 'opacity-20 grayscale pointer-events-none')}">
-                        <div class="w-12 h-12 mx-auto mb-1 rounded-lg flex items-center justify-center font-bold ${dice.quality === 'mythic' ? 'q-mythic' : ''}" 
-                            style="background-color: ${dice.baseColor}; color: #fff; border: 2px solid ${q.color}">${dice.name}</div>
-                        <div class="text-[10px]">Lv.${lv}</div>
-                        <div class="text-[8px] text-slate-400">${count} 碎片</div>
-                    </div>`;
+            <div onclick="${isOwned ? `openUpgradeUI('${dice.id}')` : ''}" 
+                class="bg-slate-800 p-2 rounded-xl text-center border-2 transition-all dice-card 
+                ${isSelected ? 'selected-dice' : (isOwned ? 'border-slate-700' : 'opacity-20 grayscale pointer-events-none')}">
+                <div class="w-12 h-12 mx-auto mb-1 rounded-lg flex items-center justify-center font-bold ${dice.quality === 'mythic' ? 'q-mythic' : ''}" 
+                    style="background-color: ${dice.baseColor}; color: #fff; border: 2px solid ${q.color}">${dice.name}</div>
+                <div class="text-[10px]">Lv.${lv}</div>
+                <div class="text-[8px] text-slate-400">${count} 碎片</div>
+            </div>`;
                 }).join('');
             }
         }
@@ -429,6 +543,7 @@
             const count = userData.inventory[id] || 0;
             const req = UPGRADE_CONFIG[lv] || [999, 999999999];
 
+            // 1. 計算屬性 (保留你原本的邏輯)
             const curAtk = dice.stats.atk + (lv - 1) * dice.grow.atk;
             const nextAtk = dice.stats.atk + lv * dice.grow.atk;
             const curSpd = dice.stats.speed + (lv - 1) * dice.grow.speed;
@@ -438,29 +553,50 @@
             if (dice.special) {
                 const curValue = (dice.special.value + (lv - 1) * dice.special.grow).toFixed(1).replace(/\.0$/, '');
                 const nextValue = (dice.special.value + lv * dice.special.grow).toFixed(1).replace(/\.0$/, '');
-
                 specialHTML = `
-                    <div class="text-xs text-slate-400 mt-2">${dice.special.label}</div>
-                    <div class="text-lg font-bold text-yellow-400">${curValue}${dice.special.unit} → ${nextValue}${dice.special.unit}</div>
-                `;
+            <div class="text-xs text-slate-400 mt-2">${dice.special.label}</div>
+            <div class="text-lg font-bold text-yellow-400">${curValue}${dice.special.unit} → ${nextValue}${dice.special.unit}</div>
+        `;
             }
 
+            // 2. 更新基礎資訊
             document.getElementById('u-name').innerText = dice.name + " 骰子";
             document.getElementById('u-quality').innerText = `${q.name} 品質`;
             document.getElementById('u-lv-now').innerText = `Lv. ${lv}`;
-
             document.getElementById('u-atk').innerHTML = `
-                <div class="text-xs text-slate-400">基礎攻擊</div>
-                <div class="text-lg font-bold text-green-400">${curAtk} → ${nextAtk}</div>
-                <div class="text-xs text-slate-400 mt-2">攻擊間隔 (ms)</div>
-                <div class="text-lg font-bold text-blue-400">${curSpd} → ${nextSpd}</div>
-                ${specialHTML} 
-            `;
+        <div class="text-xs text-slate-400">基礎攻擊</div>
+        <div class="text-lg font-bold text-green-400">${curAtk} → ${nextAtk}</div>
+        <div class="text-xs text-slate-400 mt-2">攻擊間隔 (ms)</div>
+        <div class="text-lg font-bold text-blue-400">${curSpd} → ${nextSpd}</div>
+        ${specialHTML} 
+    `;
 
+            // --- 3. 新增：顯示升級所需的資源對比 ---
+            const fragText = document.getElementById('u-req-fragments');
+            const goldReqText = document.getElementById('u-req-gold');
+
+            // 碎片顯示： 目前數量 / 需求數量
+            const hasEnoughFrags = count >= req[0];
+            fragText.innerHTML = `<span class="${hasEnoughFrags ? 'text-green-400' : 'text-red-500'}">${count}</span> / ${req[0]}`;
+
+            // 鑽石顯示： 直接顯示需求金額，不夠就變紅
+            const hasEnoughGold = currentBalance >= req[1];
+            goldReqText.innerHTML = `<span class="${hasEnoughGold ? 'text-yellow-400' : 'text-red-500'}">${req[1].toLocaleString()}</span>`;
+
+            // 4. 按鈕狀態 (修正判斷)
             const upgradeBtn = document.getElementById('btn-upgrade');
-            const canAfford = count >= req[0] && currentBalance >= req[1];
+            const canAfford = hasEnoughFrags && hasEnoughGold;
+
             upgradeBtn.disabled = !canAfford || lv >= 10;
-            upgradeBtn.innerText = lv >= 10 ? '已滿級' : `升級 (${req[1].toLocaleString()} 💰)`;
+
+            if (lv >= 10) {
+                upgradeBtn.innerText = '已達最大等級';
+                upgradeBtn.className = "flex-1 bg-slate-600 py-3 rounded-xl font-bold opacity-50";
+            } else {
+                upgradeBtn.innerText = canAfford ? '確認升級' : '資源不足';
+                // 根據是否可支付切換按鈕顏色
+                upgradeBtn.className = `flex-1 py-3 rounded-xl font-bold transition-colors ${canAfford ? 'bg-green-600 hover:bg-green-500' : 'bg-slate-700 text-slate-400'}`;
+            }
 
             document.getElementById('upgradeOverlay').classList.remove('hidden');
         }
@@ -501,7 +637,25 @@
             saveData();
             render();
         }
+        function buySpecialBox(amount) {
+            const cost = amount;
+            if ((userData.tickets || 0) < cost) {
+                alert("抽獎券不足！");
+                return;
+            }
 
+            userData.tickets -= cost;
+
+            // 這裡可以定義特殊池的英雄清單
+            // 假設你只想在特殊池抽「太陽」跟「冰霜」
+            const specialPool = ALL_DICES.filter(d => d.type === 'functional' || d.quality === 'mythic');
+
+            // 執行抽卡 (這部分可以參考你原本的 buyBox，但改用 specialPool)
+            // doSummon(amount, specialPool);
+
+            saveData();
+            render();
+        }
         function buyBox(count = 10) {
             const singlePrice = 10000;
             const totalPrice = singlePrice * count;
@@ -575,28 +729,27 @@
         function closeUpgradeUI() { document.getElementById('upgradeOverlay').classList.add('hidden'); tempUpgradeId = null; }
 
         function showPage(pageId) {
-    // 1. 隱藏所有頁面
-    document.getElementById('page-shop').classList.add('hidden');
-    document.getElementById('page-battle').classList.add('hidden');
-    document.getElementById('page-inventory').classList.add('hidden');
+            // 1. 隱藏所有頁面
+            document.getElementById('page-shop').classList.add('hidden');
+            document.getElementById('page-battle').classList.add('hidden');
+            document.getElementById('page-inventory').classList.add('hidden');
 
-    // 2. 顯示指定頁面
-    document.getElementById('page-' + pageId).classList.remove('hidden');
+            // 2. 顯示指定頁面
+            document.getElementById('page-' + pageId).classList.remove('hidden');
 
-    // 3. 更新按鈕顏色 (重置所有按鈕為灰色)
-    document.getElementById('nav-shop').className = 'flex flex-col items-center gap-1 text-slate-400';
-    document.getElementById('nav-battle').className = 'flex flex-col items-center gap-1 text-slate-400';
-    document.getElementById('nav-inventory').className = 'flex flex-col items-center gap-1 text-slate-400';
+            // 3. 更新按鈕顏色 (重置所有按鈕為灰色)
+            document.getElementById('nav-shop').className = 'flex flex-col items-center gap-1 text-slate-400';
+            document.getElementById('nav-battle').className = 'flex flex-col items-center gap-1 text-slate-400';
+            document.getElementById('nav-inventory').className = 'flex flex-col items-center gap-1 text-slate-400';
 
-    // 4. 高亮當前按鈕
-    const activeColor = pageId === 'battle' ? 'text-blue-400' : 
-                       (pageId === 'shop' ? 'text-yellow-400' : 'text-green-400');
-    document.getElementById('nav-' + pageId).classList.replace('text-slate-400', activeColor);
-    
-    // 如果切換到備戰或戰鬥，重新渲染陣容或清單 (確保數據最新)
-    if(pageId === 'inventory') renderInventory();
-    if(pageId === 'battle') renderDeck(); 
-}
+            // 4. 高亮當前按鈕
+            const activeColor = pageId === 'battle' ? 'text-blue-400' :
+                (pageId === 'shop' ? 'text-yellow-400' : 'text-green-400');
+            document.getElementById('nav-' + pageId).classList.replace('text-slate-400', activeColor);
+
+            // 如果切換到備戰或戰鬥，重新渲染陣容或清單 (確保數據最新)
+            render();
+        }
 
         function startBattle() {
             saveData();
