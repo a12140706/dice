@@ -180,70 +180,70 @@
         const ALL_DICES = [
             // --- Common (普通) ---
             {
-                id: 'fire', name: '火', quality: 'common', baseColor: '#ef4444',
+                id: 'fire', name: '火', quality: 'common', baseColor: '#ef4444', pattern: 'fire',
                 stats: { atk: 15, speed: 50 }, grow: { atk: 5, speed: -1 },
                 special: { label: '濺射範圍', value: 1.0, unit: '格', grow: 0.1 }
             },
             {
-                id: 'wind', name: '風', quality: 'common', baseColor: '#10b981',
+                id: 'wind', name: '風', quality: 'common', baseColor: '#10b981', pattern: 'wind',
                 stats: { atk: 10, speed: 20 }, grow: { atk: 3, speed: -2 },
                 special: { label: '連擊機率', value: 10, unit: '%', grow: 3 }
             },
             {
-                id: 'ice', name: '冰', quality: 'common', baseColor: '#3b82f6',
+                id: 'ice', name: '冰', quality: 'common', baseColor: '#3b82f6', pattern: 'ice',
                 stats: { atk: 8, speed: 60 }, grow: { atk: 2, speed: -1 },
                 special: { label: '緩速效果', value: 15, unit: '%', grow: 5 }
             },
             {
-                id: 'electric', name: '電', quality: 'common', baseColor: '#f59e0b',
+                id: 'electric', name: '電', quality: 'common', baseColor: '#f59e0b', pattern: 'electric',
                 stats: { atk: 7, speed: 40 }, grow: { atk: 2, speed: -1 },
                 special: { label: '連鎖目標', value: 3, unit: '體', grow: 1 }
             },
             {
-                id: 'poison', name: '毒', quality: 'common', baseColor: '#008000',
+                id: 'poison', name: '毒', quality: 'common', baseColor: '#008000', pattern: 'poison',
                 stats: { atk: 6, speed: 45 }, grow: { atk: 2, speed: -1 },
                 special: { label: '中毒傷害', value: 5, unit: 'pt', grow: 3 }
             },
 
             // --- Rare (稀有) ---
             {
-                id: 'lock', name: '鎖定', quality: 'rare', baseColor: '#64748b',
+                id: 'lock', name: '鎖定', quality: 'rare', baseColor: '#64748b', pattern: 'lock',
                 stats: { atk: 10, speed: 55 }, grow: { atk: 4, speed: -1 },
                 special: { label: '禁錮時長', value: 0.5, unit: '秒', grow: 0.2 }
             },
 
             // --- Epic (史詩) ---
             {
-                id: 'teleport', name: '傳送', quality: 'epic', baseColor: '#8b5cf6',
+                id: 'teleport', name: '傳送', quality: 'epic', baseColor: '#8b5cf6', pattern: 'teleport',
                 stats: { atk: 5, speed: 65 }, grow: { atk: 2, speed: -1 },
                 special: { label: '傳送回終點', value: 5, unit: '%', grow: 2 }
             },
             {
-                id: 'gear', name: '齒輪', quality: 'epic', baseColor: '#475569',
+                id: 'gear', name: '齒輪', quality: 'epic', baseColor: '#475569', pattern: 'gear',
                 stats: { atk: 12, speed: 50 }, grow: { atk: 6, speed: -1 },
                 special: { label: '連結加成', value: 10, unit: '%', grow: 5 }
             },
 
             // --- Legend (傳說) ---
             {
-                id: 'joker', name: '小丑', quality: 'legend', baseColor: '#f87171',
+                id: 'joker', name: '小丑', quality: 'legend', baseColor: '#f87171', pattern: 'joker',
                 stats: { atk: 5, speed: 50 }, grow: { atk: 1, speed: 0 },
                 special: { label: '繼承比例', value: 80, unit: '%', grow: 2 }
             },
             {
-                id: 'growth', name: '成長', quality: 'legend', baseColor: '#f472b6',
+                id: 'growth', name: '成長', quality: 'legend', baseColor: '#f472b6', pattern: 'growth',
                 stats: { atk: 10, speed: 50 }, grow: { atk: 5, speed: -1 },
                 special: { label: '成長時間', value: 60, unit: '秒', grow: -2 }
             },
             {
-                id: 'sun', name: '太陽', quality: 'legend', baseColor: '#fbbf24',
+                id: 'sun', name: '太陽', quality: 'legend', baseColor: '#fbbf24', pattern: 'sun',
                 stats: { atk: 25, speed: 55 }, grow: { atk: 12, speed: -0.5 },
                 special: { label: '濺射傷害', value: 100, unit: '%', grow: 20 }
             },
 
             // --- Mythic (神話) ---
             {
-                id: 'galaxy', name: '銀河', quality: 'mythic', baseColor: '#6366f1',
+                id: 'galaxy', name: '銀河', quality: 'mythic', baseColor: '#6366f1', pattern: 'galaxy',
                 stats: { atk: 40, speed: 45 }, grow: { atk: 20, speed: -1 },
                 special: { label: '黑洞吞噬', value: 1, unit: '%', grow: 0.5 }
             }
@@ -955,29 +955,134 @@
             }
             frame();
         }
-        function drawDiceStars(ctx, x, y, size, stars) {
-            ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+        function drawDiceFeature(ctx, x, y, size, pattern, diceColor) {
+            if (!pattern) return;
 
-            // 7星顯示金色大星星
+            const m = size / 2;
+            ctx.save();
+            ctx.translate(x, y);
+
+            const r = parseInt(diceColor.slice(1, 3), 16);
+            const g = parseInt(diceColor.slice(3, 5), 16);
+            const b = parseInt(diceColor.slice(5, 7), 16);
+            ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.3)`; // 稍微加深一點點，更明顯
+            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.12)`;
+            ctx.lineWidth = 4;
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+
+            switch (pattern) {
+                // --- Common ---
+                case 'fire':
+                    ctx.beginPath();
+                    ctx.moveTo(m, size * 0.2); ctx.lineTo(size * 0.8, size * 0.8); ctx.lineTo(size * 0.2, size * 0.8);
+                    ctx.closePath(); ctx.stroke(); ctx.fill();
+                    break;
+                case 'ice':
+                    ctx.beginPath(); ctx.arc(m, m, size * 0.35, 0, Math.PI * 2);
+                    ctx.moveTo(m, size * 0.1); ctx.lineTo(m, size * 0.9);
+                    ctx.moveTo(size * 0.1, m); ctx.lineTo(size * 0.9, m);
+                    ctx.stroke();
+                    break;
+                case 'wind':
+                    ctx.beginPath();
+                    for (let i = -1; i <= 1; i++) {
+                        ctx.moveTo(size * 0.2, m + (i * 12)); ctx.lineTo(size * 0.8, m + (i * 12));
+                    }
+                    ctx.stroke();
+                    break;
+                case 'electric':
+                    ctx.beginPath();
+                    ctx.moveTo(m + 5, size * 0.15); ctx.lineTo(m - 10, m + 5);
+                    ctx.lineTo(m + 10, m - 5); ctx.lineTo(m - 5, size * 0.85);
+                    ctx.stroke();
+                    break;
+                case 'poison':
+                    ctx.beginPath();
+                    ctx.moveTo(m, size * 0.2); ctx.lineTo(size * 0.75, m);
+                    ctx.lineTo(m, size * 0.8); ctx.lineTo(size * 0.25, m);
+                    ctx.closePath(); ctx.stroke(); ctx.fill();
+                    break;
+
+                // --- Rare & Epic ---
+                case 'lock': // 鎖定：方框中帶一個圓點
+                    ctx.strokeRect(size * 0.25, size * 0.25, size * 0.5, size * 0.5);
+                    ctx.beginPath(); ctx.arc(m, m, 4, 0, Math.PI * 2); ctx.fill();
+                    break;
+                case 'teleport': // 傳送：兩個漩渦括號
+                    ctx.beginPath();
+                    ctx.arc(size * 0.3, m, size * 0.3, -Math.PI / 2, Math.PI / 2);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(size * 0.7, m, size * 0.3, Math.PI / 2, -Math.PI / 2);
+                    ctx.stroke();
+                    break;
+                case 'gear': // 齒輪：外圈八個齒（用虛線模擬）
+                    ctx.beginPath();
+                    ctx.setLineDash([5, 5]);
+                    ctx.arc(m, m, size * 0.35, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.setLineDash([]); // 恢復實線
+                    ctx.beginPath(); ctx.arc(m, m, size * 0.15, 0, Math.PI * 2); ctx.stroke();
+                    break;
+
+                // --- Legend ---
+                case 'joker': // 小丑：倒三角形加上上方兩點
+                    ctx.beginPath();
+                    ctx.moveTo(size * 0.2, size * 0.3); ctx.lineTo(size * 0.8, size * 0.3);
+                    ctx.lineTo(m, size * 0.8); ctx.closePath(); ctx.stroke();
+                    ctx.beginPath(); ctx.arc(size * 0.35, size * 0.2, 3, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(size * 0.65, size * 0.2, 3, 0, Math.PI * 2); ctx.fill();
+                    break;
+                case 'growth': // 成長：向上的箭頭
+                    ctx.beginPath();
+                    ctx.moveTo(m, size * 0.15); ctx.lineTo(m, size * 0.85);
+                    ctx.moveTo(m, size * 0.15); ctx.lineTo(size * 0.3, size * 0.4);
+                    ctx.moveTo(m, size * 0.15); ctx.lineTo(size * 0.7, size * 0.4);
+                    ctx.stroke();
+                    break;
+                case 'sun': // 太陽：圓形放射狀
+                    ctx.beginPath(); ctx.arc(m, m, size * 0.2, 0, Math.PI * 2); ctx.stroke(); ctx.fill();
+                    for (let i = 0; i < 8; i++) {
+                        ctx.save();
+                        ctx.translate(m, m); ctx.rotate(i * Math.PI / 4);
+                        ctx.moveTo(0, -size * 0.25); ctx.lineTo(0, -size * 0.45);
+                        ctx.stroke(); ctx.restore();
+                    }
+                    break;
+
+                // --- Mythic ---
+                case 'galaxy': // 銀河：旋渦狀 S 型
+                    ctx.beginPath();
+                    ctx.moveTo(m, size * 0.1);
+                    ctx.bezierCurveTo(size * 0.9, size * 0.1, size * 0.1, size * 0.9, m, size * 0.9);
+                    ctx.stroke();
+                    ctx.beginPath(); ctx.arc(m, m, size * 0.1, 0, Math.PI * 2); ctx.fill();
+                    break;
+            }
+            ctx.restore();
+        }
+        function drawDiceStars(ctx, x, y, size, stars, diceColor) {
+            // 7星顯示金色大星星 (這個維持金色，因為它是最強形態)
             if (stars >= 7) {
+                ctx.save();
                 ctx.fillStyle = "#fbbf24";
-                ctx.shadowBlur = 8;
-                ctx.shadowColor = "#fbbf24";
                 ctx.font = `bold ${size * 0.7}px Arial`;
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
                 ctx.fillText("★", x + size / 2, y + size / 2 + size * 0.05);
-                ctx.shadowBlur = 0;
+                ctx.restore();
                 return;
             }
 
-            const dotSize = size * 0.09;
-            const p = size * 0.28; // 調整點距，讓分佈更好看
+            // 1-6星使用骰子顏色
+            ctx.fillStyle = diceColor || "#333";
+
+            const dotSize = size * 0.07;
+            const p = size * 0.22;
             const m = size / 2;
-            const l = p;
-            const r = size - p;
-            const t = p;
-            const b = size - p;
+            const l = p, r = size - p;
+            const t = p, b = size - p;
 
             let dots = [];
             if (stars === 1) dots = [[m, m]];
@@ -994,41 +1099,61 @@
             });
         }
         function renderDice(ctx, x, y, dice, isLocked) {
-    if (!dice) return;
+            if (!dice) return;
+            const slotSize = grid.slotSize;
 
-    // 取得格子大小（防呆處理）
-    const slotSize = (typeof grid !== 'undefined') ? grid.slotSize : 60; 
+            // 1. 畫外框 (品質顏色)
+            ctx.beginPath();
+            ctx.strokeStyle = dice.qualityColor || '#fff';
+            ctx.lineWidth = 3;
+            drawRoundedRect(ctx, x + 4, y + 4, slotSize - 8, slotSize - 8, 8);
+            ctx.stroke();
 
-    // 1. 畫外框
-    ctx.beginPath();
-    ctx.strokeStyle = dice.qualityColor || '#fff';
-    ctx.lineWidth = 3;
-    drawRoundedRect(ctx, x + 4, y + 4, slotSize - 8, slotSize - 8, 8);
-    ctx.stroke();
+            // 2. 畫填充背景 (白色)
+            ctx.beginPath();
+            ctx.fillStyle = "#ffffff";
+            drawRoundedRect(ctx, x + 6, y + 6, slotSize - 12, slotSize - 12, 6);
+            ctx.fill();
 
-    // 2. 畫填充背景
-    ctx.beginPath();
-    ctx.fillStyle = dice.color;
-    drawRoundedRect(ctx, x + 6, y + 6, slotSize - 12, slotSize - 12, 6);
-    ctx.fill();
+            // 準備繪圖參數
+            const dColor = dice.baseColor || dice.color || "#333";
+            const pattern = dice.pattern || dice.id;
+            const drawX = x + 6;
+            const drawY = y + 6;
+            const drawSize = slotSize - 12;
 
-    // 3. 畫點數 (將原本會報錯的地方包在 try-catch 裡，確保就算畫圖失敗也要能射擊)
-    try {
-        // 注意這裡：傳入正確的星數，並確保座標計算不依賴外部變數
-        const currentStars = dice.stars || dice.lv || 1;
-        drawDiceStars(ctx, x + 6, y + 6, slotSize - 12, currentStars);
-    } catch (e) {
-        console.error("畫星星出錯，但繼續執行戰鬥邏輯:", e);
-    }
+            // 3. 畫特徵圖案
+            if (typeof drawDiceFeature === 'function') {
+                drawDiceFeature(ctx, drawX, drawY, drawSize, pattern, dColor);
+            }
 
-    // 4. 畫鎖定遮罩
-    if (isLocked) {
-        ctx.beginPath();
-        ctx.fillStyle = "rgba(0,0,0,0.7)";
-        drawRoundedRect(ctx, x + 5, y + 5, slotSize - 10, slotSize - 10, 8);
-        ctx.fill();
-    }
-}
+            // 4. 畫點數
+            if (typeof drawDiceStars === 'function') {
+                drawDiceStars(ctx, drawX, drawY, drawSize, dice.lv, dColor);
+            }
+
+            // 5. 畫 Boss 鎖定/禁錮遮罩
+            if (isLocked) {
+                ctx.save();
+                // 畫一個深色的半透明層，代表被封印
+                ctx.beginPath();
+                ctx.fillStyle = "rgba(15, 23, 42, 0.75)"; // 使用深色 Slate 色調
+                drawRoundedRect(ctx, x + 5, y + 5, slotSize - 10, slotSize - 10, 8);
+                ctx.fill();
+
+                // 畫一個簡單的「X」符號，表示功能停用
+                ctx.beginPath();
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
+                ctx.lineWidth = 2;
+                const padding = slotSize * 0.3;
+                ctx.moveTo(x + padding, y + padding);
+                ctx.lineTo(x + slotSize - padding, y + slotSize - padding);
+                ctx.moveTo(x + slotSize - padding, y + padding);
+                ctx.lineTo(x + padding, y + slotSize - padding);
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
 
         function drawRoundedRect(ctx, x, y, w, h, r) {
             ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
