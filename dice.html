@@ -462,6 +462,42 @@
             5: [100, 1000000], 6: [200, 5000000], 7: [500, 10000000], 8: [800, 50000000],
             9: [1000, 100000000], 10: [1200, 500000000]
         };
+         function drawDiceStars(ctx, x, y, size, stars, diceColor) {
+            // 7星顯示金色大星星 (這個維持金色，因為它是最強形態)
+            if (stars >= 7) {
+                ctx.save();
+                ctx.fillStyle = "#fbbf24";
+                ctx.font = `bold ${size * 0.7}px Arial`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText("★", x + size / 2, y + size / 2 + size * 0.05);
+                ctx.restore();
+                return;
+            }
+
+            // 1-6星使用骰子顏色
+            ctx.fillStyle = diceColor || "#333";
+
+            const dotSize = size * 0.07;
+            const p = size * 0.22;
+            const m = size / 2;
+            const l = p, r = size - p;
+            const t = p, b = size - p;
+
+            let dots = [];
+            if (stars === 1) dots = [[m, m]];
+            else if (stars === 2) dots = [[l, t], [r, b]];
+            else if (stars === 3) dots = [[l, t], [m, m], [r, b]];
+            else if (stars === 4) dots = [[l, t], [r, t], [l, b], [r, b]];
+            else if (stars === 5) dots = [[l, t], [r, t], [m, m], [l, b], [r, b]];
+            else if (stars === 6) dots = [[l, t], [r, t], [l, m], [r, m], [l, b], [r, b]];
+
+            dots.forEach(dot => {
+                ctx.beginPath();
+                ctx.arc(x + dot[0], y + dot[1], dotSize, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
         function drawDiceFeature(ctx, x, y, size, pattern, diceColor) {
             if (!pattern) return;
 
