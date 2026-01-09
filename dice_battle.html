@@ -133,27 +133,18 @@
     </div>
 
     <div id="difficultyOverlay" class="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-6">
-        <div class="w-full max-w-sm">
-            <h2
-                class="text-center text-2xl font-black mb-8 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-                選擇戰鬥難度</h2>
-            <div class="space-y-4">
-                <button onclick="startGame('normal')"
-                    class="w-full bg-slate-800 p-4 rounded-2xl flex justify-between items-center border border-slate-700 active:bg-slate-700">
-                    <span class="font-bold text-lg text-white">簡單模式</span>
-                    <span class="text-xs text-green-400 bg-green-900/30 px-2 py-1 rounded">1x 獎勵</span>
-                </button>
-                <button onclick="startGame('hard')"
-                    class="w-full bg-slate-800 p-4 rounded-2xl flex justify-between items-center border border-blue-500/50 active:bg-slate-700">
-                    <span class="font-bold text-lg text-white">困難模式</span>
-                    <span class="text-xs text-blue-400 bg-blue-900/30 px-2 py-1 rounded">2.5x 獎勵</span>
-                </button>
-                <button onclick="startGame('hell')"
-                    class="w-full bg-slate-800 p-4 rounded-2xl flex justify-between items-center border border-red-500/50 active:bg-slate-700">
-                    <span class="font-bold text-lg text-red-500">地獄模式</span>
-                    <span class="text-xs text-red-400 bg-red-900/30 px-2 py-1 rounded">6x 獎勵</span>
-                </button>
+        <div class="w-full max-w-sm text-center">
+            <h2 class="text-2xl font-black mb-2 text-blue-400">冒險模式</h2>
+            <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700 mb-8">
+                <p class="text-slate-400 text-sm">當前進度</p>
+                <h1 class="text-4xl font-black text-white mt-1">第 <span id="currentLevelText">1</span> 關</h1>
+                <p class="text-xs text-slate-500 mt-2">每關包含 20 層</p>
             </div>
+
+            <button onclick="startGame()"
+                class="w-full bg-blue-600 py-4 rounded-2xl font-bold text-xl text-white active:scale-95 transition-all">
+                開始挑戰
+            </button>
         </div>
     </div>
 
@@ -279,9 +270,13 @@
 
         const userData = JSON.parse(localStorage.getItem('dice_game_data')) || {
             deck: ['fire', 'wind', 'ice', 'electric', 'poison'],
-            diceLevels: { 'fire': 1, 'wind': 1, 'ice': 1, 'electric': 1, 'poison': 1 }
+            diceLevels: { 'fire': 1, 'wind': 1, 'ice': 1, 'electric': 1, 'poison': 1 },
+            tickets: 0,
+            unlockLevel: 1, // 新增：紀錄歷史最高層數
+            maxWave: 0
         };
         if (userData.tickets === undefined) userData.tickets = 0;
+        document.getElementById('currentLevelText').innerText = userData.unlockLevel || 1;
         let battleState = { hp: 3, sp: 100, wave: 1, summonCost: 10, difficulty: 'normal', isStarted: false };
         let powerUpLevels = {};
         userData.deck.forEach(id => { powerUpLevels[id] = 1; });
@@ -362,25 +357,34 @@
             }
         }
         function handleGameOver(isVictory) {
-            // 計算獎勵
             let earnedTickets = 0;
 
+            // 更新最高層數紀錄 (之後做排行榜用)
+            // 這裡紀錄的是該關卡的進度層數
+            if (battleState.wave > userData.maxWave) {
+                userData.maxWave = battleState.wave;
+            }
+
             if (isVictory) {
-                // 完全通關 (20波)：給予大獎，例如 5 張抽獎券
+                // 20層完全通關獎勵 (目前統一為通關獎勵 5 張)
                 earnedTickets = 5;
+                // 通關了，解鎖下一關
+                userData.unlockLevel += 1;
+                // 重置最高層數紀錄（因為進入新關卡了）
+                userData.maxWave = 0;
             } else {
-                // 中途戰敗：每 5 波給 1 張，未滿 5 波至少給 0 或 1 張
+                // 失敗則按比例給予：每 5 層給 1 張
                 earnedTickets = Math.floor(battleState.wave / 5);
             }
 
-            // 存檔到 LocalStorage
+            // 存檔 (確保不影響原本資料)
             userData.tickets = (userData.tickets || 0) + earnedTickets;
             localStorage.setItem('dice_game_data', JSON.stringify(userData));
 
-            // 顯示結算視窗
-            showResultModal(isVictory, battleState.wave, earnedTickets);
+            // 傳入「當前關卡」與「層數」給結算畫面
+            showResultModal(isVictory, userData.unlockLevel, battleState.wave, earnedTickets);
         }
-        function showResultModal(isVictory, wave, tickets) {
+        function showResultModal(isVictory, level, wave, tickets) {
             const modal = document.getElementById('resultModal');
             const title = document.getElementById('resTitle');
 
@@ -392,7 +396,8 @@
                 title.style.color = "#ef4444"; // 紅色
             }
 
-            document.getElementById('resWave').innerText = wave;
+            // 顯示格式：第 1 關 - 20 層
+            document.getElementById('resWave').innerText = `第 ${level} 關 - ${wave} 層`;
             document.getElementById('resTickets').innerText = tickets;
             modal.style.display = 'flex';
         }
@@ -461,15 +466,53 @@
         }
 
         function spawnEnemy() {
-            let mult = (battleState.difficulty === 'hell' ? 1.5 : battleState.difficulty === 'hard' ? 1.3 : 1.15);
-            const hp = 100 * Math.pow(mult, battleState.wave - 1);
-            enemies.push({ x: path[0].x, y: path[0].y, pathIndex: 1, maxHp: hp, hp, virtualHp: hp, speed: 1.5, rewardSp: 10 + Math.floor(battleState.wave / 2), isBoss: false });
+            const level = userData.unlockLevel; // 目前關卡
+            const wave = battleState.wave;      // 目前層數 (1-20)
+
+            // 基礎 HP * (關卡難度加成) * (層數加成)
+            // 每關難度提升 50%，每層提升 10%
+            const hp = 100 * Math.pow(1.2, level - 1) * Math.pow(1.05, wave - 1);
+
+            enemies.push({
+                x: path[0].x,
+                y: path[0].y,
+                pathIndex: 1,
+                maxHp: hp,
+                hp: hp,
+                virtualHp: hp,
+                speed: 1.5, // 越高關移動越快
+                rewardSp: 10 + (wave * 2),
+                isBoss: false
+            });
         }
 
         function spawnBoss() {
-            const type = Object.keys(BOSS_TYPES)[Math.floor(Math.random() * 2)];
-            const hp = 2000 * Math.pow(1.4, battleState.wave / 10);
-            enemies.push({ x: path[0].x, y: path[0].y, pathIndex: 1, maxHp: hp, hp, virtualHp: hp, speed: 0.8, rewardSp: 150, isBoss: true, bossType: type, skillTimer: 0, size: 50, color: BOSS_TYPES[type].color });
+            // 取得當前關卡，若無則預設為 1
+            const level = userData.unlockLevel || 1;
+            // 隨機選取 Boss 種類
+            const typeKeys = Object.keys(BOSS_TYPES);
+            const type = typeKeys[Math.floor(Math.random() * typeKeys.length)];
+
+            // --- Boss HP 公式調整 ---
+            // 基礎 2000 * (關卡難度加成 1.5倍) * (層數加成)
+            // 這樣第 2 關的第 10 波 Boss 會比第 1 關的第 20 波更有挑戰性
+            const hp = 2000 * Math.pow(1.5, level - 1) * Math.pow(1.2, (battleState.wave / 10));
+
+            enemies.push({
+                x: path[0].x,
+                y: path[0].y,
+                pathIndex: 1,
+                maxHp: hp,
+                hp: hp,
+                virtualHp: hp,
+                speed: 1 , // 隨關卡稍微提升移速，增加難度
+                rewardSp: 300 + (level * 2), // 越後面的 Boss 給越多 SP
+                isBoss: true,
+                bossType: type,
+                skillTimer: 0,
+                size: 55, // Boss 大一點比較有霸氣
+                color: BOSS_TYPES[type].color
+            });
         }
 
         function updateCombat() {
@@ -802,10 +845,10 @@
                 const lv = powerUpLevels[id] || 1;
                 const cost = 100 * Math.pow(2, lv - 1);
                 return `<button onclick="powerUpDice('${id}')" class="flex-1 min-w-0 bg-slate-800 border ${battleState.sp >= cost ? 'border-blue-500' : 'border-slate-700'} rounded-lg py-1.5 flex flex-col items-center active:scale-95 transition-all">
-                <div class="w-7 h-7 rounded flex items-center justify-center text-[10px] font-bold mb-1" style="background-color: ${dice.baseColor}; color: white;">${dice.name}</div>
-                <div class="text-[9px] text-yellow-500 font-bold">Lv.${lv}</div>
-                <div class="text-[8px] text-slate-400 mt-1">${cost >= 1000 ? (cost / 1000).toFixed(1) + 'k' : cost}</div>
-            </button>`;
+                    <div class="w-7 h-7 rounded flex items-center justify-center text-[10px] font-bold mb-1" style="background-color: ${dice.baseColor}; color: white;">${dice.name}</div>
+                    <div class="text-[9px] text-yellow-500 font-bold">Lv.${lv}</div>
+                    <div class="text-[8px] text-slate-400 mt-1">${cost >= 1000 ? (cost / 1000).toFixed(1) + 'k' : cost}</div>
+                </button>`;
             }).join('');
         }
         function refreshSunState() {
