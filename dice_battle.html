@@ -516,15 +516,16 @@
         }
 
         function updateCombat() {
-            // 確保全域變數存在，防止報錯
             if (typeof isSunActivated === 'undefined') window.isSunActivated = false;
 
             grid.slots.forEach(slot => {
-                if (slot.dice && slot.dice.id && !slot.isBeingDragged && !slot.isLocked) {
+                // 修正判斷：確保 dice 存在，且排除「拖曳中」或「被Boss鎖定」
+                // 這裡要確認 slot.isLocked 只有在被 Boss 攻擊時才是 true
+                if (slot.dice && slot.dice.id && !slot.isBeingDragged && slot.isLocked !== true) {
                     const db = ALL_DICES.find(d => d.id === slot.dice.id);
                     if (!db) return;
 
-                    // --- A. 成長骰子邏輯 (保持原樣) ---
+                    // --- A. 成長骰子邏輯 (保持原樣，確保屬性正確) ---
                     if (slot.dice.id === 'growth') {
                         if (!slot.dice.growthTimer) slot.dice.growthTimer = 0;
                         slot.dice.growthTimer++;
@@ -536,33 +537,28 @@
                                 slot.dice = {
                                     id: newId,
                                     lv: slot.dice.lv + 1,
-                                    color: newDb.baseColor,
+                                    baseColor: newDb.baseColor, // 使用新版顏色
+                                    color: newDb.baseColor,     // 兼容舊版顏色
                                     qualityColor: QUALITIES[newDb.quality].color,
                                     growthTimer: 0,
                                     attackCooldown: 0
                                 };
-                                updateUI();
-                                refreshSunState();
+                                if (typeof updateUI === 'function') updateUI();
+                                if (typeof refreshSunState === 'function') refreshSunState();
                             }
                         }
                     }
 
-                    // --- B. 攻速計算 ---
+                    // --- B. 攻速與攻擊 ---
                     const pLv = userData.diceLevels[slot.dice.id] || 1;
                     let spd = Math.max(10, db.stats.speed + (pLv - 1) * db.grow.speed);
-
-                    // 太陽發光加速
-                    if (slot.dice.id === 'sun' && isSunActivated) {
-                        spd /= 1.5; // 加速感更明顯
-                    }
-
+                    if (slot.dice.id === 'sun' && isSunActivated) spd /= 1.5;
                     if (spd < 5) spd = 5;
 
-                    // 攻擊冷卻累加
+                    // 累加冷卻，確保 slot 本身或 dice 物件都能存取到這個值
                     slot.attackCooldown = (slot.attackCooldown || 0) + 1;
 
                     if (slot.attackCooldown >= spd) {
-                        // 尋找目標
                         const target = enemies
                             .filter(e => e.hp > 0 && (e.virtualHp !== undefined ? e.virtualHp : e.hp) > 0)
                             .sort((a, b) => b.pathIndex - a.pathIndex)[0];
@@ -587,19 +583,15 @@
                                 dmg *= (1 + neighbors * 0.5);
                             }
 
-                            // 執行攻擊
                             executeAttack(
                                 slot.dice,
                                 target,
                                 dmg,
                                 slot.x + grid.slotSize / 2,
                                 slot.y + grid.slotSize / 2,
-                                isSunActivated // 這裡傳入發光狀態
+                                isSunActivated
                             );
-
                             slot.attackCooldown = 0;
-                        } else {
-                            slot.attackCooldown = spd; // 沒怪時待命
                         }
                     }
                 }
@@ -687,7 +679,7 @@
 
             projectiles.push({
                 x: startX, y: startY, target: target, damage: damage,
-                diceId: dice.id, color: dice.color, speed: 12
+                diceId: dice.id, color: dice.baseColor || dice.color || "#333", speed: 12
             });
         }
         // 【撞擊端】處理：單體傷害、功能性效果 (減速、中毒、傳送、連鎖)
@@ -840,16 +832,42 @@
             document.getElementById('waveText').innerText = battleState.wave;
 
             const container = document.getElementById('powerUpButtons');
+            if (!container) return;
+
+            // 1. 產生強化按鈕的 HTML
             container.innerHTML = userData.deck.map((id) => {
                 const dice = ALL_DICES.find(d => d.id === id);
                 const lv = powerUpLevels[id] || 1;
                 const cost = 100 * Math.pow(2, lv - 1);
-                return `<button onclick="powerUpDice('${id}')" class="flex-1 min-w-0 bg-slate-800 border ${battleState.sp >= cost ? 'border-blue-500' : 'border-slate-700'} rounded-lg py-1.5 flex flex-col items-center active:scale-95 transition-all">
-                    <div class="w-7 h-7 rounded flex items-center justify-center text-[10px] font-bold mb-1" style="background-color: ${dice.baseColor}; color: white;">${dice.name}</div>
-                    <div class="text-[9px] text-yellow-500 font-bold">Lv.${lv}</div>
-                    <div class="text-[8px] text-slate-400 mt-1">${cost >= 1000 ? (cost / 1000).toFixed(1) + 'k' : cost}</div>
-                </button>`;
+                const q = QUALITIES[dice.quality] || QUALITIES.common;
+
+                // 將原本的實心方塊換成帶有 Canvas 的設計
+                return `
+        <button onclick="powerUpDice('${id}')" 
+            class="flex-1 min-w-0 bg-slate-800 border ${battleState.sp >= cost ? 'border-blue-500' : 'border-slate-700'} rounded-lg py-1.5 flex flex-col items-center active:scale-95 transition-all">
+            <div class="w-8 h-8 rounded bg-white relative mb-1 overflow-hidden" style="border: 1px solid ${q.color}">
+                <canvas id="pwr-canvas-${id}" width="32" height="32" class="absolute inset-0 pointer-events-none"></canvas>
+            </div>
+            <div class="text-[9px] text-yellow-500 font-bold leading-none">Lv.${lv}</div>
+            <div class="text-[8px] text-slate-400 mt-1">${cost >= 1000 ? (cost / 1000).toFixed(1) + 'k' : cost}</div>
+        </button>`;
             }).join('');
+
+            // 2. 繪製按鈕上的骰子圖案 (需在 innerHTML 渲染後執行)
+            setTimeout(() => {
+                userData.deck.forEach(id => {
+                    const dice = ALL_DICES.find(d => d.id === id);
+                    const canvas = document.getElementById(`pwr-canvas-${id}`);
+                    if (canvas && dice) {
+                        const ctx = canvas.getContext('2d');
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                        // 使用我們定義的繪圖函式，座標 0, 0，星數固定畫 1 星
+                        drawDiceFeature(ctx, 0, 0, canvas.width, dice.pattern || dice.id, dice.baseColor);
+                        drawDiceStars(ctx, 0, 0, canvas.width, 1, dice.baseColor);
+                    }
+                });
+            }, 0);
         }
         function refreshSunState() {
             const totalSunCount = grid.slots.filter(s => s.dice && s.dice.id === 'sun').length;
