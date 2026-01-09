@@ -466,6 +466,7 @@
             // 7星顯示金色大星星 (這個維持金色，因為它是最強形態)
             if (stars >= 7) {
                 ctx.save();
+                ctx.translate(x, y);
                 ctx.fillStyle = "#fbbf24";
                 ctx.font = `bold ${size * 0.7}px Arial`;
                 ctx.textAlign = "center";
