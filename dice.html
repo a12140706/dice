@@ -462,7 +462,7 @@
             5: [100, 1000000], 6: [200, 5000000], 7: [500, 10000000], 8: [800, 50000000],
             9: [1000, 100000000], 10: [1200, 500000000]
         };
-         function drawDiceStars(ctx, x, y, size, stars, diceColor) {
+        function drawDiceStars(ctx, x, y, size, stars, diceColor) {
             // 7星顯示金色大星星 (這個維持金色，因為它是最強形態)
             if (stars >= 7) {
                 ctx.save();
@@ -569,7 +569,7 @@
         function render() {
             if (!userData) return;
 
-            // 1. 更新金幣與票券 (維持原本邏輯)
+            // 1. 更新金幣與票券
             const goldDisplay = document.getElementById('goldText');
             if (goldDisplay) goldDisplay.innerText = Math.floor(currentBalance).toLocaleString();
             const shopGoldText = document.getElementById('shopGoldText');
@@ -579,32 +579,34 @@
             const shopTicketDisplay = document.getElementById('shopTicketText');
             if (shopTicketDisplay) shopTicketDisplay.innerText = tickets.toLocaleString();
 
-            // 2. 產生成員清單 (Deck) 的 HTML
-            const deckHtml = userData.deck.map((id, index) => {
-                const dice = ALL_DICES.find(d => d.id === id);
-                if (!dice) return `<div class="w-14 h-14 bg-slate-800 rounded-lg border-2 border-dashed border-slate-600"></div>`;
+            // 2. 產生成員清單 (Deck) 的 HTML - 區分主頁與備戰頁面的 ID
+            const generateDeckHtml = (prefix) => {
+                return userData.deck.map((id, index) => {
+                    const dice = ALL_DICES.find(d => d.id === id);
+                    if (!dice) return `<div class="w-14 h-14 bg-slate-800 rounded-lg border-2 border-dashed border-slate-600"></div>`;
 
-                const q = QUALITIES[dice.quality] || QUALITIES.common;
-                const lv = userData.diceLevels[id] || 1;
-                const isReplacing = selectedInventoryId !== null;
+                    const q = QUALITIES[dice.quality] || QUALITIES.common;
+                    const lv = userData.diceLevels[id] || 1;
+                    const isReplacing = selectedInventoryId !== null;
 
-                return `
-        <div onclick="selectDeckSlot(${index})" 
-            class="w-14 h-14 rounded-lg flex flex-col items-center justify-center relative shadow-lg border-2 transition-all 
-            ${dice.quality === 'mythic' ? 'q-mythic' : ''} ${isReplacing ? 'deck-slot-highlight' : ''}" 
-            style="background-color: #ffffff; border-color: ${q.color}">
-            <canvas id="deck-canvas-${index}" width="56" height="56" class="absolute inset-0 pointer-events-none"></canvas>
-            <div class="absolute bottom-0 text-[8px] bg-black/50 text-white px-1 rounded z-10">Lv.${lv}</div>
-        </div>`;
-            }).join('');
+                    return `
+            <div onclick="selectDeckSlot(${index})" 
+                class="w-14 h-14 rounded-lg flex flex-col items-center justify-center relative shadow-lg border-2 transition-all 
+                ${dice.quality === 'mythic' ? 'q-mythic' : ''} ${isReplacing ? 'deck-slot-highlight' : ''}" 
+                style="background-color: #ffffff; border-color: ${q.color}">
+                <canvas id="${prefix}-deck-canvas-${index}" width="56" height="56" class="absolute inset-0 pointer-events-none"></canvas>
+                <div class="absolute bottom-0 text-[8px] bg-black/50 text-white px-1 rounded z-10">Lv.${lv}</div>
+            </div>`;
+                }).join('');
+            };
 
             const deckContainer = document.getElementById('deckContainer');
-            if (deckContainer) deckContainer.innerHTML = deckHtml;
+            if (deckContainer) deckContainer.innerHTML = generateDeckHtml('main');
 
             const inventoryDeckContainer = document.getElementById('inventoryDeckContainer');
-            if (inventoryDeckContainer) inventoryDeckContainer.innerHTML = deckHtml;
+            if (inventoryDeckContainer) inventoryDeckContainer.innerHTML = generateDeckHtml('inv');
 
-            // 3. 更新骰子倉庫 (Inventory)
+            // 3. 更新骰子倉庫 (Inventory) - 加上名稱顯示
             const inventorySection = document.getElementById('inventorySection');
             if (inventorySection) {
                 inventorySection.innerHTML = ALL_DICES.map(dice => {
@@ -622,39 +624,42 @@
                      style="border: 2px solid ${q.color}">
                     <canvas id="inv-canvas-${dice.id}" width="48" height="48" class="absolute inset-0 pointer-events-none"></canvas>
                 </div>
-                <div class="text-[10px] text-white">Lv.${lv}</div>
+                <div class="text-[10px] font-bold text-white truncate mb-0.5">${dice.name}</div>
+                <div class="text-[9px] text-slate-300">Lv.${lv}</div>
                 <div class="text-[8px] text-slate-400">${count} 碎片</div>
             </div>`;
                 }).join('');
             }
 
-            // --- 關鍵步驟：渲染完 HTML 後，立即執行 Canvas 繪圖 ---
+            // --- 4. 關鍵步驟：確保 HTML 渲染後再繪圖，並修正座標 ---
+            setTimeout(() => {
+                // 繪製編隊區 (主頁與備戰頁)
+                ['main', 'inv'].forEach(prefix => {
+                    userData.deck.forEach((id, index) => {
+                        const dice = ALL_DICES.find(d => d.id === id);
+                        const canvas = document.getElementById(`${prefix}-deck-canvas-${index}`);
+                        if (canvas && dice) {
+                            const ctx = canvas.getContext('2d');
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            // 修正座標為 0, 0，避免歪掉
+                            drawDiceFeature(ctx, 0, 0, canvas.width, dice.pattern || dice.id, dice.baseColor);
+                            drawDiceStars(ctx, 0, 0, canvas.width, 1, dice.baseColor);
+                        }
+                    });
+                });
 
-            // 渲染 Deck 的畫布
-            userData.deck.forEach((id, index) => {
-                const dice = ALL_DICES.find(d => d.id === id);
-                const canvas = document.getElementById(`deck-canvas-${index}`);
-                if (canvas && dice) {
-                    const ctx = canvas.getContext('2d');
-                    // 清除畫布並重繪
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    // 畫特徵 (傳入 id 或是 pattern)
-                    drawDiceFeature(ctx, 4, 4, canvas.width - 8, dice.pattern || dice.id, dice.baseColor);
-                    // 首頁展示統一畫 1 星
-                    drawDiceStars(ctx, 4, 4, canvas.width - 8, 1, dice.baseColor);
-                }
-            });
-
-            // 渲染 Inventory 的畫布
-            ALL_DICES.forEach(dice => {
-                const canvas = document.getElementById(`inv-canvas-${dice.id}`);
-                if (canvas) {
-                    const ctx = canvas.getContext('2d');
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    drawDiceFeature(ctx, 4, 4, canvas.width - 8, dice.pattern || dice.id, dice.baseColor);
-                    drawDiceStars(ctx, 4, 4, canvas.width - 8, 1, dice.baseColor);
-                }
-            });
+                // 繪製倉庫區
+                ALL_DICES.forEach(dice => {
+                    const canvas = document.getElementById(`inv-canvas-${dice.id}`);
+                    if (canvas) {
+                        const ctx = canvas.getContext('2d');
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        // 修正座標為 0, 0
+                        drawDiceFeature(ctx, 0, 0, canvas.width, dice.pattern || dice.id, dice.baseColor);
+                        drawDiceStars(ctx, 0, 0, canvas.width, 1, dice.baseColor);
+                    }
+                });
+            }, 0);
         }
 
         function saveData() {
