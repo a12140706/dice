@@ -33,7 +33,17 @@
         .scroll-hide::-webkit-scrollbar {
             display: none;
         }
+/* 讓底部選單更像手機 App */
+.fixed.bottom-0 {
+    padding-bottom: env(safe-area-inset-bottom, 12px); /* 適配 iPhone 底線 */
+    backdrop-filter: blur(10px); /* 毛玻璃效果 */
+    background: rgba(15, 23, 42, 0.95);
+}
 
+/* 隱藏滾動條但保持滾動 */
+.scroll-hide::-webkit-scrollbar {
+    display: none;
+}
         .q-mythic {
             background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff);
             background-size: 200% 200%;
@@ -99,68 +109,93 @@
     </style>
 </head>
 
-<body class="p-4 flex flex-col">
-
-    <div class="flex justify-between items-center mb-6 bg-slate-800 p-3 rounded-xl shadow-lg border border-slate-700">
+<body class="p-4 flex flex-col h-screen"> <div class="flex justify-between items-center mb-4 bg-slate-800 p-3 rounded-xl shadow-lg border border-slate-700">
         <div class="flex items-center gap-2">
             <span class="text-yellow-400 font-bold text-lg">💎</span>
             <span id="goldText" class="font-mono text-xl text-yellow-500 font-bold">0</span>
         </div>
-        <div>
-            <p>版本V0.1.9</p>
-        </div>
-        <a href="index.html" style="text-decoration:none;">
-            <button
-                style="background:none; border:1px solid #777; color:#ccc; border-radius:5px; padding:5px 12px; font-size:14px; font-weight:bold;">🏠
-                回大廳</button>
-        </a>
+        <p class="text-[10px] text-slate-500">版本V0.2.0</p>
+        <a href="index.html" class="no-underline">
+                <button class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded-lg text-xs font-bold border border-slate-500 transition-colors">
+                    🏠 大廳
+                </button>
+            </a>
     </div>
 
-    <div class="mb-6">
-        <h2 class="text-lg font-bold mb-3 flex justify-between items-center px-1">
-            <span>陣容</span>
-            <span id="deckStatus"
-                class="text-[10px] text-blue-300 bg-blue-900/50 px-2 py-1 rounded-full uppercase">Battle Deck</span>
-        </h2>
-        <div id="deckContainer"
-            class="flex justify-between gap-2 bg-slate-900 p-4 rounded-2xl border-2 border-slate-700">
-        </div>
-    </div>
-
-    <div class="flex mb-4 border-b border-slate-700">
-        <button onclick="switchTab('inventory')" id="tab-inventory"
-            class="flex-1 py-2 font-bold tab-active">我的骰子</button>
-        <button onclick="switchTab('shop')" id="tab-shop" class="flex-1 py-2 font-bold text-slate-400">商店抽卡</button>
-    </div>
-
-
-    <div class="flex-1 overflow-y-auto scroll-hide pb-24">
-        <div id="inventorySection" class="grid grid-cols-3 gap-3">
-        </div>
-
-        <div id="shopSection" class="hidden">
-            <div
-                class="bg-gradient-to-b from-slate-800 to-slate-900 p-6 rounded-3xl text-center border-2 border-yellow-600/30">
+    <div class="flex-1 overflow-y-auto pb-24" id="main-content">
+        
+        <div id="page-shop" class="hidden">
+            <h2 class="text-xl font-bold mb-4">商店抽卡</h2>
+            <div class="bg-gradient-to-b from-slate-800 to-slate-900 p-6 rounded-3xl text-center border-2 border-yellow-600/30">
                 <div class="text-6xl mb-2">🔮</div>
                 <h3 class="text-2xl font-bold mb-1">骰子召喚</h3>
                 <p class="text-slate-400 text-sm mb-6">隨機獲得英雄骰子</p>
-
-                <button onclick="buyBox(10)"
-                    class="w-full bg-indigo-600 py-4 rounded-2xl font-bold mb-3 active:scale-95 transition-transform">
-                    10 連抽 (10萬 💎)
-                </button>
-
-                <button onclick="buyBox(100)"
-                    class="w-full bg-gradient-to-r from-purple-600 to-indigo-700 py-4 rounded-2xl font-bold active:scale-95 transition-transform">
-                    💯 百連抽 (100萬 💎)
-                </button>
+                <button onclick="buyBox(10)" class="w-full bg-indigo-600 py-4 rounded-2xl font-bold mb-3 active:scale-95 transition-transform">10 連抽 (10萬 💎)</button>
+                <button onclick="buyBox(100)" class="w-full bg-gradient-to-r from-purple-600 to-indigo-700 py-4 rounded-2xl font-bold active:scale-95 transition-transform">💯 百連抽 (100萬 💎)</button>
             </div>
+        </div>
+
+        <div id="page-battle" class="space-y-6">
+    <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-700 shadow-inner">
+        <div class="flex justify-between items-center mb-3">
+            <p class="text-[10px] text-blue-400 font-bold uppercase tracking-wider">Battle Deck</p>
+            <button onclick="showPage('inventory')" class="text-[10px] text-slate-400 bg-slate-800 px-2 py-1 rounded-md">修改</button>
+        </div>
+        <div id="deckContainer" class="flex justify-between gap-2"></div>
+    </div>
+
+    <h2 class="text-xl font-bold px-1 text-white">選擇戰鬥模式</h2>
+
+    <div class="grid grid-cols-1 gap-4">
+        <button onclick="startBattle()" class="relative overflow-hidden group bg-gradient-to-r from-blue-600 to-blue-800 p-5 rounded-2xl text-left shadow-lg active:scale-95 transition-all">
+            <div class="relative z-10">
+                <h3 class="text-xl font-black mb-1">冒險闖關</h3>
+                <p class="text-blue-100 text-xs opacity-80">挑戰關卡</p>
+            </div>
+            <span class="absolute right-4 bottom-2 text-6xl opacity-20 group-hover:scale-110 transition-transform">🗺️</span>
+        </button>
+
+        <button onclick="alert('PVP模式即將開放！')" class="relative overflow-hidden group bg-gradient-to-r from-red-600 to-red-800 p-5 rounded-2xl text-left shadow-lg active:scale-95 transition-all opacity-80">
+            <div class="relative z-10">
+                <h3 class="text-xl font-black mb-1">對戰</h3>
+                <p class="text-red-100 text-xs opacity-80">即時競技</p>
+            </div>
+            <span class="absolute right-4 bottom-2 text-6xl opacity-20">⚔️</span>
+            <div class="absolute top-2 right-2 bg-black/50 px-2 py-0.5 rounded text-[10px] font-bold text-white">SOON</div>
+        </button>
+
+        <button onclick="alert('合作模式即將開放！')" class="relative overflow-hidden group bg-gradient-to-r from-emerald-600 to-emerald-800 p-5 rounded-2xl text-left shadow-lg active:scale-95 transition-all opacity-80">
+            <div class="relative z-10">
+                <h3 class="text-xl font-black mb-1">共同合作</h3>
+                <p class="text-emerald-100 text-xs opacity-80">聯手防守，抵禦敵軍</p>
+            </div>
+            <span class="absolute right-4 bottom-2 text-6xl opacity-20">🤝</span>
+            <div class="absolute top-2 right-2 bg-black/50 px-2 py-0.5 rounded text-[10px] font-bold text-white">SOON</div>
+        </button>
+    </div>
+</div>
+
+        <div id="page-inventory" class="hidden">
+            <h2 class="text-xl font-bold mb-4 px-1">我的骰子庫</h2>
+            <div id="inventorySection" class="grid grid-cols-3 gap-3"></div>
         </div>
     </div>
 
-    <div class="fixed bottom-6 left-0 w-full px-6">
-        <button onclick="startBattle()"
-            class="w-full bg-blue-600 py-4 rounded-2xl font-bold text-xl shadow-xl active:scale-95 transition-all">進入戰鬥</button>
+    <div class="fixed bottom-0 left-0 w-full bg-slate-900 border-t border-slate-700 px-6 py-3 flex justify-between items-center z-40">
+        <button onclick="showPage('shop')" id="nav-shop" class="flex flex-col items-center gap-1 text-slate-400 transition-colors">
+            <span class="text-2xl">🛒</span>
+            <span class="text-[10px] font-bold">商店</span>
+        </button>
+        
+        <button onclick="showPage('battle')" id="nav-battle" class="flex flex-col items-center gap-1 text-blue-400 transition-colors">
+            <span class="text-3xl">⚔️</span>
+            <span class="text-[10px] font-bold">戰鬥</span>
+        </button>
+
+        <button onclick="showPage('inventory')" id="nav-inventory" class="flex flex-col items-center gap-1 text-slate-400 transition-colors">
+            <span class="text-2xl">🎲</span>
+            <span class="text-[10px] font-bold">備戰</span>
+        </button>
     </div>
 
     <div id="rewardOverlay" class="fixed inset-0 bg-black/90 hidden z-50 flex items-center justify-center p-6">
@@ -539,12 +574,29 @@
         function closeReward() { document.getElementById('rewardOverlay').classList.add('hidden'); }
         function closeUpgradeUI() { document.getElementById('upgradeOverlay').classList.add('hidden'); tempUpgradeId = null; }
 
-        function switchTab(tab) {
-            document.getElementById('inventorySection').classList.toggle('hidden', tab !== 'inventory');
-            document.getElementById('shopSection').classList.toggle('hidden', tab !== 'shop');
-            document.getElementById('tab-inventory').classList.toggle('tab-active', tab === 'inventory');
-            document.getElementById('tab-shop').classList.toggle('tab-active', tab === 'shop');
-        }
+        function showPage(pageId) {
+    // 1. 隱藏所有頁面
+    document.getElementById('page-shop').classList.add('hidden');
+    document.getElementById('page-battle').classList.add('hidden');
+    document.getElementById('page-inventory').classList.add('hidden');
+
+    // 2. 顯示指定頁面
+    document.getElementById('page-' + pageId).classList.remove('hidden');
+
+    // 3. 更新按鈕顏色 (重置所有按鈕為灰色)
+    document.getElementById('nav-shop').className = 'flex flex-col items-center gap-1 text-slate-400';
+    document.getElementById('nav-battle').className = 'flex flex-col items-center gap-1 text-slate-400';
+    document.getElementById('nav-inventory').className = 'flex flex-col items-center gap-1 text-slate-400';
+
+    // 4. 高亮當前按鈕
+    const activeColor = pageId === 'battle' ? 'text-blue-400' : 
+                       (pageId === 'shop' ? 'text-yellow-400' : 'text-green-400');
+    document.getElementById('nav-' + pageId).classList.replace('text-slate-400', activeColor);
+    
+    // 如果切換到備戰或戰鬥，重新渲染陣容或清單 (確保數據最新)
+    if(pageId === 'inventory') renderInventory();
+    if(pageId === 'battle') renderDeck(); 
+}
 
         function startBattle() {
             saveData();
