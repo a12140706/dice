@@ -505,7 +505,7 @@
                 maxHp: hp,
                 hp: hp,
                 virtualHp: hp,
-                speed: 1 , // 隨關卡稍微提升移速，增加難度
+                speed: 1, // 隨關卡稍微提升移速，增加難度
                 rewardSp: 300 + (level * 2), // 越後面的 Boss 給越多 SP
                 isBoss: true,
                 bossType: type,
@@ -955,26 +955,61 @@
             }
             frame();
         }
+        function drawDiceStars(ctx, x, y, size, stars) {
+            ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+
+            // 7星顯示金色大星星
+            if (stars >= 7) {
+                ctx.fillStyle = "#fbbf24";
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = "#fbbf24";
+                ctx.font = `bold ${size * 0.7}px Arial`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText("★", x + size / 2, y + size / 2 + size * 0.05);
+                ctx.shadowBlur = 0;
+                return;
+            }
+
+            const dotSize = size * 0.09;
+            const p = size * 0.28; // 調整點距，讓分佈更好看
+            const m = size / 2;
+            const l = p;
+            const r = size - p;
+            const t = p;
+            const b = size - p;
+
+            let dots = [];
+            if (stars === 1) dots = [[m, m]];
+            else if (stars === 2) dots = [[l, t], [r, b]];
+            else if (stars === 3) dots = [[l, t], [m, m], [r, b]];
+            else if (stars === 4) dots = [[l, t], [r, t], [l, b], [r, b]];
+            else if (stars === 5) dots = [[l, t], [r, t], [m, m], [l, b], [r, b]];
+            else if (stars === 6) dots = [[l, t], [r, t], [l, m], [r, m], [l, b], [r, b]];
+
+            dots.forEach(dot => {
+                ctx.beginPath();
+                ctx.arc(x + dot[0], y + dot[1], dotSize, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
         function renderDice(ctx, x, y, dice, isLocked) {
             // 1. 畫外框
-            ctx.beginPath(); // 確保路徑重置
+            ctx.beginPath();
             ctx.strokeStyle = dice.qualityColor || '#fff';
             ctx.lineWidth = 3;
             drawRoundedRect(ctx, x + 4, y + 4, grid.slotSize - 8, grid.slotSize - 8, 8);
             ctx.stroke();
 
             // 2. 畫填充背景
-            ctx.beginPath(); // 再次重置，確保填充不會連到外框
+            ctx.beginPath();
             ctx.fillStyle = dice.color;
             drawRoundedRect(ctx, x + 6, y + 6, grid.slotSize - 12, grid.slotSize - 12, 6);
             ctx.fill();
 
-            // 3. 畫數字
-            ctx.fillStyle = "#fff";
-            ctx.font = "bold 20px Arial";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle"; // 讓對齊更準確
-            ctx.fillText(dice.lv, x + grid.slotSize / 2, y + grid.slotSize / 2);
+            // 3. 畫點數 (取代原本的數字)
+            // 這裡傳入 dice.lv (假設 lv 代表 1-7 星)
+            drawDiceStars(ctx, x + 6, y + 6, grid.slotSize - 12, dice.lv);
 
             // 4. 畫鎖定遮罩
             if (isLocked) {
