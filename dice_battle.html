@@ -67,25 +67,12 @@
 
         #canvas-container {
             position: relative;
-            /* 手機：100% 寬度 */
             width: 100%;
-
-            /* 平板與電腦優化： */
-            /* 這裡設定 max-width 為螢幕高度的 60%，能確保比例不會太寬 */
             max-width: min(550px, 80vh);
-
-            /* 高度設定 */
-            height: 90vh;
-            /* 佔據螢幕高度的 90% */
-
-            /* 置中 */
-            margin: 0 auto;
-
+            /* 移除固定的 90vh，改用 flex-grow 讓它自動佔滿剩餘空間 */
             flex-grow: 1;
+            margin: 0 auto;
             overflow: hidden;
-
-            /* 裝飾性：在較大螢幕上增加陰影感 */
-            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
             background: #000;
         }
 
@@ -326,10 +313,16 @@
         }
 
         function initGrid(canvas) {
-            const sideMargin = 15;
+            // 增加側邊邊距，手機上建議給到畫布寬度的 15% 左右，避免佔滿左右
+            const sideMargin = canvas.width * 0.12;
+
+            // 計算單個格子的尺寸
             grid.slotSize = (canvas.width - (grid.cols + 1) * grid.padding - (sideMargin * 2)) / grid.cols;
+
             const totalGridHeight = grid.rows * (grid.slotSize + grid.padding);
+            // 讓骰子區稍微往下靠一點，給上方留出戰鬥空間
             grid.y = (canvas.height / 2) - (totalGridHeight / 2);
+
             grid.slots = [];
             for (let i = 0; i < grid.rows * grid.cols; i++) {
                 const r = Math.floor(i / grid.cols), c = i % grid.cols;
@@ -404,8 +397,29 @@
             modal.style.display = 'flex';
         }
         function initPath(canvas) {
-            const L = 25, R = canvas.width - 25, T = grid.y - 50, B = grid.y + (grid.rows * (grid.slotSize + grid.padding)) + 20;
-            path = [{ x: L, y: T }, { x: R, y: T }, { x: R, y: B }, { x: L, y: B }, { x: L, y: T + 5 }];
+            // 1. 取得骰子長方形的四個邊界
+            const gridTop = grid.y;
+            const gridBottom = grid.y + (grid.rows * (grid.slotSize + grid.padding));
+
+            // 2. 設定怪物與骰子格的「間距」(Gap)
+            // 如果 Gap 設為 0，怪物就會直接壓在骰子邊線上走
+            const gap = 35;
+
+            // 3. 設定左右邊界 (參考之前縮小後的 grid 寬度)
+            const L = grid.slots[0].x - gap; // 以最左邊的骰子格座標往外推
+            const R = grid.slots[grid.cols - 1].x + grid.slotSize + gap; // 以最右邊往外推
+
+            // 4. 定義路徑，讓它變成一個「貼合骰子區」的長方形
+            const T = gridTop - gap;
+            const B = gridBottom + gap;
+
+            path = [
+                { x: L, y: T }, // 左上
+                { x: R, y: T }, // 右上
+                { x: R, y: B }, // 右下
+                { x: L, y: B }, // 左下
+                { x: L, y: T + 5 } // 終點 (略微偏移避免重疊)
+            ];
         }
 
         function summonDice() {
