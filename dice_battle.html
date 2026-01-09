@@ -994,31 +994,41 @@
             });
         }
         function renderDice(ctx, x, y, dice, isLocked) {
-            // 1. 畫外框
-            ctx.beginPath();
-            ctx.strokeStyle = dice.qualityColor || '#fff';
-            ctx.lineWidth = 3;
-            drawRoundedRect(ctx, x + 4, y + 4, grid.slotSize - 8, grid.slotSize - 8, 8);
-            ctx.stroke();
+    if (!dice) return;
 
-            // 2. 畫填充背景
-            ctx.beginPath();
-            ctx.fillStyle = dice.color;
-            drawRoundedRect(ctx, x + 6, y + 6, grid.slotSize - 12, grid.slotSize - 12, 6);
-            ctx.fill();
+    // 取得格子大小（防呆處理）
+    const slotSize = (typeof grid !== 'undefined') ? grid.slotSize : 60; 
 
-            // 3. 畫點數 (取代原本的數字)
-            // 這裡傳入 dice.lv (假設 lv 代表 1-7 星)
-            drawDiceStars(ctx, x + 6, y + 6, grid.slotSize - 12, dice.lv);
+    // 1. 畫外框
+    ctx.beginPath();
+    ctx.strokeStyle = dice.qualityColor || '#fff';
+    ctx.lineWidth = 3;
+    drawRoundedRect(ctx, x + 4, y + 4, slotSize - 8, slotSize - 8, 8);
+    ctx.stroke();
 
-            // 4. 畫鎖定遮罩
-            if (isLocked) {
-                ctx.beginPath();
-                ctx.fillStyle = "rgba(0,0,0,0.7)";
-                drawRoundedRect(ctx, x + 5, y + 5, grid.slotSize - 10, grid.slotSize - 10, 8);
-                ctx.fill();
-            }
-        }
+    // 2. 畫填充背景
+    ctx.beginPath();
+    ctx.fillStyle = dice.color;
+    drawRoundedRect(ctx, x + 6, y + 6, slotSize - 12, slotSize - 12, 6);
+    ctx.fill();
+
+    // 3. 畫點數 (將原本會報錯的地方包在 try-catch 裡，確保就算畫圖失敗也要能射擊)
+    try {
+        // 注意這裡：傳入正確的星數，並確保座標計算不依賴外部變數
+        const currentStars = dice.stars || dice.lv || 1;
+        drawDiceStars(ctx, x + 6, y + 6, slotSize - 12, currentStars);
+    } catch (e) {
+        console.error("畫星星出錯，但繼續執行戰鬥邏輯:", e);
+    }
+
+    // 4. 畫鎖定遮罩
+    if (isLocked) {
+        ctx.beginPath();
+        ctx.fillStyle = "rgba(0,0,0,0.7)";
+        drawRoundedRect(ctx, x + 5, y + 5, slotSize - 10, slotSize - 10, 8);
+        ctx.fill();
+    }
+}
 
         function drawRoundedRect(ctx, x, y, w, h, r) {
             ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
