@@ -428,32 +428,43 @@
         }
 
         function summonDice() {
-            if (battleState.sp < battleState.summonCost) return;
-            const emptySlots = grid.slots.filter(s => s.dice === null);
-            if (emptySlots.length === 0) return;
+    if (battleState.sp < battleState.summonCost) return;
+    const emptySlots = grid.slots.filter(s => s.dice === null);
+    if (emptySlots.length === 0) return;
 
-            battleState.sp -= battleState.summonCost;
-            battleState.summonCost += 10;
+    battleState.sp -= battleState.summonCost;
+    battleState.summonCost += 10;
 
-            const targetSlot = emptySlots[Math.floor(Math.random() * emptySlots.length)];
-            const diceId = userData.deck[Math.floor(Math.random() * userData.deck.length)];
-            const db = ALL_DICES.find(d => d.id === diceId);
+    const targetSlot = emptySlots[Math.floor(Math.random() * emptySlots.length)];
+    const diceId = userData.deck[Math.floor(Math.random() * userData.deck.length)];
+    const db = ALL_DICES.find(d => d.id === diceId);
 
-            // 強制設定 lv 為 1
-            targetSlot.dice = {
-                id: diceId,
-                lv: 1, // 這裡確保是 1
-                color: db.baseColor,
-                qualityColor: QUALITIES[db.quality].color,
-                growthTimer: 0,   // 給成長骰子用
-                isPowered: false, // 給齒輪/太陽用
-                attackCooldown: 0
-            };
+    // 確保 slot 狀態乾淨
+    targetSlot.isLocked = false;
+    targetSlot.isBeingDragged = false;
+    targetSlot.attackCooldown = 0; // 重置該位置的冷卻
 
-            // 招喚後立刻重算一次太陽數量，避免 updateCombat 閃退
-            updateUI();
-            refreshSunState();
-        }
+    // 完整的骰子資料物件
+    targetSlot.dice = {
+        id: diceId,
+        lv: 1, 
+        baseColor: db.baseColor, // 必須新增這行！
+        color: db.baseColor,     // 兼容舊邏輯
+        pattern: db.pattern || diceId, // 確保有圖騰資訊
+        qualityColor: QUALITIES[db.quality].color,
+        growthTimer: 0,
+        isPowered: false
+    };
+
+    // 如果 slot 物件本身沒有 x, y 像素值，要在這裡計算給 updateCombat 用
+    if (targetSlot.x === undefined) {
+        targetSlot.x = targetSlot.col * grid.slotSize;
+        targetSlot.y = targetSlot.row * grid.slotSize;
+    }
+
+    updateUI();
+    if (typeof refreshSunState === 'function') refreshSunState();
+}
 
         function powerUpDice(id) {
             const lv = powerUpLevels[id] || 1;
