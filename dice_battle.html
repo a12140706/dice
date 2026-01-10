@@ -1068,7 +1068,19 @@ function drawDynamicBackground(ctx, width, height) {
                     ctx.fillStyle = "#22c55e";
                     ctx.fillRect(e.x - 15, e.y - (s / 2 + 8), (e.hp / e.maxHp) * 30, 3);
                 });
-
+                for (let i = damagePopups.length - 1; i >= 0; i--) {
+                    let d = damagePopups[i];
+                    // 使用 life 控制透明度
+                    ctx.fillStyle = `rgba(255, 255, 255, ${d.life / 30})`;
+                    ctx.font = "bold 14px Arial";
+                    ctx.textAlign = "center"; // 建議加上置中，看起來更舒服
+                    ctx.fillText(d.val, d.x, d.y);
+                    
+                    // 動態：往上飄且生命值減少
+                    d.y -= 1;
+                    d.life--;
+                    if (d.life <= 0) damagePopups.splice(i, 1);
+                }
                 // 畫骰子 (原本邏輯，但背景格子已經在上面 drawEnhancedGridBase 畫過凹槽了)
                 grid.slots.forEach(slot => {
                     if (slot.dice && !slot.isBeingDragged) {
