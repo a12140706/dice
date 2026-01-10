@@ -106,6 +106,24 @@
         .scroll-hide::-webkit-scrollbar {
             display: none;
         }
+        .pb-safe {
+    /* 這裡使用 calc 確保原本的 p-3 (12px) 加上 iOS 安全區 */
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom)) !important;
+}
+
+/* 確保整個戰鬥容器是佔滿螢幕且不溢出的 */
+body, html {
+    height: 100%;
+    margin: 0;
+    overflow: hidden; /* 防止橡皮筋回彈影響戰鬥 */
+    display: flex;
+    flex-direction: column;
+}
+
+/* 確保 Footer 是固定高度或自動撐開，不被遮擋 */
+#footer-controls {
+    background-color: #0f172a; /* 給它一個實底色，避免白條穿透看到背景 */
+}
     </style>
 </head>
 
@@ -122,15 +140,15 @@
         <canvas id="gameCanvas" style="width: 100%; height: 100%; display: block;"></canvas>
     </div>
 
-    <div id="footer-controls" class="p-3 max-w-[500px] mx-auto w-full">
-        <div class="flex flex-nowrap w-full gap-1 mb-4">
-            <div id="powerUpButtons" class="contents"></div>
-        </div>
-        <button onclick="summonDice()"
-            class="w-full py-4 bg-blue-600 rounded-xl font-black text-xl shadow-lg active:scale-95 transition-all text-white">
-            召喚骰子 (<span id="summonCostText">10</span> SP)
-        </button>
+    <div id="footer-controls" class="p-3 max-w-[500px] mx-auto w-full pb-safe">
+    <div class="flex flex-nowrap w-full gap-1 mb-4">
+        <div id="powerUpButtons" class="contents"></div>
     </div>
+    <button onclick="summonDice()"
+        class="w-full py-4 bg-blue-600 rounded-xl font-black text-xl shadow-lg active:scale-95 transition-all text-white">
+        召喚骰子 (<span id="summonCostText">10</span> SP)
+    </button>
+</div>
 
     <div id="difficultyOverlay" class="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-6">
         <div class="w-full max-w-sm text-center">
