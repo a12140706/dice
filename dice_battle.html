@@ -979,10 +979,7 @@
             const ctx = canvas.getContext('2d');
 
             function frame() {
-                // 1. 如果遊戲沒開始或已結束，停止循環
                 if (!battleState.isStarted) return;
-
-                // 額外檢查：如果遊戲已經結算，就不要再畫了
                 const modal = document.getElementById('resultModal');
                 if (modal.style.display === 'flex') return;
 
@@ -994,16 +991,13 @@
                 updateWave();
                 updateCombat();
 
-                // 畫路徑
-                ctx.strokeStyle = "rgba(59, 130, 246, 0.1)";
-                ctx.lineWidth = 30;
-                ctx.lineJoin = "round";
-                ctx.beginPath();
-                ctx.moveTo(path[0].x, path[0].y);
-                path.forEach(p => ctx.lineTo(p.x, p.y));
-                ctx.stroke();
+                // --- 新增：畫 3x5 科技感 L 邊框與凹槽 ---
+                drawEnhancedGridBase(ctx, grid);
 
-                // 畫子彈
+                // --- 修改：畫發光軌道與傳送門 (取代原本那段 stroke) ---
+                drawEnhancedPath(ctx, path);
+
+                // 畫子彈 (原本邏輯)
                 projectiles.forEach(p => {
                     ctx.fillStyle = p.color;
                     ctx.beginPath();
@@ -1011,57 +1005,34 @@
                     ctx.fill();
                 });
 
-                // 畫敵人
+                // 畫敵人 (原本邏輯)
                 enemies.forEach(e => {
                     const s = e.isBoss ? e.size : 20;
                     ctx.fillStyle = e.isBoss ? e.color : "#ef4444";
                     ctx.fillRect(e.x - s / 2, e.y - s / 2, s, s);
+                    // ...血條邏輯...
                     ctx.fillStyle = "rgba(0,0,0,0.5)";
                     ctx.fillRect(e.x - 15, e.y - (s / 2 + 8), 30, 3);
                     ctx.fillStyle = "#22c55e";
                     ctx.fillRect(e.x - 15, e.y - (s / 2 + 8), (e.hp / e.maxHp) * 30, 3);
                 });
 
-                // 畫傷害字體
-                for (let i = damagePopups.length - 1; i >= 0; i--) {
-                    let d = damagePopups[i];
-                    ctx.fillStyle = `rgba(255, 255, 255, ${d.life / 30})`;
-                    ctx.font = "bold 14px Arial";
-                    ctx.fillText(d.val, d.x, d.y);
-                    d.y -= 1;
-                    d.life--;
-                    if (d.life <= 0) damagePopups.splice(i, 1);
-                }
-
-
-
+                // 畫骰子 (原本邏輯，但背景格子已經在上面 drawEnhancedGridBase 畫過凹槽了)
                 grid.slots.forEach(slot => {
-                    // 1. 畫格子背景 (獨立路徑)
-                    ctx.beginPath();
-                    ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
-                    drawRoundedRect(ctx, slot.x, slot.y, grid.slotSize, grid.slotSize, 10);
-                    ctx.fill();
-
                     if (slot.dice && !slot.isBeingDragged) {
-                        // 2. 太陽特效 (必須先跑特效，且特效內部已經有 save/restore 和 beginPath)
+                        // 太陽/齒輪特效
                         if (slot.dice.id === 'sun' && isSunActivated) {
-                            // 在這裡直接寫繪圖指令，不要呼叫外面的 function，減少 stack 壓力
                             ctx.save();
-                            ctx.beginPath(); // 關鍵！
-                            ctx.setLineDash([5, 5]); // 使用虛線，這在手機上反而有時能避開某些渲染 Bug
+                            ctx.beginPath();
+                            ctx.setLineDash([5, 5]);
                             ctx.strokeStyle = "orange";
                             ctx.lineWidth = 3;
                             ctx.strokeRect(slot.x + 4, slot.y + 4, grid.slotSize - 8, grid.slotSize - 8);
-                            ctx.setLineDash([]); // 恢復實線
                             ctx.restore();
                         }
-
-                        // 3. 齒輪特效
                         if (slot.dice.id === 'gear' && slot.dice.isPowered) {
                             drawEffect(slot, "#00ccff");
                         }
-
-                        // 4. 畫骰子主體 (重要：renderDice 內部第一行必須是 ctx.beginPath())
                         renderDice(ctx, slot.x, slot.y, slot.dice, slot.isLocked);
                     }
                 });
@@ -1073,6 +1044,89 @@
                 requestAnimationFrame(frame);
             }
             frame();
+        }
+        // A. 繪製發光軌道與起終點
+        function drawEnhancedPath(ctx, path) {
+            if (!path || path.length < 2) return;
+
+            ctx.save();
+            // 1. 發光底層
+            ctx.beginPath();
+            ctx.strokeStyle = "rgba(59, 130, 246, 0.2)"; // 淡淡藍光
+            ctx.lineWidth = 35;
+            ctx.lineJoin = "round";
+            ctx.lineCap = "round";
+            ctx.moveTo(path[0].x, path[0].y);
+            path.forEach(p => ctx.lineTo(p.x, p.y));
+            ctx.stroke();
+
+            // 2. 軌道中心線 (科技感虛線)
+            ctx.beginPath();
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+            ctx.lineWidth = 2;
+            ctx.setLineDash([10, 20]);
+            ctx.moveTo(path[0].x, path[0].y);
+            path.forEach(p => ctx.lineTo(p.x, p.y));
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // 3. 起點：傳送門 (Portal)
+            const start = path[0];
+            const time = Date.now() / 500;
+            ctx.beginPath();
+            ctx.arc(start.x, start.y, 20, 0, Math.PI * 2);
+            ctx.strokeStyle = "#3b82f6";
+            ctx.lineWidth = 3;
+            ctx.setLineDash([5, 5]);
+            ctx.lineDashOffset = -time * 20;
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // 4. 終點：核心 (Core)
+            const end = path[path.length - 1];
+            const pulse = 0.5 + Math.abs(Math.sin(Date.now() / 400)) * 0.5;
+            ctx.fillStyle = `rgba(239, 68, 68, ${pulse * 0.5})`;
+            ctx.fillRect(end.x - 15, end.y - 15, 30, 30);
+            ctx.strokeStyle = "#ef4444";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(end.x - 15, end.y - 15, 30, 30);
+
+            ctx.restore();
+        }
+
+        // B. 繪製 3x5 區域的凹槽與四角 L 邊框
+        function drawEnhancedGridBase(ctx, grid) {
+            const margin = 10;
+            const left = grid.slots[0].x - margin;
+            const top = grid.slots[0].y - margin;
+            const right = grid.slots[grid.cols - 1].x + grid.slotSize + margin;
+            const bottom = grid.slots[grid.slots.length - 1].y + grid.slotSize + margin;
+            const LSize = 20;
+
+            // 1. 繪製四角 L 邊框
+            ctx.strokeStyle = "#3b82f6";
+            ctx.lineWidth = 3;
+            // 左上
+            ctx.beginPath(); ctx.moveTo(left, top + LSize); ctx.lineTo(left, top); ctx.lineTo(left + LSize, top); ctx.stroke();
+            // 右上
+            ctx.beginPath(); ctx.moveTo(right - LSize, top); ctx.lineTo(right, top); ctx.lineTo(right, top + LSize); ctx.stroke();
+            // 左下
+            ctx.beginPath(); ctx.moveTo(left, bottom - LSize); ctx.lineTo(left, bottom); ctx.lineTo(left + LSize, bottom); ctx.stroke();
+            // 右下
+            ctx.beginPath(); ctx.moveTo(right - LSize, bottom); ctx.lineTo(right, bottom); ctx.lineTo(right, bottom - LSize); ctx.stroke();
+
+            // 2. 繪製格子的凹槽背景
+            grid.slots.forEach(slot => {
+                // 深色背景
+                ctx.fillStyle = "rgba(15, 23, 42, 0.8)";
+                drawRoundedRect(ctx, slot.x + 2, slot.y + 2, grid.slotSize - 4, grid.slotSize - 4, 10);
+                ctx.fill();
+
+                // 內陰影
+                ctx.strokeStyle = "rgba(0, 0, 0, 0.6)";
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            });
         }
         function drawDiceFeature(ctx, x, y, size, pattern, diceColor) {
             if (!pattern) return;
