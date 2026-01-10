@@ -573,7 +573,7 @@
                 hp: hp,
                 virtualHp: hp, // 同步虛擬血量
                 speed: 1.5,
-                rewardSp: 10 + (wave * 2),
+                rewardSp: 10 + Math.floor((battleState.wave - 1) / 5) * 5,
                 isBoss: false
             });
         }
@@ -598,7 +598,7 @@
                 hp: hp,
                 virtualHp: hp,
                 speed: 1, // 隨關卡稍微提升移速，增加難度
-                rewardSp: 300 + (level * 2), // 越後面的 Boss 給越多 SP
+                rewardSp: 200 + (level * 2), // 越後面的 Boss 給越多 SP
                 isBoss: true,
                 bossType: type,
                 skillTimer: 0,
@@ -891,7 +891,7 @@
 
                 // --- 新增：動態計算生怪速度 ---
                 // 每過 1 層減少 1 幀間隔，最快維持在 10 幀生一隻 (可自行調整)
-                let currentSpawnInterval = Math.max(10, 30 - Math.floor(battleState.wave));
+                let currentSpawnInterval = Math.max(10, 30 - Math.floor(battleState.wave) / 2);
 
                 if (waveState.timer >= currentSpawnInterval) {
                     if (battleState.wave % 10 === 0 && waveState.spawnedCount === 0) {
@@ -926,24 +926,37 @@
             }
         }
 
-        function updateUI() {
-            document.getElementById('spText').innerText = Math.floor(battleState.sp);
-            document.getElementById('summonCostText').innerText = battleState.summonCost;
-            document.getElementById('hpText').innerText = battleState.hp;
-            document.getElementById('waveText').innerText = battleState.wave;
+       // 專門處理每幀都要即時變動的數字
+function updateLiveStats() {
+    const spEl = document.getElementById('spText');
+    const costEl = document.getElementById('summonCostText');
+    const hpEl = document.getElementById('hpText');
+    const waveEl = document.getElementById('waveText');
 
-            const container = document.getElementById('powerUpButtons');
-            if (!container) return;
+    if (spEl) spEl.innerText = Math.floor(battleState.sp);
+    if (costEl) costEl.innerText = battleState.summonCost;
+    if (hpEl) hpEl.innerText = battleState.hp;
+    if (waveEl) waveEl.innerText = battleState.wave;
 
-            // 1. 產生強化按鈕的 HTML
-            container.innerHTML = userData.deck.map((id) => {
-                const dice = ALL_DICES.find(d => d.id === id);
-                const lv = powerUpLevels[id] || 1;
-                const cost = 100 * Math.pow(2, lv - 1);
-                const q = QUALITIES[dice.quality] || QUALITIES.common;
+    // (選做) 這裡還可以即時檢查按鈕是否該變亮/變暗，而不重新繪製按鈕
+}
 
-                // 將原本的實心方塊換成帶有 Canvas 的設計
-                return `
+// 只有在「強化等級改變」或「召喚骰子」時才呼叫這個
+function updateUI() {
+    // 先同步一次數字
+    updateLiveStats();
+
+    const container = document.getElementById('powerUpButtons');
+    if (!container) return;
+
+    // 1. 產生強化按鈕的 HTML (這部分維持你原本的邏輯)
+    container.innerHTML = userData.deck.map((id) => {
+        const dice = ALL_DICES.find(d => d.id === id);
+        const lv = powerUpLevels[id] || 1;
+        const cost = 100 * Math.pow(2, lv - 1);
+        const q = QUALITIES[dice.quality] || QUALITIES.common;
+
+        return `
         <button onclick="powerUpDice('${id}')" 
             class="flex-1 min-w-0 bg-slate-800 border ${battleState.sp >= cost ? 'border-blue-500' : 'border-slate-700'} rounded-lg py-1.5 flex flex-col items-center active:scale-95 transition-all">
             <div class="w-8 h-8 rounded bg-white relative mb-1 overflow-hidden" style="border: 1px solid ${q.color}">
@@ -952,24 +965,22 @@
             <div class="text-[9px] text-yellow-500 font-bold leading-none">Lv.${lv}</div>
             <div class="text-[8px] text-slate-400 mt-1">${cost >= 1000 ? (cost / 1000).toFixed(1) + 'k' : cost}</div>
         </button>`;
-            }).join('');
+    }).join('');
 
-            // 2. 繪製按鈕上的骰子圖案 (需在 innerHTML 渲染後執行)
-            setTimeout(() => {
-                userData.deck.forEach(id => {
-                    const dice = ALL_DICES.find(d => d.id === id);
-                    const canvas = document.getElementById(`pwr-canvas-${id}`);
-                    if (canvas && dice) {
-                        const ctx = canvas.getContext('2d');
-                        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                        // 使用我們定義的繪圖函式，座標 0, 0，星數固定畫 1 星
-                        drawDiceFeature(ctx, 0, 0, canvas.width, dice.pattern || dice.id, dice.baseColor);
-                        drawDiceStars(ctx, 0, 0, canvas.width, 1, dice.baseColor);
-                    }
-                });
-            }, 0);
-        }
+    // 2. 繪製按鈕上的骰子圖案
+    setTimeout(() => {
+        userData.deck.forEach(id => {
+            const dice = ALL_DICES.find(d => d.id === id);
+            const canvas = document.getElementById(`pwr-canvas-${id}`);
+            if (canvas && dice) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawDiceFeature(ctx, 0, 0, canvas.width, dice.pattern || dice.id, dice.baseColor);
+                drawDiceStars(ctx, 0, 0, canvas.width, 1, dice.baseColor);
+            }
+        });
+    }, 0);
+}
         function refreshSunState() {
             const totalSunCount = grid.slots.filter(s => s.dice && s.dice.id === 'sun').length;
             isSunActivated = [1, 4, 7].includes(totalSunCount);
@@ -990,7 +1001,7 @@
                 updateEnemies();
                 updateWave();
                 updateCombat();
-
+                updateLiveStats();
                 // --- 新增：畫 3x5 科技感 L 邊框與凹槽 ---
                 drawEnhancedGridBase(ctx, grid);
 
