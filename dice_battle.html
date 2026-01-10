@@ -320,34 +320,48 @@
             }
         ];
 
-       const BOSS_TYPES = {
-    'CRUSHER': {
-        name: '粉碎者',
-        color: '#ff4444',
-        // 更新為 PNG 檔案路徑
-        img: (() => { const i = new Image(); i.src = 'dice-boss/lock.png'; return i; })(),
-        skillInterval: 300,
-        onSkill: (boss) => {
-            const occupied = grid.slots.filter(s => s.dice && !s.isLocked);
-            if (occupied.length > 0) {
-                const target = occupied[Math.floor(Math.random() * occupied.length)];
-                target.isLocked = true;
-                setTimeout(() => { target.isLocked = false; }, 4000);
+        const BOSS_TYPES = {
+            'CRUSHER': {
+                name: '粉碎者',
+                color: '#ff4444',
+                // 更新為 PNG 檔案路徑
+                img: (() => { const i = new Image(); i.src = 'dice-boss/lock.png'; return i; })(),
+                skillInterval: 300,
+                onSkill: (boss) => {
+                    const occupied = grid.slots.filter(s => s.dice && !s.isLocked);
+                    if (occupied.length > 0) {
+                        const target = occupied[Math.floor(Math.random() * occupied.length)];
+                        target.isLocked = true;
+                        setTimeout(() => { target.isLocked = false; }, 4000);
+                    }
+                }
+            },
+            'SNAKE': {
+                name: '噴射者',
+                color: '#22c55e',
+                img: (() => { const i = new Image(); i.src = 'dice-boss/speed.png'; return i; })(),
+                skillInterval: 240,
+                onSkill: (boss) => {
+                    enemies.forEach(e => e.speed *= 1.5);
+                    setTimeout(() => { enemies.forEach(e => e.speed /= 1.5); }, 2000);
+                }
             }
-        }
-    },
-    'SNAKE': {
-        name: '噴射者',
-        color: '#22c55e',
-        img: (() => { const i = new Image(); i.src = 'dice-boss/speed.png'; return i; })(),
-        skillInterval: 240,
-        onSkill: (boss) => {
-            enemies.forEach(e => e.speed *= 1.5);
-            setTimeout(() => { enemies.forEach(e => e.speed /= 1.5); }, 2000);
-        }
-    }
-};
+        };
+        const BALANCE = {
+            // --- 普通怪物 ---
+            ENEMY_BASE_HP: 100,        // 基礎血量
+            ENEMY_LEVEL_GROWTH: 1.25,  // 跨關卡成長 (每多一關多 25% 血量)
+            ENEMY_WAVE_GROWTH: 1.20,   // 每波成長 (每多一波多 15% 血量)
+            //ENEMY_SPEED_BASE: 1.5,     // 初始移速
+            //ENEMY_SPEED_WAVE_ADD: 0.015, // 每波增加的移速
 
+            // --- Boss ---
+            BOSS_BASE_HP: 3000,        // Boss 基礎血量
+            BOSS_LEVEL_GROWTH: 1.6,    // Boss 跨關卡成長
+            BOSS_WAVE_GROWTH: 1.8,     // Boss 隨波次成長系數 (以 10 波為單位)
+            //BOSS_SPEED_BASE: 1.0,      // Boss 初始移速
+           // BOSS_SPEED_WAVE_ADD: 0.01  // Boss 每波增加的移速
+        };
         const userData = JSON.parse(localStorage.getItem('dice_game_data')) || {
             deck: ['fire', 'wind', 'ice', 'electric', 'poison'],
             diceLevels: { 'fire': 1, 'wind': 1, 'ice': 1, 'electric': 1, 'poison': 1 },
@@ -572,7 +586,9 @@
             const wave = Number(battleState.wave) || 1;
 
             // 基礎 HP 計算，加入 Math.max 確保不會有 0 血怪
-            const hp = Math.max(1, 100 * Math.pow(1.2, level - 1) * Math.pow(1.05, wave - 1));
+            const hp = Math.max(1,
+                BALANCE.ENEMY_BASE_HP * Math.pow(BALANCE.ENEMY_LEVEL_GROWTH, level - 1) * Math.pow(BALANCE.ENEMY_WAVE_GROWTH, wave - 1)
+            );
 
             enemies.push({
                 x: path[0].x,
@@ -597,8 +613,7 @@
             // --- Boss HP 公式調整 ---
             // 基礎 2000 * (關卡難度加成 1.5倍) * (層數加成)
             // 這樣第 2 關的第 10 波 Boss 會比第 1 關的第 20 波更有挑戰性
-            const hp = 2000 * Math.pow(1.5, level - 1) * Math.pow(1.2, (battleState.wave / 10));
-
+            const hp = BALANCE.BOSS_BASE_HP * Math.pow(BALANCE.BOSS_LEVEL_GROWTH, level - 1) * Math.pow(BALANCE.BOSS_WAVE_GROWTH, (wave / 10));
             enemies.push({
                 x: path[0].x,
                 y: path[0].y,
@@ -927,7 +942,7 @@
                     }
                     battleState.wave++;
                     waveState.spawnedCount = 0;
-                    waveState.totalEnemiesPerWave += 5;
+                    waveState.totalEnemiesPerWave += 1;
                     waveState.isWaiting = false;
                     waveState.timer = 0;
                     updateUI();
@@ -935,46 +950,46 @@
             }
         }
 
-       // 專門處理每幀都要即時變動的數字
-function updateLiveStats() {
-    const spEl = document.getElementById('spText');
-    const costEl = document.getElementById('summonCostText');
-    const hpEl = document.getElementById('hpText');
-    const waveEl = document.getElementById('waveText');
+        // 專門處理每幀都要即時變動的數字
+        function updateLiveStats() {
+            const spEl = document.getElementById('spText');
+            const costEl = document.getElementById('summonCostText');
+            const hpEl = document.getElementById('hpText');
+            const waveEl = document.getElementById('waveText');
 
-    if (spEl) spEl.innerText = Math.floor(battleState.sp);
-    if (costEl) costEl.innerText = battleState.summonCost;
-    if (hpEl) hpEl.innerText = battleState.hp;
-    if (waveEl) waveEl.innerText = battleState.wave;
+            if (spEl) spEl.innerText = Math.floor(battleState.sp);
+            if (costEl) costEl.innerText = battleState.summonCost;
+            if (hpEl) hpEl.innerText = battleState.hp;
+            if (waveEl) waveEl.innerText = battleState.wave;
 
-    // (選做) 這裡還可以即時檢查按鈕是否該變亮/變暗，而不重新繪製按鈕
-}
+            // (選做) 這裡還可以即時檢查按鈕是否該變亮/變暗，而不重新繪製按鈕
+        }
 
-// 只有在「強化等級改變」或「召喚骰子」時才呼叫這個
-function updateUI() {
-    // 先同步一次數字
-    updateLiveStats();
+        // 只有在「強化等級改變」或「召喚骰子」時才呼叫這個
+        function updateUI() {
+            // 先同步一次數字
+            updateLiveStats();
 
-    const container = document.getElementById('powerUpButtons');
-    if (!container) return;
+            const container = document.getElementById('powerUpButtons');
+            if (!container) return;
 
-    // 1. 產生強化按鈕的 HTML
-    container.innerHTML = userData.deck.map((id) => {
-        const dice = ALL_DICES.find(d => d.id === id);
-        const lv = powerUpLevels[id] || 1;
-        const cost = 100 * Math.pow(2, lv - 1);
-        const q = QUALITIES[dice.quality] || QUALITIES.common;
+            // 1. 產生強化按鈕的 HTML
+            container.innerHTML = userData.deck.map((id) => {
+                const dice = ALL_DICES.find(d => d.id === id);
+                const lv = powerUpLevels[id] || 1;
+                const cost = 100 * Math.pow(2, lv - 1);
+                const q = QUALITIES[dice.quality] || QUALITIES.common;
 
-        // --- 新增判斷邏輯 ---
-        const isMax = lv >= 5;
-        // 滿等顯示 MAX，否則顯示數值 + SP
-        const costDisplay = isMax ? "MAX" : `${cost >= 1000 ? (cost / 1000).toFixed(1) + 'k' : cost} SP`;
-        // 顏色與邊框動態切換
-        const costColor = isMax ? "text-orange-500" : "text-slate-400";
-        const borderColor = isMax ? "border-yellow-500 shadow-[0_0_5px_rgba(234,179,8,0.3)]" : 
-                           (battleState.sp >= cost ? 'border-blue-500' : 'border-slate-700');
+                // --- 新增判斷邏輯 ---
+                const isMax = lv >= 5;
+                // 滿等顯示 MAX，否則顯示數值 + SP
+                const costDisplay = isMax ? "MAX" : `${cost >= 1000 ? (cost / 1000).toFixed(1) + 'k' : cost} SP`;
+                // 顏色與邊框動態切換
+                const costColor = isMax ? "text-orange-500" : "text-slate-400";
+                const borderColor = isMax ? "border-yellow-500 shadow-[0_0_5px_rgba(234,179,8,0.3)]" :
+                    (battleState.sp >= cost ? 'border-blue-500' : 'border-slate-700');
 
-        return `
+                return `
         <button onclick="${isMax ? '' : `powerUpDice('${id}')`}" 
             class="flex-1 min-w-0 bg-slate-800 border ${borderColor} rounded-lg py-1.5 flex flex-col items-center ${isMax ? '' : 'active:scale-95'} transition-all">
             <div class="w-8 h-8 rounded bg-white relative mb-1 overflow-hidden" style="border: 1px solid ${q.color}">
@@ -983,180 +998,180 @@ function updateUI() {
             <div class="text-[9px] text-yellow-500 font-bold leading-none">Lv.${lv}</div>
             <div class="text-[8px] ${costColor} mt-1 font-bold tracking-tighter">${costDisplay}</div>
         </button>`;
-    }).join('');
+            }).join('');
 
-    // 2. 繪製按鈕上的骰子圖案 (維持原有的異步繪製邏輯)
-    setTimeout(() => {
-        userData.deck.forEach(id => {
-            const dice = ALL_DICES.find(d => d.id === id);
-            const canvas = document.getElementById(`pwr-canvas-${id}`);
-            if (canvas && dice) {
-                const ctx = canvas.getContext('2d');
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                drawDiceFeature(ctx, 0, 0, canvas.width, dice.pattern || dice.id, dice.baseColor);
-                drawDiceStars(ctx, 0, 0, canvas.width, 1, dice.baseColor);
+            // 2. 繪製按鈕上的骰子圖案 (維持原有的異步繪製邏輯)
+            setTimeout(() => {
+                userData.deck.forEach(id => {
+                    const dice = ALL_DICES.find(d => d.id === id);
+                    const canvas = document.getElementById(`pwr-canvas-${id}`);
+                    if (canvas && dice) {
+                        const ctx = canvas.getContext('2d');
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        drawDiceFeature(ctx, 0, 0, canvas.width, dice.pattern || dice.id, dice.baseColor);
+                        drawDiceStars(ctx, 0, 0, canvas.width, 1, dice.baseColor);
+                    }
+                });
+            }, 0);
+        }
+        let bgOffset = 0; // 用於控制網格移動的偏移量
+
+        function drawDynamicBackground(ctx, width, height) {
+            // 1. 繪製動態網格
+            bgOffset += 0.2; // 控制網格移動速度
+            if (bgOffset > 40) bgOffset = 0;
+
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.1)'; // 淡淡的科技藍
+            ctx.lineWidth = 1;
+            const gridSize = 40;
+
+            // 垂直線
+            for (let x = (bgOffset % gridSize); x < width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
             }
-        });
-    }, 0);
-}
-let bgOffset = 0; // 用於控制網格移動的偏移量
+            // 水平線
+            for (let y = (bgOffset % gridSize); y < height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
 
-function drawDynamicBackground(ctx, width, height) {
-    // 1. 繪製動態網格
-    bgOffset += 0.2; // 控制網格移動速度
-    if (bgOffset > 40) bgOffset = 0;
+            // 2. 繪製四個角落的裝飾性光暈 (不隨網格移動)
+            const time = Date.now() * 0.001;
+            const pulse = Math.sin(time) * 10; // 呼吸燈效果
 
-    ctx.strokeStyle = 'rgba(56, 189, 248, 0.1)'; // 淡淡的科技藍
-    ctx.lineWidth = 1;
-    const gridSize = 40;
-
-    // 垂直線
-    for (let x = (bgOffset % gridSize); x < width; x += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
-        ctx.stroke();
-    }
-    // 水平線
-    for (let y = (bgOffset % gridSize); y < height; y += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-        ctx.stroke();
-    }
-
-    // 2. 繪製四個角落的裝飾性光暈 (不隨網格移動)
-    const time = Date.now() * 0.001;
-    const pulse = Math.sin(time) * 10; // 呼吸燈效果
-
-    ctx.fillStyle = 'rgba(56, 189, 248, 0.05)';
-    // 左上角
-    ctx.beginPath();
-    ctx.arc(0, 0, 150 + pulse, 0, Math.PI * 2);
-    ctx.fill();
-    // 右下角
-    ctx.beginPath();
-    ctx.arc(width, height, 200 + pulse, 0, Math.PI * 2);
-    ctx.fill();
-}
+            ctx.fillStyle = 'rgba(56, 189, 248, 0.05)';
+            // 左上角
+            ctx.beginPath();
+            ctx.arc(0, 0, 150 + pulse, 0, Math.PI * 2);
+            ctx.fill();
+            // 右下角
+            ctx.beginPath();
+            ctx.arc(width, height, 200 + pulse, 0, Math.PI * 2);
+            ctx.fill();
+        }
         function refreshSunState() {
             const totalSunCount = grid.slots.filter(s => s.dice && s.dice.id === 'sun').length;
             isSunActivated = [1, 4, 7].includes(totalSunCount);
         }
         function startRenderLoop() {
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
 
-    function frame() {
-        // 1. 如果遊戲沒開始或已結束，停止循環
-        if (!battleState.isStarted) return;
-        const modal = document.getElementById('resultModal');
-        if (modal && modal.style.display === 'flex') return;
+            function frame() {
+                // 1. 如果遊戲沒開始或已結束，停止循環
+                if (!battleState.isStarted) return;
+                const modal = document.getElementById('resultModal');
+                if (modal && modal.style.display === 'flex') return;
 
-        frameCount++;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                frameCount++;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // --- 邏輯更新 ---
-        updateEnemies();
-        updateWave();
-        updateCombat();
-        updateLiveStats();
+                // --- 邏輯更新 ---
+                updateEnemies();
+                updateWave();
+                updateCombat();
+                updateLiveStats();
 
-        // --- 背景與底層裝飾 ---
-        drawDynamicBackground(ctx, canvas.width, canvas.height);
-        // 畫 3x5 科技感 L 邊框與凹槽
-        drawEnhancedGridBase(ctx, grid);
-        // 畫發光軌道與傳送門
-        drawEnhancedPath(ctx, path);
+                // --- 背景與底層裝飾 ---
+                drawDynamicBackground(ctx, canvas.width, canvas.height);
+                // 畫 3x5 科技感 L 邊框與凹槽
+                drawEnhancedGridBase(ctx, grid);
+                // 畫發光軌道與傳送門
+                drawEnhancedPath(ctx, path);
 
-        // --- 畫子彈 ---
-        projectiles.forEach(p => {
-            ctx.fillStyle = p.color;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
-            ctx.fill();
-        });
-
-        // --- 畫敵人 (含 Boss PNG 邏輯) ---
-        enemies.forEach(e => {
-            const s = e.isBoss ? e.size : 20;
-
-            if (e.isBoss && e.bossType && BOSS_TYPES[e.bossType]) {
-                ctx.save();
-                // 幫 Boss PNG 加一點符合屬性的外發光
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = e.color || BOSS_TYPES[e.bossType].color;
-                
-                const bossImg = BOSS_TYPES[e.bossType].img;
-                // 確保圖片已載入完成才繪製，否則畫色塊墊底
-                if (bossImg && bossImg.complete && bossImg.naturalWidth !== 0) {
-                    ctx.drawImage(bossImg, e.x - s / 2, e.y - s / 2, s, s);
-                } else {
-                    ctx.fillStyle = e.color || "#ef4444";
-                    ctx.fillRect(e.x - s / 2, e.y - s / 2, s, s);
-                }
-                ctx.restore();
-            } else {
-                // 一般小怪維持原樣 (紅色方塊)
-                ctx.fillStyle = "#ef4444";
-                ctx.fillRect(e.x - s / 2, e.y - s / 2, s, s);
-            }
-
-            // 血條邏輯 (居中於敵人上方)
-            ctx.fillStyle = "rgba(0,0,0,0.5)";
-            ctx.fillRect(e.x - 15, e.y - (s / 2 + 8), 30, 3);
-            ctx.fillStyle = "#22c55e";
-            ctx.fillRect(e.x - 15, e.y - (s / 2 + 8), (e.hp / e.maxHp) * 30, 3);
-        });
-
-        // --- 畫傷害字體 (確保在敵人之上) ---
-        for (let i = damagePopups.length - 1; i >= 0; i--) {
-            let d = damagePopups[i];
-            ctx.save();
-            ctx.fillStyle = `rgba(255, 255, 255, ${d.life / 30})`;
-            ctx.font = "bold 14px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText(d.val, d.x, d.y);
-            ctx.restore();
-            
-            // 傷害動畫：向上飄移與生命週期遞減
-            d.y -= 1;
-            d.life--;
-            if (d.life <= 0) damagePopups.splice(i, 1);
-        }
-
-        // --- 畫骰子 (原本邏輯) ---
-        grid.slots.forEach(slot => {
-            if (slot.dice && !slot.isBeingDragged) {
-                // 太陽/齒輪特效
-                if (slot.dice.id === 'sun' && isSunActivated) {
-                    ctx.save();
+                // --- 畫子彈 ---
+                projectiles.forEach(p => {
+                    ctx.fillStyle = p.color;
                     ctx.beginPath();
-                    ctx.setLineDash([5, 5]);
-                    ctx.strokeStyle = "orange";
-                    ctx.lineWidth = 3;
-                    ctx.strokeRect(slot.x + 4, slot.y + 4, grid.slotSize - 8, grid.slotSize - 8);
+                    ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+
+                // --- 畫敵人 (含 Boss PNG 邏輯) ---
+                enemies.forEach(e => {
+                    const s = e.isBoss ? e.size : 20;
+
+                    if (e.isBoss && e.bossType && BOSS_TYPES[e.bossType]) {
+                        ctx.save();
+                        // 幫 Boss PNG 加一點符合屬性的外發光
+                        ctx.shadowBlur = 10;
+                        ctx.shadowColor = e.color || BOSS_TYPES[e.bossType].color;
+
+                        const bossImg = BOSS_TYPES[e.bossType].img;
+                        // 確保圖片已載入完成才繪製，否則畫色塊墊底
+                        if (bossImg && bossImg.complete && bossImg.naturalWidth !== 0) {
+                            ctx.drawImage(bossImg, e.x - s / 2, e.y - s / 2, s, s);
+                        } else {
+                            ctx.fillStyle = e.color || "#ef4444";
+                            ctx.fillRect(e.x - s / 2, e.y - s / 2, s, s);
+                        }
+                        ctx.restore();
+                    } else {
+                        // 一般小怪維持原樣 (紅色方塊)
+                        ctx.fillStyle = "#ef4444";
+                        ctx.fillRect(e.x - s / 2, e.y - s / 2, s, s);
+                    }
+
+                    // 血條邏輯 (居中於敵人上方)
+                    ctx.fillStyle = "rgba(0,0,0,0.5)";
+                    ctx.fillRect(e.x - 15, e.y - (s / 2 + 8), 30, 3);
+                    ctx.fillStyle = "#22c55e";
+                    ctx.fillRect(e.x - 15, e.y - (s / 2 + 8), (e.hp / e.maxHp) * 30, 3);
+                });
+
+                // --- 畫傷害字體 (確保在敵人之上) ---
+                for (let i = damagePopups.length - 1; i >= 0; i--) {
+                    let d = damagePopups[i];
+                    ctx.save();
+                    ctx.fillStyle = `rgba(255, 255, 255, ${d.life / 30})`;
+                    ctx.font = "bold 14px Arial";
+                    ctx.textAlign = "center";
+                    ctx.fillText(d.val, d.x, d.y);
                     ctx.restore();
+
+                    // 傷害動畫：向上飄移與生命週期遞減
+                    d.y -= 1;
+                    d.life--;
+                    if (d.life <= 0) damagePopups.splice(i, 1);
                 }
-                if (slot.dice.id === 'gear' && slot.dice.isPowered) {
-                    drawEffect(slot, "#00ccff");
+
+                // --- 畫骰子 (原本邏輯) ---
+                grid.slots.forEach(slot => {
+                    if (slot.dice && !slot.isBeingDragged) {
+                        // 太陽/齒輪特效
+                        if (slot.dice.id === 'sun' && isSunActivated) {
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.setLineDash([5, 5]);
+                            ctx.strokeStyle = "orange";
+                            ctx.lineWidth = 3;
+                            ctx.strokeRect(slot.x + 4, slot.y + 4, grid.slotSize - 8, grid.slotSize - 8);
+                            ctx.restore();
+                        }
+                        if (slot.dice.id === 'gear' && slot.dice.isPowered) {
+                            drawEffect(slot, "#00ccff");
+                        }
+                        // 繪製骰子主體與星數
+                        renderDice(ctx, slot.x, slot.y, slot.dice, slot.isLocked);
+                    }
+                });
+
+                // --- 畫正在拖拽中的骰子 (最頂層) ---
+                if (drag.isDragging) {
+                    renderDice(ctx, drag.currentX - grid.slotSize / 2, drag.currentY - grid.slotSize / 2, drag.dice, false);
                 }
-                // 繪製骰子主體與星數
-                renderDice(ctx, slot.x, slot.y, slot.dice, slot.isLocked);
+
+                requestAnimationFrame(frame);
             }
-        });
 
-        // --- 畫正在拖拽中的骰子 (最頂層) ---
-        if (drag.isDragging) {
-            renderDice(ctx, drag.currentX - grid.slotSize / 2, drag.currentY - grid.slotSize / 2, drag.dice, false);
+            // 啟動循環
+            frame();
         }
-
-        requestAnimationFrame(frame);
-    }
-    
-    // 啟動循環
-    frame();
-}
         // A. 繪製發光軌道與起終點
         function drawEnhancedPath(ctx, path) {
             if (!path || path.length < 2) return;
