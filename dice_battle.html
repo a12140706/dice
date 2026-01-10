@@ -106,24 +106,28 @@
         .scroll-hide::-webkit-scrollbar {
             display: none;
         }
+
         .pb-safe {
-    /* 這裡使用 calc 確保原本的 p-3 (12px) 加上 iOS 安全區 */
-    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom)) !important;
-}
+            /* 這裡使用 calc 確保原本的 p-3 (12px) 加上 iOS 安全區 */
+            padding-bottom: calc(0.75rem + env(safe-area-inset-bottom)) !important;
+        }
 
-/* 確保整個戰鬥容器是佔滿螢幕且不溢出的 */
-body, html {
-    height: 100%;
-    margin: 0;
-    overflow: hidden; /* 防止橡皮筋回彈影響戰鬥 */
-    display: flex;
-    flex-direction: column;
-}
+        /* 確保整個戰鬥容器是佔滿螢幕且不溢出的 */
+        body,
+        html {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            /* 防止橡皮筋回彈影響戰鬥 */
+            display: flex;
+            flex-direction: column;
+        }
 
-/* 確保 Footer 是固定高度或自動撐開，不被遮擋 */
-#footer-controls {
-    background-color: #0f172a; /* 給它一個實底色，避免白條穿透看到背景 */
-}
+        /* 確保 Footer 是固定高度或自動撐開，不被遮擋 */
+        #footer-controls {
+            background-color: #0f172a;
+            /* 給它一個實底色，避免白條穿透看到背景 */
+        }
     </style>
 </head>
 
@@ -141,14 +145,14 @@ body, html {
     </div>
 
     <div id="footer-controls" class="p-3 max-w-[500px] mx-auto w-full pb-safe">
-    <div class="flex flex-nowrap w-full gap-1 mb-4">
-        <div id="powerUpButtons" class="contents"></div>
+        <div class="flex flex-nowrap w-full gap-1 mb-4">
+            <div id="powerUpButtons" class="contents"></div>
+        </div>
+        <button onclick="summonDice()"
+            class="w-full py-4 bg-blue-600 rounded-xl font-black text-xl shadow-lg active:scale-95 transition-all text-white">
+            召喚骰子 (<span id="summonCostText">10</span> SP)
+        </button>
     </div>
-    <button onclick="summonDice()"
-        class="w-full py-4 bg-blue-600 rounded-xl font-black text-xl shadow-lg active:scale-95 transition-all text-white">
-        召喚骰子 (<span id="summonCostText">10</span> SP)
-    </button>
-</div>
 
     <div id="difficultyOverlay" class="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-6">
         <div class="w-full max-w-sm text-center">
@@ -188,53 +192,53 @@ body, html {
     </div>
     <script>
         const AudioManager = {
-    ctx: new (window.AudioContext || window.webkitAudioContext)(),
-    buffers: {},
+            ctx: new (window.AudioContext || window.webkitAudioContext)(),
+            buffers: {},
 
-    // 預加載音效 (傳入名稱與路徑)
-    async init() {
-        const sounds = {
-            'hit': 'dice-sound/hit.wav'
-            // 以後可以增加更多，例如 'summon': 'dice-sound/summon.wav'
+            // 預加載音效 (傳入名稱與路徑)
+            async init() {
+                const sounds = {
+                    'hit': 'dice-sound/hit.wav'
+                    // 以後可以增加更多，例如 'summon': 'dice-sound/summon.wav'
+                };
+
+                for (const [name, url] of Object.entries(sounds)) {
+                    try {
+                        const response = await fetch(url);
+                        const arrayBuffer = await response.arrayBuffer();
+                        this.buffers[name] = await this.ctx.decodeAudioData(arrayBuffer);
+                        console.log(`音效加載成功: ${name}`);
+                    } catch (e) {
+                        console.error(`音效加載失敗: ${name}`, e);
+                    }
+                }
+            },
+
+            // 播放打擊音效
+            playHit() {
+                // 如果靜音或尚未加載，則返回
+                if (!this.buffers['hit'] || (userData.settings && !userData.settings.sfx)) return;
+
+                // iPhone 解鎖邏輯
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+
+                const source = this.ctx.createBufferSource();
+                source.buffer = this.buffers['hit'];
+
+                // 設定音量 (15個骰子一起打，音量一定要小，建議 0.05 ~ 0.1)
+                const gainNode = this.ctx.createGain();
+                gainNode.gain.value = 0.08;
+
+                source.connect(gainNode);
+                gainNode.connect(this.ctx.destination);
+                source.start(0);
+            }
         };
 
-        for (const [name, url] of Object.entries(sounds)) {
-            try {
-                const response = await fetch(url);
-                const arrayBuffer = await response.arrayBuffer();
-                this.buffers[name] = await this.ctx.decodeAudioData(arrayBuffer);
-                console.log(`音效加載成功: ${name}`);
-            } catch (e) {
-                console.error(`音效加載失敗: ${name}`, e);
-            }
-        }
-    },
-
-    // 播放打擊音效
-    playHit() {
-        // 如果靜音或尚未加載，則返回
-        if (!this.buffers['hit'] || (userData.settings && !userData.settings.sfx)) return;
-
-        // iPhone 解鎖邏輯
-        if (this.ctx.state === 'suspended') {
-            this.ctx.resume();
-        }
-
-        const source = this.ctx.createBufferSource();
-        source.buffer = this.buffers['hit'];
-
-        // 設定音量 (15個骰子一起打，音量一定要小，建議 0.05 ~ 0.1)
-        const gainNode = this.ctx.createGain();
-        gainNode.gain.value = 0.08; 
-
-        source.connect(gainNode);
-        gainNode.connect(this.ctx.destination);
-        source.start(0);
-    }
-};
-
-// 頁面加載時執行初始化
-AudioManager.init();
+        // 頁面加載時執行初始化
+        AudioManager.init();
 
         const QUALITIES = {
             common: { name: '普通', color: '#ffffff', chance: 0.60 },   // 60% 機率
@@ -354,6 +358,16 @@ AudioManager.init();
         let projectiles = [], enemies = [], path = [], damagePopups = [];
 
         function startGame(diff) {
+            // --- 新增：解鎖音訊 (iPhone 關鍵) ---
+            if (typeof AudioManager !== 'undefined' && AudioManager.ctx) {
+                if (AudioManager.ctx.state === 'suspended') {
+                    AudioManager.ctx.resume().then(() => {
+                        console.log("AudioContext resumed successfully");
+                    });
+                }
+            }
+
+            // --- 原有邏輯 ---
             battleState.difficulty = diff;
             battleState.isStarted = true;
             document.getElementById('difficultyOverlay').style.display = 'none';
@@ -741,69 +755,69 @@ AudioManager.init();
             });
         }
         // 【撞擊端】處理：單體傷害、功能性效果 (減速、中毒、傳送、連鎖)
-       // 【撞擊端】處理：單體傷害、功能性效果
-function applyHitEffect(p) {
-    const target = p.target;
-    if (!target || target.hp <= 0) return;
+        // 【撞擊端】處理：單體傷害、功能性效果
+        function applyHitEffect(p) {
+            const target = p.target;
+            if (!target || target.hp <= 0) return;
 
-    // --- 新增：觸發打擊音效 ---
-    // 這裡呼叫我們之前寫好的專業 Web Audio API 播放器
-    if (typeof AudioManager !== 'undefined' && AudioManager.playHit) {
-        AudioManager.playHit();
-    }
-
-    // 1. 基礎傷害
-    target.hp -= p.damage;
-    if (damagePopups.length < 20) {
-        damagePopups.push({ x: target.x, y: target.y, val: Math.floor(p.damage), life: 30 });
-    }
-
-    // 2. 執行功能性效果
-    const spec = getDiceSpecialValue(p.diceId);
-    switch (p.diceId) {
-        case 'ice':
-            target.speed = Math.max(0.3, 1.5 * (1 - spec / 100));
-            clearTimeout(target.iceTimer);
-            target.iceTimer = setTimeout(() => { target.speed = 1.5; }, 1000);
-            break;
-        case 'lock':
-            if (Math.random() < 0.2) {
-                target.speed = 0;
-                setTimeout(() => { target.speed = 1.5; }, spec * 1000);
+            // --- 新增：觸發打擊音效 ---
+            // 這裡呼叫我們之前寫好的專業 Web Audio API 播放器
+            if (typeof AudioManager !== 'undefined' && AudioManager.playHit) {
+                AudioManager.playHit();
             }
-            break;
-        case 'electric':
-            // 電力連鎖 (撞擊才跳電，視覺比較自然)
-            enemies.forEach(e => {
-                if (e !== target && e.hp > 0 && Math.hypot(e.x - target.x, e.y - target.y) < 100) {
-                    let chainDmg = p.damage * 0.5;
-                    e.hp -= chainDmg;
-                    e.virtualHp -= chainDmg;
-                    if (damagePopups.length < 10) {
-                        damagePopups.push({ x: e.x, y: e.y, val: Math.floor(chainDmg), life: 20, color: "#fde047" });
+
+            // 1. 基礎傷害
+            target.hp -= p.damage;
+            if (damagePopups.length < 20) {
+                damagePopups.push({ x: target.x, y: target.y, val: Math.floor(p.damage), life: 30 });
+            }
+
+            // 2. 執行功能性效果
+            const spec = getDiceSpecialValue(p.diceId);
+            switch (p.diceId) {
+                case 'ice':
+                    target.speed = Math.max(0.3, 1.5 * (1 - spec / 100));
+                    clearTimeout(target.iceTimer);
+                    target.iceTimer = setTimeout(() => { target.speed = 1.5; }, 1000);
+                    break;
+                case 'lock':
+                    if (Math.random() < 0.2) {
+                        target.speed = 0;
+                        setTimeout(() => { target.speed = 1.5; }, spec * 1000);
                     }
-                    // 如果電力連鎖也想要有聲音，可以在這裡也加一個極小聲的 playHit
-                }
-            });
-            break;
-        case 'poison':
-            target.poisonStacks = (target.poisonStacks || 0) + 1;
-            break;
-        case 'teleport':
-            if (Math.random() < (spec / 100) && !target.isBoss) {
-                target.x = path[0].x; target.y = path[0].y; target.pathIndex = 1;
+                    break;
+                case 'electric':
+                    // 電力連鎖 (撞擊才跳電，視覺比較自然)
+                    enemies.forEach(e => {
+                        if (e !== target && e.hp > 0 && Math.hypot(e.x - target.x, e.y - target.y) < 100) {
+                            let chainDmg = p.damage * 0.5;
+                            e.hp -= chainDmg;
+                            e.virtualHp -= chainDmg;
+                            if (damagePopups.length < 10) {
+                                damagePopups.push({ x: e.x, y: e.y, val: Math.floor(chainDmg), life: 20, color: "#fde047" });
+                            }
+                            // 如果電力連鎖也想要有聲音，可以在這裡也加一個極小聲的 playHit
+                        }
+                    });
+                    break;
+                case 'poison':
+                    target.poisonStacks = (target.poisonStacks || 0) + 1;
+                    break;
+                case 'teleport':
+                    if (Math.random() < (spec / 100) && !target.isBoss) {
+                        target.x = path[0].x; target.y = path[0].y; target.pathIndex = 1;
+                    }
+                    break;
             }
-            break;
-    }
 
-    // 3. 統一清理死亡怪物
-    for (let i = enemies.length - 1; i >= 0; i--) {
-        if (enemies[i].hp <= 0) {
-            battleState.sp += enemies[i].rewardSp || 10;
-            enemies.splice(i, 1);
+            // 3. 統一清理死亡怪物
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                if (enemies[i].hp <= 0) {
+                    battleState.sp += enemies[i].rewardSp || 10;
+                    enemies.splice(i, 1);
+                }
+            }
         }
-    }
-}
         function updateEnemies() {
             for (let i = enemies.length - 1; i >= 0; i--) {
                 let e = enemies[i];
