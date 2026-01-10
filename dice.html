@@ -119,7 +119,7 @@
             <span class="text-yellow-400 font-bold text-lg">💎</span>
             <span id="goldText" class="font-mono text-xl text-yellow-500 font-bold">0</span>
         </div>
-        <p class="text-[10px] text-slate-500">版本V0.2.8</p>
+        <p class="text-[10px] text-slate-500">版本V0.3.0</p>
         <a href="index.html" class="no-underline">
             <button
                 class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded-lg text-xs font-bold border border-slate-500 transition-colors">
@@ -131,7 +131,7 @@
     <div class="flex-1 overflow-y-auto pb-24" id="main-content">
 
         <div id="page-shop" class="hidden space-y-6">
-            <h2 class="text-xl font-bold px-1 text-white">英雄召喚</h2>
+            <h2 class="text-xl font-bold px-1 text-white">骰子召喚</h2>
 
             <div
                 class="bg-gradient-to-br from-indigo-900 to-slate-900 p-5 rounded-3xl border-2 border-indigo-500/50 shadow-xl relative overflow-hidden">
@@ -139,7 +139,7 @@
 
                 <div class="flex justify-between items-start mb-4">
                     <div>
-                        <h3 class="text-xl font-black text-indigo-300">功能型特選池</h3>
+                        <h3 class="text-xl font-black text-indigo-300">特選池</h3>
                         <p class="text-[10px] text-indigo-400 opacity-80 uppercase tracking-tighter">Special Support
                             Summon</p>
                     </div>
@@ -152,7 +152,7 @@
 
                 <div class="text-center py-4">
                     <div class="text-5xl mb-2">🎫</div>
-                    <p class="text-slate-300 text-xs mb-4">本池獲取「功能型」英雄機率提升 20%</p>
+                    <p class="text-slate-300 text-xs mb-4">特殊骰池</p>
                 </div>
 
                 <button onclick="buySpecialBox(1)"
@@ -295,6 +295,7 @@
             class="bg-slate-800 w-full max-w-sm rounded-3xl p-6 border border-slate-600 animate-popup text-center">
             <div id="u-icon"
                 class="w-20 h-20 mx-auto rounded-2xl flex items-center justify-center text-2xl font-black mb-4 border-4 shadow-2xl">
+                <canvas id="u-canvas" width="80" height="80"></canvas>
             </div>
             <h3 id="u-name" class="text-2xl font-bold mb-1"></h3>
             <p id="u-quality" class="text-xs mb-4 uppercase tracking-widest"></p>
@@ -336,7 +337,7 @@
     <script>
         // --- 1. 基礎資料定義 ---
         const QUALITIES = {
-            common: { name: '普通', color: '#ffffff', chance: 0.50 },
+            common: { name: '普通', color: '#9ca3af', chance: 0.50 },
             rare: { name: '稀有', color: '#3b82f6', chance: 0.30 },
             epic: { name: '史詩', color: '#a855f7', chance: 0.18 },
             legend: { name: '傳說', color: '#eab308', chance: 0.015 },
@@ -436,16 +437,22 @@
             if (!data) {
                 data = {
                     deck: ['fire', 'wind', 'ice', 'electric', 'poison'],
+                    inventory: { 'fire': 1, 'wind': 1, 'ice': 1, 'electric': 1, 'poison': 1 },
                     diceLevels: { 'fire': 1, 'wind': 1, 'ice': 1, 'electric': 1, 'poison': 1 },
                     tickets: 0,
-                    unlockLevel: 1, // 新增：紀錄歷史最高層數
+                    unlockLevel: 1,
                     maxWave: 0
                 };
                 localStorage.setItem('dice_game_data', JSON.stringify(data));
             }
 
+            // --- 關鍵補強區：確保舊存檔也能獲得新屬性 ---
+            if (data.unlockLevel === undefined || isNaN(data.unlockLevel)) data.unlockLevel = 1;
+            if (data.maxWave === undefined || isNaN(data.maxWave)) data.maxWave = 0;
+            if (data.tickets === undefined) data.tickets = 0;
+            if (!data.inventory) data.inventory = {};
+
             ALL_DICES.forEach(d => {
-                if (!data.inventory) data.inventory = {};
                 if (!data.diceLevels) data.diceLevels = {};
                 if (data.inventory[d.id] === undefined) data.inventory[d.id] = 0;
                 if (data.diceLevels[d.id] === undefined) data.diceLevels[d.id] = 1;
@@ -724,35 +731,38 @@
             localStorage.setItem('sicbo_balance', currentBalance);
         }
 
-        function openUpgradeUI(id) {
-            tempUpgradeId = id;
-            const dice = ALL_DICES.find(d => d.id === id);
-            const q = QUALITIES[dice.quality];
-            const lv = userData.diceLevels[id] || 1;
-            const count = userData.inventory[id] || 0;
-            const req = UPGRADE_CONFIG[lv] || [999, 999999999];
+     function openUpgradeUI(id) {
+    tempUpgradeId = id;
+    const dice = ALL_DICES.find(d => d.id === id);
+    if (!dice) return;
 
-            // 1. 計算屬性 (保留你原本的邏輯)
-            const curAtk = dice.stats.atk + (lv - 1) * dice.grow.atk;
-            const nextAtk = dice.stats.atk + lv * dice.grow.atk;
-            const curSpd = dice.stats.speed + (lv - 1) * dice.grow.speed;
-            const nextSpd = dice.stats.speed + lv * dice.grow.speed;
+    const q = QUALITIES[dice.quality];
+    const lv = userData.diceLevels[id] || 1;
+    const count = userData.inventory[id] || 0;
+    const req = UPGRADE_CONFIG[lv] || [999, 999999999];
 
-            let specialHTML = '';
-            if (dice.special) {
-                const curValue = (dice.special.value + (lv - 1) * dice.special.grow).toFixed(1).replace(/\.0$/, '');
-                const nextValue = (dice.special.value + lv * dice.special.grow).toFixed(1).replace(/\.0$/, '');
-                specialHTML = `
+    // 1. 計算屬性
+    const curAtk = dice.stats.atk + (lv - 1) * dice.grow.atk;
+    const nextAtk = dice.stats.atk + lv * dice.grow.atk;
+    const curSpd = dice.stats.speed + (lv - 1) * dice.grow.speed;
+    const nextSpd = dice.stats.speed + lv * dice.grow.speed;
+
+    let specialHTML = '';
+    if (dice.special) {
+        const curValue = (dice.special.value + (lv - 1) * dice.special.grow).toFixed(1).replace(/\.0$/, '');
+        const nextValue = (dice.special.value + lv * dice.special.grow).toFixed(1).replace(/\.0$/, '');
+        specialHTML = `
             <div class="text-xs text-slate-400 mt-2">${dice.special.label}</div>
             <div class="text-lg font-bold text-yellow-400">${curValue}${dice.special.unit} → ${nextValue}${dice.special.unit}</div>
         `;
-            }
+    }
 
-            // 2. 更新基礎資訊
-            document.getElementById('u-name').innerText = dice.name + " 骰子";
-            document.getElementById('u-quality').innerText = `${q.name} 品質`;
-            document.getElementById('u-lv-now').innerText = `Lv. ${lv}`;
-            document.getElementById('u-atk').innerHTML = `
+    // 2. 更新基礎資訊
+    document.getElementById('u-name').innerText = dice.name + " 骰子";
+    document.getElementById('u-quality').innerText = `${q.name} 品質`;
+    document.getElementById('u-quality').style.color = q.color; // 讓品質文字也變色
+    document.getElementById('u-lv-now').innerText = `Lv. ${lv}`;
+    document.getElementById('u-atk').innerHTML = `
         <div class="text-xs text-slate-400">基礎攻擊</div>
         <div class="text-lg font-bold text-green-400">${curAtk} → ${nextAtk}</div>
         <div class="text-xs text-slate-400 mt-2">攻擊間隔 (ms)</div>
@@ -760,36 +770,49 @@
         ${specialHTML} 
     `;
 
-            // --- 3. 新增：顯示升級所需的資源對比 ---
-            const fragText = document.getElementById('u-req-fragments');
-            const goldReqText = document.getElementById('u-req-gold');
+    // 3. 資源對比
+    const fragText = document.getElementById('u-req-fragments');
+    const goldReqText = document.getElementById('u-req-gold');
+    const hasEnoughFrags = count >= req[0];
+    fragText.innerHTML = `<span class="${hasEnoughFrags ? 'text-green-400' : 'text-red-500'}">${count}</span> / ${req[0]}`;
+    const hasEnoughGold = currentBalance >= req[1];
+    goldReqText.innerHTML = `<span class="${hasEnoughGold ? 'text-yellow-400' : 'text-red-500'}">${req[1].toLocaleString()}</span>`;
 
-            // 碎片顯示： 目前數量 / 需求數量
-            const hasEnoughFrags = count >= req[0];
-            fragText.innerHTML = `<span class="${hasEnoughFrags ? 'text-green-400' : 'text-red-500'}">${count}</span> / ${req[0]}`;
+    // 4. 按鈕狀態
+    const upgradeBtn = document.getElementById('btn-upgrade');
+    const canAfford = hasEnoughFrags && hasEnoughGold;
+    upgradeBtn.disabled = !canAfford || lv >= 10;
 
-            // 鑽石顯示： 直接顯示需求金額，不夠就變紅
-            const hasEnoughGold = currentBalance >= req[1];
-            goldReqText.innerHTML = `<span class="${hasEnoughGold ? 'text-yellow-400' : 'text-red-500'}">${req[1].toLocaleString()}</span>`;
+    if (lv >= 10) {
+        upgradeBtn.innerText = '已達最大等級';
+        upgradeBtn.className = "flex-1 bg-slate-600 py-3 rounded-xl font-bold opacity-50";
+    } else {
+        upgradeBtn.innerText = canAfford ? '確認升級' : '資源不足';
+        upgradeBtn.className = `flex-1 py-3 rounded-xl font-bold transition-colors ${canAfford ? 'bg-green-600 hover:bg-green-500' : 'bg-slate-700 text-slate-400'}`;
+    }
 
-            // 4. 按鈕狀態 (修正判斷)
-            const upgradeBtn = document.getElementById('btn-upgrade');
-            const canAfford = hasEnoughFrags && hasEnoughGold;
+    // --- 5. 強制繪製骰子 ---
+    const iconContainer = document.getElementById('u-icon');
+    const canvas = document.getElementById('u-canvas');
+    if (canvas && iconContainer) {
+        const ctx = canvas.getContext('2d');
+        const size = canvas.width;
 
-            upgradeBtn.disabled = !canAfford || lv >= 10;
+        // 設定邊框顏色與背景
+        iconContainer.style.borderColor = q.color;
+        iconContainer.style.backgroundColor = "#ffffff";
 
-            if (lv >= 10) {
-                upgradeBtn.innerText = '已達最大等級';
-                upgradeBtn.className = "flex-1 bg-slate-600 py-3 rounded-xl font-bold opacity-50";
-            } else {
-                upgradeBtn.innerText = canAfford ? '確認升級' : '資源不足';
-                // 根據是否可支付切換按鈕顏色
-                upgradeBtn.className = `flex-1 py-3 rounded-xl font-bold transition-colors ${canAfford ? 'bg-green-600 hover:bg-green-500' : 'bg-slate-700 text-slate-400'}`;
-            }
+        // 清除畫布並填白底
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, size, size);
 
-            document.getElementById('upgradeOverlay').classList.remove('hidden');
-        }
+        // 呼叫你的繪圖函式
+        drawDiceFeature(ctx, 0, 0, size, dice.pattern || dice.id, dice.baseColor);
+        drawDiceStars(ctx, 0, 0, size, 1, "#333333");
+    }
 
+    document.getElementById('upgradeOverlay').classList.remove('hidden');
+}
         function confirmUpgrade() {
             if (!tempUpgradeId) return;
             const lv = userData.diceLevels[tempUpgradeId] || 1;

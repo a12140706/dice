@@ -181,71 +181,71 @@
             // --- Common (普通) ---
             {
                 id: 'fire', name: '火', quality: 'common', baseColor: '#ef4444', pattern: 'fire',
-                stats: { atk: 15, speed: 50 }, grow: { atk: 5, speed: -1 },
+                stats: { atk: 18, speed: 55 }, grow: { atk: 6, speed: -1 },
                 special: { label: '濺射範圍', value: 1.0, unit: '格', grow: 0.1 }
             },
             {
                 id: 'wind', name: '風', quality: 'common', baseColor: '#10b981', pattern: 'wind',
-                stats: { atk: 10, speed: 20 }, grow: { atk: 3, speed: -2 },
+                stats: { atk: 8, speed: 35 }, grow: { atk: 2, speed: -1.5 }, // 削弱基礎，讓出前期霸主位置
                 special: { label: '連擊機率', value: 10, unit: '%', grow: 3 }
             },
             {
                 id: 'ice', name: '冰', quality: 'common', baseColor: '#3b82f6', pattern: 'ice',
-                stats: { atk: 8, speed: 60 }, grow: { atk: 2, speed: -1 },
-                special: { label: '緩速效果', value: 15, unit: '%', grow: 5 }
+                stats: { atk: 5, speed: 60 }, grow: { atk: 1, speed: -1 },
+                special: { label: '緩速效果', value: 20, unit: '%', grow: 2 }
             },
             {
                 id: 'electric', name: '電', quality: 'common', baseColor: '#f59e0b', pattern: 'electric',
-                stats: { atk: 7, speed: 40 }, grow: { atk: 2, speed: -1 },
+                stats: { atk: 6, speed: 45 }, grow: { atk: 2, speed: -1 },
                 special: { label: '連鎖目標', value: 3, unit: '體', grow: 1 }
             },
             {
                 id: 'poison', name: '毒', quality: 'common', baseColor: '#008000', pattern: 'poison',
-                stats: { atk: 6, speed: 45 }, grow: { atk: 2, speed: -1 },
-                special: { label: '中毒傷害', value: 5, unit: 'pt', grow: 3 }
+                stats: { atk: 4, speed: 50 }, grow: { atk: 2, speed: -1 },
+                special: { label: '中毒傷害', value: 8, unit: 'pt', grow: 4 }
             },
 
             // --- Rare (稀有) ---
             {
                 id: 'lock', name: '鎖定', quality: 'rare', baseColor: '#64748b', pattern: 'lock',
-                stats: { atk: 10, speed: 55 }, grow: { atk: 4, speed: -1 },
-                special: { label: '禁錮時長', value: 0.5, unit: '秒', grow: 0.2 }
+                stats: { atk: 12, speed: 55 }, grow: { atk: 4, speed: -1 },
+                special: { label: '禁錮時長', value: 0.8, unit: '秒', grow: 0.2 }
             },
 
             // --- Epic (史詩) ---
             {
                 id: 'teleport', name: '傳送', quality: 'epic', baseColor: '#8b5cf6', pattern: 'teleport',
-                stats: { atk: 5, speed: 65 }, grow: { atk: 2, speed: -1 },
-                special: { label: '傳送回終點', value: 5, unit: '%', grow: 2 }
+                stats: { atk: 10, speed: 65 }, grow: { atk: 3, speed: -1 },
+                special: { label: '傳送回起點', value: 5, unit: '%', grow: 2 }
             },
             {
                 id: 'gear', name: '齒輪', quality: 'epic', baseColor: '#475569', pattern: 'gear',
-                stats: { atk: 12, speed: 50 }, grow: { atk: 6, speed: -1 },
-                special: { label: '連結加成', value: 10, unit: '%', grow: 5 }
+                stats: { atk: 15, speed: 50 }, grow: { atk: 8, speed: -1 },
+                special: { label: '連結加成', value: 12, unit: '%', grow: 6 }
             },
 
             // --- Legend (傳說) ---
             {
                 id: 'joker', name: '小丑', quality: 'legend', baseColor: '#f87171', pattern: 'joker',
                 stats: { atk: 5, speed: 50 }, grow: { atk: 1, speed: 0 },
-                special: { label: '繼承比例', value: 80, unit: '%', grow: 2 }
+                special: { label: '繼承比例', value: 80, unit: '%', grow: 2 } // 依照你的測試保留 80%
             },
             {
                 id: 'growth', name: '成長', quality: 'legend', baseColor: '#f472b6', pattern: 'growth',
-                stats: { atk: 10, speed: 50 }, grow: { atk: 5, speed: -1 },
-                special: { label: '成長時間', value: 60, unit: '秒', grow: -2 }
+                stats: { atk: 5, speed: 50 }, grow: { atk: 1, speed: -1 },
+                special: { label: '成長時間', value: 40, unit: '秒', grow: -2 } // 因應節奏調快，縮短至 40 秒
             },
             {
                 id: 'sun', name: '太陽', quality: 'legend', baseColor: '#fbbf24', pattern: 'sun',
-                stats: { atk: 25, speed: 55 }, grow: { atk: 12, speed: -0.5 },
-                special: { label: '濺射傷害', value: 100, unit: '%', grow: 20 }
+                stats: { atk: 35, speed: 55 }, grow: { atk: 15, speed: -0.5 },
+                special: { label: '濺射傷害', value: 100, unit: '%', grow: 25 }
             },
 
             // --- Mythic (神話) ---
             {
                 id: 'galaxy', name: '銀河', quality: 'mythic', baseColor: '#6366f1', pattern: 'galaxy',
-                stats: { atk: 40, speed: 45 }, grow: { atk: 20, speed: -1 },
-                special: { label: '黑洞吞噬', value: 1, unit: '%', grow: 0.5 }
+                stats: { atk: 60, speed: 50 }, grow: { atk: 30, speed: -1 },
+                special: { label: '黑洞吞噬', value: 2, unit: '%', grow: 1 }
             }
         ];
 
@@ -799,19 +799,40 @@
         function updateWave() {
             if (!waveState.isWaiting) {
                 waveState.timer++;
-                if (waveState.timer >= 30) {
-                    if (battleState.wave % 10 === 0 && waveState.spawnedCount === 0) { spawnBoss(); waveState.spawnedCount = waveState.totalEnemiesPerWave; }
-                    else if (waveState.spawnedCount < waveState.totalEnemiesPerWave) { spawnEnemy(); waveState.spawnedCount++; waveState.timer = 0; }
-                    else if (enemies.length === 0) { waveState.isWaiting = true; waveState.timer = 0; }
+
+                // --- 新增：動態計算生怪速度 ---
+                // 每過 1 層減少 1 幀間隔，最快維持在 10 幀生一隻 (可自行調整)
+                let currentSpawnInterval = Math.max(10, 30 - Math.floor(battleState.wave));
+
+                if (waveState.timer >= currentSpawnInterval) {
+                    if (battleState.wave % 10 === 0 && waveState.spawnedCount === 0) {
+                        spawnBoss();
+                        waveState.spawnedCount = waveState.totalEnemiesPerWave;
+                    }
+                    else if (waveState.spawnedCount < waveState.totalEnemiesPerWave) {
+                        spawnEnemy();
+                        waveState.spawnedCount++;
+                        waveState.timer = 0;
+                    }
+                    else if (enemies.length === 0) {
+                        waveState.isWaiting = true;
+                        waveState.timer = 0;
+                    }
                 }
             } else {
                 waveState.timer++;
+                // 這裡維持 60 幀 (約 1 秒) 的過場等待，讓玩家有時間喘口氣合成骰子
                 if (waveState.timer >= 60) {
                     if (battleState.wave >= 20) {
-                        handleGameOver(true); // 觸發勝利結算
-                        return; // 停止後續邏輯，防止遊戲繼續跑
+                        handleGameOver(true);
+                        return;
                     }
-                    battleState.wave++; waveState.spawnedCount = 0; waveState.totalEnemiesPerWave += 6; waveState.isWaiting = false; waveState.timer = 0; updateUI();
+                    battleState.wave++;
+                    waveState.spawnedCount = 0;
+                    waveState.totalEnemiesPerWave += 5;
+                    waveState.isWaiting = false;
+                    waveState.timer = 0;
+                    updateUI();
                 }
             }
         }
