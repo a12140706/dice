@@ -606,6 +606,7 @@
         function spawnBoss() {
             // 取得當前關卡，若無則預設為 1
             const level = userData.unlockLevel || 1;
+            const wave = Number(battleState.wave) || 1;
             // 隨機選取 Boss 種類
             const typeKeys = Object.keys(BOSS_TYPES);
             const type = typeKeys[Math.floor(Math.random() * typeKeys.length)];
