@@ -187,6 +187,55 @@ body, html {
         </button>
     </div>
     <script>
+        const AudioManager = {
+    ctx: new (window.AudioContext || window.webkitAudioContext)(),
+    buffers: {},
+
+    // 預加載音效 (傳入名稱與路徑)
+    async init() {
+        const sounds = {
+            'hit': 'dice-sound/hit.wav'
+            // 以後可以增加更多，例如 'summon': 'dice-sound/summon.wav'
+        };
+
+        for (const [name, url] of Object.entries(sounds)) {
+            try {
+                const response = await fetch(url);
+                const arrayBuffer = await response.arrayBuffer();
+                this.buffers[name] = await this.ctx.decodeAudioData(arrayBuffer);
+                console.log(`音效加載成功: ${name}`);
+            } catch (e) {
+                console.error(`音效加載失敗: ${name}`, e);
+            }
+        }
+    },
+
+    // 播放打擊音效
+    playHit() {
+        // 如果靜音或尚未加載，則返回
+        if (!this.buffers['hit'] || (userData.settings && !userData.settings.sfx)) return;
+
+        // iPhone 解鎖邏輯
+        if (this.ctx.state === 'suspended') {
+            this.ctx.resume();
+        }
+
+        const source = this.ctx.createBufferSource();
+        source.buffer = this.buffers['hit'];
+
+        // 設定音量 (15個骰子一起打，音量一定要小，建議 0.05 ~ 0.1)
+        const gainNode = this.ctx.createGain();
+        gainNode.gain.value = 0.08; 
+
+        source.connect(gainNode);
+        gainNode.connect(this.ctx.destination);
+        source.start(0);
+    }
+};
+
+// 頁面加載時執行初始化
+AudioManager.init();
+
         const QUALITIES = {
             common: { name: '普通', color: '#ffffff', chance: 0.60 },   // 60% 機率
             rare: { name: '稀有', color: '#3b82f6', chance: 0.25 },   // 25% 機率
@@ -692,61 +741,69 @@ body, html {
             });
         }
         // 【撞擊端】處理：單體傷害、功能性效果 (減速、中毒、傳送、連鎖)
-        function applyHitEffect(p) {
-            const target = p.target;
-            if (!target || target.hp <= 0) return;
+       // 【撞擊端】處理：單體傷害、功能性效果
+function applyHitEffect(p) {
+    const target = p.target;
+    if (!target || target.hp <= 0) return;
 
-            // 1. 基礎傷害
-            target.hp -= p.damage;
-            if (damagePopups.length < 20) {
-                damagePopups.push({ x: target.x, y: target.y, val: Math.floor(p.damage), life: 30 });
+    // --- 新增：觸發打擊音效 ---
+    // 這裡呼叫我們之前寫好的專業 Web Audio API 播放器
+    if (typeof AudioManager !== 'undefined' && AudioManager.playHit) {
+        AudioManager.playHit();
+    }
+
+    // 1. 基礎傷害
+    target.hp -= p.damage;
+    if (damagePopups.length < 20) {
+        damagePopups.push({ x: target.x, y: target.y, val: Math.floor(p.damage), life: 30 });
+    }
+
+    // 2. 執行功能性效果
+    const spec = getDiceSpecialValue(p.diceId);
+    switch (p.diceId) {
+        case 'ice':
+            target.speed = Math.max(0.3, 1.5 * (1 - spec / 100));
+            clearTimeout(target.iceTimer);
+            target.iceTimer = setTimeout(() => { target.speed = 1.5; }, 1000);
+            break;
+        case 'lock':
+            if (Math.random() < 0.2) {
+                target.speed = 0;
+                setTimeout(() => { target.speed = 1.5; }, spec * 1000);
             }
-
-            // 2. 執行功能性效果
-            const spec = getDiceSpecialValue(p.diceId);
-            switch (p.diceId) {
-                case 'ice':
-                    target.speed = Math.max(0.3, 1.5 * (1 - spec / 100));
-                    clearTimeout(target.iceTimer);
-                    target.iceTimer = setTimeout(() => { target.speed = 1.5; }, 1000);
-                    break;
-                case 'lock':
-                    if (Math.random() < 0.2) {
-                        target.speed = 0;
-                        setTimeout(() => { target.speed = 1.5; }, spec * 1000);
+            break;
+        case 'electric':
+            // 電力連鎖 (撞擊才跳電，視覺比較自然)
+            enemies.forEach(e => {
+                if (e !== target && e.hp > 0 && Math.hypot(e.x - target.x, e.y - target.y) < 100) {
+                    let chainDmg = p.damage * 0.5;
+                    e.hp -= chainDmg;
+                    e.virtualHp -= chainDmg;
+                    if (damagePopups.length < 10) {
+                        damagePopups.push({ x: e.x, y: e.y, val: Math.floor(chainDmg), life: 20, color: "#fde047" });
                     }
-                    break;
-                case 'electric':
-                    // 電力連鎖 (撞擊才跳電，視覺比較自然)
-                    enemies.forEach(e => {
-                        if (e !== target && e.hp > 0 && Math.hypot(e.x - target.x, e.y - target.y) < 100) {
-                            let chainDmg = p.damage * 0.5;
-                            e.hp -= chainDmg;
-                            e.virtualHp -= chainDmg;
-                            if (damagePopups.length < 10) {
-                                damagePopups.push({ x: e.x, y: e.y, val: Math.floor(chainDmg), life: 20, color: "#fde047" });
-                            }
-                        }
-                    });
-                    break;
-                case 'poison':
-                    target.poisonStacks = (target.poisonStacks || 0) + 1;
-                    break;
-                case 'teleport':
-                    if (Math.random() < (spec / 100) && !target.isBoss) {
-                        target.x = path[0].x; target.y = path[0].y; target.pathIndex = 1;
-                    }
-                    break;
-            }
-
-            // 3. 統一清理死亡怪物 (移除 updateUI 避免頻繁重繪)
-            for (let i = enemies.length - 1; i >= 0; i--) {
-                if (enemies[i].hp <= 0) {
-                    battleState.sp += enemies[i].rewardSp || 10;
-                    enemies.splice(i, 1);
+                    // 如果電力連鎖也想要有聲音，可以在這裡也加一個極小聲的 playHit
                 }
+            });
+            break;
+        case 'poison':
+            target.poisonStacks = (target.poisonStacks || 0) + 1;
+            break;
+        case 'teleport':
+            if (Math.random() < (spec / 100) && !target.isBoss) {
+                target.x = path[0].x; target.y = path[0].y; target.pathIndex = 1;
             }
+            break;
+    }
+
+    // 3. 統一清理死亡怪物
+    for (let i = enemies.length - 1; i >= 0; i--) {
+        if (enemies[i].hp <= 0) {
+            battleState.sp += enemies[i].rewardSp || 10;
+            enemies.splice(i, 1);
         }
+    }
+}
         function updateEnemies() {
             for (let i = enemies.length - 1; i >= 0; i--) {
                 let e = enemies[i];
