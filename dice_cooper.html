@@ -69,14 +69,20 @@
 
         #header-info {
             flex-shrink: 0;
+            padding-top: max(12px, env(safe-area-inset-top));
+            padding-left: 12px;
+            padding-right: 12px;
+            padding-bottom: 12px;
         }
 
         #footer-controls {
             flex-shrink: 0;
             padding: 12px;
-            padding-bottom: env(safe-area-inset-bottom, 20px);
+            padding-bottom: max(20px, env(safe-area-inset-bottom, 20px));
             background: rgba(15, 23, 42, 0.95);
             border-top: 1px solid rgba(51, 65, 85, 0.5);
+            z-index: 50;
+            /* Ensure on top */
         }
 
         #canvas-container {
@@ -1427,6 +1433,53 @@
 
         function initUI() {
             updateUI();
+        }
+
+        function resizeCanvas() {
+            const container = document.getElementById('canvas-container');
+            if (container) {
+                canvas.width = container.clientWidth;
+                canvas.height = container.clientHeight;
+                // 重新計算 Slot 位置
+                grid.slotSize = Math.floor(canvas.width / 6); // 寬度分給5格+間距
+                grid.padding = 8;
+                // 依據寬度調整，但不超過某個大小
+                if (grid.slotSize > 70) grid.slotSize = 70;
+            }
+        }
+
+        function init() {
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            setupTouchEvents();
+
+            initUI();
+
+            // 初始化路徑
+            const w = canvas.width;
+            const h = canvas.height;
+            const midY = h / 2;
+            const gap = 50;
+
+            paths.p1 = [
+                { x: w - gap, y: h - gap },
+                { x: gap, y: h - gap },
+                { x: gap, y: midY + 20 },
+                { x: w / 2, y: midY },
+                { x: w + 50, y: midY }
+            ];
+            paths.p2 = [
+                { x: w - gap, y: gap },
+                { x: gap, y: gap },
+                { x: gap, y: midY - 20 },
+                { x: w / 2, y: midY },
+                { x: w + 50, y: midY }
+            ];
+
+            startFirebaseSync();
+
+            battleState.isStarted = true;
+            requestAnimationFrame(gameLoop);
         }
 
         // 啟動
