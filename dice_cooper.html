@@ -1042,9 +1042,15 @@
                 drawPortal(ctx, tx(paths.p2[0].x), ty(paths.p2[0].y), '#f472b6', angle, true);
             }
 
-            // 2. 畫格子 (傳入是否需要翻轉渲染，但在 tx/ty 已經全域處理)
-            drawDiceGrid(mySlots, 'p1');
-            drawDiceGrid(partnerSlots, 'p2');
+            // 2. 畫格子與骰子
+            // 根據角色決定顯示位置
+            // Host: my=p1(Bottom), partner=p2(Top)
+            // Guest: my=p2(Top->Flip->Bottom), partner=p1(Bottom->Flip->Top)
+            const myOwner = role === 'host' ? 'p1' : 'p2';
+            const partnerOwner = role === 'host' ? 'p2' : 'p1';
+
+            drawDiceGrid(mySlots, myOwner);
+            drawDiceGrid(partnerSlots, partnerOwner);
 
             // 3. 畫敵人
             enemies.forEach(e => {
