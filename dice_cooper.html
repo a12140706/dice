@@ -376,17 +376,20 @@
 
                 // 共同狀態
                 if (data.wave) battleState.wave = data.wave;
-                if (data.hp) battleState.hp = data.hp;
+                if (data.hp !== undefined) battleState.hp = data.hp;
 
                 // 監聽結束信號
-                if (data.gameover === true && battleState.hp <= 0 && battleState.isStarted) {
+                // 只要收到 gameover 為 true 就結束，不需檢查本地 HP (避免同步落差)
+                if (data.gameover === true && battleState.isStarted) {
+                    battleState.hp = 0; // 強制歸零
                     handleGameOver();
                 }
 
                 // 敵人同步 (Host 寫入，Guest 讀取)
                 if (role === 'guest' && data.enemies) {
-                    // 為了平滑移動，可以做一點插值，這裡簡化直接覆蓋
                     enemies = data.enemies || [];
+                    // 確保敵人物件的一些方法能運作 (雖然 draw 只是讀屬性，但如果 logic 依然跑...)
+                    // Guest 的 updateGuestLogic 應該不執行任何影響狀態的邏輯
                 }
 
                 if (role === 'host') {
