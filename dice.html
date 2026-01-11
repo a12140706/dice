@@ -14,16 +14,18 @@
             overflow: hidden;
             height: 100vh;
         }
-.pb-safe {
-    /* env(safe-area-inset-bottom) 是 iOS 專用變數 */
-    /* 我們保留原本的 py-3 (12px)，並額外加上安全區域的高度 */
-    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom)) !important;
-}
 
-/* 確保整個導航列高度自動撐開 */
-nav {
-    min-height: calc(60px + env(safe-area-inset-bottom));
-}
+        .pb-safe {
+            /* env(safe-area-inset-bottom) 是 iOS 專用變數 */
+            /* 我們保留原本的 py-3 (12px)，並額外加上安全區域的高度 */
+            padding-bottom: calc(0.75rem + env(safe-area-inset-bottom)) !important;
+        }
+
+        /* 確保整個導航列高度自動撐開 */
+        nav {
+            min-height: calc(60px + env(safe-area-inset-bottom));
+        }
+
         .dice-card {
             transition: transform 0.1s;
             position: relative;
@@ -119,6 +121,7 @@ nav {
         .animate-popup {
             animation: popup 0.3s ease-out forwards;
         }
+        
     </style>
 </head>
 
@@ -128,7 +131,7 @@ nav {
             <span class="text-yellow-400 font-bold text-lg">💎</span>
             <span id="goldText" class="font-mono text-xl text-yellow-500 font-bold">0</span>
         </div>
-        <p class="text-[10px] text-slate-500">測試版本V0.3.0</p>
+        <p class="text-[10px] text-slate-500">測試版本V0.3.1</p>
         <a href="index.html" class="no-underline">
             <button
                 class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded-lg text-xs font-bold border border-slate-500 transition-colors">
@@ -231,10 +234,10 @@ nav {
                     <span class="absolute right-4 bottom-2 text-6xl opacity-20">⚔️</span>
                     <div
                         class="absolute top-2 right-2 bg-black/50 px-2 py-0.5 rounded text-[10px] font-bold text-white">
-                        SOON</div>
+                        未完成</div>
                 </button>
 
-                <button onclick="alert('合作模式即將開放！')"
+                <button onclick="openCoopModal()"
                     class="relative overflow-hidden group bg-gradient-to-r from-emerald-600 to-emerald-800 p-5 rounded-2xl text-left shadow-lg active:scale-95 transition-all opacity-80">
                     <div class="relative z-10">
                         <h3 class="text-xl font-black mb-1">共同合作</h3>
@@ -243,10 +246,50 @@ nav {
                     <span class="absolute right-4 bottom-2 text-6xl opacity-20">🤝</span>
                     <div
                         class="absolute top-2 right-2 bg-black/50 px-2 py-0.5 rounded text-[10px] font-bold text-white">
-                        SOON</div>
+                        開始遊玩!</div>
                 </button>
             </div>
         </div>
+        <div id="coop-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div class="bg-slate-800 w-full max-w-sm rounded-3xl p-6 border border-emerald-500/30 shadow-2xl">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-black text-white">合作模式</h2>
+            <button onclick="closeCoopModal()" class="text-slate-400 text-2xl">&times;</button>
+        </div>
+
+        <div id="coop-initial-actions" class="space-y-4">
+            <button onclick="createCoopRoom()"
+                class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95">
+                建立新房間
+            </button>
+
+            <div class="relative py-2">
+                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-600"></div></div>
+                <div class="relative flex justify-center text-xs uppercase"><span class="bg-slate-800 px-2 text-slate-400">或者加入他人</span></div>
+            </div>
+
+            <div class="flex gap-2">
+                <input type="text" id="room-code-input" maxlength="4" placeholder="請輸入4位房號"
+                    class="flex-1 bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white text-center font-mono text-xl focus:border-emerald-500 outline-none">
+                <button onclick="joinCoopRoom()"
+                    class="bg-slate-100 hover:bg-white text-slate-900 font-bold px-6 rounded-xl transition-all active:scale-95">
+                    加入
+                </button>
+            </div>
+        </div>
+
+        <div id="coop-waiting-section" class="hidden flex flex-col items-center py-4">
+            <p class="text-slate-400 text-sm mb-1">房間號碼</p>
+            <h1 id="display-room-id" class="text-5xl font-black text-white tracking-widest mb-4">----</h1>
+            <p id="lobby-status-text" class="text-emerald-400 font-medium animate-pulse mb-6">等待隊友加入...</p>
+            
+            <button id="host-start-btn" onclick="hostStartGame()" 
+                class="hidden w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95">
+                開始遊戲
+            </button>
+        </div>
+    </div>
+</div>
 
         <div id="page-inventory" class="hidden space-y-6">
             <div
@@ -270,25 +313,26 @@ nav {
         </div>
     </div>
 
-    <div class="fixed bottom-0 left-0 w-full bg-slate-900 border-t border-slate-700 px-6 py-3 flex justify-between items-center z-40 pb-safe">
-    <button onclick="showPage('shop')" id="nav-shop"
-        class="flex flex-col items-center gap-1 text-slate-400 transition-colors">
-        <span class="text-2xl">🛒</span>
-        <span class="text-[10px] font-bold">商店</span>
-    </button>
+    <div
+        class="fixed bottom-0 left-0 w-full bg-slate-900 border-t border-slate-700 px-6 py-3 flex justify-between items-center z-40 pb-safe">
+        <button onclick="showPage('shop')" id="nav-shop"
+            class="flex flex-col items-center gap-1 text-slate-400 transition-colors">
+            <span class="text-2xl">🛒</span>
+            <span class="text-[10px] font-bold">商店</span>
+        </button>
 
-    <button onclick="showPage('battle')" id="nav-battle"
-        class="flex flex-col items-center gap-1 text-blue-400 transition-colors">
-        <span class="text-3xl">⚔️</span>
-        <span class="text-[10px] font-bold">戰鬥</span>
-    </button>
+        <button onclick="showPage('battle')" id="nav-battle"
+            class="flex flex-col items-center gap-1 text-blue-400 transition-colors">
+            <span class="text-3xl">⚔️</span>
+            <span class="text-[10px] font-bold">戰鬥</span>
+        </button>
 
-    <button onclick="showPage('inventory')" id="nav-inventory"
-        class="flex flex-col items-center gap-1 text-slate-400 transition-colors">
-        <span class="text-2xl">🎲</span>
-        <span class="text-[10px] font-bold">備戰</span>
-    </button>
-</div>
+        <button onclick="showPage('inventory')" id="nav-inventory"
+            class="flex flex-col items-center gap-1 text-slate-400 transition-colors">
+            <span class="text-2xl">🎲</span>
+            <span class="text-[10px] font-bold">備戰</span>
+        </button>
+    </div>
 
     <div id="rewardOverlay" class="fixed inset-0 bg-black/90 hidden z-50 flex items-center justify-center p-6">
         <div class="bg-slate-800 w-full max-w-sm rounded-3xl p-6 border border-slate-600 animate-popup">
@@ -341,8 +385,27 @@ nav {
             <button onclick="closeUpgradeUI()" class="text-slate-500 text-sm">返回</button>
         </div>
     </div>
-
+    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-database-compat.js"></script>
     <script>
+        const _k = ["AIzaSyDSRfVA", "uWCWCUd1NJop", "J6wHvsqsAM4UzJA"];
+
+        const firebaseConfig = {
+            apiKey: _k.join(''),
+            authDomain: "game-80d68.firebaseapp.com",
+            projectId: "game-80d68",
+            storageBucket: "game-80d68.firebasestorage.app",
+            messagingSenderId: "636332967920",
+            appId: "1:636332967920:web:29e5600daf4db0ab613f35",
+            measurementId: "G-MJZ4PGEHSQ"
+        };
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database(); // 使用 Realtime Database
+        const fs = firebase.firestore(); // 依然可以用來存玩家的等級、骰子等長期資料
+
         // --- 1. 基礎資料定義 ---
         const QUALITIES = {
             common: { name: '普通', color: '#9ca3af', chance: 0.50 },
@@ -356,78 +419,207 @@ nav {
             // --- Common (普通) ---
             {
                 id: 'fire', name: '火', quality: 'common', baseColor: '#ef4444', pattern: 'fire',
-                stats: { atk: 15, speed: 50 }, grow: { atk: 5, speed: -1 },
+                stats: { atk: 18, speed: 55 }, grow: { atk: 6, speed: -1 },
                 special: { label: '濺射範圍', value: 1.0, unit: '格', grow: 0.1 }
             },
             {
                 id: 'wind', name: '風', quality: 'common', baseColor: '#10b981', pattern: 'wind',
-                stats: { atk: 10, speed: 20 }, grow: { atk: 3, speed: -2 },
+                stats: { atk: 8, speed: 35 }, grow: { atk: 2, speed: -1.5 }, // 削弱基礎，讓出前期霸主位置
                 special: { label: '連擊機率', value: 10, unit: '%', grow: 3 }
             },
             {
                 id: 'ice', name: '冰', quality: 'common', baseColor: '#3b82f6', pattern: 'ice',
-                stats: { atk: 8, speed: 60 }, grow: { atk: 2, speed: -1 },
-                special: { label: '緩速效果', value: 15, unit: '%', grow: 5 }
+                stats: { atk: 5, speed: 60 }, grow: { atk: 1, speed: -1 },
+                special: { label: '緩速效果', value: 20, unit: '%', grow: 2 }
             },
             {
                 id: 'electric', name: '電', quality: 'common', baseColor: '#f59e0b', pattern: 'electric',
-                stats: { atk: 7, speed: 40 }, grow: { atk: 2, speed: -1 },
+                stats: { atk: 6, speed: 45 }, grow: { atk: 2, speed: -1 },
                 special: { label: '連鎖目標', value: 3, unit: '體', grow: 1 }
             },
             {
                 id: 'poison', name: '毒', quality: 'common', baseColor: '#008000', pattern: 'poison',
-                stats: { atk: 6, speed: 45 }, grow: { atk: 2, speed: -1 },
-                special: { label: '中毒傷害', value: 5, unit: 'pt', grow: 3 }
+                stats: { atk: 4, speed: 50 }, grow: { atk: 2, speed: -1 },
+                special: { label: '中毒傷害', value: 8, unit: 'pt', grow: 4 }
             },
 
             // --- Rare (稀有) ---
             {
                 id: 'lock', name: '鎖定', quality: 'rare', baseColor: '#64748b', pattern: 'lock',
-                stats: { atk: 10, speed: 55 }, grow: { atk: 4, speed: -1 },
-                special: { label: '禁錮時長', value: 0.5, unit: '秒', grow: 0.2 }
+                stats: { atk: 12, speed: 55 }, grow: { atk: 4, speed: -1 },
+                special: { label: '禁錮時長', value: 0.8, unit: '秒', grow: 0.2 }
             },
 
             // --- Epic (史詩) ---
             {
                 id: 'teleport', name: '傳送', quality: 'epic', baseColor: '#8b5cf6', pattern: 'teleport',
-                stats: { atk: 5, speed: 65 }, grow: { atk: 2, speed: -1 },
-                special: { label: '傳送回終點', value: 5, unit: '%', grow: 2 }
+                stats: { atk: 10, speed: 65 }, grow: { atk: 3, speed: -1 },
+                special: { label: '傳送回起點', value: 5, unit: '%', grow: 2 }
             },
             {
                 id: 'gear', name: '齒輪', quality: 'epic', baseColor: '#475569', pattern: 'gear',
-                stats: { atk: 12, speed: 50 }, grow: { atk: 6, speed: -1 },
-                special: { label: '連結加成', value: 10, unit: '%', grow: 5 }
+                stats: { atk: 15, speed: 50 }, grow: { atk: 8, speed: -1 },
+                special: { label: '連結加成', value: 12, unit: '%', grow: 6 }
             },
 
             // --- Legend (傳說) ---
             {
                 id: 'joker', name: '小丑', quality: 'legend', baseColor: '#f87171', pattern: 'joker',
                 stats: { atk: 5, speed: 50 }, grow: { atk: 1, speed: 0 },
-                special: { label: '繼承比例', value: 80, unit: '%', grow: 2 }
+                special: { label: '繼承比例', value: 80, unit: '%', grow: 2 } // 依照你的測試保留 80%
             },
             {
                 id: 'growth', name: '成長', quality: 'legend', baseColor: '#f472b6', pattern: 'growth',
-                stats: { atk: 10, speed: 50 }, grow: { atk: 5, speed: -1 },
-                special: { label: '成長時間', value: 60, unit: '秒', grow: -2 }
+                stats: { atk: 5, speed: 50 }, grow: { atk: 1, speed: -1 },
+                special: { label: '成長時間', value: 40, unit: '秒', grow: -2 } // 因應節奏調快，縮短至 40 秒
             },
             {
                 id: 'sun', name: '太陽', quality: 'legend', baseColor: '#fbbf24', pattern: 'sun',
-                stats: { atk: 25, speed: 55 }, grow: { atk: 12, speed: -0.5 },
-                special: { label: '濺射傷害', value: 100, unit: '%', grow: 20 }
+                stats: { atk: 35, speed: 55 }, grow: { atk: 15, speed: -0.5 },
+                special: { label: '濺射傷害', value: 100, unit: '%', grow: 25 }
             },
 
             // --- Mythic (神話) ---
             {
                 id: 'galaxy', name: '銀河', quality: 'mythic', baseColor: '#6366f1', pattern: 'galaxy',
-                stats: { atk: 40, speed: 45 }, grow: { atk: 20, speed: -1 },
-                special: { label: '黑洞吞噬', value: 1, unit: '%', grow: 0.5 }
+                stats: { atk: 60, speed: 50 }, grow: { atk: 30, speed: -1 },
+                special: { label: '黑洞吞噬', value: 2, unit: '%', grow: 1 }
             }
         ];
 
         // --- 2. 資料載入 ---
         let currentBalance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
         let userData = null;
+        // 彈窗控制
+        function openCoopModal() {
+            document.getElementById('coop-modal').classList.remove('hidden');
+        }
 
+        function closeCoopModal() {
+            document.getElementById('coop-modal').classList.add('hidden');
+        }
+
+        // --- Firebase 合作邏輯 ---
+
+        // --- 房間管理變數 ---
+let currentRoomId = null;
+let isHost = false;
+
+// 1. 建立房間
+async function createCoopRoom() {
+    const roomId = Math.floor(1000 + Math.random() * 9000).toString();
+    currentRoomId = roomId;
+    isHost = true;
+
+    const roomData = {
+        roomId: roomId,
+        status: 'waiting',
+        gameStarted: false,
+        host: userData.userId || 'Guest_' + Math.random().toString(36).substr(2, 5),
+        createdAt: Date.now(),
+        wave: 1,
+        hp: 3,
+        players: {
+            p1: { uid: userData.userId || 'host', sp: 100, isReady: true }
+        }
+    };
+
+    try {
+        await firebase.database().ref('coop_rooms/' + roomId).set(roomData);
+        
+        // 切換 UI 到等待狀態
+        showLobbyUI(roomId, "等待隊友加入...");
+        
+        // 開始監聽房間變化
+        listenForRoomUpdates(roomId);
+    } catch (error) {
+        console.error("建立失敗", error);
+    }
+}
+
+// 2. 加入房間
+async function joinCoopRoom() {
+    const roomId = document.getElementById('room-code-input').value;
+    if (roomId.length !== 4) return;
+
+    const roomRef = firebase.database().ref('coop_rooms/' + roomId);
+    const snapshot = await roomRef.once('value');
+    const room = snapshot.val();
+
+    if (!room || room.status !== 'waiting') {
+        document.getElementById('room-code-input').classList.add('border-red-500');
+        return;
+    }
+
+    currentRoomId = roomId;
+    isHost = false;
+
+    await roomRef.child('players/p2').set({
+        uid: userData.userId || 'guest',
+        sp: 100,
+        isReady: true
+    });
+    
+    await roomRef.update({ status: 'ready' });
+
+    // 加入者也切換 UI 到等待狀態
+    showLobbyUI(roomId, "等待房主開始...");
+    listenForRoomUpdates(roomId);
+}
+
+// 3. UI 切換輔助
+function showLobbyUI(roomId, statusMsg) {
+    document.getElementById('coop-initial-actions').classList.add('hidden');
+    document.getElementById('coop-waiting-section').classList.remove('hidden');
+    document.getElementById('display-room-id').innerText = roomId;
+    document.getElementById('lobby-status-text').innerText = statusMsg;
+}
+
+// 4. 監聽房間狀態
+function listenForRoomUpdates(roomId) {
+    const roomRef = firebase.database().ref('coop_rooms/' + roomId);
+    roomRef.on('value', (snapshot) => {
+        const room = snapshot.val();
+        if (!room) return;
+
+        // 當 P2 加入且我是房主
+        if (room.status === 'ready' && isHost) {
+            document.getElementById('lobby-status-text').innerText = "隊友已就緒！";
+            document.getElementById('host-start-btn').classList.remove('hidden');
+        }
+
+        // 核心：當房主點擊開始，所有人都會執行進入遊戲
+        if (room.gameStarted === true) {
+            roomRef.off(); // 停止監聽
+            enterCoopBattle(roomId);
+        }
+    });
+}
+
+// 5. 房主按下開始
+function hostStartGame() {
+    if (!currentRoomId) return;
+    firebase.database().ref('coop_rooms/' + currentRoomId).update({
+        gameStarted: true,
+        status: 'playing'
+    });
+}
+
+// 進入戰鬥畫面
+// 進入戰鬥頁面 (跳轉到 dice_cooper.html)
+function enterCoopBattle(roomId) {
+    // 停止監聽，避免跳轉時重複觸發
+    firebase.database().ref('coop_rooms/' + roomId).off();
+    
+    // 帶上參數：roomId (房號) 和 role (角色：host 或 guest)
+    const role = isHost ? 'host' : 'guest';
+    const targetUrl = `dice_cooper.html?roomId=${roomId}&role=${role}`;
+    
+    console.log("正在跳轉至合作模式...", targetUrl);
+    
+    // 執行跳轉
+    window.location.href = targetUrl;
+}
         function initGameData() {
             let raw = localStorage.getItem('dice_game_data');
             let data = null;
@@ -739,38 +931,38 @@ nav {
             localStorage.setItem('sicbo_balance', currentBalance);
         }
 
-     function openUpgradeUI(id) {
-    tempUpgradeId = id;
-    const dice = ALL_DICES.find(d => d.id === id);
-    if (!dice) return;
+        function openUpgradeUI(id) {
+            tempUpgradeId = id;
+            const dice = ALL_DICES.find(d => d.id === id);
+            if (!dice) return;
 
-    const q = QUALITIES[dice.quality];
-    const lv = userData.diceLevels[id] || 1;
-    const count = userData.inventory[id] || 0;
-    const req = UPGRADE_CONFIG[lv] || [999, 999999999];
+            const q = QUALITIES[dice.quality];
+            const lv = userData.diceLevels[id] || 1;
+            const count = userData.inventory[id] || 0;
+            const req = UPGRADE_CONFIG[lv] || [999, 999999999];
 
-    // 1. 計算屬性
-    const curAtk = dice.stats.atk + (lv - 1) * dice.grow.atk;
-    const nextAtk = dice.stats.atk + lv * dice.grow.atk;
-    const curSpd = dice.stats.speed + (lv - 1) * dice.grow.speed;
-    const nextSpd = dice.stats.speed + lv * dice.grow.speed;
+            // 1. 計算屬性
+            const curAtk = dice.stats.atk + (lv - 1) * dice.grow.atk;
+            const nextAtk = dice.stats.atk + lv * dice.grow.atk;
+            const curSpd = dice.stats.speed + (lv - 1) * dice.grow.speed;
+            const nextSpd = dice.stats.speed + lv * dice.grow.speed;
 
-    let specialHTML = '';
-    if (dice.special) {
-        const curValue = (dice.special.value + (lv - 1) * dice.special.grow).toFixed(1).replace(/\.0$/, '');
-        const nextValue = (dice.special.value + lv * dice.special.grow).toFixed(1).replace(/\.0$/, '');
-        specialHTML = `
+            let specialHTML = '';
+            if (dice.special) {
+                const curValue = (dice.special.value + (lv - 1) * dice.special.grow).toFixed(1).replace(/\.0$/, '');
+                const nextValue = (dice.special.value + lv * dice.special.grow).toFixed(1).replace(/\.0$/, '');
+                specialHTML = `
             <div class="text-xs text-slate-400 mt-2">${dice.special.label}</div>
             <div class="text-lg font-bold text-yellow-400">${curValue}${dice.special.unit} → ${nextValue}${dice.special.unit}</div>
         `;
-    }
+            }
 
-    // 2. 更新基礎資訊
-    document.getElementById('u-name').innerText = dice.name + " 骰子";
-    document.getElementById('u-quality').innerText = `${q.name} 品質`;
-    document.getElementById('u-quality').style.color = q.color; // 讓品質文字也變色
-    document.getElementById('u-lv-now').innerText = `Lv. ${lv}`;
-    document.getElementById('u-atk').innerHTML = `
+            // 2. 更新基礎資訊
+            document.getElementById('u-name').innerText = dice.name + " 骰子";
+            document.getElementById('u-quality').innerText = `${q.name} 品質`;
+            document.getElementById('u-quality').style.color = q.color; // 讓品質文字也變色
+            document.getElementById('u-lv-now').innerText = `Lv. ${lv}`;
+            document.getElementById('u-atk').innerHTML = `
         <div class="text-xs text-slate-400">基礎攻擊</div>
         <div class="text-lg font-bold text-green-400">${curAtk} → ${nextAtk}</div>
         <div class="text-xs text-slate-400 mt-2">攻擊間隔 (ms)</div>
@@ -778,49 +970,49 @@ nav {
         ${specialHTML} 
     `;
 
-    // 3. 資源對比
-    const fragText = document.getElementById('u-req-fragments');
-    const goldReqText = document.getElementById('u-req-gold');
-    const hasEnoughFrags = count >= req[0];
-    fragText.innerHTML = `<span class="${hasEnoughFrags ? 'text-green-400' : 'text-red-500'}">${count}</span> / ${req[0]}`;
-    const hasEnoughGold = currentBalance >= req[1];
-    goldReqText.innerHTML = `<span class="${hasEnoughGold ? 'text-yellow-400' : 'text-red-500'}">${req[1].toLocaleString()}</span>`;
+            // 3. 資源對比
+            const fragText = document.getElementById('u-req-fragments');
+            const goldReqText = document.getElementById('u-req-gold');
+            const hasEnoughFrags = count >= req[0];
+            fragText.innerHTML = `<span class="${hasEnoughFrags ? 'text-green-400' : 'text-red-500'}">${count}</span> / ${req[0]}`;
+            const hasEnoughGold = currentBalance >= req[1];
+            goldReqText.innerHTML = `<span class="${hasEnoughGold ? 'text-yellow-400' : 'text-red-500'}">${req[1].toLocaleString()}</span>`;
 
-    // 4. 按鈕狀態
-    const upgradeBtn = document.getElementById('btn-upgrade');
-    const canAfford = hasEnoughFrags && hasEnoughGold;
-    upgradeBtn.disabled = !canAfford || lv >= 10;
+            // 4. 按鈕狀態
+            const upgradeBtn = document.getElementById('btn-upgrade');
+            const canAfford = hasEnoughFrags && hasEnoughGold;
+            upgradeBtn.disabled = !canAfford || lv >= 10;
 
-    if (lv >= 10) {
-        upgradeBtn.innerText = '已達最大等級';
-        upgradeBtn.className = "flex-1 bg-slate-600 py-3 rounded-xl font-bold opacity-50";
-    } else {
-        upgradeBtn.innerText = canAfford ? '確認升級' : '資源不足';
-        upgradeBtn.className = `flex-1 py-3 rounded-xl font-bold transition-colors ${canAfford ? 'bg-green-600 hover:bg-green-500' : 'bg-slate-700 text-slate-400'}`;
-    }
+            if (lv >= 10) {
+                upgradeBtn.innerText = '已達最大等級';
+                upgradeBtn.className = "flex-1 bg-slate-600 py-3 rounded-xl font-bold opacity-50";
+            } else {
+                upgradeBtn.innerText = canAfford ? '確認升級' : '資源不足';
+                upgradeBtn.className = `flex-1 py-3 rounded-xl font-bold transition-colors ${canAfford ? 'bg-green-600 hover:bg-green-500' : 'bg-slate-700 text-slate-400'}`;
+            }
 
-    // --- 5. 強制繪製骰子 ---
-    const iconContainer = document.getElementById('u-icon');
-    const canvas = document.getElementById('u-canvas');
-    if (canvas && iconContainer) {
-        const ctx = canvas.getContext('2d');
-        const size = canvas.width;
+            // --- 5. 強制繪製骰子 ---
+            const iconContainer = document.getElementById('u-icon');
+            const canvas = document.getElementById('u-canvas');
+            if (canvas && iconContainer) {
+                const ctx = canvas.getContext('2d');
+                const size = canvas.width;
 
-        // 設定邊框顏色與背景
-        iconContainer.style.borderColor = q.color;
-        iconContainer.style.backgroundColor = "#ffffff";
+                // 設定邊框顏色與背景
+                iconContainer.style.borderColor = q.color;
+                iconContainer.style.backgroundColor = "#ffffff";
 
-        // 清除畫布並填白底
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, size, size);
+                // 清除畫布並填白底
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(0, 0, size, size);
 
-        // 呼叫你的繪圖函式
-        drawDiceFeature(ctx, 0, 0, size, dice.pattern || dice.id, dice.baseColor);
-        drawDiceStars(ctx, 0, 0, size, 1, "#333333");
-    }
+                // 呼叫你的繪圖函式
+                drawDiceFeature(ctx, 0, 0, size, dice.pattern || dice.id, dice.baseColor);
+                drawDiceStars(ctx, 0, 0, size, 1, "#333333");
+            }
 
-    document.getElementById('upgradeOverlay').classList.remove('hidden');
-}
+            document.getElementById('upgradeOverlay').classList.remove('hidden');
+        }
         function confirmUpgrade() {
             if (!tempUpgradeId) return;
             const lv = userData.diceLevels[tempUpgradeId] || 1;

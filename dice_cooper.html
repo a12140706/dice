@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>隨機骰子 - 聯機合作模式</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-database-compat.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100dvh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #0f172a;
+            /* Slate-900 for desktop bg */
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        #game-wrapper {
+            width: 100%;
+            max-width: 500px;
+            /* Mobile width constraint */
+            height: 100%;
+            max-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            background-color: #020617;
+            position: relative;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+            margin: 0 auto;
+        }
+
+        /* 太陽爆炸光圈 */
+        .sun-explosion {
+            position: absolute;
+            border: 3px solid #fb923c;
+            background: rgba(251, 146, 60, 0.3);
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            animation: sunExplode 0.4s ease-out forwards;
+            z-index: 100;
+            box-shadow: 0 0 15px orange;
+        }
+
+        @keyframes sunExplode {
+            0% {
+                width: 0px;
+                height: 0px;
+                opacity: 1;
+            }
+
+            100% {
+                width: 130px;
+                height: 130px;
+                opacity: 0;
+            }
+        }
+
+        #header-info {
+            flex-shrink: 0;
+        }
+
+        #footer-controls {
+            flex-shrink: 0;
+            padding: 12px;
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+            background: rgba(15, 23, 42, 0.95);
+            border-top: 1px solid rgba(51, 65, 85, 0.5);
+        }
+
+        #canvas-container {
+            position: relative;
+            width: 100%;
+            flex-grow: 1;
+            overflow: hidden;
+            background: #000;
+        }
+
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #1e1e24 0%, #000000 100%);
+        }
+
+        .pb-safe {
+            padding-bottom: calc(0.75rem + env(safe-area-inset-bottom)) !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="game-wrapper">
+        <div id="header-info" class="p-3 flex justify-between items-center bg-slate-900/80 border-b border-slate-800">
+            <div class="flex items-center gap-4">
+                <span class="text-red-500 font-bold">HP: <span id="hpText">3</span></span>
+                <span class="text-blue-400 font-bold">SP: <span id="spText">100</span></span>
+            </div>
+            <div class="text-slate-400 font-bold text-xs">ROOM: <span id="room-id" class="text-emerald-500">----</span>
+            </div>
+            <div class="text-slate-400 font-bold text-sm">WAVE: <span id="waveText">1</span></div>
+        </div>
+
+        <div id="canvas-container">
+            <canvas id="gameCanvas"></canvas>
+        </div>
+
+        <div id="footer-controls" class="pb-safe">
+            <div class="flex flex-nowrap w-full gap-1 mb-4" id="powerUpButtons"></div>
+            <button onclick="handleSummonClick()"
+                class="w-full py-4 bg-blue-600 rounded-xl font-black text-xl shadow-lg active:scale-95 transition-all text-white">
+                召喚骰子 (<span id="summonCostText">10</span> SP)
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. 遊戲基礎資料 (整合 Dice Battle) ---
+        const QUALITIES = {
+            common: { name: '普通', color: '#ffffff', chance: 0.60 },
+            rare: { name: '稀有', color: '#3b82f6', chance: 0.25 },
+            epic: { name: '史詩', color: '#a855f7', chance: 0.10 },
+            legend: { name: '傳說', color: '#eab308', chance: 0.04 },
+            mythic: { name: '神話', color: '#ff00ff', chance: 0.01 }
+        };
+
+        const ALL_DICES = [
+            // --- Common ---
+            { id: 'fire', name: '火', quality: 'common', baseColor: '#ef4444', pattern: 'fire', stats: { atk: 18, speed: 55 }, grow: { atk: 6, speed: -1 }, special: { label: '濺射範圍', value: 1.0, unit: '格', grow: 0.1 } },
+            { id: 'wind', name: '風', quality: 'common', baseColor: '#10b981', pattern: 'wind', stats: { atk: 8, speed: 35 }, grow: { atk: 2, speed: -1.5 }, special: { label: '連擊機率', value: 10, unit: '%', grow: 3 } },
+            { id: 'ice', name: '冰', quality: 'common', baseColor: '#3b82f6', pattern: 'ice', stats: { atk: 5, speed: 60 }, grow: { atk: 1, speed: -1 }, special: { label: '緩速效果', value: 20, unit: '%', grow: 2 } },
+            { id: 'electric', name: '電', quality: 'common', baseColor: '#f59e0b', pattern: 'electric', stats: { atk: 6, speed: 45 }, grow: { atk: 2, speed: -1 }, special: { label: '連鎖目標', value: 3, unit: '體', grow: 1 } },
+            { id: 'poison', name: '毒', quality: 'common', baseColor: '#008000', pattern: 'poison', stats: { atk: 4, speed: 50 }, grow: { atk: 2, speed: -1 }, special: { label: '中毒傷害', value: 8, unit: 'pt', grow: 4 } },
+            // --- Rare ---
+            { id: 'lock', name: '鎖定', quality: 'rare', baseColor: '#64748b', pattern: 'lock', stats: { atk: 12, speed: 55 }, grow: { atk: 4, speed: -1 }, special: { label: '禁錮時長', value: 0.8, unit: '秒', grow: 0.2 } },
+            // --- Epic ---
+            { id: 'teleport', name: '傳送', quality: 'epic', baseColor: '#8b5cf6', pattern: 'teleport', stats: { atk: 10, speed: 65 }, grow: { atk: 3, speed: -1 }, special: { label: '傳送回起點', value: 5, unit: '%', grow: 2 } },
+            { id: 'gear', name: '齒輪', quality: 'epic', baseColor: '#475569', pattern: 'gear', stats: { atk: 15, speed: 50 }, grow: { atk: 8, speed: -1 }, special: { label: '連結加成', value: 12, unit: '%', grow: 6 } },
+            // --- Legend ---
+            { id: 'joker', name: '小丑', quality: 'legend', baseColor: '#f87171', pattern: 'joker', stats: { atk: 5, speed: 50 }, grow: { atk: 1, speed: 0 }, special: { label: '繼承比例', value: 80, unit: '%', grow: 2 } },
+            { id: 'growth', name: '成長', quality: 'legend', baseColor: '#f472b6', pattern: 'growth', stats: { atk: 5, speed: 50 }, grow: { atk: 1, speed: -1 }, special: { label: '成長時間', value: 40, unit: '秒', grow: -2 } },
+            { id: 'sun', name: '太陽', quality: 'legend', baseColor: '#fbbf24', pattern: 'sun', stats: { atk: 35, speed: 55 }, grow: { atk: 15, speed: -0.5 }, special: { label: '濺射傷害', value: 100, unit: '%', grow: 25 } },
+            // --- Mythic ---
+            { id: 'galaxy', name: '銀河', quality: 'mythic', baseColor: '#6366f1', pattern: 'galaxy', stats: { atk: 60, speed: 50 }, grow: { atk: 30, speed: -1 }, special: { label: '黑洞吞噬', value: 2, unit: '%', grow: 1 } }
+        ];
+
+        const BOSS_TYPES = {
+            'CRUSHER': {
+                name: '粉碎者', color: '#ff4444',
+                img: (() => { const i = new Image(); i.src = 'dice-boss/lock.png'; return i; })(),
+                skillInterval: 300,
+                onSkill: (boss) => {
+                    // Boss 的鎖定技能同時針對雙方玩家進行判定 (房主負責)
+                    // 這裡簡化為隨機鎖定其中一方的一個骰子
+                    const p1Slots = mySlots; // 在 Host 邏輯中，mySlots 是 P1
+                    const p2Slots = partnerSlots; // P2
+
+                    const targets = [];
+                    p1Slots.forEach(s => { if (s.dice && !s.isLocked) targets.push(s); });
+                    p2Slots.forEach(s => { if (s.dice && !s.isLocked) targets.push(s); });
+
+                    if (targets.length > 0) {
+                        const target = targets[Math.floor(Math.random() * targets.length)];
+                        target.isLocked = true;
+                        // 鎖定持續 4 秒
+                        setTimeout(() => { target.isLocked = false; syncMyData(); }, 4000);
+                        syncMyData();
+                    }
+                }
+            },
+            'SNAKE': {
+                name: '噴射者', color: '#22c55e',
+                img: (() => { const i = new Image(); i.src = 'dice-boss/speed.png'; return i; })(),
+                skillInterval: 240,
+                onSkill: (boss) => {
+                    enemies.forEach(e => e.speed *= 1.5);
+                    setTimeout(() => { enemies.forEach(e => e.speed /= 1.5); }, 2000);
+                }
+            }
+        };
+
+        const BALANCE = {
+            ENEMY_BASE_HP: 100, ENEMY_LEVEL_GROWTH: 1.25, ENEMY_WAVE_GROWTH: 1.20,
+            BOSS_BASE_HP: 3000, BOSS_LEVEL_GROWTH: 1.6, BOSS_WAVE_GROWTH: 1.8
+        };
+
+        // --- 2. 初始化 ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDSRfVA" + "uWCWCUd1NJop" + "J6wHvsqsAM4UzJA",
+            databaseURL: "https://game-80d68-default-rtdb.asia-southeast1.firebasedatabase.app/",
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('roomId') || "COOP_TEST";
+        const role = urlParams.get('role') || "host"; // 'host' (P1) or 'guest' (P2)
+        document.getElementById('room-id').innerText = roomId + (role === 'host' ? " (房主)" : " (隊友)");
+
+        const userData = JSON.parse(localStorage.getItem('dice_game_data')) || {
+            deck: ['fire', 'wind', 'ice', 'electric', 'poison'],
+            diceLevels: { 'fire': 1, 'wind': 1, 'ice': 1, 'electric': 1, 'poison': 1 },
+            unlockLevel: 1
+        };
+
+        const AudioManager = {
+            ctx: new (window.AudioContext || window.webkitAudioContext)(),
+            buffers: {},
+            async init() {
+                const sounds = { 'hit': 'dice-sound/hit.wav' };
+                for (const [name, url] of Object.entries(sounds)) {
+                    try {
+                        const response = await fetch(url);
+                        const b = await response.arrayBuffer();
+                        this.buffers[name] = await this.ctx.decodeAudioData(b);
+                    } catch (e) { console.error(e); }
+                }
+            },
+            playHit() {
+                if (!this.buffers['hit'] || this.ctx.state === 'suspended') {
+                    if (this.ctx.state === 'suspended') this.ctx.resume();
+                    return;
+                }
+                const s = this.ctx.createBufferSource(); s.buffer = this.buffers['hit'];
+                const g = this.ctx.createGain(); g.gain.value = 0.05;
+                s.connect(g); g.connect(this.ctx.destination); s.start(0);
+            }
+        };
+        AudioManager.init();
+
+        // --- 3. 遊戲狀態 ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let battleState = { hp: 3, sp: 100, wave: 1, summonCost: 10, isStarted: false };
+        let powerUpLevels = {};
+        userData.deck.forEach(id => powerUpLevels[id] = 1);
+
+        // 雙方盤面 (Host: my=P1, partner=P2; Guest: my=P2, partner=P1)
+        // 為了邏輯統一，我們使用 mySlots 以及 partnerSlots
+        let mySlots = [];
+        let partnerSlots = [];
+
+        // 網格佈局 (3x5)
+        let grid = { rows: 3, cols: 5, padding: 8, slotSize: 0 };
+        let drag = { isDragging: false, fromSlot: null, currentX: 0, currentY: 0, dice: null };
+
+        let enemies = []; // 共享敵人列表 (含 owner: 'p1'|'p2' 及 pathIndex)
+        let projectiles = [];
+        let damagePopups = [];
+        let frameCount = 0;
+        let waveState = { total: 10, spawned: 0, timer: 0, waiting: false };
+        let paths = { p1: [], p2: [] };
+
+        // 太陽骰子狀態
+        let isSunActivated = false;
+
+        // --- 4. 初始化流程 ---
+        function init() {
+            resizeCanvas();
+            initGrid();
+            initPaths();
+            initUI();
+
+            // 綁定操作事件
+            setupTouchEvents();
+
+            // Firebase 同步
+            startFirebaseSync();
+
+            // 啟動迴圈
+            battleState.isStarted = true;
+            requestAnimationFrame(gameLoop);
+        }
+
+        function resizeCanvas() {
+            const container = document.getElementById('canvas-container');
+            const rect = container.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        }
+
+        function initGrid() {
+            const sideMargin = canvas.width * 0.12;
+            grid.slotSize = (canvas.width - (grid.cols + 1) * grid.padding - (sideMargin * 2)) / grid.cols;
+
+            // 建立 15 個格子
+            const createSlots = () => Array(15).fill(null).map((_, i) => ({
+                dice: null, isLocked: false, isBeingDragged: false, attackCooldown: 0,
+                // index, col, row
+                index: i, col: i % 5, row: Math.floor(i / 5)
+            }));
+
+            mySlots = createSlots();
+            partnerSlots = createSlots(); // 初始為空，等同步
+        }
+
+        // 路徑定義：從兩側出發，匯聚到中間
+        // Index >= 4 為共享路徑 (中央直線)
+        // 路徑定義：直角交會
+        // Index >= 3 為共享路徑 (從交匯點往中央走)
+        const MERGE_INDEX = 3; // 更新為 3: 直到抵達 index 2 (交匯點) 之後，開始往 3 走才算共享
+        function initPaths() {
+            const w = canvas.width;
+            const h = canvas.height;
+            const gap = 30;
+            const midY = h / 2;
+
+            // P1 (Host/Bottom) 路徑: 
+            // 0: 右下 -> 1: 左下 -> 2: 左中(匯聚) -> 3: 中央點 -> 4: 終點
+            paths.p1 = [
+                { x: w - gap, y: h - gap },       // 0
+                { x: gap, y: h - gap },           // 1
+                { x: gap, y: midY },              // 2 (進入中央線)
+                { x: w / 2, y: midY },            // 3 (中央點)
+                { x: w + 50, y: midY }            // 4 (終點)
+            ];
+
+            // P2 (Guest/Top) 路徑:
+            // 0: 右上 -> 1: 左上 -> 2: 左中(匯聚) -> 3: 中央點 -> 4: 終點
+            paths.p2 = [
+                { x: w - gap, y: gap },           // 0
+                { x: gap, y: gap },               // 1
+                { x: gap, y: midY },              // 2 (進入中央線)
+                { x: w / 2, y: midY },            // 3
+                { x: w + 50, y: midY }            // 4
+            ];
+        }
+
+        // --- 5. Firebase 同步 ---
+        function startFirebaseSync() {
+            const roomRef = db.ref('coop_rooms/' + roomId);
+
+            roomRef.on('value', (snap) => {
+                const data = snap.val();
+                if (!data) return;
+
+                // 共同狀態
+                if (data.wave) battleState.wave = data.wave;
+                if (data.hp) battleState.hp = data.hp;
+
+                // 敵人同步 (Host 寫入，Guest 讀取)
+                if (role === 'guest' && data.enemies) {
+                    // 為了平滑移動，可以做一點插值，這裡簡化直接覆蓋
+                    enemies = data.enemies || [];
+                }
+
+                if (role === 'host') {
+                    if (data.players?.p2) {
+                        updateSlotsFromSync(partnerSlots, data.players.p2.slots);
+                        // 同步夥伴等級
+                        if (data.players.p2.powerUpLevels) {
+                            partnerPowerUpLevels = data.players.p2.powerUpLevels;
+                        }
+                    }
+                } else {
+                    if (data.players?.p1) {
+                        updateSlotsFromSync(partnerSlots, data.players.p1.slots);
+                        if (data.players.p1.powerUpLevels) {
+                            partnerPowerUpLevels = data.players.p1.powerUpLevels;
+                        }
+                    }
+                }
+                updateUILive();
+            });
+
+            // 立即同步一次初始資料 (包含 Deck 與 Levels)
+            syncMyData();
+        }
+
+        function updateSlotsFromSync(localSlots, remoteData) {
+            if (!remoteData) return;
+            remoteData.forEach((rSlot, i) => {
+                const lSlot = localSlots[i];
+                if (!lSlot.dice && rSlot.dice) {
+                    // 新增骰子
+                    lSlot.dice = rSlot.dice;
+                } else if (lSlot.dice && !rSlot.dice) {
+                    // 移除
+                    lSlot.dice = null;
+                } else if (lSlot.dice && rSlot.dice) {
+                    // 更新
+                    lSlot.dice.lv = rSlot.dice.lv;
+                    lSlot.dice.id = rSlot.dice.id;
+                    lSlot.dice.baseColor = rSlot.dice.baseColor;
+                    lSlot.isLocked = rSlot.isLocked; // 同步鎖定狀態
+                }
+            });
+        }
+
+        function syncMyData() {
+            const pKey = role === 'host' ? 'p1' : 'p2';
+            // 只上傳必要資料以節省頻寬
+            const simpleSlots = mySlots.map(s => ({
+                dice: s.dice ? { id: s.dice.id, lv: s.dice.lv, baseColor: s.dice.baseColor } : null,
+                isLocked: s.isLocked
+            }));
+
+            db.ref(`coop_rooms/${roomId}/players/${pKey}`).update({
+                slots: simpleSlots,
+                sp: battleState.sp,
+                // 新增同步：讓對方知道我的牌組與等級
+                deck: userData.deck,
+                powerUpLevels: powerUpLevels
+            });
+        }
+
+        // 夥伴的等級資訊
+        let partnerPowerUpLevels = {};
+
+
+        // --- 6. 遊戲迴圈 ---
+        function gameLoop() {
+            if (!battleState.isStarted) return;
+            frameCount++;
+
+            // 1. 邏輯更新
+            if (role === 'host') {
+                updateHostLogic(); // 生怪、移動、傷害結算
+                if (frameCount % 3 === 0) { // 每 3 幀同步一次，減少寫入頻率
+                    db.ref(`coop_rooms/${roomId}`).update({
+                        enemies: enemies,
+                        wave: battleState.wave,
+                        hp: battleState.hp
+                    });
+                }
+            } else {
+                updateGuestLogic(); // 僅預測移動 (visual only)
+            }
+
+            // 2. 戰鬥判定 (雙方都要跑，因為要發射子彈和特效)
+            updateCombat();
+
+            // 3. 渲染
+            draw();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // 黑洞列表
+        let blackHoles = [];
+
+        // --- Host 邏輯: 生怪與移動 ---
+        function updateHostLogic() {
+            // Wave 管理
+            if (!waveState.waiting) {
+                waveState.timer++;
+                let spawnRate = Math.max(15, 40 - battleState.wave);
+                // Boss 關卡只生成一次 (因為一次 spawnBoss 會生成兩隻)
+                const isBossWave = battleState.wave % 10 === 0;
+                const waveLimit = isBossWave ? 1 : waveState.total;
+
+                if (waveState.timer >= spawnRate) {
+                    if (waveState.spawned < waveLimit) {
+                        if (isBossWave) spawnBoss();
+                        else spawnEnemy();
+                        waveState.spawned++;
+                        waveState.timer = 0;
+                    } else if (enemies.length === 0) {
+                        waveState.waiting = true;
+                        waveState.timer = 0;
+                    }
+                }
+            } else {
+                waveState.timer++;
+                if (waveState.timer > 120) { // 休息 2 秒
+                    battleState.wave++;
+                    waveState.total += 2;
+                    waveState.spawned = 0;
+                    waveState.waiting = false;
+                    waveState.timer = 0;
+                }
+            }
+
+            // 黑洞邏輯
+            for (let i = blackHoles.length - 1; i >= 0; i--) {
+                const bh = blackHoles[i];
+                bh.timer++;
+                if (bh.timer > 120) { // 持續 2 秒
+                    blackHoles.splice(i, 1);
+                    continue;
+                }
+
+                // 吸附敌人
+                enemies.forEach(e => {
+                    // 判斷權限: 只能吸"能打的怪"
+                    let canHit = false;
+                    if (e.owner === bh.owner) canHit = true;
+                    else if (e.pathIndex >= 3) canHit = true;
+
+                    if (canHit) {
+                        const dx = bh.x - e.x;
+                        const dy = bh.y - e.y;
+                        const dist = Math.hypot(dx, dy);
+                        if (dist < 150 && dist > 10) {
+                            e.x += dx * 0.05; // 吸力
+                            e.y += dy * 0.05;
+                            e.hp -= 0.5; // 黑洞傷害
+
+                            // 黑洞傷害數字 (每 0.5 秒跳一次，深藍色)
+                            if (frameCount % 30 === 0) {
+                                damagePopups.push({
+                                    x: e.x + (Math.random() * 20 - 10),
+                                    y: e.y - 10,
+                                    val: 15, // 0.5 * 30 frames = 15 total dmg approx
+                                    color: '#6366f1', // Indigo
+                                    life: 30
+                                });
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 敵人移動與效果
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                let e = enemies[i];
+
+                // 1. DOT 傷害 (毒)
+                if (e.poisonStacks > 0) {
+                    e.hp -= (e.poisonStacks * 2) / 60;
+                    // 每秒跳一次毒傷數字 (紫色)
+                    if (frameCount % 60 === 0) {
+                        damagePopups.push({
+                            x: e.x, y: e.y - 10,
+                            val: Math.floor(e.poisonStacks * 2),
+                            color: '#a855f7', // Purple
+                            life: 40
+                        });
+                    }
+                }
+
+                // 狀態恢復
+                if (e.iceTimer > 0) {
+                    e.iceTimer--;
+                    if (e.iceTimer <= 0) e.speed = 1.5; // 恢復速度 (須考慮 Boss 加成?)
+                }
+                if (e.lockTimer > 0) {
+                    e.lockTimer--;
+                    e.speed = 0;
+                } else if (e.iceTimer <= 0 && !e.lockTimer) {
+                    // 這裡簡單恢復，如果有多重 buff 系統可能要改
+                    e.speed = 1.5;
+                }
+
+                // 2. Boss 技能
+                if (e.isBoss) {
+                    e.skillTimer = (e.skillTimer || 0) + 1;
+                    if (e.skillTimer >= BOSS_TYPES[e.bossType].skillInterval) {
+                        BOSS_TYPES[e.bossType].onSkill(e);
+                        e.skillTimer = 0;
+                    }
+                }
+
+                // 3. 移動
+                const path = e.owner === 'p1' ? paths.p1 : paths.p2;
+                const target = path[e.pathIndex];
+
+                if (target) {
+                    let dx = target.x - e.x;
+                    let dy = target.y - e.y;
+                    let dist = Math.hypot(dx, dy);
+
+                    if (dist < e.speed) {
+                        e.pathIndex++;
+                        // 修正位置避免瞬移
+                        if (e.pathIndex < path.length) {
+                            // 還沒到終點
+                        } else {
+                            // 到終點
+                            battleState.hp--;
+                            enemies.splice(i, 1);
+                            continue;
+                        }
+                    } else {
+                        e.x += (dx / dist) * e.speed;
+                        e.y += (dy / dist) * e.speed;
+                    }
+                }
+
+                // 死亡移除
+                if (e.hp <= 0) {
+                    enemies.splice(i, 1);
+                    // 根據擊殺者給 SP? 目前簡化為 Host 通通拿到 (需改進：共享 SP 或各自擊殺)
+                    // 這版本簡化：擊殺不給 SP，SP 靠時間自動回復或 Pve 獎勵? 
+                    // 為了合作樂趣，我們設定：每殺一隻怪，雙方都加 SP (Host 寫入)
+                    // 這裡先簡單增加 Host 的，並透過 sync 同步給 Guest? 
+                    // 不，Guest 的 SP 是本地維護的。
+                    // 暫定：Host 廣播 "enemy_killed" 事件較複雜，這裡先讓 Host 拿到 SP，Guest 透過模擬擊殺拿 SP
+                }
+            }
+        }
+
+        // Guest 邏輯: 簡單插值
+        function updateGuestLogic() {
+            // 這裡其實只要依賴 Firebase 數據即可
+            // 但為了流暢，可以做本地預測移動
+        }
+
+        function spawnEnemy() {
+            const level = userData.unlockLevel;
+            const wave = battleState.wave;
+            const hp = Math.max(10, BALANCE.ENEMY_BASE_HP * Math.pow(BALANCE.ENEMY_LEVEL_GROWTH, 0) * Math.pow(BALANCE.ENEMY_WAVE_GROWTH, wave - 1));
+
+            // 同時在 P1 與 P2 路徑生成
+            ['p1', 'p2'].forEach(owner => {
+                const start = owner === 'p1' ? paths.p1[0] : paths.p2[0];
+                enemies.push({
+                    x: start.x, y: start.y,
+                    owner: owner,
+                    pathIndex: 1, // 往第 1 個點走
+                    maxHp: hp, hp: hp, virtualHp: hp,
+                    speed: 1.5,
+                    poisonStacks: 0,
+                    isBoss: false
+                });
+            });
+        }
+
+        function spawnBoss() {
+            const wave = battleState.wave;
+            const typeKey = Object.keys(BOSS_TYPES)[Math.floor(Math.random() * Object.keys(BOSS_TYPES).length)];
+            const type = BOSS_TYPES[typeKey];
+            const hp = BALANCE.BOSS_BASE_HP * Math.pow(BALANCE.BOSS_WAVE_GROWTH, wave / 10);
+
+            ['p1', 'p2'].forEach(owner => {
+                const start = owner === 'p1' ? paths.p1[0] : paths.p2[0];
+                enemies.push({
+                    x: start.x, y: start.y,
+                    owner: owner,
+                    pathIndex: 1,
+                    maxHp: hp, hp: hp, virtualHp: hp,
+                    speed: 1.0,
+                    isBoss: true, bossType: typeKey,
+                    color: type.color, size: 55, skillTimer: 0
+                });
+            });
+        }
+
+        // --- 7. 戰鬥核心 (Client Side Visual + Host Side Logic) ---
+        function updateCombat() {
+            // 我方攻擊
+            processSlotsCombat(mySlots, role === 'host' ? 'p1' : 'p2');
+
+            // 隊友攻擊 (只做視覺特效，傷害設為 0 或忽略) - 為了簡化，這裡 Client 端只運算自己的攻擊
+            // Host 端因為擁有完整數據，其實可以運算所有人的攻擊，但為了效能，
+            // 這裡採用：Host 算 P1 + P2 的真實傷害，Guest 算 P2 的視覺 + P1 視覺？
+            // 最佳解：雙方都各自算自己的攻擊並扣減 enemy.virtualHp，
+            // Host 最終確認 enemy.hp。Guest 看到的 hp 是 sync 過來的。
+
+            // 修正策略：
+            // Host: 執行 mySlots (P1) 攻擊 -> 扣 HP。執行 partnerSlots (P2) 攻擊 -> 扣 HP。
+            // Guest: 執行 mySlots (P2) 攻擊 -> 發射子彈 (不扣真實 HP，等待 Host 同步)。
+
+            if (role === 'host') {
+                processSlotsCombat(partnerSlots, 'p2');
+            }
+
+            // 子彈移動
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                let p = projectiles[i];
+                if (!enemies.includes(p.target) || p.target.hp <= 0) {
+                    projectiles.splice(i, 1); continue;
+                }
+                let dx = p.target.x - p.x, dy = p.target.y - p.y;
+                let dist = Math.hypot(dx, dy);
+                if (dist < p.speed) {
+                    // 擊中
+                    projectiles.splice(i, 1);
+                    AudioManager.playHit();
+
+                    // 視覺跳字
+                    if (damagePopups.length < 20) {
+                        damagePopups.push({ x: p.target.x, y: p.target.y, val: Math.floor(p.damage), life: 30, color: '#fff' });
+                    }
+
+                    // 實際扣血 (僅 Host)
+                    if (role === 'host') {
+                        applyDamageLogic(p.target, p.damage, p.diceId, p.attackerRole);
+                    }
+                } else {
+                    p.x += (dx / dist) * p.speed;
+                    p.y += (dy / dist) * p.speed;
+                }
+            }
+        }
+
+        // 處理一組插槽對敵人的攻擊
+        function processSlotsCombat(slots, slotOwner) { // slotOwner: 'p1' or 'p2'
+            // 計算太陽個數
+            const sunCount = slots.filter(s => s.dice && s.dice.id === 'sun').length;
+            const isSun = [1, 4, 7].includes(sunCount); // 簡化版太陽規則
+
+            slots.forEach(slot => {
+                if (!slot.dice || slot.isBeingDragged || slot.isLocked) return;
+
+                // 攻速計算
+                const db = ALL_DICES.find(d => d.id === slot.dice.id);
+                // 簡化：不計算等級成長，只算基礎
+                let spd = db.stats.speed;
+                if (slot.dice.id === 'sun' && isSun) spd /= 1.5;
+
+                slot.attackCooldown = (slot.attackCooldown || 0) + 1;
+                if (slot.attackCooldown >= spd) {
+                    // 尋找目標
+                    const target = findTarget(slot, slotOwner);
+                    if (target) {
+                        slot.attackCooldown = 0;
+                        const dmg = getDiceDamage(slot.dice, slotOwner);
+
+                        // 太陽特殊攻擊
+                        if (slot.dice.id === 'sun' && isSun) {
+                            createSunExplosion(target, dmg, slotOwner);
+                        } else {
+                            // 發射子彈
+                            // 注意：如果是 Host 算 Partner 的攻擊，視覺起始點要正確
+                            // 這裡簡化：只顯示「自己」畫面上看到的子彈
+                            // 如果我是 Guest，Host 幫我算的 P2 攻擊不需要產生子彈 (我看不到)
+                            // 相反，我是 Guest，我自己算的 P2 攻擊才要產子彈
+
+                            const isMyVisual = (role === 'host' && slotOwner === 'p1') || (role === 'guest' && slotOwner === 'p2');
+                            if (isMyVisual) {
+                                createProjectile(
+                                    { x: getSlotPixelX(slot, slotOwner), y: getSlotPixelY(slot, slotOwner) },
+                                    target,
+                                    slot.dice,
+                                    slotOwner
+                                );
+                            } else if (role === 'host') {
+                                // Host 幫 P2 算傷害，但不產子彈，直接扣血 (或設法模擬擊中?)
+                                // 為了精確，Host 還是要產隱形子彈來計時，或者直接瞬傷?
+                                // 這裡採用: Host 產子彈，但如果不繪製可能會看不見。
+                                // 簡單解法：全部產子彈，Render 時過濾？還是直接讓他飛
+                                // 為了同步感，Host 應該也要看到 P2 的子彈
+                                createProjectile(
+                                    { x: getSlotPixelX(slot, slotOwner), y: getSlotPixelY(slot, slotOwner) },
+                                    target,
+                                    slot.dice,
+                                    slotOwner
+                                );
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createProjectile(start, target, dice, owner) {
+            const dmg = getDiceDamage(dice, owner); // 傳入 owner 以讀取正確等級
+            projectiles.push({
+                x: start.x, y: start.y,
+                target: target,
+                speed: 12, // Changed from 15 to 12 to match previous hardcoded value
+                damage: dmg,
+                color: dice.baseColor,
+                life: 1, // alive
+                diceId: dice.id, // 用於判斷特效
+                attackerRole: owner // 標記是誰發射的
+            });
+        }
+
+        function getSlotPixelX(slot, owner) {
+            // 計算插槽中心點
+            const sideMargin = canvas.width * 0.12;
+            const baseX = sideMargin + grid.padding + slot.col * (grid.slotSize + grid.padding) + grid.slotSize / 2;
+            return baseX; // X 座標對於 P1 P2 是一樣的 (僅 Y 不同)
+        }
+        function getSlotPixelY(slot, owner) {
+            // P1 (Host) 在下方，P2 (Guest) 在上方
+            // 但注意，我們在 Render 時有對 Guest 做 rotate。
+            // 這裡的邏輯座標應該是基於全局的。
+            // P1 區域：Y = canvas.height - height/3 左右
+            // P2 區域：Y = 0 + height/3 左右
+
+            const totalH = grid.rows * (grid.slotSize + grid.padding);
+            const p1Y = (canvas.height * 0.75) - (totalH / 2) + slot.row * (grid.slotSize + grid.padding) + grid.slotSize / 2;
+            const p2Y = (canvas.height * 0.25) - (totalH / 2) + slot.row * (grid.slotSize + grid.padding) + grid.slotSize / 2;
+
+            return owner === 'p1' ? p1Y : p2Y;
+        }
+
+        // --- 核心：索敵邏輯 (含區域限制) ---
+        function findTarget(slot, attackerRole) {
+            // 1. 篩選有效敵人
+            // 規則：如果 enemy.pathIndex < 2，只能被 enemy.owner === attackerRole 的人打
+            //       如果不在此限 (走到中間了)，雙方皆可打 (index >= 2)
+
+            const validEnemies = enemies.filter(e => {
+                if (e.hp <= 0) return false;
+                // 如果是我自己的怪，一定可以打
+                if (e.owner === attackerRole) return true;
+
+                // 如果是隊友的怪，必須等到達交匯點 (Index >= 3)
+                // pathIndex 代表"正在前往的點"。
+                // 剛生成時往 1 走。
+                // 到達 1 後往 2 走 (垂直段)。
+                // 到達 2 後 (交匯點) 往 3 走 (水平共享段)。此時 pathIndex = 3。
+                return e.pathIndex >= 3;
+            });
+
+            if (validEnemies.length === 0) return null;
+
+            // 2. 排序 (走最遠的優先)
+            validEnemies.sort((a, b) => {
+                // pathIndex 越大越近終點
+                if (b.pathIndex !== a.pathIndex) return b.pathIndex - a.pathIndex;
+
+                // pathIndex 相同，比較距離下一個節點的距離 (越小越近，即越前面)
+                const pathA = a.owner === 'p1' ? paths.p1 : paths.p2;
+                const pathB = b.owner === 'p1' ? paths.p1 : paths.p2;
+
+                // 防呆：避免 index 超出
+                const nextNodeA = pathA[a.pathIndex] || { x: a.x, y: a.y }; // 其實 a.pathIndex 是目標點
+                const nextNodeB = pathB[b.pathIndex] || { x: b.x, y: b.y };
+
+                const distA = Math.hypot(nextNodeA.x - a.x, nextNodeA.y - a.y);
+                const distB = Math.hypot(nextNodeB.x - b.x, nextNodeB.y - b.y);
+
+                return distA - distB; // 距離越小排越前面
+            });
+
+            return validEnemies[0];
+        }
+
+        function createSunExplosion(target, dmg, attackerRole) {
+            // 視覺
+            const div = document.createElement('div');
+            div.className = 'sun-explosion';
+            // 需轉換為螢幕座標?? canvas 是絕對定位，可以直接用
+            // 不過如果是 Guest 且 Canvas 被旋轉了... 這裡會有點麻煩
+            // 簡單起見：只在 Canvas 內畫，不要用 DOM。或者 DOM 座標要換算。
+            // 這裡先略過 DOM 特效，改用 Canvas 畫爆炸圈
+
+            if (role === 'host') {
+                // 造成 AOE 傷害
+                enemies.forEach(e => {
+                    // 檢查區域限制
+                    let canHit = false;
+                    if (e.owner === attackerRole) canHit = true;
+                    else if (e.pathIndex >= 3) canHit = true;
+
+                    if (canHit && Math.hypot(e.x - target.x, e.y - target.y) < 70) {
+                        applyDamageLogic(e, dmg, 'sun', attackerRole);
+                    }
+                });
+            }
+        }
+
+        function applyDamageLogic(target, dmg, type, attackerRole) {
+            target.hp -= dmg;
+            if (target.hp <= 0 && role === 'host') {
+                battleState.sp += 10;
+                syncMyData();
+            }
+
+            // 特殊效果
+            if (type === 'ice') {
+                target.speed = 1.5 * 0.7;
+                target.iceTimer = 60; // 1秒
+            } else if (type === 'poison') {
+                target.poisonStacks = (target.poisonStacks || 0) + 1;
+            } else if (type === 'lock') {
+                if (Math.random() < 0.2) target.lockTimer = 60; // 1秒
+            } else if (type === 'teleport') {
+                if (Math.random() < 0.1 && !target.isBoss) {
+                    // 傳送回起點
+                    target.pathIndex = 1;
+                    const path = target.owner === 'p1' ? paths.p1 : paths.p2;
+                    target.x = path[0].x;
+                    target.y = path[0].y;
+                }
+            } else if (type === 'electric') {
+                // 連鎖
+                let chainCount = 0;
+                enemies.forEach(e => {
+                    if (chainCount >= 3) return;
+                    if (e === target) return;
+                    // 權限檢查
+                    if (e.owner !== attackerRole && e.pathIndex < 3) return;
+
+                    if (Math.hypot(e.x - target.x, e.y - target.y) < 150) {
+                        let chainDmg = dmg * 0.5;
+                        e.hp -= chainDmg;
+                        chainCount++;
+                        // 視覺連線與傷害數字
+                        damagePopups.push({
+                            x: e.x, y: e.y - 15,
+                            val: Math.floor(chainDmg),
+                            color: '#facc15', // Yellow
+                            life: 30
+                        });
+                    }
+                });
+            } else if (type === 'galaxy') {
+                if (Math.random() < 0.05) { // 5% 機率觸發黑洞
+                    blackHoles.push({ x: target.x, y: target.y, timer: 0, owner: attackerRole });
+                }
+            }
+        }
+
+        function getDiceDamage(dice, roleOverride) {
+            if (!dice) return 0;
+            const ref = ALL_DICES.find(d => d.id === dice.id);
+            if (!ref) return 10;
+
+            // 判斷是誰的骰子來決定用哪份等級表
+            let lv = 1;
+            // 如果調用時有指定 attackerRole，則根據 attackerRole 判斷
+            // 但這裡 dice 物件本身沒有 owner 屬性 (是在 slots 裡管理的)
+            // 所以我們需要上下文。
+            // 修正：renderLoop 呼叫時 slot 物件沒有 owner 標記? 
+            // 其實 drawDiceGrid 呼叫 renderDice 時也只傳 dice
+            // 我們修改 updateCombat 把 owner 傳進來
+
+            // 由於 `dice` 物件是 `{id, lv, baseColor}`，我們無法從 dice 本身知道是誰的
+            // 所以 getDiceDamage 必須依賴外部傳入 `owner`
+
+            // 暫時解決方案：如果 roleOverride 存在，用它。
+            // 如果不存在，預設用自己的 (這可能不準確，但在 updateCombat 中我們會正確傳入)
+
+            const owner = roleOverride || role;
+
+            if ((owner === 'p1' && role === 'host') || (owner === 'p2' && role === 'guest')) {
+                // 這是自己的骰子
+                lv = powerUpLevels[dice.id] || 1;
+            } else {
+                // 這是夥伴的骰子
+                lv = partnerPowerUpLevels[dice.id] || 1;
+            }
+
+            // 基礎攻擊 + (等級-1)*成長 + (星數-1)*10%
+            let dmg = ref.stats.atk + (lv - 1) * (ref.grow?.atk || 0); // Added null check for grow.atk
+            dmg = dmg * (1 + (dice.lv - 1) * 0.1);
+
+            return dmg;
+        }
+
+        // --- 8. 渲染 ---
+        function draw() {
+            ctx.save();
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height); // 清空
+
+            // Guest 視角翻轉：讓自己 (P2) 顯示在下方
+            if (role === 'guest') {
+                ctx.translate(canvas.width / 2, canvas.height / 2);
+                ctx.rotate(Math.PI);
+                ctx.translate(-canvas.width / 2, -canvas.height / 2);
+            }
+
+            // 1. 畫背景路徑
+            drawPath(paths.p1, '#3b82f6');
+            drawPath(paths.p2, '#f472b6');
+
+            // 1.5 畫傳送門 (起點與終點)
+            const angle = (Date.now() / 1000) % (Math.PI * 2);
+
+            // P1 Start (Host)
+            drawPortal(ctx, paths.p1[0].x, paths.p1[0].y, '#3b82f6', angle, true);
+            // P1 End (Shared)
+            drawPortal(ctx, paths.p1[paths.p1.length - 1].x, paths.p1[paths.p1.length - 1].y, '#ef4444', -angle, false);
+
+            // P2 Start (Guest)
+            drawPortal(ctx, paths.p2[0].x, paths.p2[0].y, '#f472b6', angle, true);
+            // P2 End (Shared) - 其實跟 P1 End 同一點，可以不畫或重疊畫
+            // drawPortal(ctx, paths.p2[paths.p2.length - 1].x, paths.p2[paths.p2.length - 1].y, '#ef4444', -angle, false);
+
+            // 2. 畫格子與骰子
+            // P1 (Host) 在下方
+            drawDiceGrid(mySlots, 'p1');
+            // P2 (Guest) 在上方
+            drawDiceGrid(partnerSlots, 'p2');
+
+            // 3. 畫敵人
+            enemies.forEach(e => {
+                const size = e.isBoss ? e.size : 20;
+                const color = e.isBoss ? (BOSS_TYPES[e.bossType]?.color || '#f00') : (e.owner === 'p1' ? '#3b82f6' : '#f472b6');
+
+                // 畫本體
+                if (e.isBoss) {
+                    const bossImg = BOSS_TYPES[e.bossType]?.img;
+                    if (bossImg && bossImg.complete) {
+                        ctx.save();
+                        // 簡單的呼吸效果
+                        const scale = 1 + Math.sin(Date.now() / 200) * 0.05;
+                        ctx.translate(e.x, e.y);
+                        ctx.scale(scale, scale);
+                        ctx.drawImage(bossImg, -size / 2, -size / 2, size, size);
+                        ctx.restore();
+                    } else {
+                        // 圖片未載入時的備案
+                        ctx.fillStyle = color;
+                        ctx.beginPath(); ctx.arc(e.x, e.y, size / 2, 0, Math.PI * 2); ctx.fill();
+                    }
+                } else {
+                    ctx.fillStyle = color;
+                    ctx.fillRect(e.x - size / 2, e.y - size / 2, size, size);
+                }
+
+                // 血條
+                const percent = Math.max(0, e.hp / e.maxHp);
+                ctx.fillStyle = '#333';
+                ctx.fillRect(e.x - 12, e.y - size / 2 - 8, 24, 4);
+                ctx.fillStyle = '#22c55e';
+                ctx.fillRect(e.x - 12, e.y - size / 2 - 8, 24 * percent, 4);
+            });
+
+            // 4. 畫子彈
+            projectiles.forEach(p => {
+                ctx.fillStyle = p.color || '#fff';
+                ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI * 2); ctx.fill();
+            });
+
+            // 5. 畫傷害與特效
+            damagePopups.forEach(d => {
+                ctx.fillStyle = d.color;
+                ctx.font = 'bold 16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(d.val, d.x, d.y);
+                d.y -= 0.5; d.life--;
+            });
+            damagePopups = damagePopups.filter(d => d.life > 0);
+
+            // 6. 畫黑洞
+            blackHoles.forEach(bh => {
+                ctx.save();
+                ctx.translate(bh.x, bh.y);
+                const rot = (Date.now() / 1000) * 2;
+                ctx.rotate(rot);
+
+                // 黑洞本體
+                ctx.beginPath();
+                ctx.arc(0, 0, 20, 0, Math.PI * 2);
+                ctx.fillStyle = '#000';
+                ctx.fill();
+                ctx.strokeStyle = '#6366f1'; // 銀河紫
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // 吸入線條
+                for (let i = 0; i < 4; i++) {
+                    ctx.rotate(Math.PI / 2);
+                    ctx.beginPath();
+                    ctx.moveTo(30 + Math.sin(Date.now() / 200) * 10, 0);
+                    ctx.lineTo(10, 0);
+                    ctx.strokeStyle = `rgba(99, 102, 241, 0.5)`;
+                    ctx.stroke();
+                }
+                ctx.restore();
+            });
+
+            // 拖曳中的骰子 (最後畫)
+            if (drag.isDragging && drag.dice) {
+                // 注意：drag.currentX/Y 是螢幕座標，如果 Guest 翻轉了，這裡可能要反轉？
+                // touch 事件取得的是 clientX，我們需要轉換成 Canvas 內部坐標
+                // 如果 Canvas rotate 了，座標系也變了。
+                // 簡單解法：Guest 模式下，touch 座標也做一次中心對稱轉換
+
+                let dx = drag.currentX;
+                let dy = drag.currentY;
+                if (role === 'guest') {
+                    dx = canvas.width - dx;
+                    dy = canvas.height - dy;
+                }
+                renderDice(ctx, dx - grid.slotSize / 2, dy - grid.slotSize / 2, drag.dice, false);
+            }
+
+            ctx.restore();
+        }
+
+        function drawPath(path, color) {
+            if (path.length < 2) return;
+            ctx.save();
+            ctx.beginPath();
+            ctx.strokeStyle = color + '44'; // 淡色
+            ctx.lineWidth = 30;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.moveTo(path[0].x, path[0].y);
+            path.forEach(p => ctx.lineTo(p.x, p.y));
+            ctx.stroke();
+
+            // 虛線
+            ctx.strokeStyle = '#ffffff44';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([10, 15]);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawPortal(ctx, x, y, color, angle, isStart) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+
+            // 外圈光環
+            const gradient = ctx.createRadialGradient(0, 0, 10, 0, 0, 30);
+            gradient.addColorStop(0, color);
+            gradient.addColorStop(1, 'rgba(0,0,0,0)');
+
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(0, 0, 30, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 旋轉紋路
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 4; i++) {
+                ctx.rotate(Math.PI / 2);
+                ctx.beginPath();
+                ctx.moveTo(10, 0);
+                ctx.quadraticCurveTo(20, 10, 25, 0);
+                ctx.stroke();
+            }
+
+            // 中心黑洞/亮點
+            ctx.fillStyle = isStart ? '#000' : '#fff';
+            ctx.beginPath();
+            ctx.arc(0, 0, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 標示文字 (START / END) - 不旋轉
+            ctx.rotate(-angle - (role === 'guest' ? Math.PI : 0)); // 抵銷旋轉，並修正 Guest 視角
+            // Guest 視角下 canvas 其實已經 rotate(PI) 了。
+            // 這裡的 angle 是 portal 自己的動畫。
+            // 我們希望文字永遠正向顯示?
+            // Canvas has global rotate PI for guest.
+            // Text drawn here will be upside down for Guest if we don't fix it?
+            // No, the global rotate handles everything.
+            // But if we want text to be readable "upright" relative to the player...
+            // Guest sees P2 (Top) as Bottom.
+            // Actually, let's keep it simple, just symbols.
+
+            ctx.restore();
+        }
+
+        function drawDiceGrid(slots, owner) {
+            const isP1 = owner === 'p1';
+            // 計算區域 Offset
+            // 沿用 getSlotPixelY 的邏輯，但為了畫 Grid 整體，我們重新算
+            const totalH = grid.rows * (grid.slotSize + grid.padding);
+            const startY = isP1 ?
+                (canvas.height * 0.75) - (totalH / 2) :
+                (canvas.height * 0.25) - (totalH / 2);
+
+            const sideMargin = canvas.width * 0.12;
+
+            slots.forEach(slot => {
+                const x = sideMargin + grid.padding + slot.col * (grid.slotSize + grid.padding);
+                const y = startY + slot.row * (grid.slotSize + grid.padding);
+
+                // 底座
+                ctx.fillStyle = '#1e293b';
+                drawRoundedRect(ctx, x, y, grid.slotSize, grid.slotSize, 8);
+                ctx.fill();
+
+                if (slot.dice && !slot.isBeingDragged) {
+                    renderDice(ctx, x, y, slot.dice, slot.isLocked);
+                }
+            });
+        }
+
+        // 畫圓角矩形
+        function drawRoundedRect(ctx, x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+            ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h); ctx.lineTo(x + r, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - r); ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.closePath();
+        }
+
+        // --- 9. 操作事件 ---
+        function setupTouchEvents() {
+            canvas.addEventListener('touchstart', e => {
+                const t = e.touches[0];
+                const rect = canvas.getBoundingClientRect();
+                handleInputStart(t.clientX - rect.left, t.clientY - rect.top);
+            });
+            canvas.addEventListener('touchmove', e => {
+                e.preventDefault();
+                const t = e.touches[0];
+                const rect = canvas.getBoundingClientRect();
+                handleInputMove(t.clientX - rect.left, t.clientY - rect.top);
+            }, { passive: false });
+            canvas.addEventListener('touchend', handleInputEnd);
+        }
+
+        function handleInputStart(x, y) {
+            // 轉換座標 (若為 Guest，輸入座標要反轉去對應邏輯座標?)
+            // 我們的 mySlots 在邏輯上永遠是 P1 (Host) 的那塊區域嗎？
+            // 不，mySlots 的渲染位置由 drawDiceGrid 決定。
+            // Host: mySlots 在下方。 Input(x,y) 直接對應。
+            // Guest: mySlots 在下方 (視覺上)。Input(x,y) 是手指位置。
+            // 但因為 draw 時做了 rotate，所以 Guest 看到的「下方」其實是 Canvas 座標的「上方」(0,0 附近) 還是「下方」？
+            // 讓我們釐清：
+            // Guest Rotate 180: 原點 (0,0) 變右下，(w,h) 變左上。
+            // 所以 Guest 點擊畫面下方 (高 Y)，對應到 Canvas 座標應該是 低 Y (因為被轉了)。
+            // Canvas 邏輯座標系中，P2 (Guest) 的區域被定義在上方 (Y 小)。
+            // 所以 Guest 點畫面下方 -> 視覺上是自己的區域 -> 轉換後應該要是 Y 小的區域。
+            // 轉換公式： if guest: x = w - x; y = h - y;
+
+            let lx = x, ly = y;
+            if (role === 'guest') {
+                lx = canvas.width - x;
+                ly = canvas.height - y;
+            }
+
+            // 判定點擊了哪個格子 (只能點 mySlots)
+            // 需反推 slot 位置
+            // 這裡暴力法：遍歷 mySlots 算距離
+            const clicked = mySlots.find(slot => {
+                const sx = getSlotPixelX(slot, role === 'host' ? 'p1' : 'p2');
+                const sy = getSlotPixelY(slot, role === 'host' ? 'p1' : 'p2');
+                return Math.abs(lx - sx) < grid.slotSize / 2 + 5 && Math.abs(ly - sy) < grid.slotSize / 2 + 5;
+            });
+
+            if (clicked && clicked.dice && !clicked.isLocked) {
+                drag.isDragging = true;
+                drag.fromSlot = clicked;
+                drag.dice = { ...clicked.dice };
+                drag.currentX = x; // 視覺座標
+                drag.currentY = y;
+                clicked.isBeingDragged = true;
+            }
+        }
+
+        function handleInputMove(x, y) {
+            if (drag.isDragging) {
+                drag.currentX = x;
+                drag.currentY = y;
+            }
+        }
+
+        function handleInputEnd() {
+            if (!drag.isDragging) return;
+
+            // 計算放開的位置 (邏輯座標)
+            let lx = drag.currentX, ly = drag.currentY;
+            if (role === 'guest') {
+                lx = canvas.width - lx;
+                ly = canvas.height - ly;
+            }
+
+            // 判定目標格
+            const target = mySlots.find(slot => {
+                const sx = getSlotPixelX(slot, role === 'host' ? 'p1' : 'p2');
+                const sy = getSlotPixelY(slot, role === 'host' ? 'p1' : 'p2');
+                return Math.abs(lx - sx) < grid.slotSize / 2 + 10 && Math.abs(ly - sy) < grid.slotSize / 2 + 10;
+            });
+
+            if (target && target !== drag.fromSlot) {
+                // 合成邏輯
+                if (target.dice && target.dice.id === drag.dice.id && target.dice.lv === drag.dice.lv && target.dice.lv < 7) {
+                    // 成功合成
+                    const newId = userData.deck[Math.floor(Math.random() * userData.deck.length)];
+                    const db = ALL_DICES.find(d => d.id === newId);
+                    target.dice = {
+                        id: newId, lv: drag.dice.lv + 1,
+                        baseColor: db.baseColor
+                    };
+                    drag.fromSlot.dice = null;
+
+                    syncMyData();
+                } else if (!target.dice) {
+                    // 移動
+                    target.dice = drag.dice;
+                    drag.fromSlot.dice = null;
+                    syncMyData();
+                }
+            }
+
+            drag.fromSlot.isBeingDragged = false;
+            drag.isDragging = false;
+            drag.fromSlot = null;
+        }
+
+        function handleSummonClick() {
+            if (battleState.sp < battleState.summonCost) return;
+            // 找空位
+            const empties = mySlots.filter(s => !s.dice);
+            if (empties.length === 0) return;
+
+            battleState.sp -= battleState.summonCost;
+            battleState.summonCost += 10;
+
+            const target = empties[Math.floor(Math.random() * empties.length)];
+            const diceId = userData.deck[Math.floor(Math.random() * userData.deck.length)];
+            const db = ALL_DICES.find(d => d.id === diceId);
+
+            target.dice = {
+                id: diceId, lv: 1, baseColor: db.baseColor
+            };
+
+            syncMyData();
+            updateUILive();
+        }
+
+        function powerUpDice(id) {
+            const lv = powerUpLevels[id] || 1;
+            const cost = 100 * Math.pow(2, lv - 1);
+            if (battleState.sp >= cost && lv < 5) {
+                battleState.sp -= cost;
+                powerUpLevels[id] = lv + 1;
+                syncMyData(); // Powerup 雖然不影響盤面結構，但會影響傷害，這部分 Host 算傷害時需要知道對方等級嗎？
+                // 目前 syncMyData 只傳 slots.
+                // 為了簡化，合作模式中「強化」只影響「自己」的傷害計算。
+                // Host 幫 Guest 算傷害時，不知道 Guest 的等級。
+                // 這是一個 bug。 Host 必須知道 Guest 的 diceLevels。
+                // 修正：syncMyData 應該也要傳 diceLevels (powerUpLevels)。
+                updateUI(); // 重新繪製按鈕
+            }
+        }
+
+        function updateUILive() {
+            // 1. 同步純文字狀態
+            document.getElementById('hpText').innerText = battleState.hp;
+            document.getElementById('spText').innerText = Math.floor(battleState.sp);
+            document.getElementById('waveText').innerText = battleState.wave;
+            document.getElementById('summonCostText').innerText = battleState.summonCost;
+
+            // 2. 局部更新按鈕狀態 (只改顏色，不重繪 DOM)
+            // 只有在 SP 變動影響到「買得起/買不起」的狀態時，視覺才需要變
+            const currentSp = battleState.sp;
+
+            userData.deck.forEach(id => {
+                const btn = document.getElementById(`btn-power-${id}`);
+                const costEl = document.getElementById(`cost-power-${id}`);
+                if (!btn) return;
+
+                const lv = powerUpLevels[id] || 1;
+                const cost = 100 * Math.pow(2, lv - 1);
+                const isMax = lv >= 5;
+
+                // 處理邊框顏色
+                // 如果滿等 -> 金色
+                // 如果買得起 -> 藍色
+                // 否則 -> 灰色
+                // 我們直接操作 classList 比較安全，但因為有 tailwind class 混雜，可以暴力替換 border-*
+
+                // 清除舊的 border color class
+                btn.classList.remove('border-yellow-500', 'border-blue-500', 'border-slate-700', 'shadow-[0_0_5px_rgba(234,179,8,0.3)]');
+
+                if (isMax) {
+                    btn.classList.add('border-yellow-500', 'shadow-[0_0_5px_rgba(234,179,8,0.3)]');
+                } else if (currentSp >= cost) {
+                    btn.classList.add('border-blue-500');
+                } else {
+                    btn.classList.add('border-slate-700');
+                }
+            });
+        }
+
+        function updateUI() {
+            const container = document.getElementById('powerUpButtons');
+            if (!container) return;
+
+            // 產生強化按鈕 (完全移植 dice_battle 風格)
+            container.innerHTML = userData.deck.map((id) => {
+                const dice = ALL_DICES.find(d => d.id === id);
+                const lv = powerUpLevels[id] || 1;
+                const cost = 100 * Math.pow(2, lv - 1);
+                const q = QUALITIES[dice.quality] || QUALITIES.common;
+                const isMax = lv >= 5;
+                const costDisplay = isMax ? "MAX" : `${cost >= 1000 ? (cost / 1000).toFixed(1) + 'k' : cost} SP`;
+                const costColor = isMax ? "text-orange-500" : "text-slate-400";
+                const borderColor = isMax ? "border-yellow-500 shadow-[0_0_5px_rgba(234,179,8,0.3)]" :
+                    (battleState.sp >= cost ? 'border-blue-500' : 'border-slate-700');
+
+                // 注意：這裡我們在按鈕內放一個 canvas 畫骰子圖
+                return `
+                <button id="btn-power-${id}" onclick="${isMax ? '' : `powerUpDice('${id}')`}" 
+                    class="flex-1 min-w-[70px] bg-slate-800 border ${borderColor} rounded-lg py-1.5 flex flex-col items-center ${isMax ? '' : 'active:scale-95'} transition-all mx-1">
+                    <div class="w-8 h-8 rounded bg-white relative mb-1 overflow-hidden" style="border: 1px solid ${q.color}">
+                        <canvas id="pwr-canvas-${id}" width="32" height="32" class="absolute inset-0 pointer-events-none"></canvas>
+                    </div>
+                    <div class="text-[9px] text-yellow-500 font-bold leading-none">Lv.${lv}</div>
+                    <div id="cost-power-${id}" class="text-[8px] ${costColor} mt-1 font-bold tracking-tighter">${costDisplay}</div>
+                </button>`;
+            }).join('');
+
+            // 繪製按鈕上的小骰子
+            setTimeout(() => {
+                userData.deck.forEach(id => {
+                    const dice = ALL_DICES.find(d => d.id === id);
+                    const canvas = document.getElementById(`pwr-canvas-${id}`);
+                    if (canvas && dice) {
+                        const ctx = canvas.getContext('2d');
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        // 使用新的 drawDiceFeature
+                        drawDiceFeature(ctx, 0, 0, canvas.width, dice.pattern || dice.id, dice.baseColor);
+                    }
+                });
+            }, 0);
+        }
+
+        function initUI() {
+            updateUI();
+        }
+
+        // 啟動
+        init();
+
+        // --- 繪圖函式 (移植自 dice_battle) ---
+        function renderDice(ctx, x, y, dice, isLocked) {
+            if (!dice) return;
+            // 確保 slotSize 存在
+            const slotSize = grid.slotSize;
+            const q = QUALITIES[ALL_DICES.find(d => d.id === dice.id)?.quality || 'common'];
+
+            // 1. 畫外框 (品質顏色)
+            ctx.beginPath();
+            ctx.strokeStyle = q.color || '#fff';
+            ctx.lineWidth = 3;
+            drawRoundedRect(ctx, x + 4, y + 4, slotSize - 8, slotSize - 8, 8);
+            ctx.stroke();
+
+            // 2. 畫填充背景 (白色)
+            ctx.beginPath();
+            ctx.fillStyle = "#ffffff";
+            drawRoundedRect(ctx, x + 6, y + 6, slotSize - 12, slotSize - 12, 6);
+            ctx.fill();
+
+            const dColor = dice.baseColor || "#333";
+            const pattern = ALL_DICES.find(d => d.id === dice.id)?.pattern || dice.id;
+            const drawX = x + 6;
+            const drawY = y + 6;
+            const drawSize = slotSize - 12;
+
+            // 3. 畫特徵圖案
+            drawDiceFeature(ctx, drawX, drawY, drawSize, pattern, dColor);
+
+            // 4. 畫點數 (星級)
+            drawDiceStars(ctx, drawX, drawY, drawSize, dice.lv, dColor);
+
+            // 5. 鎖定遮罩
+            if (isLocked) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.fillStyle = "rgba(15, 23, 42, 0.75)";
+                drawRoundedRect(ctx, x + 5, y + 5, slotSize - 10, slotSize - 10, 8);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
+                ctx.lineWidth = 2;
+                const p = slotSize * 0.3;
+                ctx.moveTo(x + p, y + p); ctx.lineTo(x + slotSize - p, y + slotSize - p);
+                ctx.moveTo(x + slotSize - p, y + p); ctx.lineTo(x + p, y + slotSize - p);
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        function drawDiceFeature(ctx, x, y, size, pattern, diceColor) {
+            const m = size / 2;
+            ctx.save();
+            ctx.translate(x, y);
+
+            const r = parseInt(diceColor.slice(1, 3), 16);
+            const g = parseInt(diceColor.slice(3, 5), 16);
+            const b = parseInt(diceColor.slice(5, 7), 16);
+            ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.3)`;
+            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.12)`;
+            ctx.lineWidth = 4;
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+
+            switch (pattern) {
+                case 'fire':
+                    ctx.beginPath();
+                    ctx.moveTo(m, size * 0.2); ctx.lineTo(size * 0.8, size * 0.8); ctx.lineTo(size * 0.2, size * 0.8);
+                    ctx.closePath(); ctx.stroke(); ctx.fill();
+                    break;
+                case 'ice':
+                    ctx.beginPath(); ctx.arc(m, m, size * 0.35, 0, Math.PI * 2);
+                    ctx.moveTo(m, size * 0.1); ctx.lineTo(m, size * 0.9);
+                    ctx.moveTo(size * 0.1, m); ctx.lineTo(size * 0.9, m);
+                    ctx.stroke();
+                    break;
+                case 'wind':
+                    ctx.beginPath();
+                    for (let i = -1; i <= 1; i++) {
+                        ctx.moveTo(size * 0.2, m + (i * 12)); ctx.lineTo(size * 0.8, m + (i * 12));
+                    }
+                    ctx.stroke();
+                    break;
+                case 'electric':
+                    ctx.beginPath();
+                    ctx.moveTo(m + 5, size * 0.15); ctx.lineTo(m - 10, m + 5);
+                    ctx.lineTo(m + 10, m - 5); ctx.lineTo(m - 5, size * 0.85);
+                    ctx.stroke();
+                    break;
+                case 'poison':
+                    ctx.beginPath();
+                    ctx.moveTo(m, size * 0.2); ctx.lineTo(size * 0.75, m);
+                    ctx.lineTo(m, size * 0.8); ctx.lineTo(size * 0.25, m);
+                    ctx.closePath(); ctx.stroke(); ctx.fill();
+                    break;
+                case 'lock':
+                    ctx.strokeRect(size * 0.25, size * 0.25, size * 0.5, size * 0.5);
+                    ctx.beginPath(); ctx.arc(m, m, 4, 0, Math.PI * 2); ctx.fill();
+                    break;
+                case 'teleport':
+                    ctx.beginPath(); ctx.arc(size * 0.3, m, size * 0.3, -Math.PI / 2, Math.PI / 2); ctx.stroke();
+                    ctx.beginPath(); ctx.arc(size * 0.7, m, size * 0.3, Math.PI / 2, -Math.PI / 2); ctx.stroke();
+                    break;
+                case 'gear':
+                    ctx.beginPath(); ctx.setLineDash([5, 5]); ctx.arc(m, m, size * 0.35, 0, Math.PI * 2); ctx.stroke();
+                    ctx.setLineDash([]); ctx.beginPath(); ctx.arc(m, m, size * 0.15, 0, Math.PI * 2); ctx.stroke();
+                    break;
+                case 'joker':
+                    ctx.beginPath(); ctx.moveTo(size * 0.2, size * 0.3); ctx.lineTo(size * 0.8, size * 0.3); ctx.lineTo(m, size * 0.8); ctx.closePath(); ctx.stroke();
+                    ctx.beginPath(); ctx.arc(size * 0.35, size * 0.2, 3, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(size * 0.65, size * 0.2, 3, 0, Math.PI * 2); ctx.fill();
+                    break;
+                case 'growth':
+                    ctx.beginPath(); ctx.moveTo(m, size * 0.15); ctx.lineTo(m, size * 0.85);
+                    ctx.moveTo(m, size * 0.15); ctx.lineTo(size * 0.3, size * 0.4);
+                    ctx.moveTo(m, size * 0.15); ctx.lineTo(size * 0.7, size * 0.4);
+                    ctx.stroke();
+                    break;
+                case 'sun':
+                    ctx.beginPath(); ctx.arc(m, m, size * 0.15, 0, Math.PI * 2); ctx.stroke(); ctx.fill();
+                    ctx.lineWidth = 2;
+                    for (let i = 0; i < 8; i++) {
+                        ctx.save(); ctx.translate(m, m); ctx.rotate((i * Math.PI / 4) + (Math.PI / 8));
+                        ctx.beginPath(); ctx.moveTo(0, -size * 0.22); ctx.lineTo(0, -size * 0.32); ctx.stroke(); ctx.restore();
+                    }
+                    ctx.lineWidth = 4;
+                    break;
+                case 'galaxy':
+                    ctx.beginPath(); ctx.moveTo(m, size * 0.1); ctx.bezierCurveTo(size * 0.9, size * 0.1, size * 0.1, size * 0.9, m, size * 0.9); ctx.stroke();
+                    ctx.beginPath(); ctx.arc(m, m, size * 0.1, 0, Math.PI * 2); ctx.fill();
+                    break;
+            }
+            ctx.restore();
+        }
+
+        function drawDiceStars(ctx, x, y, size, stars, diceColor) {
+            if (stars >= 7) {
+                ctx.save();
+                ctx.fillStyle = "#fbbf24";
+                ctx.font = `bold ${size * 0.7}px Arial`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText("★", x + size / 2, y + size / 2 + size * 0.05);
+                ctx.restore();
+                return;
+            }
+
+            ctx.fillStyle = diceColor || "#333";
+            const dotSize = size * 0.07;
+            const p = size * 0.22;
+            const m = size / 2;
+            const l = p, r = size - p;
+            const t = p, b = size - p;
+
+            let dots = [];
+            if (stars === 1) dots = [[m, m]];
+            else if (stars === 2) dots = [[l, t], [r, b]];
+            else if (stars === 3) dots = [[l, t], [m, m], [r, b]];
+            else if (stars === 4) dots = [[l, t], [r, t], [l, b], [r, b]];
+            else if (stars === 5) dots = [[l, t], [r, t], [m, m], [l, b], [r, b]];
+            else if (stars === 6) dots = [[l, t], [r, t], [l, m], [r, m], [l, b], [r, b]];
+
+            dots.forEach(dot => {
+                ctx.beginPath();
+                ctx.arc(x + dot[0], y + dot[1], dotSize, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+    </script>
+</body>
+
+</html>
