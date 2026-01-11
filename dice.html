@@ -121,7 +121,6 @@
         .animate-popup {
             animation: popup 0.3s ease-out forwards;
         }
-        
     </style>
 </head>
 
@@ -250,46 +249,50 @@
                 </button>
             </div>
         </div>
-        <div id="coop-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-    <div class="bg-slate-800 w-full max-w-sm rounded-3xl p-6 border border-emerald-500/30 shadow-2xl">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-black text-white">合作模式</h2>
-            <button onclick="closeCoopModal()" class="text-slate-400 text-2xl">&times;</button>
-        </div>
+        <div id="coop-modal"
+            class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <div class="bg-slate-800 w-full max-w-sm rounded-3xl p-6 border border-emerald-500/30 shadow-2xl">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-black text-white">合作模式</h2>
+                    <button onclick="closeCoopModal()" class="text-slate-400 text-2xl">&times;</button>
+                </div>
 
-        <div id="coop-initial-actions" class="space-y-4">
-            <button onclick="createCoopRoom()"
-                class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95">
-                建立新房間
-            </button>
+                <div id="coop-initial-actions" class="space-y-4">
+                    <button onclick="createCoopRoom()"
+                        class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95">
+                        建立新房間
+                    </button>
 
-            <div class="relative py-2">
-                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-600"></div></div>
-                <div class="relative flex justify-center text-xs uppercase"><span class="bg-slate-800 px-2 text-slate-400">或者加入他人</span></div>
+                    <div class="relative py-2">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-slate-600"></div>
+                        </div>
+                        <div class="relative flex justify-center text-xs uppercase"><span
+                                class="bg-slate-800 px-2 text-slate-400">或者加入他人</span></div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <input type="text" id="room-code-input" maxlength="4" placeholder="請輸入4位房號"
+                            class="flex-1 bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white text-center font-mono text-xl focus:border-emerald-500 outline-none">
+                        <button onclick="joinCoopRoom()"
+                            class="bg-slate-100 hover:bg-white text-slate-900 font-bold px-6 rounded-xl transition-all active:scale-95">
+                            加入
+                        </button>
+                    </div>
+                </div>
+
+                <div id="coop-waiting-section" class="hidden flex flex-col items-center py-4">
+                    <p class="text-slate-400 text-sm mb-1">房間號碼</p>
+                    <h1 id="display-room-id" class="text-5xl font-black text-white tracking-widest mb-4">----</h1>
+                    <p id="lobby-status-text" class="text-emerald-400 font-medium animate-pulse mb-6">等待隊友加入...</p>
+
+                    <button id="host-start-btn" onclick="hostStartGame()"
+                        class="hidden w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95">
+                        開始遊戲
+                    </button>
+                </div>
             </div>
-
-            <div class="flex gap-2">
-                <input type="text" id="room-code-input" maxlength="4" placeholder="請輸入4位房號"
-                    class="flex-1 bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white text-center font-mono text-xl focus:border-emerald-500 outline-none">
-                <button onclick="joinCoopRoom()"
-                    class="bg-slate-100 hover:bg-white text-slate-900 font-bold px-6 rounded-xl transition-all active:scale-95">
-                    加入
-                </button>
-            </div>
         </div>
-
-        <div id="coop-waiting-section" class="hidden flex flex-col items-center py-4">
-            <p class="text-slate-400 text-sm mb-1">房間號碼</p>
-            <h1 id="display-room-id" class="text-5xl font-black text-white tracking-widest mb-4">----</h1>
-            <p id="lobby-status-text" class="text-emerald-400 font-medium animate-pulse mb-6">等待隊友加入...</p>
-            
-            <button id="host-start-btn" onclick="hostStartGame()" 
-                class="hidden w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95">
-                開始遊戲
-            </button>
-        </div>
-    </div>
-</div>
 
         <div id="page-inventory" class="hidden space-y-6">
             <div
@@ -395,7 +398,7 @@
             apiKey: _k.join(''),
             authDomain: "game-80d68.firebaseapp.com",
             projectId: "game-80d68",
-           databaseURL: "https://game-80d68-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            databaseURL: "https://game-80d68-default-rtdb.asia-southeast1.firebasedatabase.app/",
             messagingSenderId: "636332967920",
             appId: "1:636332967920:web:29e5600daf4db0ab613f35",
             measurementId: "G-MJZ4PGEHSQ"
@@ -502,124 +505,124 @@
         // --- Firebase 合作邏輯 ---
 
         // --- 房間管理變數 ---
-let currentRoomId = null;
-let isHost = false;
+        let currentRoomId = null;
+        let isHost = false;
 
-// 1. 建立房間
-async function createCoopRoom() {
-    const roomId = Math.floor(1000 + Math.random() * 9000).toString();
-    currentRoomId = roomId;
-    isHost = true;
+        // 1. 建立房間
+        async function createCoopRoom() {
+            const roomId = Math.floor(1000 + Math.random() * 9000).toString();
+            currentRoomId = roomId;
+            isHost = true;
 
-    const roomData = {
-        roomId: roomId,
-        status: 'waiting',
-        gameStarted: false,
-        host: userData.userId || 'Guest_' + Math.random().toString(36).substr(2, 5),
-        createdAt: Date.now(),
-        wave: 1,
-        hp: 3,
-        players: {
-            p1: { uid: userData.userId || 'host', sp: 100, isReady: true }
-        }
-    };
+            const roomData = {
+                roomId: roomId,
+                status: 'waiting',
+                gameStarted: false,
+                host: userData.userId || 'Guest_' + Math.random().toString(36).substr(2, 5),
+                createdAt: Date.now(),
+                wave: 1,
+                hp: 3,
+                players: {
+                    p1: { uid: userData.userId || 'host', sp: 100, isReady: true }
+                }
+            };
 
-    try {
-        await firebase.database().ref('coop_rooms/' + roomId).set(roomData);
-        
-        // 切換 UI 到等待狀態
-        showLobbyUI(roomId, "等待隊友加入...");
-        
-        // 開始監聽房間變化
-        listenForRoomUpdates(roomId);
-    } catch (error) {
-        console.error("建立失敗", error);
-    }
-}
+            try {
+                await firebase.database().ref('coop_rooms/' + roomId).set(roomData);
 
-// 2. 加入房間
-async function joinCoopRoom() {
-    const roomId = document.getElementById('room-code-input').value;
-    if (roomId.length !== 4) return;
+                // 切換 UI 到等待狀態
+                showLobbyUI(roomId, "等待隊友加入...");
 
-    const roomRef = firebase.database().ref('coop_rooms/' + roomId);
-    const snapshot = await roomRef.once('value');
-    const room = snapshot.val();
-
-    if (!room || room.status !== 'waiting') {
-        document.getElementById('room-code-input').classList.add('border-red-500');
-        return;
-    }
-
-    currentRoomId = roomId;
-    isHost = false;
-
-    await roomRef.child('players/p2').set({
-        uid: userData.userId || 'guest',
-        sp: 100,
-        isReady: true
-    });
-    
-    await roomRef.update({ status: 'ready' });
-
-    // 加入者也切換 UI 到等待狀態
-    showLobbyUI(roomId, "等待房主開始...");
-    listenForRoomUpdates(roomId);
-}
-
-// 3. UI 切換輔助
-function showLobbyUI(roomId, statusMsg) {
-    document.getElementById('coop-initial-actions').classList.add('hidden');
-    document.getElementById('coop-waiting-section').classList.remove('hidden');
-    document.getElementById('display-room-id').innerText = roomId;
-    document.getElementById('lobby-status-text').innerText = statusMsg;
-}
-
-// 4. 監聽房間狀態
-function listenForRoomUpdates(roomId) {
-    const roomRef = firebase.database().ref('coop_rooms/' + roomId);
-    roomRef.on('value', (snapshot) => {
-        const room = snapshot.val();
-        if (!room) return;
-
-        // 當 P2 加入且我是房主
-        if (room.status === 'ready' && isHost) {
-            document.getElementById('lobby-status-text').innerText = "隊友已就緒！";
-            document.getElementById('host-start-btn').classList.remove('hidden');
+                // 開始監聽房間變化
+                listenForRoomUpdates(roomId);
+            } catch (error) {
+                console.error("建立失敗", error);
+            }
         }
 
-        // 核心：當房主點擊開始，所有人都會執行進入遊戲
-        if (room.gameStarted === true) {
-            roomRef.off(); // 停止監聽
-            enterCoopBattle(roomId);
+        // 2. 加入房間
+        async function joinCoopRoom() {
+            const roomId = document.getElementById('room-code-input').value;
+            if (roomId.length !== 4) return;
+
+            const roomRef = firebase.database().ref('coop_rooms/' + roomId);
+            const snapshot = await roomRef.once('value');
+            const room = snapshot.val();
+
+            if (!room || room.status !== 'waiting') {
+                document.getElementById('room-code-input').classList.add('border-red-500');
+                return;
+            }
+
+            currentRoomId = roomId;
+            isHost = false;
+
+            await roomRef.child('players/p2').set({
+                uid: userData.userId || 'guest',
+                sp: 100,
+                isReady: true
+            });
+
+            await roomRef.update({ status: 'ready' });
+
+            // 加入者也切換 UI 到等待狀態
+            showLobbyUI(roomId, "等待房主開始...");
+            listenForRoomUpdates(roomId);
         }
-    });
-}
 
-// 5. 房主按下開始
-function hostStartGame() {
-    if (!currentRoomId) return;
-    firebase.database().ref('coop_rooms/' + currentRoomId).update({
-        gameStarted: true,
-        status: 'playing'
-    });
-}
+        // 3. UI 切換輔助
+        function showLobbyUI(roomId, statusMsg) {
+            document.getElementById('coop-initial-actions').classList.add('hidden');
+            document.getElementById('coop-waiting-section').classList.remove('hidden');
+            document.getElementById('display-room-id').innerText = roomId;
+            document.getElementById('lobby-status-text').innerText = statusMsg;
+        }
 
-// 進入戰鬥畫面
-// 進入戰鬥頁面 (跳轉到 dice_cooper.html)
-function enterCoopBattle(roomId) {
-    // 停止監聽，避免跳轉時重複觸發
-    firebase.database().ref('coop_rooms/' + roomId).off();
-    
-    // 帶上參數：roomId (房號) 和 role (角色：host 或 guest)
-    const role = isHost ? 'host' : 'guest';
-    const targetUrl = `dice_cooper.html?roomId=${roomId}&role=${role}`;
-    
-    console.log("正在跳轉至合作模式...", targetUrl);
-    
-    // 執行跳轉
-    window.location.href = targetUrl;
-}
+        // 4. 監聽房間狀態
+        function listenForRoomUpdates(roomId) {
+            const roomRef = firebase.database().ref('coop_rooms/' + roomId);
+            roomRef.on('value', (snapshot) => {
+                const room = snapshot.val();
+                if (!room) return;
+
+                // 當 P2 加入且我是房主
+                if (room.status === 'ready' && isHost) {
+                    document.getElementById('lobby-status-text').innerText = "隊友已就緒！";
+                    document.getElementById('host-start-btn').classList.remove('hidden');
+                }
+
+                // 核心：當房主點擊開始，所有人都會執行進入遊戲
+                if (room.gameStarted === true) {
+                    roomRef.off(); // 停止監聽
+                    enterCoopBattle(roomId);
+                }
+            });
+        }
+
+        // 5. 房主按下開始
+        function hostStartGame() {
+            if (!currentRoomId) return;
+            firebase.database().ref('coop_rooms/' + currentRoomId).update({
+                gameStarted: true,
+                status: 'playing'
+            });
+        }
+
+        // 進入戰鬥畫面
+        // 進入戰鬥頁面 (跳轉到 dice_cooper.html)
+        function enterCoopBattle(roomId) {
+            // 停止監聽，避免跳轉時重複觸發
+            firebase.database().ref('coop_rooms/' + roomId).off();
+
+            // 帶上參數：roomId (房號) 和 role (角色：host 或 guest)
+            const role = isHost ? 'host' : 'guest';
+            const targetUrl = `dice_cooper.html?roomId=${roomId}&role=${role}`;
+
+            console.log("正在跳轉至合作模式...", targetUrl);
+
+            // 執行跳轉
+            window.location.href = targetUrl;
+        }
         function initGameData() {
             let raw = localStorage.getItem('dice_game_data');
             let data = null;

@@ -196,12 +196,23 @@
         };
 
         // --- 2. 初始化 ---
+        const _k = ["AIzaSyDSRfVA", "uWCWCUd1NJop", "J6wHvsqsAM4UzJA"];
+
         const firebaseConfig = {
-            apiKey: "AIzaSyDSRfVA" + "uWCWCUd1NJop" + "J6wHvsqsAM4UzJA",
+            apiKey: _k.join(''),
+            authDomain: "game-80d68.firebaseapp.com",
+            projectId: "game-80d68",
             databaseURL: "https://game-80d68-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            messagingSenderId: "636332967920",
+            appId: "1:636332967920:web:29e5600daf4db0ab613f35",
+            measurementId: "G-MJZ4PGEHSQ"
         };
-        firebase.initializeApp(firebaseConfig);
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
         const db = firebase.database();
+        const fs = firebase.firestore();
 
         const urlParams = new URLSearchParams(window.location.search);
         const roomId = urlParams.get('roomId') || "COOP_TEST";
@@ -349,6 +360,11 @@
                 if (data.wave) battleState.wave = data.wave;
                 if (data.hp) battleState.hp = data.hp;
 
+                // 監聽結束信號
+                if (data.gameover === true && battleState.hp <= 0 && battleState.isStarted) {
+                    handleGameOver();
+                }
+
                 // 敵人同步 (Host 寫入，Guest 讀取)
                 if (role === 'guest' && data.enemies) {
                     // 為了平滑移動，可以做一點插值，這裡簡化直接覆蓋
@@ -431,7 +447,9 @@
                     db.ref(`coop_rooms/${roomId}`).update({
                         enemies: enemies,
                         wave: battleState.wave,
-                        hp: battleState.hp
+                        wave: battleState.wave,
+                        hp: battleState.hp,
+                        gameover: battleState.hp <= 0 // 同步結束狀態
                     });
                 }
             } else {
@@ -579,6 +597,9 @@
                         } else {
                             // 到終點
                             battleState.hp--;
+                            if (battleState.hp <= 0) {
+                                handleGameOver();
+                            }
                             enemies.splice(i, 1);
                             continue;
                         }
@@ -1410,6 +1431,48 @@
 
         // 啟動
         init();
+
+        function handleGameOver() {
+            battleState.isStarted = false;
+
+            // 1. 更新本地紀錄
+            if (battleState.wave > userData.maxWave) {
+                userData.maxWave = battleState.wave;
+                localStorage.setItem('dice_game_data', JSON.stringify(userData));
+            }
+
+            // 2. 上傳排行榜 (僅由 Host 執行一次)
+            if (role === 'host') {
+                // 取得雙方名稱 (或 ID)
+                // 這裡我們需要從 currentRoomId 取得房間資訊，或者假設我們已經有雙方資料
+                // 暫時用本地變數
+                const p1Name = "Player 1"; // 可優化：從 userData 拿名字
+                const p2Name = "Player 2";
+
+                db.ref(`coop_rooms/${roomId}`).once('value').then(snap => {
+                    const data = snap.val();
+                    const p1Id = data.players.p1?.uid || 'unknown';
+                    const p2Id = data.players.p2?.uid || 'unknown';
+
+                    // 寫入 Firestore 排行榜集合
+                    fs.collection('leaderboard').add({
+                        p1: p1Id,
+                        p2: p2Id,
+                        wave: battleState.wave,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        roomId: roomId
+                    }).then(() => {
+                        console.log("排行榜紀錄已上傳");
+                    }).catch(err => {
+                        console.error("上傳失敗", err);
+                    });
+                });
+            }
+
+            // 3. 顯示結算畫面
+            alert(`遊戲結束！\n您撐過了 ${battleState.wave} 波`);
+            location.href = 'dice.html'; // 回大廳
+        }
 
         // --- 繪圖函式 (移植自 dice_battle) ---
         function renderDice(ctx, x, y, dice, isLocked) {
