@@ -378,6 +378,23 @@
                 if (data.wave) battleState.wave = data.wave;
                 if (data.hp !== undefined) battleState.hp = data.hp;
 
+                if (role === 'guest' && data.gameStats && data.gameStats.totalSpP2) {
+                    const newTotal = data.gameStats.totalSpP2;
+                    let diff = newTotal - (stateCache.lastTotalSpP2 || 0);
+
+                    // 如果伺服器重置 (數值變小)，視為新局，不加卻也不扣
+                    if (diff < 0) {
+                        stateCache.lastTotalSpP2 = newTotal;
+                        diff = 0;
+                    }
+
+                    if (diff > 0) {
+                        battleState.sp += diff;
+                        stateCache.lastTotalSpP2 = newTotal;
+                        updateUILive();
+                    }
+                }
+
                 // 監聽結束信號
                 // 只要收到 gameover 為 true 就結束，不需檢查本地 HP (避免同步落差)
                 if (data.gameover === true && battleState.isStarted) {
@@ -493,9 +510,9 @@
                     db.ref(`coop_rooms/${roomId}`).update({
                         enemies: enemies,
                         wave: battleState.wave,
-                        wave: battleState.wave,
                         hp: battleState.hp,
-                        gameover: battleState.hp <= 0 // 同步結束狀態
+                        gameover: battleState.hp <= 0,
+                        gameStats: { totalSpP2: stateCache.totalSpP2 || 0 }
                     });
                 }
             } else {
@@ -962,8 +979,13 @@
         function applyDamageLogic(target, dmg, type, attackerRole) {
             target.hp -= dmg;
             if (target.hp <= 0 && role === 'host') {
-                battleState.sp += 10;
-                syncMyData();
+                // 改為：誰的怪就加誰的 SP (不看誰殺的)
+                if (target.owner === 'p1') {
+                    battleState.sp += 10;
+                } else if (target.owner === 'p2') {
+                    // P2 (Guest) 的怪，累積到 P2 獎勵池
+                    stateCache.totalSpP2 = (stateCache.totalSpP2 || 0) + 10;
+                }
             }
 
             // 特殊效果
@@ -1053,7 +1075,7 @@
 
         // --- 視角轉換函式 ---
         function tx(x) {
-            return role === 'guest' ? canvas.width - x : x;
+            return x; // 不翻轉 X，保持左右一致，僅翻轉上下 (Mirror View)
         }
         function ty(y) {
             return role === 'guest' ? canvas.height - y : y;
@@ -1335,22 +1357,22 @@
             // Guest Rotate 180: 原點 (0,0) 變右下，(w,h) 變左上。
             // 所以 Guest 點擊畫面下方 (高 Y)，對應到 Canvas 座標應該是 低 Y (因為被轉了)。
             // Canvas 邏輯座標系中，P2 (Guest) 的區域被定義在上方 (Y 小)。
-            // 所以 Guest 點畫面下方 -> 視覺上是自己的區域 -> 轉換後應該要是 Y 小的區域。
-            // 轉換公式： if guest: x = w - x; y = h - y;
+            // 輸入座標 x, y 是 Canvas 上的像素座標
+            // 我們比對 Slot 的視覺位置 = tx(Slot.rawX), ty(Slot.rawY)
+            // 現在 tx(x) = x，所以視覺 X = 邏輯 X
+            // ty(y) = H - y (if guest)
 
-            let lx = x, ly = y;
-            if (role === 'guest') {
-                lx = canvas.width - x;
-                ly = canvas.height - y;
-            }
-
-            // 判定點擊了哪個格子 (只能點 mySlots)
-            // 需反推 slot 位置
-            // 這裡暴力法：遍歷 mySlots 算距離
             const clicked = mySlots.find(slot => {
+                // 取得 Slot 的 Raw 座標 (邏輯座標)
                 const sx = getSlotPixelX(slot, role === 'host' ? 'p1' : 'p2');
                 const sy = getSlotPixelY(slot, role === 'host' ? 'p1' : 'p2');
-                return Math.abs(lx - sx) < grid.slotSize / 2 + 5 && Math.abs(ly - sy) < grid.slotSize / 2 + 5;
+
+                // 轉成視覺座標
+                const visualX = tx(sx);
+                const visualY = ty(sy);
+
+                // 判定距離
+                return Math.abs(x - visualX) < grid.slotSize / 2 + 5 && Math.abs(y - visualY) < grid.slotSize / 2 + 5;
             });
 
             if (clicked && clicked.dice && !clicked.isLocked) {
@@ -1373,18 +1395,17 @@
         function handleInputEnd() {
             if (!drag.isDragging) return;
 
-            // 計算放開的位置 (邏輯座標)
-            let lx = drag.currentX, ly = drag.currentY;
-            if (role === 'guest') {
-                lx = canvas.width - lx;
-                ly = canvas.height - ly;
-            }
+            const lx = drag.currentX;
+            const ly = drag.currentY;
 
-            // 判定目標格
+            // 判定目標格 (由視覺座標比對)
             const target = mySlots.find(slot => {
                 const sx = getSlotPixelX(slot, role === 'host' ? 'p1' : 'p2');
                 const sy = getSlotPixelY(slot, role === 'host' ? 'p1' : 'p2');
-                return Math.abs(lx - sx) < grid.slotSize / 2 + 10 && Math.abs(ly - sy) < grid.slotSize / 2 + 10;
+                const visualX = tx(sx);
+                const visualY = ty(sy);
+
+                return Math.abs(lx - visualX) < grid.slotSize / 2 + 10 && Math.abs(ly - visualY) < grid.slotSize / 2 + 10;
             });
 
             if (target && target !== drag.fromSlot) {
