@@ -985,79 +985,107 @@
         }
 
         // --- 8. 渲染 ---
-        function draw() {
-            ctx.save();
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, canvas.width, canvas.height); // 清空
 
-            // Guest 視角翻轉：讓自己 (P2) 顯示在下方
-            if (role === 'guest') {
-                ctx.translate(canvas.width / 2, canvas.height / 2);
-                ctx.rotate(Math.PI);
-                ctx.translate(-canvas.width / 2, -canvas.height / 2);
+
+        // --- 視角轉換函式 ---
+        function tx(x) {
+            return role === 'guest' ? canvas.width - x : x;
+        }
+        function ty(y) {
+            return role === 'guest' ? canvas.height - y : y;
+        }
+
+        // --- 繪圖主函式 ---
+        function draw() {
+            // 清空畫布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 0. 畫背景路徑
+            // 路徑點也需要轉換
+            const drawTransformedPath = (path, color) => {
+                if (!path || path.length === 0) return;
+                ctx.beginPath();
+                ctx.strokeStyle = color; // 路徑顏色
+                ctx.lineWidth = 40;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                const start = { x: tx(path[0].x), y: ty(path[0].y) };
+                ctx.moveTo(start.x, start.y);
+
+                for (let i = 1; i < path.length; i++) {
+                    const p = { x: tx(path[i].x), y: ty(path[i].y) };
+                    ctx.lineTo(p.x, p.y);
+                }
+                ctx.stroke();
+
+                // 內細線
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+                ctx.stroke();
+            };
+
+            drawTransformedPath(paths.p1, '#3b82f6');
+            drawTransformedPath(paths.p2, '#f472b6');
+
+            // 1.5 畫傳送門
+            const angle = (Date.now() / 1000) % (Math.PI * 2);
+            // P1 (Host)
+            if (paths.p1.length) {
+                drawPortal(ctx, tx(paths.p1[0].x), ty(paths.p1[0].y), '#3b82f6', angle, true);
+                const end = paths.p1[paths.p1.length - 1];
+                drawPortal(ctx, tx(end.x), ty(end.y), '#ef4444', -angle, false);
+            }
+            // P2 (Guest)
+            if (paths.p2.length) {
+                drawPortal(ctx, tx(paths.p2[0].x), ty(paths.p2[0].y), '#f472b6', angle, true);
             }
 
-            // 1. 畫背景路徑
-            drawPath(paths.p1, '#3b82f6');
-            drawPath(paths.p2, '#f472b6');
-
-            // 1.5 畫傳送門 (起點與終點)
-            const angle = (Date.now() / 1000) % (Math.PI * 2);
-
-            // P1 Start (Host)
-            drawPortal(ctx, paths.p1[0].x, paths.p1[0].y, '#3b82f6', angle, true);
-            // P1 End (Shared)
-            drawPortal(ctx, paths.p1[paths.p1.length - 1].x, paths.p1[paths.p1.length - 1].y, '#ef4444', -angle, false);
-
-            // P2 Start (Guest)
-            drawPortal(ctx, paths.p2[0].x, paths.p2[0].y, '#f472b6', angle, true);
-            // P2 End (Shared) - 其實跟 P1 End 同一點，可以不畫或重疊畫
-            // drawPortal(ctx, paths.p2[paths.p2.length - 1].x, paths.p2[paths.p2.length - 1].y, '#ef4444', -angle, false);
-
-            // 2. 畫格子與骰子
-            // P1 (Host) 在下方
+            // 2. 畫格子 (傳入是否需要翻轉渲染，但在 tx/ty 已經全域處理)
             drawDiceGrid(mySlots, 'p1');
-            // P2 (Guest) 在上方
             drawDiceGrid(partnerSlots, 'p2');
 
             // 3. 畫敵人
             enemies.forEach(e => {
-                const size = e.isBoss ? e.size : 20;
+                const drawX = tx(e.x);
+                const drawY = ty(e.y);
+                const size = e.isBoss ? e.size : 20; // 確保 size 有值
+                const renderSize = size || 20;
+
                 const color = e.isBoss ? (BOSS_TYPES[e.bossType]?.color || '#f00') : (e.owner === 'p1' ? '#3b82f6' : '#f472b6');
 
-                // 畫本體
                 if (e.isBoss) {
                     const bossImg = BOSS_TYPES[e.bossType]?.img;
                     if (bossImg && bossImg.complete) {
                         ctx.save();
-                        // 簡單的呼吸效果
                         const scale = 1 + Math.sin(Date.now() / 200) * 0.05;
-                        ctx.translate(e.x, e.y);
+                        ctx.translate(drawX, drawY);
                         ctx.scale(scale, scale);
-                        ctx.drawImage(bossImg, -size / 2, -size / 2, size, size);
+                        // Guest 視角是否需要旋轉 Boss 圖片? 
+                        // 不用，圖片本身朝向無所謂，甚至我們希望它看起來是正的
+                        ctx.drawImage(bossImg, -renderSize / 2, -renderSize / 2, renderSize, renderSize);
                         ctx.restore();
                     } else {
-                        // 圖片未載入時的備案
                         ctx.fillStyle = color;
-                        ctx.beginPath(); ctx.arc(e.x, e.y, size / 2, 0, Math.PI * 2); ctx.fill();
+                        ctx.beginPath(); ctx.arc(drawX, drawY, renderSize / 2, 0, Math.PI * 2); ctx.fill();
                     }
                 } else {
                     ctx.fillStyle = color;
-                    ctx.fillRect(e.x - size / 2, e.y - size / 2, size, size);
+                    ctx.fillRect(drawX - renderSize / 2, drawY - renderSize / 2, renderSize, renderSize);
                 }
 
-                // 血條
+                // 血條 (始終在上方)
                 const percent = Math.max(0, e.hp / e.maxHp);
                 ctx.fillStyle = '#333';
-                ctx.fillRect(e.x - 12, e.y - size / 2 - 8, 24, 4);
+                ctx.fillRect(drawX - 12, drawY - renderSize / 2 - 8, 24, 4);
                 ctx.fillStyle = '#22c55e';
-                ctx.fillRect(e.x - 12, e.y - size / 2 - 8, 24 * percent, 4);
+                ctx.fillRect(drawX - 12, drawY - renderSize / 2 - 8, 24 * percent, 4);
             });
 
             // 4. 畫子彈
             projectiles.forEach(p => {
                 ctx.fillStyle = p.color || '#fff';
-                ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(tx(p.x), ty(p.y), 4, 0, Math.PI * 2); ctx.fill();
             });
 
             // 5. 畫傷害與特效
@@ -1065,56 +1093,42 @@
                 ctx.fillStyle = d.color;
                 ctx.font = 'bold 16px Arial';
                 ctx.textAlign = 'center';
-                ctx.fillText(d.val, d.x, d.y);
+                ctx.fillText(d.val, tx(d.x), ty(d.y));
                 d.y -= 0.5; d.life--;
             });
             damagePopups = damagePopups.filter(d => d.life > 0);
 
             // 6. 畫黑洞
             blackHoles.forEach(bh => {
+                const bx = tx(bh.x);
+                const by = ty(bh.y);
                 ctx.save();
-                ctx.translate(bh.x, bh.y);
+                ctx.translate(bx, by);
                 const rot = (Date.now() / 1000) * 2;
                 ctx.rotate(rot);
+                ctx.beginPath(); ctx.arc(0, 0, 20, 0, Math.PI * 2);
+                ctx.fillStyle = '#000'; ctx.fill();
+                ctx.strokeStyle = '#6366f1'; ctx.lineWidth = 2; ctx.stroke();
 
-                // 黑洞本體
-                ctx.beginPath();
-                ctx.arc(0, 0, 20, 0, Math.PI * 2);
-                ctx.fillStyle = '#000';
-                ctx.fill();
-                ctx.strokeStyle = '#6366f1'; // 銀河紫
-                ctx.lineWidth = 2;
-                ctx.stroke();
-
-                // 吸入線條
+                // 吸入動畫
                 for (let i = 0; i < 4; i++) {
                     ctx.rotate(Math.PI / 2);
-                    ctx.beginPath();
-                    ctx.moveTo(30 + Math.sin(Date.now() / 200) * 10, 0);
-                    ctx.lineTo(10, 0);
-                    ctx.strokeStyle = `rgba(99, 102, 241, 0.5)`;
-                    ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(30 + Math.sin(Date.now() / 200) * 10, 0); ctx.lineTo(10, 0);
+                    ctx.strokeStyle = 'rgba(99, 102, 241, 0.5)'; ctx.stroke();
                 }
                 ctx.restore();
             });
 
-            // 拖曳中的骰子 (最後畫)
+            // 拖曳中
             if (drag.isDragging && drag.dice) {
-                // 注意：drag.currentX/Y 是螢幕座標，如果 Guest 翻轉了，這裡可能要反轉？
-                // touch 事件取得的是 clientX，我們需要轉換成 Canvas 內部坐標
-                // 如果 Canvas rotate 了，座標系也變了。
-                // 簡單解法：Guest 模式下，touch 座標也做一次中心對稱轉換
-
-                let dx = drag.currentX;
-                let dy = drag.currentY;
-                if (role === 'guest') {
-                    dx = canvas.width - dx;
-                    dy = canvas.height - dy;
-                }
-                renderDice(ctx, dx - grid.slotSize / 2, dy - grid.slotSize / 2, drag.dice, false);
+                // drag.currentX/Y 已經是 Input 座標
+                // 在 handleInputMove 中我们需要根據 Guest 調整嗎？
+                // 我們統一：drag.currentX/Y 儲存的是「螢幕/Canvas 像素座標」 (未經 tx/ty 轉換)
+                // 但因為我們 drawDiceGrid 裡面用了 tx/ty，格子位置變了
+                // 所以 InputEvent 裡面也需要做對應的逆轉換來判定格子?
+                // 這裡單純畫拖曳物，直接畫在滑鼠位置即可
+                renderDice(ctx, drag.currentX - grid.slotSize / 2, drag.currentY - grid.slotSize / 2, drag.dice, false);
             }
-
-            ctx.restore();
         }
 
         function drawPath(path, color) {
@@ -1196,16 +1210,20 @@
             const sideMargin = canvas.width * 0.12;
 
             slots.forEach(slot => {
-                const x = sideMargin + grid.padding + slot.col * (grid.slotSize + grid.padding);
-                const y = startY + slot.row * (grid.slotSize + grid.padding);
+                const rawX = sideMargin + grid.padding + slot.col * (grid.slotSize + grid.padding);
+                const rawY = startY + slot.row * (grid.slotSize + grid.padding);
+
+                // 應用視角轉換
+                const drawX = tx(rawX);
+                const drawY = ty(rawY);
 
                 // 底座
                 ctx.fillStyle = '#1e293b';
-                drawRoundedRect(ctx, x, y, grid.slotSize, grid.slotSize, 8);
+                drawRoundedRect(ctx, drawX, drawY, grid.slotSize, grid.slotSize, 8);
                 ctx.fill();
 
                 if (slot.dice && !slot.isBeingDragged) {
-                    renderDice(ctx, x, y, slot.dice, slot.isLocked);
+                    renderDice(ctx, drawX, drawY, slot.dice, slot.isLocked);
                 }
             });
         }
