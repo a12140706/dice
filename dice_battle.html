@@ -141,7 +141,8 @@
     </div>
 
     <div id="canvas-container" class="flex-1 relative">
-        <canvas id="gameCanvas" style="width: 100%; height: 100%; display: block;"></canvas>
+        <canvas id="gameCanvas"
+            style="touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; width: 100%; height: 100%; display: block;"></canvas>
     </div>
 
     <div id="footer-controls" class="p-3 max-w-[500px] mx-auto w-full pb-safe">
@@ -360,7 +361,7 @@
             BOSS_LEVEL_GROWTH: 1.6,    // Boss 跨關卡成長
             BOSS_WAVE_GROWTH: 1.8,     // Boss 隨波次成長系數 (以 10 波為單位)
             //BOSS_SPEED_BASE: 1.0,      // Boss 初始移速
-           // BOSS_SPEED_WAVE_ADD: 0.01  // Boss 每波增加的移速
+            // BOSS_SPEED_WAVE_ADD: 0.01  // Boss 每波增加的移速
         };
         const userData = JSON.parse(localStorage.getItem('dice_game_data')) || {
             deck: ['fire', 'wind', 'ice', 'electric', 'poison'],
@@ -633,152 +634,171 @@
         }
 
         function updateCombat() {
-            if (typeof isSunActivated === 'undefined') window.isSunActivated = false;
+    if (typeof isSunActivated === 'undefined') window.isSunActivated = false;
 
-            grid.slots.forEach(slot => {
-                // 修正判斷：確保 dice 存在，且排除「拖曳中」或「被Boss鎖定」
-                // 這裡要確認 slot.isLocked 只有在被 Boss 攻擊時才是 true
-                if (slot.dice && slot.dice.id && !slot.isBeingDragged && slot.isLocked !== true) {
-                    const db = ALL_DICES.find(d => d.id === slot.dice.id);
-                    if (!db) return;
+    grid.slots.forEach(slot => {
+        if (slot.dice && slot.dice.id && !slot.isBeingDragged && slot.isLocked !== true) {
+            const db = ALL_DICES.find(d => d.id === slot.dice.id);
+            if (!db) return;
 
-                    // --- A. 成長骰子邏輯 (保持原樣，確保屬性正確) ---
-                    if (slot.dice.id === 'growth') {
-                        if (!slot.dice.growthTimer) slot.dice.growthTimer = 0;
-                        slot.dice.growthTimer++;
-                        const targetSeconds = getDiceSpecialValue('growth');
-                        if (slot.dice.growthTimer >= targetSeconds * 60) {
-                            if (slot.dice.lv < 7) {
-                                const newId = userData.deck[Math.floor(Math.random() * userData.deck.length)];
-                                const newDb = ALL_DICES.find(d => d.id === newId);
-                                slot.dice = {
-                                    id: newId,
-                                    lv: slot.dice.lv + 1,
-                                    baseColor: newDb.baseColor, // 使用新版顏色
-                                    color: newDb.baseColor,     // 兼容舊版顏色
-                                    qualityColor: QUALITIES[newDb.quality].color,
-                                    growthTimer: 0,
-                                    attackCooldown: 0
-                                };
-                                if (typeof updateUI === 'function') updateUI();
-                                if (typeof refreshSunState === 'function') refreshSunState();
-                            }
-                        }
-                    }
-
-                    // --- B. 攻速與攻擊 ---
-                    const pLv = userData.diceLevels[slot.dice.id] || 1;
-                    let spd = Math.max(10, db.stats.speed + (pLv - 1) * db.grow.speed);
-                    if (slot.dice.id === 'sun' && isSunActivated) spd /= 1.5;
-                    if (spd < 5) spd = 5;
-
-                    // 累加冷卻，確保 slot 本身或 dice 物件都能存取到這個值
-                    slot.attackCooldown = (slot.attackCooldown || 0) + 1;
-
-                    if (slot.attackCooldown >= spd) {
-                        const target = enemies
-                            .filter(e => e.hp > 0 && (e.virtualHp !== undefined ? e.virtualHp : e.hp) > 0)
-                            .sort((a, b) => b.pathIndex - a.pathIndex)[0];
-
-                        if (target) {
-                            const powerUpLv = powerUpLevels[slot.dice.id] || 1;
-                            let dmg = (db.stats.atk + (pLv - 1) * db.grow.atk) * slot.dice.lv * (1 + (powerUpLv - 1) * 0.4);
-
-                            // 齒輪加成
-                            if (slot.dice.id === 'gear') {
-                                const idx = grid.slots.indexOf(slot);
-                                const col = idx % grid.cols;
-                                const row = Math.floor(idx / grid.cols);
-                                let neighbors = 0;
-                                grid.slots.forEach((s, sIdx) => {
-                                    if (s.dice && s.dice.id === 'gear' && s !== slot) {
-                                        let sCol = sIdx % grid.cols;
-                                        let sRow = Math.floor(sIdx / grid.cols);
-                                        if (Math.abs(sCol - col) + Math.abs(sRow - row) === 1) neighbors++;
-                                    }
-                                });
-                                dmg *= (1 + neighbors * 0.5);
-                            }
-
-                            executeAttack(
-                                slot.dice,
-                                target,
-                                dmg,
-                                slot.x + grid.slotSize / 2,
-                                slot.y + grid.slotSize / 2,
-                                isSunActivated
-                            );
-                            slot.attackCooldown = 0;
-                        }
+            // --- A. 成長骰子邏輯 (保持原樣) ---
+            if (slot.dice.id === 'growth') {
+                if (!slot.dice.growthTimer) slot.dice.growthTimer = 0;
+                slot.dice.growthTimer++;
+                const targetSeconds = getDiceSpecialValue('growth');
+                if (slot.dice.growthTimer >= targetSeconds * 60) {
+                    if (slot.dice.lv < 7) {
+                        const newId = userData.deck[Math.floor(Math.random() * userData.deck.length)];
+                        const newDb = ALL_DICES.find(d => d.id === newId);
+                        slot.dice = {
+                            id: newId,
+                            lv: slot.dice.lv + 1,
+                            baseColor: newDb.baseColor,
+                            color: newDb.baseColor,
+                            qualityColor: QUALITIES[newDb.quality].color,
+                            growthTimer: 0,
+                            attackCooldown: 0
+                        };
+                        if (typeof updateUI === 'function') updateUI();
+                        if (typeof refreshSunState === 'function') refreshSunState();
                     }
                 }
-            });
+            }
 
-            // 3. 子彈移動 (保持原樣)
-            for (let i = projectiles.length - 1; i >= 0; i--) {
-                let p = projectiles[i];
-                if (!enemies.includes(p.target) || p.target.hp <= 0) {
-                    projectiles.splice(i, 1);
-                    continue;
-                }
-                let dx = p.target.x - p.x;
-                let dy = p.target.y - p.y;
-                let dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < 15) {
-                    applyHitEffect(p);
-                    projectiles.splice(i, 1);
-                } else {
-                    p.x += (dx / dist) * (p.speed || 10);
-                    p.y += (dy / dist) * (p.speed || 10);
+            // --- B. 攻速與攻擊 ---
+            const pLv = userData.diceLevels[slot.dice.id] || 1;
+            let spd = Math.max(10, db.stats.speed + (pLv - 1) * db.grow.speed);
+            if (slot.dice.id === 'sun' && isSunActivated) spd /= 1.5;
+            if (spd < 5) spd = 5;
+
+            slot.attackCooldown = (slot.attackCooldown || 0) + 1;
+
+            if (slot.attackCooldown >= spd) {
+                // --- 核心修改：精確鎖定最前怪物 ---
+                const target = enemies
+                    .filter(e => e.hp > 0 && (e.virtualHp !== undefined ? e.virtualHp : e.hp) > 0)
+                    .sort((a, b) => {
+                        // 1. 先比路徑進度 (哪一個經過的路徑點多)
+                        if (b.pathIndex !== a.pathIndex) {
+                            return b.pathIndex - a.pathIndex;
+                        }
+                        // 2. 如果路徑點一樣，比距離下一個點的距離 (越小代表越前面)
+                        // 我們簡單用當前座標與 path[pathIndex] 的距離來比
+                        const nextPoint = path[a.pathIndex];
+                        if (nextPoint) {
+                            const distA = Math.hypot(a.x - nextPoint.x, a.y - nextPoint.y);
+                            const distB = Math.hypot(b.x - nextPoint.x, b.y - nextPoint.y);
+                            return distA - distB; 
+                        }
+                        return 0;
+                    })[0];
+
+                if (target) {
+                    const powerUpLv = powerUpLevels[slot.dice.id] || 1;
+                    let dmg = (db.stats.atk + (pLv - 1) * db.grow.atk) * slot.dice.lv * (1 + (powerUpLv - 1) * 0.4);
+
+                    // 齒輪加成邏輯保持原樣
+                    if (slot.dice.id === 'gear') {
+                        const idx = grid.slots.indexOf(slot);
+                        const col = idx % grid.cols;
+                        const row = Math.floor(idx / grid.cols);
+                        let neighbors = 0;
+                        grid.slots.forEach((s, sIdx) => {
+                            if (s.dice && s.dice.id === 'gear' && s !== slot) {
+                                let sCol = sIdx % grid.cols;
+                                let sRow = Math.floor(sIdx / grid.cols);
+                                if (Math.abs(sCol - col) + Math.abs(sRow - row) === 1) neighbors++;
+                            }
+                        });
+                        dmg *= (1 + neighbors * 0.5);
+                    }
+
+                    executeAttack(
+                        slot.dice,
+                        target,
+                        dmg,
+                        slot.x + grid.slotSize / 2,
+                        slot.y + grid.slotSize / 2,
+                        isSunActivated
+                    );
+                    slot.attackCooldown = 0;
                 }
             }
         }
+    });
+
+    // 子彈移動邏輯 (保持原樣)
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+        let p = projectiles[i];
+        if (!enemies.includes(p.target) || p.target.hp <= 0) {
+            projectiles.splice(i, 1);
+            continue;
+        }
+        let dx = p.target.x - p.x;
+        let dy = p.target.y - p.y;
+        let dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 15) {
+            applyHitEffect(p);
+            projectiles.splice(i, 1);
+        } else {
+            p.x += (dx / dist) * (p.speed || 10);
+            p.y += (dy / dist) * (p.speed || 10);
+        }
+    }
+}
         // 特殊骰子效果
         // 【發射端】處理：虛擬血量、太陽 AOE、產生子彈
         function executeAttack(dice, target, damage, startX, startY, isSunActivated) {
-            if (!target) return;
+    if (!target) return;
 
-            if (dice.id === 'sun' && isSunActivated) {
-                // --- 1. 產生 CSS 爆炸特效 ---
-                const gameContainer = document.getElementById('canvas-container'); // 確保你有一個包住 Canvas 的容器
-                if (gameContainer) {
-                    const effect = document.createElement('div');
-                    effect.className = 'sun-explosion';
-                    // 這裡的座標要根據你的 Canvas 縮放調整，假設是 1:1
-                    effect.style.left = target.x + 'px';
-                    effect.style.top = target.y + 'px';
-                    gameContainer.appendChild(effect);
-
-                    // 400ms 後自動移除，防止 DOM 累積過多
-                    setTimeout(() => effect.remove(), 400);
-                }
-
-                // --- 2. 原本的 AOE 傷害邏輯 ---
-                const tx = target.x;
-                const ty = target.y;
-                enemies.forEach(e => {
-                    const dx = Math.abs(e.x - tx);
-                    const dy = Math.abs(e.y - ty);
-                    if (e.hp > 0 && dx < 65 && dy < 65) {
-                        e.hp -= damage;
-                        e.virtualHp = e.hp;
-                        if (e === target && damagePopups.length < 10) {
-                            damagePopups.push({ x: e.x, y: e.y, val: Math.floor(damage), life: 20 });
-                        }
-                    }
-                });
-                return;
-            }
-
-            // --- 其他非 AOE 骰子（產生子彈）保持原樣 ---
-            if (target.virtualHp === undefined) target.virtualHp = target.hp;
-            target.virtualHp -= damage; // 只有子彈攻擊才需要「預扣」
-
-            projectiles.push({
-                x: startX, y: startY, target: target, damage: damage,
-                diceId: dice.id, color: dice.baseColor || dice.color || "#333", speed: 12
-            });
+    if (dice.id === 'sun' && isSunActivated) {
+        // --- 1. CSS 爆炸特效 ---
+        const gameContainer = document.getElementById('canvas-container');
+        if (gameContainer) {
+            const effect = document.createElement('div');
+            effect.className = 'sun-explosion';
+            effect.style.left = target.x + 'px';
+            effect.style.top = target.y + 'px';
+            gameContainer.appendChild(effect);
+            setTimeout(() => effect.remove(), 400);
         }
+
+        // --- 2. AOE 傷害與 Popup ---
+        const tx = target.x;
+        const ty = target.y;
+        enemies.forEach(e => {
+            const dx = Math.abs(e.x - tx);
+            const dy = Math.abs(e.y - ty);
+            // 範圍判斷
+            if (e.hp > 0 && dx < 65 && dy < 65) {
+                e.hp -= damage;
+                e.virtualHp = e.hp;
+
+                // --- 新增：每一隻被打到的怪都跳 Popup ---
+                // 限制一下數量上限避免畫面太亂 (這裡設為 15)
+                if (damagePopups.length < 15) {
+                    damagePopups.push({ 
+                        x: e.x + (Math.random() * 20 - 10), // 稍微偏移讓數字不重疊
+                        y: e.y + (Math.random() * 20 - 10), 
+                        val: Math.floor(damage), 
+                        life: 20,
+                        color: "#ffaa00" // 太陽傷害用亮橘色
+                    });
+                }
+            }
+        });
+        return;
+    }
+
+    // --- 其他子彈類攻擊 (保持原樣) ---
+    if (target.virtualHp === undefined) target.virtualHp = target.hp;
+    target.virtualHp -= damage; 
+
+    projectiles.push({
+        x: startX, y: startY, target: target, damage: damage,
+        diceId: dice.id, color: dice.baseColor || dice.color || "#333", speed: 12
+    });
+}
         // 【撞擊端】處理：單體傷害、功能性效果 (減速、中毒、傳送、連鎖)
         // 【撞擊端】處理：單體傷害、功能性效果
         function applyHitEffect(p) {
@@ -1342,14 +1362,29 @@
                     ctx.moveTo(m, size * 0.15); ctx.lineTo(size * 0.7, size * 0.4);
                     ctx.stroke();
                     break;
-                case 'sun': // 太陽：圓形放射狀
-                    ctx.beginPath(); ctx.arc(m, m, size * 0.2, 0, Math.PI * 2); ctx.stroke(); ctx.fill();
+                case 'sun': // 太陽：圓形放射狀 (優化版：縮小射線範圍，避開星數點點)
+                    // 1. 中心圓縮小一點點
+                    ctx.beginPath();
+                    ctx.arc(m, m, size * 0.15, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.fill();
+
+                    // 2. 射線調整：縮短長度，並將線條變細，避免干擾
+                    ctx.lineWidth = 2; // 射線用細線
                     for (let i = 0; i < 8; i++) {
                         ctx.save();
-                        ctx.translate(m, m); ctx.rotate(i * Math.PI / 4);
-                        ctx.moveTo(0, -size * 0.25); ctx.lineTo(0, -size * 0.45);
-                        ctx.stroke(); ctx.restore();
+                        ctx.translate(m, m);
+                        // 旋轉 22.5 度 (Math.PI / 8)，讓射線錯開正方形的四角與正中心
+                        ctx.rotate((i * Math.PI / 4) + (Math.PI / 8));
+                        ctx.beginPath();
+                        // 射線從中心 0.22 延伸到 0.32，確保它留在骰子中間區域，不碰到邊緣的星點
+                        ctx.moveTo(0, -size * 0.22);
+                        ctx.lineTo(0, -size * 0.32);
+                        ctx.stroke();
+                        ctx.restore();
                     }
+                    // 恢復原始線寬供後續圖形使用
+                    ctx.lineWidth = 4;
                     break;
 
                 // --- Mythic ---
