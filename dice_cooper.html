@@ -386,10 +386,35 @@
                 }
 
                 // 敵人同步 (Host 寫入，Guest 讀取)
+                // 敵人同步 (Host 寫入，Guest 讀取)
                 if (role === 'guest' && data.enemies) {
-                    enemies = data.enemies || [];
-                    // 確保敵人物件的一些方法能運作 (雖然 draw 只是讀屬性，但如果 logic 依然跑...)
-                    // Guest 的 updateGuestLogic 應該不執行任何影響狀態的邏輯
+                    const remoteEnemies = data.enemies || [];
+
+                    // 1. 標記所有現有敵人為"未更新"
+                    const currentMap = new Map();
+                    enemies.forEach(e => currentMap.set(e.id, e));
+
+                    const newEnemies = [];
+
+                    remoteEnemies.forEach(r => {
+                        if (currentMap.has(r.id)) {
+                            // 更新舊物件屬性 (保留 references)
+                            const local = currentMap.get(r.id);
+                            local.x = r.x;
+                            local.y = r.y;
+                            local.hp = r.hp;
+                            local.pathIndex = r.pathIndex;
+                            // 其他屬性視需要同步
+                            newEnemies.push(local);
+                        } else {
+                            // 新增
+                            newEnemies.push(r);
+                        }
+                    });
+
+                    // 替換列表 (此時 newEnemies 包含更新後的舊物件 + 新物件)
+                    // 這樣 projectiles 持有的 target 引用依然有效
+                    enemies = newEnemies;
                 }
 
                 if (role === 'host') {
@@ -474,7 +499,7 @@
                     });
                 }
             } else {
-                updateGuestLogic(); // 僅預測移動 (visual only)
+                updateGuestLogic(); // 預測移動
             }
 
             // 2. 戰鬥判定 (雙方都要跑，因為要發射子彈和特效)
@@ -484,6 +509,35 @@
             draw();
 
             requestAnimationFrame(gameLoop);
+        }
+
+        // Guest 邏輯: 本地預測移動 (避免卡頓)
+        function updateGuestLogic() {
+            enemies.forEach(e => {
+                if (e.hp <= 0) return;
+
+                const path = e.owner === 'p1' ? paths.p1 : paths.p2;
+                // 防呆
+                if (!path || e.pathIndex >= path.length) return;
+
+                const target = path[e.pathIndex];
+                if (target) {
+                    let dx = target.x - e.x;
+                    let dy = target.y - e.y;
+                    let dist = Math.hypot(dx, dy);
+
+                    // 簡單移動
+                    // 注意：e.speed 也是 sync 過來的，如果有 buff 會自動同步
+                    if (dist < e.speed) {
+                        e.pathIndex++;
+                        // 不做移除或扣血，只負責移動
+                        // 如果超出路徑，就停在終點等待 Host 移除
+                    } else {
+                        e.x += (dx / dist) * e.speed;
+                        e.y += (dy / dist) * e.speed;
+                    }
+                }
+            });
         }
 
         // 黑洞列表
@@ -649,6 +703,11 @@
             // 但為了流暢，可以做本地預測移動
         }
 
+        // 生成唯一 ID
+        function generateId() {
+            return Math.random().toString(36).substr(2, 9);
+        }
+
         function spawnEnemy() {
             const level = userData.unlockLevel;
             const wave = battleState.wave;
@@ -658,6 +717,7 @@
             ['p1', 'p2'].forEach(owner => {
                 const start = owner === 'p1' ? paths.p1[0] : paths.p2[0];
                 enemies.push({
+                    id: generateId(), // Add ID
                     x: start.x, y: start.y,
                     owner: owner,
                     pathIndex: 1, // 往第 1 個點走
@@ -678,6 +738,7 @@
             ['p1', 'p2'].forEach(owner => {
                 const start = owner === 'p1' ? paths.p1[0] : paths.p2[0];
                 enemies.push({
+                    id: generateId(),
                     x: start.x, y: start.y,
                     owner: owner,
                     pathIndex: 1,
