@@ -9,6 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore-compat.js"></script>
     <style>
         body {
             margin: 0;
@@ -285,6 +286,12 @@
         // --- 4. 初始化流程 ---
         function init() {
             resizeCanvas();
+            // 監聽視窗變化，即時調整 Canvas 與路徑
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+                initPaths();
+            });
+
             initGrid();
             initPaths();
             initUI();
@@ -305,22 +312,27 @@
             const rect = container.getBoundingClientRect();
             canvas.width = rect.width;
             canvas.height = rect.height;
+
+            // 重新計算 Grid Size (響應式)
+            if (grid.cols) {
+                const sideMargin = canvas.width * 0.12;
+                grid.slotSize = (canvas.width - (grid.cols + 1) * grid.padding - (sideMargin * 2)) / grid.cols;
+            }
         }
 
         function initGrid() {
-            const sideMargin = canvas.width * 0.12;
-            grid.slotSize = (canvas.width - (grid.cols + 1) * grid.padding - (sideMargin * 2)) / grid.cols;
-
-            // 建立 15 個格子
-            const createSlots = () => Array(15).fill(null).map((_, i) => ({
-                dice: null, isLocked: false, isBeingDragged: false, attackCooldown: 0,
-                // index, col, row
-                index: i, col: i % 5, row: Math.floor(i / 5)
-            }));
-
-            mySlots = createSlots();
-            partnerSlots = createSlots(); // 初始為空，等同步
+            // resizeCanvas 已經算好 slotSize，這裡只負責生格子
+            if (mySlots.length === 0) {
+                const createSlots = () => Array(15).fill(null).map((_, i) => ({
+                    dice: null, isLocked: false, isBeingDragged: false, attackCooldown: 0,
+                    index: i, col: i % 5, row: Math.floor(i / 5)
+                }));
+                mySlots = createSlots();
+                partnerSlots = createSlots();
+            }
         }
+
+
 
         // 路徑定義：從兩側出發，匯聚到中間
         // Index >= 4 為共享路徑 (中央直線)
@@ -1435,52 +1447,7 @@
             updateUI();
         }
 
-        function resizeCanvas() {
-            const container = document.getElementById('canvas-container');
-            if (container) {
-                canvas.width = container.clientWidth;
-                canvas.height = container.clientHeight;
-                // 重新計算 Slot 位置
-                grid.slotSize = Math.floor(canvas.width / 6); // 寬度分給5格+間距
-                grid.padding = 8;
-                // 依據寬度調整，但不超過某個大小
-                if (grid.slotSize > 70) grid.slotSize = 70;
-            }
-        }
 
-        function init() {
-            resizeCanvas();
-            window.addEventListener('resize', resizeCanvas);
-            setupTouchEvents();
-
-            initUI();
-
-            // 初始化路徑
-            const w = canvas.width;
-            const h = canvas.height;
-            const midY = h / 2;
-            const gap = 50;
-
-            paths.p1 = [
-                { x: w - gap, y: h - gap },
-                { x: gap, y: h - gap },
-                { x: gap, y: midY + 20 },
-                { x: w / 2, y: midY },
-                { x: w + 50, y: midY }
-            ];
-            paths.p2 = [
-                { x: w - gap, y: gap },
-                { x: gap, y: gap },
-                { x: gap, y: midY - 20 },
-                { x: w / 2, y: midY },
-                { x: w + 50, y: midY }
-            ];
-
-            startFirebaseSync();
-
-            battleState.isStarted = true;
-            requestAnimationFrame(gameLoop);
-        }
 
         // 啟動
         init();
