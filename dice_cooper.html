@@ -300,6 +300,10 @@
             setupTouchEvents();
 
             // Firebase 同步
+            // Firebase 同步
+            if (role === 'host') {
+                resetRoomData();
+            }
             startFirebaseSync();
 
             // 啟動迴圈
@@ -307,11 +311,33 @@
             requestAnimationFrame(gameLoop);
         }
 
+        function resetRoomData() {
+            db.ref(`coop_rooms/${roomId}`).set({
+                enemies: [],
+                wave: 1,
+                hp: 3,
+                gameover: false,
+                gameStats: { totalSp: 0, totalSpP2: 0 },
+                players: {
+                    p1: { slots: [], sp: 100, powerUpLevels: powerUpLevels },
+                    p2: null // P2 重連後會自己更新
+                }
+            });
+        }
+
+        // 標準化邏輯解析度 (即使是兩隻手機，寬度也可能有微小差異導致座標錯位)
+        const LOGICAL_WIDTH = 500;
+        let scaleFactor = 1;
+
         function resizeCanvas() {
             const container = document.getElementById('canvas-container');
             const rect = container.getBoundingClientRect();
-            canvas.width = rect.width;
-            canvas.height = rect.height;
+
+            // 強制內部邏輯寬度為 500，高度依比例縮放
+            scaleFactor = LOGICAL_WIDTH / rect.width;
+
+            canvas.width = LOGICAL_WIDTH;
+            canvas.height = rect.height * scaleFactor;
 
             // 重新計算 Grid Size (響應式)
             if (grid.cols) {
@@ -1332,18 +1358,40 @@
 
         // --- 9. 操作事件 ---
         function setupTouchEvents() {
-            canvas.addEventListener('touchstart', e => {
-                const t = e.touches[0];
+            // 統一轉換座標
+            const getPos = (e) => {
                 const rect = canvas.getBoundingClientRect();
-                handleInputStart(t.clientX - rect.left, t.clientY - rect.top);
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                // 轉換為邏輯座標 (500 width base)
+                return {
+                    x: (clientX - rect.left) * scaleFactor,
+                    y: (clientY - rect.top) * scaleFactor
+                };
+            };
+
+            canvas.addEventListener('mousedown', e => {
+                const p = getPos(e);
+                handleInputStart(p.x, p.y);
             });
+            canvas.addEventListener('mousemove', e => {
+                const p = getPos(e);
+                handleInputMove(p.x, p.y);
+            });
+            window.addEventListener('mouseup', handleInputEnd);
+
+            canvas.addEventListener('touchstart', e => {
+                e.preventDefault(); // 防止滾動
+                const p = getPos(e);
+                handleInputStart(p.x, p.y);
+            }, { passive: false });
             canvas.addEventListener('touchmove', e => {
                 e.preventDefault();
-                const t = e.touches[0];
-                const rect = canvas.getBoundingClientRect();
-                handleInputMove(t.clientX - rect.left, t.clientY - rect.top);
+                const p = getPos(e);
+                handleInputMove(p.x, p.y);
             }, { passive: false });
-            canvas.addEventListener('touchend', handleInputEnd);
+            window.addEventListener('touchend', handleInputEnd);
         }
 
         function handleInputStart(x, y) {
