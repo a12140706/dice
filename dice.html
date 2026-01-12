@@ -284,6 +284,28 @@
                 <div id="coop-waiting-section" class="hidden flex flex-col items-center py-4">
                     <p class="text-slate-400 text-sm mb-1">房間號碼</p>
                     <h1 id="display-room-id" class="text-5xl font-black text-white tracking-widest mb-4">----</h1>
+
+                    <div class="w-full space-y-3 mb-6">
+                        <div id="player-p1-row"
+                            class="flex items-center justify-between bg-slate-700/50 p-3 rounded-xl border border-slate-600">
+                            <div class="flex items-center gap-3">
+                                <span
+                                    class="bg-emerald-500 text-[10px] font-bold px-2 py-0.5 rounded uppercase">房主</span>
+                                <span id="p1-name" class="text-white font-medium">等待中...</span>
+                            </div>
+                            <div id="p1-status" class="text-emerald-400 text-xs">● 已就緒</div>
+                        </div>
+
+                        <div id="player-p2-row"
+                            class="flex items-center justify-between bg-slate-700/50 p-3 rounded-xl border border-slate-600">
+                            <div class="flex items-center gap-3">
+                                <span class="bg-blue-500 text-[10px] font-bold px-2 py-0.5 rounded uppercase">隊友</span>
+                                <span id="p2-name" class="text-slate-400 font-medium">等待加入...</span>
+                            </div>
+                            <div id="p2-status" class="text-slate-500 text-xs">○ 準備中</div>
+                        </div>
+                    </div>
+
                     <p id="lobby-status-text" class="text-emerald-400 font-medium animate-pulse mb-6">等待隊友加入...</p>
 
                     <button id="host-start-btn" onclick="hostStartGame()"
@@ -414,8 +436,8 @@
             common: { name: '普通', color: '#9ca3af', chance: 0.50 },
             rare: { name: '稀有', color: '#3b82f6', chance: 0.30 },
             epic: { name: '史詩', color: '#a855f7', chance: 0.18 },
-            legend: { name: '傳說', color: '#eab308', chance: 0.015 },
-            mythic: { name: '神話', color: '#ff00ff', chance: 0.005 }
+            legend: { name: '傳說', color: '#eab308', chance: 0.019 },
+            mythic: { name: '神話', color: '#ff00ff', chance: 0.001 }
         };
 
         const ALL_DICES = [
@@ -491,6 +513,7 @@
         ];
 
         // --- 2. 資料載入 ---
+        const userId = localStorage.getItem('player_id') || 'guest';
         let currentBalance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
         let userData = null;
         // 彈窗控制
@@ -510,6 +533,12 @@
 
         // 1. 建立房間
         async function createCoopRoom() {
+            // 取得最新名稱 (對接 index.html 的 player_name)
+            const playerName = localStorage.getItem('player_name') || '房主';
+
+            // 進入合作模式前，先確保當前骰子等級與資料都上傳了
+            await saveData();
+
             const roomId = Math.floor(1000 + Math.random() * 9000).toString();
             currentRoomId = roomId;
             isHost = true;
@@ -518,14 +547,15 @@
                 roomId: roomId,
                 status: 'waiting',
                 gameStarted: false,
-                host: userData.uid || 'Guest', // 修正為 userData.uid
+                host: userId, // 直接使用我們在頂層定義的 userId (u1766...)
+                hostName: playerName,
                 createdAt: Date.now(),
                 wave: 1,
                 hp: 3,
                 players: {
                     p1: {
-                        uid: userData.uid || 'host',
-                        name: userData.playerName || "房主", // 新增這行
+                        uid: userId,
+                        name: playerName,
                         sp: 100,
                         isReady: true
                     }
@@ -538,6 +568,7 @@
                 listenForRoomUpdates(roomId);
             } catch (error) {
                 console.error("建立失敗", error);
+                alert("建立房間失敗，請檢查網路。");
             }
         }
 
@@ -546,11 +577,18 @@
             const roomId = document.getElementById('room-code-input').value;
             if (roomId.length !== 4) return;
 
+            // 取得最新名稱
+            const playerName = localStorage.getItem('player_name') || '挑戰者';
+
+            // 關鍵：加入前先同步自己的 dice_data，這樣隊友才看得到你的真實等級
+            await saveData();
+
             const roomRef = firebase.database().ref('coop_rooms/' + roomId);
             const snapshot = await roomRef.once('value');
             const room = snapshot.val();
 
             if (!room || room.status !== 'waiting') {
+                alert("房間不存在或已滿！");
                 document.getElementById('room-code-input').classList.add('border-red-500');
                 return;
             }
@@ -558,9 +596,10 @@
             currentRoomId = roomId;
             isHost = false;
 
+            // 寫入 P2 資訊
             await roomRef.child('players/p2').set({
-                uid: userData.uid || 'guest',
-                name: userData.playerName || "挑戰者", // 新增這行
+                uid: userId, // 使用對接後的 userId
+                name: playerName,
                 sp: 100,
                 isReady: true
             });
@@ -573,28 +612,72 @@
 
         // 3. UI 切換輔助
         function showLobbyUI(roomId, statusMsg) {
+            // 1. 切換顯示區域
             document.getElementById('coop-initial-actions').classList.add('hidden');
             document.getElementById('coop-waiting-section').classList.remove('hidden');
+
+            // 2. 顯示房號與當前狀態
             document.getElementById('display-room-id').innerText = roomId;
             document.getElementById('lobby-status-text').innerText = statusMsg;
+
+            // 3. 初始名稱重置 (避免殘留上次的資料)
+            const myName = localStorage.getItem('player_name') || (isHost ? "房主" : "隊友");
+
+            if (isHost) {
+                document.getElementById('p1-name').innerText = myName;
+                document.getElementById('p2-name').innerText = "等待加入...";
+            } else {
+                // 如果是加入者，自己的名字會在 P2 (這部分會由 listenForRoomUpdates 隨後從 Firebase 同步)
+                document.getElementById('p2-name').innerText = myName;
+            }
         }
 
         // 4. 監聽房間狀態
         function listenForRoomUpdates(roomId) {
             const roomRef = firebase.database().ref('coop_rooms/' + roomId);
+
             roomRef.on('value', (snapshot) => {
                 const room = snapshot.val();
                 if (!room) return;
 
-                // 當 P2 加入且我是房主
-                if (room.status === 'ready' && isHost) {
-                    document.getElementById('lobby-status-text').innerText = "隊友已就緒！";
-                    document.getElementById('host-start-btn').classList.remove('hidden');
+                // --- 更新玩家 1 (房主) 資訊 ---
+                if (room.players && room.players.p1) {
+                    document.getElementById('p1-name').innerText = room.players.p1.name || "房主";
+                    document.getElementById('p1-name').classList.replace('text-slate-400', 'text-white');
+                    document.getElementById('p1-status').innerText = "● 已就緒";
+                    document.getElementById('p1-status').className = "text-emerald-400 text-xs";
                 }
 
-                // 核心：當房主點擊開始，所有人都會執行進入遊戲
+                // --- 更新玩家 2 (加入者) 資訊 ---
+                if (room.players && room.players.p2) {
+                    // P2 在位
+                    document.getElementById('p2-name').innerText = room.players.p2.name || "隊友";
+                    document.getElementById('p2-name').classList.replace('text-slate-400', 'text-white');
+                    document.getElementById('p2-status').innerText = "● 已就緒";
+                    document.getElementById('p2-status').className = "text-emerald-400 text-xs";
+
+                    // 如果我是房主，顯示開始按鈕
+                    if (isHost) {
+                        document.getElementById('lobby-status-text').innerText = "隊友已就緒！";
+                        document.getElementById('host-start-btn').classList.remove('hidden');
+                    } else {
+                        document.getElementById('lobby-status-text').innerText = "等待房主開始...";
+                    }
+                } else {
+                    // P2 尚未加入
+                    document.getElementById('p2-name').innerText = "等待加入...";
+                    document.getElementById('p2-name').classList.replace('text-white', 'text-slate-400');
+                    document.getElementById('p2-status').innerText = "○ 準備中";
+                    document.getElementById('p2-status').className = "text-slate-500 text-xs";
+
+                    if (isHost) {
+                        document.getElementById('host-start-btn').classList.add('hidden');
+                    }
+                }
+
+                // --- 核心：遊戲啟動邏輯 ---
                 if (room.gameStarted === true) {
-                    roomRef.off(); // 停止監聽
+                    roomRef.off(); // 停止監聽，避免重複執行
                     enterCoopBattle(roomId);
                 }
             });
@@ -670,6 +753,40 @@
         let selectedInventoryId = null;
         let tempUpgradeId = null;
 
+        async function syncFromCloud() {
+            if (userId === 'guest') return;
+
+            try {
+                const doc = await fs.collection('users').doc(userId).get();
+                if (doc.exists) {
+                    const data = doc.data();
+
+                    // 同步餘額 (頂層欄位)
+                    if (data.balance !== undefined) {
+                        currentBalance = Number(data.balance);
+                    }
+
+                    // 同步骰子數據 (dice_data 欄位)
+                    if (data.dice_data) {
+                        const cloud = data.dice_data;
+                        userData.deck = cloud.deck || userData.deck;
+                        userData.inventory = cloud.inventory || {};
+                        userData.diceLevels = cloud.diceLevels || {};
+                        userData.tickets = cloud.tickets || 0;
+                        userData.unlockLevel = cloud.unlockLevel || 1;
+                        userData.maxWave = cloud.maxWave || 0;
+
+                        // 存回本地並刷新
+                        localStorage.setItem('dice_game_data', JSON.stringify(userData));
+                        localStorage.setItem('sicbo_balance', currentBalance);
+                        render();
+                        console.log("☁️ 雲端數據已載入");
+                    }
+                }
+            } catch (error) {
+                console.error("❌ 從雲端抓取失敗:", error);
+            }
+        }
         const UPGRADE_CONFIG = {
             1: [5, 50000], 2: [10, 100000], 3: [20, 200000], 4: [50, 500000],
             5: [100, 1000000], 6: [200, 5000000], 7: [500, 10000000], 8: [800, 50000000],
@@ -930,9 +1047,31 @@
             }, 0);
         }
 
-        function saveData() {
+        async function saveData() {
+            // 1. 本地儲存
             localStorage.setItem('dice_game_data', JSON.stringify(userData));
             localStorage.setItem('sicbo_balance', currentBalance);
+
+            // 2. 雲端同步 (對接 index.html 的 playerId)
+            if (userId !== 'guest') {
+                try {
+                    await fs.collection('users').doc(userId).set({
+                        balance: Number(currentBalance), // 同步餘額
+                        dice_data: { // 依照你的要求改為 dice_data
+                            deck: userData.deck,
+                            inventory: userData.inventory,
+                            diceLevels: userData.diceLevels,
+                            tickets: userData.tickets,
+                            unlockLevel: userData.unlockLevel,
+                            maxWave: userData.maxWave,
+                            lastSync: Date.now()
+                        }
+                    }, { merge: true });
+                    console.log("✅ 雲端同步成功 (UID: " + userId + ")");
+                } catch (error) {
+                    console.error("❌ 雲端同步失敗:", error);
+                }
+            }
         }
 
         function openUpgradeUI(id) {
@@ -1104,7 +1243,7 @@
             saveData();
             render();
         }
-        function buyBox(count = 10) {
+        async function buyBox(count = 10) {
             const singlePrice = 10000;
             const totalPrice = singlePrice * count;
 
@@ -1138,7 +1277,7 @@
                 }
             }
 
-            saveData();
+            await saveData();
             showRewardUI(Object.values(rewardsSummary));
             render();
         }
@@ -1204,8 +1343,17 @@
             window.location.href = 'dice_battle.html';
         }
 
-        window.onload = function () {
+        window.onload = async function () {
+            userData = initGameData();
+
+            // 2. 核心修正：將 localStorage 的 player_id 綁定給 userData
+            userData.uid = userId;
+
+            // 3. 先畫出介面
             render();
+
+            // 4. 從雲端同步最新進度 (包含 dice_data 與 balance)
+            await syncFromCloud();
         };
     </script>
 </body>
