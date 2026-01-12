@@ -350,8 +350,30 @@
                 stats: { atk: 35, speed: 55 }, grow: { atk: 15, speed: -0.5 },
                 special: { label: '濺射傷害', value: 100, unit: '%', grow: 25 }
             },
+            {
+                id: 'sanctuary', name: '聖域', quality: 'legend', baseColor: '#fbbf24', pattern: 'sanctuary',
+                stats: { atk: 15, speed: 60 }, grow: { atk: 6, speed: -1 },
+                special: { label: '加速範圍', value: 30, unit: '%', grow: 5 }
+            },
+            {
+                id: 'comet', name: '彗星', quality: 'legend', baseColor: '#3b82f6', pattern: 'comet',
+                stats: { atk: 18, speed: 45 }, grow: { atk: 7, speed: -1 },
+                special: { label: '充能倍率', value: 500, unit: '%', grow: 100 }
+            },
+
+            // --- Epic (史詩) 新增 ---
+            {
+                id: 'chain', name: '連鎖', quality: 'epic', baseColor: '#8b5cf6', pattern: 'chain',
+                stats: { atk: 15, speed: 50 }, grow: { atk: 5, speed: -1 },
+                special: { label: '彈射增傷', value: 50, unit: '%', grow: 10 }
+            },
 
             // --- Mythic (神話) ---
+            {
+                id: 'doom', name: '毀滅', quality: 'mythic', baseColor: '#7c3aed', pattern: 'doom',
+                stats: { atk: 45, speed: 50 }, grow: { atk: 20, speed: -1 },
+                special: { label: '斬殺比例', value: 35, unit: '%', grow: 5 }
+            },
             {
                 id: 'galaxy', name: '銀河', quality: 'mythic', baseColor: '#6366f1', pattern: 'galaxy',
                 stats: { atk: 60, speed: 50 }, grow: { atk: 30, speed: -1 },
@@ -682,6 +704,17 @@
         function updateCombat() {
             if (typeof isSunActivated === 'undefined') window.isSunActivated = false;
 
+            // --- 檢查聖域光環 (全局加速) ---
+            let sanctuaryBoost = 0;
+            grid.slots.forEach(slot => {
+                if (slot.dice && slot.dice.id === 'sanctuary' && !slot.isLocked) {
+                    const pLv = userData.diceLevels['sanctuary'] || 1;
+                    const db = ALL_DICES.find(d => d.id === 'sanctuary');
+                    const boostPercent = (db.special.value + (pLv - 1) * db.special.grow) / 100;
+                    sanctuaryBoost = Math.max(sanctuaryBoost, boostPercent); // 取最高值，不疊加
+                }
+            });
+
             grid.slots.forEach(slot => {
                 if (slot.dice && slot.dice.id && !slot.isBeingDragged && slot.isLocked !== true) {
                     const db = ALL_DICES.find(d => d.id === slot.dice.id);
@@ -749,6 +782,12 @@
                     // --- B. 攻速與攻擊 ---
                     const pLv = userData.diceLevels[slot.dice.id] || 1;
                     let spd = Math.max(10, db.stats.speed + (pLv - 1) * db.grow.speed);
+
+                    // 聖域加速
+                    if (sanctuaryBoost > 0 && slot.dice.id !== 'sanctuary') {
+                        spd *= (1 - sanctuaryBoost);
+                    }
+
                     if (slot.dice.id === 'sun' && isSunActivated) spd /= 1.5;
                     if (spd < 5) spd = 5;
 
@@ -793,7 +832,22 @@
                                 });
                                 dmg *= (1 + neighbors * 0.5);
                             }
+
+                            // --- 彗星充能機制 ---
+                            let isCometCharged = false;
+                            if (slot.dice.id === 'comet') {
+                                slot.dice.chargeCount = (slot.dice.chargeCount || 0) + 1;
+                                if (slot.dice.chargeCount >= 5) {
+                                    const cometDb = ALL_DICES.find(d => d.id === 'comet');
+                                    const cometBoost = (cometDb.special.value + (pLv - 1) * cometDb.special.grow) / 100;
+                                    dmg *= cometBoost; // 500% = ×5
+                                    isCometCharged = true;
+                                    slot.dice.chargeCount = 0;
+                                }
+                            }
+
                             slot.dice.tempSlotIdx = grid.slots.indexOf(slot);
+                            slot.dice.tempIsCometCharged = isCometCharged; // 傳遞給 executeAttack
                             executeAttack(
                                 slot.dice,
                                 target,
@@ -904,6 +958,86 @@
                     x: target.x, y: target.y
                 });
                 return;
+            }
+
+            // --- 彗星暈眩效果 ---
+            if (dice.id === 'comet' && dice.tempIsCometCharged) {
+                // 造成暈眩
+                const originalSpeed = target.speed;
+                target.speed = 0;
+                setTimeout(() => {
+                    if (target && target.speed === 0) target.speed = originalSpeed;
+                }, 1000);
+
+                // 彗星爆發特效
+                visualEffects.push({
+                    type: 'explosion',
+                    x: target.x, y: target.y,
+                    radius: 80,
+                    color: 'rgba(59, 130, 246, 0.8)', // 藍色
+                    life: 25, maxLife: 25
+                });
+            }
+
+            // --- 連鎖彈射機制 ---
+            if (dice.id === 'chain') {
+                // 1. 主目標傷害（正常子彈）
+                if (target.virtualHp === undefined) target.virtualHp = target.hp;
+                target.virtualHp -= damage;
+
+                projectiles.push({
+                    x: startX,
+                    y: startY,
+                    target: target,
+                    damage: damage,
+                    diceId: dice.id,
+                    diceUid: `slot_${dice.tempSlotIdx}`,
+                    color: dice.color || "#8b5cf6",
+                    speed: 12,
+                    isChainPrimary: true
+                });
+
+                // 2. 尋找彈射目標
+                const chainDb = ALL_DICES.find(d => d.id === 'chain');
+                const pLv = userData.diceLevels['chain'] || 1;
+                const boostPercent = (chainDb.special.value + (pLv - 1) * chainDb.special.grow) / 100;
+
+                let currentTarget = target;
+                let currentDamage = damage;
+                const bouncedTargets = [target];
+
+                for (let i = 0; i < 2; i++) {
+                    // 找最近的未彈射敵人
+                    const nextTarget = enemies
+                        .filter(e => e.hp > 0 && !bouncedTargets.includes(e))
+                        .sort((a, b) => {
+                            const distA = Math.hypot(a.x - currentTarget.x, a.y - currentTarget.y);
+                            const distB = Math.hypot(b.x - currentTarget.x, b.y - currentTarget.y);
+                            return distA - distB;
+                        })[0];
+
+                    if (!nextTarget) break;
+
+                    currentDamage *= (1 + boostPercent); // 遞增傷害
+                    if (nextTarget.virtualHp === undefined) nextTarget.virtualHp = nextTarget.hp;
+                    nextTarget.virtualHp -= currentDamage;
+
+                    projectiles.push({
+                        x: currentTarget.x,
+                        y: currentTarget.y,
+                        target: nextTarget,
+                        damage: currentDamage,
+                        diceId: dice.id,
+                        diceUid: `slot_${dice.tempSlotIdx}_chain${i + 1}`,
+                        color: "#a78bfa", // 彈射用更亮的紫色
+                        speed: 15,
+                        isChainBounce: true
+                    });
+
+                    bouncedTargets.push(nextTarget);
+                    currentTarget = nextTarget;
+                }
+                return; // 連鎖處理完畢，不執行下面的普通子彈
             }
 
             // --- 其他子彈類攻擊 (保持原樣) ---
@@ -1061,6 +1195,29 @@
                     // 額外傷害：既然是神話級，被命中的目標通常要扣一點最大生命 % 數
                     // target.hp -= target.maxHp * (spec / 100); 
                     break;
+
+                case 'doom':
+                    // 毀滅骰子：延遲斬殺
+                    const doomDb = ALL_DICES.find(d => d.id === 'doom');
+                    const doomLv = userData.diceLevels['doom'] || 1;
+                    const doomPercent = (doomDb.special.value + (doomLv - 1) * doomDb.special.grow) / 100;
+
+                    // 標記目標
+                    target.doomMark = {
+                        damage: target.maxHp * doomPercent,
+                        timer: 15000, // 15秒
+                        startTime: Date.now()
+                    };
+
+                    // 視覺特效：末日時鐘標記
+                    visualEffects.push({
+                        type: 'explosion',
+                        x: target.x, y: target.y,
+                        radius: 50,
+                        color: 'rgba(124, 58, 237, 0.7)', // 深紫色
+                        life: 20, maxLife: 20
+                    });
+                    break;
             }
 
             // 3. 統一清理死亡怪物
@@ -1101,6 +1258,37 @@
                     if (e.skillTimer >= BOSS_TYPES[e.bossType].skillInterval) {
                         BOSS_TYPES[e.bossType].onSkill(e);
                         e.skillTimer = 0;
+                    }
+                }
+
+                // --- 2.5. 毀滅標記倒數檢查 ---
+                if (e.doomMark) {
+                    const elapsed = Date.now() - e.doomMark.startTime;
+                    if (elapsed >= e.doomMark.timer) {
+                        // 時間到，執行斬殺
+                        e.hp -= e.doomMark.damage;
+
+                        // 顯示斬殺傷害
+                        if (damagePopups.length < 10) {
+                            damagePopups.push({
+                                x: e.x,
+                                y: e.y,
+                                val: Math.floor(e.doomMark.damage),
+                                life: 40,
+                                color: "#7c3aed" // 深紫色
+                            });
+                        }
+
+                        // 斬殺特效
+                        visualEffects.push({
+                            type: 'explosion',
+                            x: e.x, y: e.y,
+                            radius: 100,
+                            color: 'rgba(124, 58, 237, 0.9)',
+                            life: 30, maxLife: 30
+                        });
+
+                        delete e.doomMark; // 移除標記
                     }
                 }
 
@@ -1787,6 +1975,129 @@
                         ctx.bezierCurveTo(m, m + i * size * 0.4, m, m - i * size * 0.4, size * 0.8, m + i * size * 0.15);
                     }
                     ctx.stroke();
+                    break;
+
+                // --- 聖域 (Sanctuary) 光環圓圈 ---
+                case 'sanctuary':
+                    // 1. 外圈光環
+                    ctx.beginPath();
+                    ctx.arc(m, m, size * 0.35, 0, Math.PI * 2);
+                    ctx.stroke();
+                    // 2. 中圈光環
+                    ctx.beginPath();
+                    ctx.arc(m, m, size * 0.25, 0, Math.PI * 2);
+                    ctx.stroke();
+                    // 3. 中心十字
+                    ctx.beginPath();
+                    ctx.moveTo(m - size * 0.1, m); ctx.lineTo(m + size * 0.1, m);
+                    ctx.moveTo(m, m - size * 0.1); ctx.lineTo(m, m + size * 0.1);
+                    ctx.stroke();
+                    // 4. 四個光點
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.6)`;
+                    [0, 90, 180, 270].forEach(angle => {
+                        const rad = angle * Math.PI / 180;
+                        const px = m + Math.cos(rad) * size * 0.3;
+                        const py = m + Math.sin(rad) * size * 0.3;
+                        ctx.beginPath();
+                        ctx.arc(px, py, size * 0.04, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                    break;
+
+                // --- 彗星 (Comet) 彗星拖尾 ---
+                case 'comet':
+                    // 1. 彗星本體
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.8)`;
+                    ctx.beginPath();
+                    ctx.arc(size * 0.65, size * 0.35, size * 0.12, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                    // 2. 拖尾（三條流光）
+                    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.5)`;
+                    for (let i = -1; i <= 1; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(size * 0.65, size * 0.35);
+                        ctx.quadraticCurveTo(
+                            size * 0.4, size * 0.5 + i * size * 0.1,
+                            size * 0.15, size * 0.7 + i * size * 0.15
+                        );
+                        ctx.stroke();
+                    }
+                    // 3. 尾部星點
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.4)`;
+                    [[0.3, 0.55], [0.2, 0.65], [0.15, 0.75]].forEach(([px, py]) => {
+                        ctx.beginPath();
+                        ctx.arc(size * px, size * py, size * 0.03, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                    break;
+
+                // --- 連鎖 (Chain) 閃電鏈 ---
+                case 'chain':
+                    // 三個目標點
+                    const chainPoints = [
+                        [size * 0.2, size * 0.25],
+                        [size * 0.5, size * 0.65],
+                        [size * 0.8, size * 0.35]
+                    ];
+                    // 繪製閃電連線
+                    ctx.lineWidth = 2.5;
+                    for (let i = 0; i < chainPoints.length - 1; i++) {
+                        const [x1, y1] = chainPoints[i];
+                        const [x2, y2] = chainPoints[i + 1];
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        // 鋸齒效果
+                        const segments = 3;
+                        for (let s = 1; s <= segments; s++) {
+                            const t = s / segments;
+                            const mx = x1 + (x2 - x1) * t;
+                            const my = y1 + (y2 - y1) * t;
+                            const offset = (s % 2 === 0 ? 1 : -1) * size * 0.08;
+                            ctx.lineTo(mx + offset, my);
+                        }
+                        ctx.lineTo(x2, y2);
+                        ctx.stroke();
+                    }
+                    // 繪製目標點
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.7)`;
+                    chainPoints.forEach(([px, py]) => {
+                        ctx.beginPath();
+                        ctx.arc(px, py, size * 0.06, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                    break;
+
+                // --- 毀滅 (Doom) 末日時鐘 ---
+                case 'doom':
+                    // 1. 時鐘外圈
+                    ctx.beginPath();
+                    ctx.arc(m, m, size * 0.35, 0, Math.PI * 2);
+                    ctx.stroke();
+                    // 2. 12點刻度
+                    [0, 90, 180, 270].forEach(angle => {
+                        const rad = angle * Math.PI / 180 - Math.PI / 2;
+                        const x1 = m + Math.cos(rad) * size * 0.3;
+                        const y1 = m + Math.sin(rad) * size * 0.3;
+                        const x2 = m + Math.cos(rad) * size * 0.35;
+                        const y2 = m + Math.sin(rad) * size * 0.35;
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        ctx.lineTo(x2, y2);
+                        ctx.stroke();
+                    });
+                    // 3. 指針（指向12點 - 死亡象徵）
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.9)`;
+                    ctx.beginPath();
+                    ctx.moveTo(m, m);
+                    ctx.lineTo(m, m - size * 0.25);
+                    ctx.stroke();
+                    // 4. 中心點
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.8)`;
+                    ctx.beginPath();
+                    ctx.arc(m, m, size * 0.06, 0, Math.PI * 2);
+                    ctx.fill();
                     break;
                 case 'joker': // 小丑：倒三角形加上上方兩點
                     ctx.beginPath();

@@ -526,8 +526,30 @@
                 stats: { atk: 35, speed: 55 }, grow: { atk: 15, speed: -0.5 },
                 special: { label: '濺射傷害', value: 100, unit: '%', grow: 25 }
             },
+            {
+                id: 'sanctuary', name: '聖域', quality: 'legend', baseColor: '#fbbf24', pattern: 'sanctuary',
+                stats: { atk: 15, speed: 60 }, grow: { atk: 6, speed: -1 },
+                special: { label: '加速範圍', value: 30, unit: '%', grow: 5 }
+            },
+            {
+                id: 'comet', name: '彗星', quality: 'legend', baseColor: '#3b82f6', pattern: 'comet',
+                stats: { atk: 18, speed: 45 }, grow: { atk: 7, speed: -1 },
+                special: { label: '充能倍率', value: 500, unit: '%', grow: 100 }
+            },
+
+            // --- Epic (史詩) 新增 ---
+            {
+                id: 'chain', name: '連鎖', quality: 'epic', baseColor: '#8b5cf6', pattern: 'chain',
+                stats: { atk: 15, speed: 50 }, grow: { atk: 5, speed: -1 },
+                special: { label: '彈射增傷', value: 50, unit: '%', grow: 10 }
+            },
 
             // --- Mythic (神話) ---
+            {
+                id: 'doom', name: '毀滅', quality: 'mythic', baseColor: '#7c3aed', pattern: 'doom',
+                stats: { atk: 45, speed: 50 }, grow: { atk: 20, speed: -1 },
+                special: { label: '斬殺比例', value: 35, unit: '%', grow: 5 }
+            },
             {
                 id: 'galaxy', name: '銀河', quality: 'mythic', baseColor: '#6366f1', pattern: 'galaxy',
                 stats: { atk: 60, speed: 50 }, grow: { atk: 30, speed: -1 },
@@ -1069,6 +1091,114 @@
                         ctx.bezierCurveTo(m, m + i * size * 0.4, m, m - i * size * 0.4, size * 0.8, m + i * size * 0.15);
                     }
                     ctx.stroke();
+                    break;
+
+                // --- 聖域 (Sanctuary) 光環圓圈 ---
+                case 'sanctuary':
+                    ctx.beginPath();
+                    ctx.arc(m, m, size * 0.35, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(m, m, size * 0.25, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(m - size * 0.1, m); ctx.lineTo(m + size * 0.1, m);
+                    ctx.moveTo(m, m - size * 0.1); ctx.lineTo(m, m + size * 0.1);
+                    ctx.stroke();
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.6)`;
+                    [0, 90, 180, 270].forEach(angle => {
+                        const rad = angle * Math.PI / 180;
+                        const px = m + Math.cos(rad) * size * 0.3;
+                        const py = m + Math.sin(rad) * size * 0.3;
+                        ctx.beginPath();
+                        ctx.arc(px, py, size * 0.04, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                    break;
+
+                // --- 彗星 (Comet) 彗星拖尾 ---
+                case 'comet':
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.8)`;
+                    ctx.beginPath();
+                    ctx.arc(size * 0.65, size * 0.35, size * 0.12, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.5)`;
+                    for (let i = -1; i <= 1; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(size * 0.65, size * 0.35);
+                        ctx.quadraticCurveTo(
+                            size * 0.4, size * 0.5 + i * size * 0.1,
+                            size * 0.15, size * 0.7 + i * size * 0.15
+                        );
+                        ctx.stroke();
+                    }
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.4)`;
+                    [[0.3, 0.55], [0.2, 0.65], [0.15, 0.75]].forEach(([px, py]) => {
+                        ctx.beginPath();
+                        ctx.arc(size * px, size * py, size * 0.03, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                    break;
+
+                // --- 連鎖 (Chain) 閃電鏈 ---
+                case 'chain':
+                    const chainPoints = [
+                        [size * 0.2, size * 0.25],
+                        [size * 0.5, size * 0.65],
+                        [size * 0.8, size * 0.35]
+                    ];
+                    ctx.lineWidth = Math.max(1, size * 0.04);
+                    for (let i = 0; i < chainPoints.length - 1; i++) {
+                        const [x1, y1] = chainPoints[i];
+                        const [x2, y2] = chainPoints[i + 1];
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        const segments = 3;
+                        for (let s = 1; s <= segments; s++) {
+                            const t = s / segments;
+                            const mx = x1 + (x2 - x1) * t;
+                            const my = y1 + (y2 - y1) * t;
+                            const offset = (s % 2 === 0 ? 1 : -1) * size * 0.08;
+                            ctx.lineTo(mx + offset, my);
+                        }
+                        ctx.lineTo(x2, y2);
+                        ctx.stroke();
+                    }
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.7)`;
+                    chainPoints.forEach(([px, py]) => {
+                        ctx.beginPath();
+                        ctx.arc(px, py, size * 0.06, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                    break;
+
+                // --- 毀滅 (Doom) 末日時鐘 ---
+                case 'doom':
+                    ctx.beginPath();
+                    ctx.arc(m, m, size * 0.35, 0, Math.PI * 2);
+                    ctx.stroke();
+                    [0, 90, 180, 270].forEach(angle => {
+                        const rad = angle * Math.PI / 180 - Math.PI / 2;
+                        const x1 = m + Math.cos(rad) * size * 0.3;
+                        const y1 = m + Math.sin(rad) * size * 0.3;
+                        const x2 = m + Math.cos(rad) * size * 0.35;
+                        const y2 = m + Math.sin(rad) * size * 0.35;
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        ctx.lineTo(x2, y2);
+                        ctx.stroke();
+                    });
+                    ctx.lineWidth = Math.max(1, size * 0.03);
+                    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.9)`;
+                    ctx.beginPath();
+                    ctx.moveTo(m, m);
+                    ctx.lineTo(m, m - size * 0.25);
+                    ctx.stroke();
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.8)`;
+                    ctx.beginPath();
+                    ctx.arc(m, m, size * 0.06, 0, Math.PI * 2);
+                    ctx.fill();
                     break;
             }
             ctx.restore();
