@@ -966,6 +966,35 @@
                     }
                     p.damage *= target.laserStack;
                     break;
+                case 'galaxy':
+                    // 產生一個小型黑洞效果
+                    const pullRange = 100; // 吸引半徑
+                    const spec = getDiceSpecialValue('galaxy'); // 假設你用 special.value 當作拉力倍率
+
+                    enemies.forEach(e => {
+                        if (e !== target && e.hp > 0) {
+                            const dx = target.x - e.x;
+                            const dy = target.y - e.y;
+                            const dist = Math.hypot(dx, dy);
+
+                            if (dist < pullRange) {
+                                // 拉力隨距離遞減
+                                const pullStrength = (pullRange - dist) / pullRange * spec;
+
+                                // 執行位移
+                                e.x += (dx / dist) * pullStrength;
+                                e.y += (dy / dist) * pullStrength;
+
+                                // 💡 重要：如果你的怪物移動是靠 pathIndex，
+                                // 被拉動後的 e.x, e.y 會在下一幀 updateEnemy 時自動修正回軌道方向，
+                                // 這會產生一種「掙扎」的視覺感，效果很好。
+                            }
+                        }
+                    });
+
+                    // 額外傷害：既然是神話級，被命中的目標通常要扣一點最大生命 % 數
+                    // target.hp -= target.maxHp * (spec / 100); 
+                    break;
             }
 
             // 3. 統一清理死亡怪物
