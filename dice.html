@@ -130,7 +130,7 @@
             <span class="text-yellow-400 font-bold text-lg">💎</span>
             <span id="goldText" class="font-mono text-xl text-yellow-500 font-bold">0</span>
         </div>
-        <p class="text-[10px] text-slate-500">測試版本V0.3.2</p>
+        <p class="text-[10px] text-slate-500">測試版本V0.3.3</p>
         <a href="index.html" class="no-underline">
             <button
                 class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded-lg text-xs font-bold border border-slate-500 transition-colors">
@@ -474,8 +474,26 @@
                 stats: { atk: 12, speed: 55 }, grow: { atk: 4, speed: -1 },
                 special: { label: '禁錮時長', value: 0.8, unit: '秒', grow: 0.2 }
             },
+            // --- 易傷骰子 (替代原本的破甲) ---
+            {
+                id: 'crack', name: '易傷', quality: 'rare', baseColor: '#f87171', pattern: 'crack',
+                stats: { atk: 12, speed: 50 }, grow: { atk: 3, speed: -1 },
+                special: { label: '額外受傷', value: 5, unit: '%', grow: 1 }
+            },
+            // --- 礦山骰子 (經濟型) ---
+            {
+                id: 'mine', name: '礦山', quality: 'rare', baseColor: '#fbbf24', pattern: 'mine',
+                stats: { atk: 0, speed: 40 }, grow: { atk: 0, speed: -5 }, // 不攻擊，速度代表產錢間隔
+                special: { label: '產出SP', value: 10, unit: 'pt', grow: 5 }
+            },
 
             // --- Epic (史詩) ---
+            {
+                id: 'laser', name: '雷射', quality: 'epic', baseColor: '#ec4899', pattern: 'laser_beam',
+                stats: { atk: 5, speed: 40 }, grow: { atk: 2, speed: 0 },
+                special: { label: '增幅上限', value: 5, unit: '倍', grow: 1 }
+                // 功能：持續攻擊同一個目標時，傷害會隨攻擊次數不斷爬升
+            },
             {
                 id: 'teleport', name: '傳送', quality: 'epic', baseColor: '#8b5cf6', pattern: 'teleport',
                 stats: { atk: 10, speed: 65 }, grow: { atk: 3, speed: -1 },
@@ -488,6 +506,11 @@
             },
 
             // --- Legend (傳說) ---
+            {
+                id: 'mighty_wind', name: '強風', quality: 'legend', baseColor: '#a5f3fc', pattern: 'mighty_wind',
+                stats: { atk: 15, speed: 40 }, grow: { atk: 6, speed: -1 },
+                special: { label: '狂暴時長', value: 2, unit: '秒', grow: 0.5 }
+            },
             {
                 id: 'joker', name: '小丑', quality: 'legend', baseColor: '#f87171', pattern: 'joker',
                 stats: { atk: 5, speed: 50 }, grow: { atk: 1, speed: 0 },
@@ -859,6 +882,13 @@
             ctx.lineJoin = "round";
 
             switch (pattern) {
+                case 'laser_beam': // 雷射：三條匯聚線
+                    ctx.beginPath();
+                    ctx.moveTo(size * 0.2, size * 0.2); ctx.lineTo(m, m);
+                    ctx.moveTo(size * 0.2, size * 0.8); ctx.lineTo(m, m);
+                    ctx.moveTo(size * 0.8, m); ctx.lineTo(m, m);
+                    ctx.stroke(); ctx.beginPath(); ctx.arc(m, m, size * 0.08, 0, Math.PI * 2); ctx.fill();
+                    break;
                 case 'fire':
                     ctx.beginPath();
                     ctx.moveTo(m, size * 0.25);
@@ -946,6 +976,48 @@
                     ctx.bezierCurveTo(size * 0.85, size * 0.15, size * 0.15, size * 0.85, m, size * 0.85);
                     ctx.stroke();
                     ctx.beginPath(); ctx.arc(m, m, size * 0.08, 0, Math.PI * 2); ctx.fill();
+                    break;
+                // --- 易傷 (Crack) 外觀：盾牌加裂痕 ---
+                case 'crack':
+                    ctx.beginPath();
+                    // 繪製一個倒三角形（盾牌感）
+                    ctx.moveTo(m, size * 0.8);
+                    ctx.lineTo(size * 0.25, size * 0.25);
+                    ctx.lineTo(size * 0.75, size * 0.25);
+                    ctx.closePath();
+                    ctx.stroke();
+                    // 繪製中間的裂痕
+                    ctx.beginPath();
+                    ctx.moveTo(m - size * 0.1, size * 0.35);
+                    ctx.lineTo(m + size * 0.1, m);
+                    ctx.lineTo(m - size * 0.1, size * 0.65);
+                    ctx.stroke();
+                    break;
+
+                // --- 礦山 (Mine) 外觀：一個 T 字型的鎬頭 ---
+                case 'mine':
+                    ctx.beginPath();
+                    // 鎬頭的弧形金屬部分
+                    ctx.moveTo(size * 0.25, size * 0.35);
+                    ctx.quadraticCurveTo(m, size * 0.15, size * 0.75, size * 0.35);
+                    ctx.stroke();
+                    // 鎬頭的木柄
+                    ctx.beginPath();
+                    ctx.moveTo(m, size * 0.25);
+                    ctx.lineTo(m, size * 0.75);
+                    ctx.stroke();
+                    // 裝飾一個小錢幣圓點
+                    ctx.beginPath();
+                    ctx.arc(m + size * 0.15, size * 0.7, size * 0.08, 0, Math.PI * 2);
+                    ctx.fill(); ctx.stroke();
+                    break;
+                case 'mighty_wind': // 強風：多重氣流線條
+                    ctx.beginPath();
+                    for (let i = -1; i <= 1; i++) {
+                        ctx.moveTo(size * 0.2, m + i * size * 0.15);
+                        ctx.bezierCurveTo(m, m + i * size * 0.4, m, m - i * size * 0.4, size * 0.8, m + i * size * 0.15);
+                    }
+                    ctx.stroke();
                     break;
             }
             ctx.restore();

@@ -257,11 +257,11 @@
         AudioManager.init();
 
         const QUALITIES = {
-            common: { name: '普通', color: '#ffffff', chance: 0.60 },   // 60% 機率
-            rare: { name: '稀有', color: '#3b82f6', chance: 0.25 },   // 25% 機率
-            epic: { name: '史詩', color: '#a855f7', chance: 0.10 },   // 10% 機率
-            legend: { name: '傳說', color: '#eab308', chance: 0.04 },   // 4% 機率
-            mythic: { name: '神話', color: '#ff00ff', chance: 0.01 }    // 1% 機率
+            common: { name: '普通', color: '#9ca3af', chance: 0.50 },
+            rare: { name: '稀有', color: '#3b82f6', chance: 0.30 },
+            epic: { name: '史詩', color: '#a855f7', chance: 0.18 },
+            legend: { name: '傳說', color: '#eab308', chance: 0.019 },
+            mythic: { name: '神話', color: '#ff00ff', chance: 0.001 }
         };
 
         const ALL_DICES = [
@@ -298,8 +298,26 @@
                 stats: { atk: 12, speed: 55 }, grow: { atk: 4, speed: -1 },
                 special: { label: '禁錮時長', value: 0.8, unit: '秒', grow: 0.2 }
             },
+            // --- 易傷骰子 (替代原本的破甲) ---
+            {
+                id: 'crack', name: '易傷', quality: 'rare', baseColor: '#f87171', pattern: 'crack',
+                stats: { atk: 12, speed: 50 }, grow: { atk: 3, speed: -1 },
+                special: { label: '額外受傷', value: 5, unit: '%', grow: 1 }
+            },
+            // --- 礦山骰子 (經濟型) ---
+            {
+                id: 'mine', name: '礦山', quality: 'rare', baseColor: '#fbbf24', pattern: 'mine',
+                stats: { atk: 0, speed: 40 }, grow: { atk: 0, speed: -5 }, // 不攻擊，速度代表產錢間隔
+                special: { label: '產出SP', value: 10, unit: 'pt', grow: 5 }
+            },
 
             // --- Epic (史詩) ---
+            {
+                id: 'laser', name: '雷射', quality: 'epic', baseColor: '#ec4899', pattern: 'laser_beam',
+                stats: { atk: 5, speed: 40 }, grow: { atk: 2, speed: 0 },
+                special: { label: '增幅上限', value: 5, unit: '倍', grow: 1 }
+                // 功能：持續攻擊同一個目標時，傷害會隨攻擊次數不斷爬升
+            },
             {
                 id: 'teleport', name: '傳送', quality: 'epic', baseColor: '#8b5cf6', pattern: 'teleport',
                 stats: { atk: 10, speed: 65 }, grow: { atk: 3, speed: -1 },
@@ -312,6 +330,11 @@
             },
 
             // --- Legend (傳說) ---
+            {
+                id: 'mighty_wind', name: '強風', quality: 'legend', baseColor: '#a5f3fc', pattern: 'mighty_wind',
+                stats: { atk: 15, speed: 40 }, grow: { atk: 6, speed: -1 },
+                special: { label: '狂暴時長', value: 2, unit: '秒', grow: 0.5 }
+            },
             {
                 id: 'joker', name: '小丑', quality: 'legend', baseColor: '#f87171', pattern: 'joker',
                 stats: { atk: 5, speed: 50 }, grow: { atk: 1, speed: 0 },
@@ -662,7 +685,42 @@
                 if (slot.dice && slot.dice.id && !slot.isBeingDragged && slot.isLocked !== true) {
                     const db = ALL_DICES.find(d => d.id === slot.dice.id);
                     if (!db) return;
+                    // 在 updateCombat 函數內，grid.slots.forEach 循環中
+                    if (slot.dice.id === 'mighty_wind') {
+                        const cycle = (Date.now() % 8000); // 7秒一輪
+                        const burstTime = getDiceSpecialValue('mighty_wind') * 1000;
+                        if (cycle < burstTime) {
+                            spd = 6; // 極速模式
+                            slot.dice.color = "#ffffff"; // 視覺變化
+                        } else {
+                            slot.dice.color = db.baseColor;
+                        }
+                    }
+                    if (slot.dice.id === 'mine') {
+                        slot.mineTimer = (slot.mineTimer || 0) + 1;
+                        const pLv = userData.diceLevels['mine'] || 1;
+                        // 計算產錢速度 (spd)
+                        let spd = Math.max(60, db.stats.speed + (pLv - 1) * db.grow.speed);
 
+                        if (slot.mineTimer >= spd) {
+                            const spAmount = getDiceSpecialValue('mine') * slot.dice.lv;
+                            battleState.sp += spAmount;
+
+                            // 增加一個金幣跳出的視覺回饋
+                            if (damagePopups.length < 15) {
+                                damagePopups.push({
+                                    x: slot.x + grid.slotSize / 2,
+                                    y: slot.y,
+                                    val: `+${spAmount} SP`,
+                                    life: 40,
+                                    color: "#fbbf24"
+                                });
+                            }
+                            slot.mineTimer = 0;
+                            if (typeof updateUI === 'function') updateUI();
+                        }
+                        return; // 礦山骰子不執行下方的尋敵攻擊邏輯
+                    }
                     // --- A. 成長骰子邏輯 (保持原樣) ---
                     if (slot.dice.id === 'growth') {
                         if (!slot.dice.growthTimer) slot.dice.growthTimer = 0;
@@ -734,7 +792,7 @@
                                 });
                                 dmg *= (1 + neighbors * 0.5);
                             }
-
+                            slot.dice.tempSlotIdx = grid.slots.indexOf(slot);
                             executeAttack(
                                 slot.dice,
                                 target,
@@ -817,8 +875,15 @@
             target.virtualHp -= damage;
 
             projectiles.push({
-                x: startX, y: startY, target: target, damage: damage,
-                diceId: dice.id, color: dice.baseColor || dice.color || "#333", speed: 12
+                x: startX,
+                y: startY,
+                target: target,
+                damage: damage,
+                diceId: dice.id,
+                // 從骰子物件裡把剛才塞進去的索引拿出來當 UID
+                diceUid: `slot_${dice.tempSlotIdx}`,
+                color: dice.color || "#ffffff",
+                speed: 12
             });
         }
         // 【撞擊端】處理：單體傷害、功能性效果 (減速、中毒、傳送、連鎖)
@@ -827,6 +892,10 @@
             const target = p.target;
             if (!target || target.hp <= 0) return;
 
+            if (target.vulnerability) {
+                // 如果怪獸身上有易傷標記，傷害乘以加成百分比
+                p.damage *= (1 + target.vulnerability / 100);
+            }
             // --- 新增：觸發打擊音效 ---
             // 這裡呼叫我們之前寫好的專業 Web Audio API 播放器
             if (typeof AudioManager !== 'undefined' && AudioManager.playHit) {
@@ -836,12 +905,23 @@
             // 1. 基礎傷害
             target.hp -= p.damage;
             if (damagePopups.length < 20) {
-                damagePopups.push({ x: target.x, y: target.y, val: Math.floor(p.damage), life: 30 });
+                damagePopups.push({
+                    x: target.x,
+                    y: target.y,
+                    val: Math.floor(finalDamage),
+                    life: 30,
+                    color: target.vulnerability ? "#f87171" : "#ffffff"
+                });
             }
 
             // 2. 執行功能性效果
             const spec = getDiceSpecialValue(p.diceId);
             switch (p.diceId) {
+                case 'crack': // 易傷骰子撞擊時，給怪物掛上標記
+                    // 取當前骰子等級對應的易傷百分比
+                    // 如果怪物已有易傷，則取最高值而不堆疊 (平衡考量)
+                    target.vulnerability = Math.max(target.vulnerability || 0, spec);
+                    break;
                 case 'ice':
                     target.speed = Math.max(0.3, 1.5 * (1 - spec / 100));
                     clearTimeout(target.iceTimer);
@@ -874,6 +954,17 @@
                     if (Math.random() < (spec / 100) && !target.isBoss) {
                         target.x = path[0].x; target.y = path[0].y; target.pathIndex = 1;
                     }
+                    break;
+                // 在 applyHitEffect switch 內
+                case 'laser':
+                    // 如果怪物沒變，疊加增傷
+                    if (target.lastHitId === p.diceUid) {
+                        target.laserStack = Math.min((target.laserStack || 1) + 1, spec);
+                    } else {
+                        target.laserStack = 1;
+                        target.lastHitId = p.diceUid;
+                    }
+                    p.damage *= target.laserStack;
                     break;
             }
 
@@ -1348,6 +1439,13 @@
                     break;
 
                 // --- Rare & Epic ---
+                case 'laser_beam': // 雷射：三條匯聚線
+                    ctx.beginPath();
+                    ctx.moveTo(size * 0.2, size * 0.2); ctx.lineTo(m, m);
+                    ctx.moveTo(size * 0.2, size * 0.8); ctx.lineTo(m, m);
+                    ctx.moveTo(size * 0.8, m); ctx.lineTo(m, m);
+                    ctx.stroke(); ctx.beginPath(); ctx.arc(m, m, size * 0.08, 0, Math.PI * 2); ctx.fill();
+                    break;
                 case 'lock': // 鎖定：方框中帶一個圓點
                     ctx.strokeRect(size * 0.25, size * 0.25, size * 0.5, size * 0.5);
                     ctx.beginPath(); ctx.arc(m, m, 4, 0, Math.PI * 2); ctx.fill();
@@ -1370,6 +1468,14 @@
                     break;
 
                 // --- Legend ---
+                case 'mighty_wind': // 強風：多重氣流線條
+                    ctx.beginPath();
+                    for (let i = -1; i <= 1; i++) {
+                        ctx.moveTo(size * 0.2, m + i * size * 0.15);
+                        ctx.bezierCurveTo(m, m + i * size * 0.4, m, m - i * size * 0.4, size * 0.8, m + i * size * 0.15);
+                    }
+                    ctx.stroke();
+                    break;
                 case 'joker': // 小丑：倒三角形加上上方兩點
                     ctx.beginPath();
                     ctx.moveTo(size * 0.2, size * 0.3); ctx.lineTo(size * 0.8, size * 0.3);
@@ -1416,6 +1522,40 @@
                     ctx.bezierCurveTo(size * 0.9, size * 0.1, size * 0.1, size * 0.9, m, size * 0.9);
                     ctx.stroke();
                     ctx.beginPath(); ctx.arc(m, m, size * 0.1, 0, Math.PI * 2); ctx.fill();
+                    break;
+                // --- 易傷 (Crack) 外觀：盾牌加裂痕 ---
+                case 'crack':
+                    ctx.beginPath();
+                    // 繪製一個倒三角形（盾牌感）
+                    ctx.moveTo(m, size * 0.8);
+                    ctx.lineTo(size * 0.25, size * 0.25);
+                    ctx.lineTo(size * 0.75, size * 0.25);
+                    ctx.closePath();
+                    ctx.stroke();
+                    // 繪製中間的裂痕
+                    ctx.beginPath();
+                    ctx.moveTo(m - size * 0.1, size * 0.35);
+                    ctx.lineTo(m + size * 0.1, m);
+                    ctx.lineTo(m - size * 0.1, size * 0.65);
+                    ctx.stroke();
+                    break;
+
+                // --- 礦山 (Mine) 外觀：一個 T 字型的鎬頭 ---
+                case 'mine':
+                    ctx.beginPath();
+                    // 鎬頭的弧形金屬部分
+                    ctx.moveTo(size * 0.25, size * 0.35);
+                    ctx.quadraticCurveTo(m, size * 0.15, size * 0.75, size * 0.35);
+                    ctx.stroke();
+                    // 鎬頭的木柄
+                    ctx.beginPath();
+                    ctx.moveTo(m, size * 0.25);
+                    ctx.lineTo(m, size * 0.75);
+                    ctx.stroke();
+                    // 裝飾一個小錢幣圓點
+                    ctx.beginPath();
+                    ctx.arc(m + size * 0.15, size * 0.7, size * 0.08, 0, Math.PI * 2);
+                    ctx.fill(); ctx.stroke();
                     break;
             }
             ctx.restore();
