@@ -2246,7 +2246,7 @@
                     const hue = (Date.now() / 10) % 360;
                     dotColor = `hsl(${hue}, 80%, 60%)`;
                     break;
-                default: dotColor = "#ffffff"; break;
+                default: dotColor = "#333"; break; // 改為深灰色，避免在白色背景上看不見
             }
 
             ctx.fillStyle = dotColor;

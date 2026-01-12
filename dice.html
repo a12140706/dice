@@ -855,8 +855,16 @@
                 return;
             }
 
-            // 根據你之前的要求，未來要處理攻擊特效，這裡我們先確保點點顏色正確
-            ctx.fillStyle = diceColor || "#333";
+            // 確保星星顏色在白色背景上清晰可見
+            // 如果沒有傳入顏色，或顏色太淺，使用深灰色
+            let starColor = diceColor || "#333";
+
+            // 檢查顏色是否太淺（接近白色）
+            if (starColor.toLowerCase() === '#ffffff' || starColor.toLowerCase() === '#fff' || starColor.toLowerCase() === 'white') {
+                starColor = "#333"; // 使用深灰色
+            }
+
+            ctx.fillStyle = starColor;
             const dotSize = size * 0.07;
             const p = size * 0.22;
             const m = size / 2;
