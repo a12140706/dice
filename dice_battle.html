@@ -137,6 +137,7 @@
             <span class="text-red-500 font-bold">HP: <span id="hpText">3</span></span>
             <span class="text-blue-400 font-bold">SP: <span id="spText">100</span></span>
         </div>
+        <div class="text-slate-400 font-bold text-sm">LEVEL: <span id="currentLevelText">1</span></div>
         <div class="text-slate-400 font-bold text-sm">WAVE: <span id="waveText">1</span></div>
     </div>
 
@@ -192,6 +193,15 @@
         </button>
     </div>
     <script>
+        const userData = JSON.parse(localStorage.getItem('dice_game_data')) || {
+            deck: ['fire', 'wind', 'ice', 'electric', 'poison'],
+            diceLevels: { 'fire': 1, 'wind': 1, 'ice': 1, 'electric': 1, 'poison': 1 },
+            tickets: 0,
+            unlockLevel: 1, // 新增：紀錄歷史最高層數
+            maxWave: 0
+        };
+        if (userData.tickets === undefined) userData.tickets = 0;
+        document.getElementById('currentLevelText').innerText = userData.unlockLevel || 1;
         const AudioManager = {
             ctx: new (window.AudioContext || window.webkitAudioContext)(),
             buffers: {},
@@ -367,15 +377,7 @@
             //BOSS_SPEED_BASE: 1.0,      // Boss 初始移速
             // BOSS_SPEED_WAVE_ADD: 0.01  // Boss 每波增加的移速
         };
-        const userData = JSON.parse(localStorage.getItem('dice_game_data')) || {
-            deck: ['fire', 'wind', 'ice', 'electric', 'poison'],
-            diceLevels: { 'fire': 1, 'wind': 1, 'ice': 1, 'electric': 1, 'poison': 1 },
-            tickets: 0,
-            unlockLevel: 1, // 新增：紀錄歷史最高層數
-            maxWave: 0
-        };
-        if (userData.tickets === undefined) userData.tickets = 0;
-        document.getElementById('currentLevelText').innerText = userData.unlockLevel || 1;
+        
         let battleState = { hp: 3, sp: 100, wave: 1, summonCost: 10, difficulty: 'normal', isStarted: false };
         let powerUpLevels = {};
         userData.deck.forEach(id => { powerUpLevels[id] = 1; });
