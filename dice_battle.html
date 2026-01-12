@@ -1172,7 +1172,7 @@
                         const ctx = canvas.getContext('2d');
                         ctx.clearRect(0, 0, canvas.width, canvas.height);
                         drawDiceFeature(ctx, 0, 0, canvas.width, dice.pattern || dice.id, dice.baseColor);
-                        drawDiceStars(ctx, 0, 0, canvas.width, 1, dice.baseColor);
+                        drawDiceStars(ctx, 0, 0, canvas.width, 1, dice.baseColor, dice.id);
                     }
                 });
             }, 0);
@@ -1589,22 +1589,57 @@
             }
             ctx.restore();
         }
-        function drawDiceStars(ctx, x, y, size, stars, diceColor) {
-            // 7星顯示金色大星星 (這個維持金色，因為它是最強形態)
+        function drawDiceStars(ctx, x, y, size, stars, diceColor, diceId) {
+            const db = ALL_DICES.find(d => d.id === diceId);
+            const quality = db ? db.quality : 'common';
+
+            // --- 處理 7 星大星星的顏色 ---
             if (stars >= 7) {
                 ctx.save();
-                ctx.fillStyle = "#fbbf24";
+
+                let starColor = "#fbbf24"; // 預設金色
+
+                if (quality === 'mythic') {
+                    // 神話級 7 星：大星星也要虹彩閃爍！
+                    const hue = (Date.now() / 10) % 360;
+                    starColor = `hsl(${hue}, 80%, 60%)`;
+                } else if (quality === 'epic') {
+                    starColor = "#c084fc"; // 史詩 7 星可以用紫色大星星，或者維持金色
+                }
+
+                ctx.fillStyle = starColor;
                 ctx.font = `bold ${size * 0.7}px Arial`;
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
+
+                // 增加一個發光陰影讓神話大星星更霸氣
+                if (quality === 'mythic') {
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = starColor;
+                }
+
                 ctx.fillText("★", x + size / 2, y + size / 2 + size * 0.05);
                 ctx.restore();
                 return;
             }
 
-            // 1-6星使用骰子顏色
-            ctx.fillStyle = diceColor || "#333";
+            // --- 處理 1-6 星點點的顏色 ---
+            let dotColor = diceColor || "#333";
 
+            switch (quality) {
+                case 'rare': dotColor = "#60a5fa"; break;
+                case 'epic': dotColor = "#c084fc"; break;
+                case 'legend': dotColor = "#fbbf24"; break;
+                case 'mythic':
+                    const hue = (Date.now() / 10) % 360;
+                    dotColor = `hsl(${hue}, 80%, 60%)`;
+                    break;
+                default: dotColor = "#ffffff"; break;
+            }
+
+            ctx.fillStyle = dotColor;
+
+            // --- 繪製 1-6 顆點點的邏輯 (維持不變) ---
             const dotSize = size * 0.07;
             const p = size * 0.22;
             const m = size / 2;
@@ -1656,7 +1691,7 @@
 
             // 4. 畫點數
             if (typeof drawDiceStars === 'function') {
-                drawDiceStars(ctx, drawX, drawY, drawSize, dice.lv, dColor);
+                drawDiceStars(ctx, drawX, drawY, drawSize, dice.lv, dColor, dice.id);
             }
 
             // 5. 畫 Boss 鎖定/禁錮遮罩
