@@ -1437,6 +1437,7 @@
 
         function shouldAnimate() {
             // 檢查是否有傳說或神話品質的骰子需要動畫
+            if (!userData || !userData.deck) return false;
             return userData.deck.some(id => {
                 const dice = ALL_DICES.find(d => d.id === id);
                 return dice && (dice.quality === 'legend' || dice.quality === 'mythic');
@@ -1449,11 +1450,15 @@
                 return; // 沒有需要動畫的骰子，停止循環
             }
 
-            // 更新所有 canvas 中的骰子
-            ['main', 'inv'].forEach(prefix => {
-                userData.deck.forEach((diceId, index) => {
-                    const canvas = document.getElementById(`${prefix}-deck-canvas-${index}`);
-                    if (canvas) {
+            try {
+                // 更新所有 canvas 中的骰子
+                ['main', 'inv'].forEach(prefix => {
+                    if (!userData || !userData.deck) return;
+
+                    userData.deck.forEach((diceId, index) => {
+                        const canvas = document.getElementById(`${prefix}-deck-canvas-${index}`);
+                        if (!canvas) return;
+
                         const dice = ALL_DICES.find(d => d.id === diceId);
                         if (dice && (dice.quality === 'legend' || dice.quality === 'mythic')) {
                             const ctx = canvas.getContext('2d');
@@ -1462,23 +1467,25 @@
                             drawDiceFeature(ctx, 0, 0, canvas.width, dice.pattern || dice.id, dice.baseColor);
                             drawDiceStars(ctx, 0, 0, canvas.width, 1, dice.baseColor);
                         }
+                    });
+                });
+
+                // 更新倉庫區的傳說/神話骰子
+                ALL_DICES.forEach(dice => {
+                    if (dice.quality === 'legend' || dice.quality === 'mythic') {
+                        const canvas = document.getElementById(`inv-canvas-${dice.id}`);
+                        if (canvas) {
+                            const ctx = canvas.getContext('2d');
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            drawQualityBorder(ctx, 0, 0, canvas.width, dice.id);
+                            drawDiceFeature(ctx, 0, 0, canvas.width, dice.pattern || dice.id, dice.baseColor);
+                            drawDiceStars(ctx, 0, 0, canvas.width, 1, dice.baseColor);
+                        }
                     }
                 });
-            });
-
-            // 更新倉庫區的傳說/神話骰子
-            ALL_DICES.forEach(dice => {
-                if (dice.quality === 'legend' || dice.quality === 'mythic') {
-                    const canvas = document.getElementById(`inv-canvas-${dice.id}`);
-                    if (canvas) {
-                        const ctx = canvas.getContext('2d');
-                        ctx.clearRect(0, 0, canvas.width, canvas.height);
-                        drawQualityBorder(ctx, 0, 0, canvas.width, dice.id);
-                        drawDiceFeature(ctx, 0, 0, canvas.width, dice.pattern || dice.id, dice.baseColor);
-                        drawDiceStars(ctx, 0, 0, canvas.width, 1, dice.baseColor);
-                    }
-                }
-            });
+            } catch (error) {
+                console.error('動畫循環錯誤:', error);
+            }
 
             animationFrameId = requestAnimationFrame(animateDiceBorders);
         }
@@ -1602,29 +1609,6 @@
             }
 
             document.getElementById('upgradeOverlay').classList.remove('hidden');
-
-            // 如果是傳說或神話骰子，啟動動畫
-            if ((dice.quality === 'legend' || dice.quality === 'mythic') && canvas) {
-                let upgradeAnimationId = null;
-                const animateUpgradeCanvas = () => {
-                    const overlay = document.getElementById('upgradeOverlay');
-                    if (!overlay || overlay.classList.contains('hidden')) {
-                        if (upgradeAnimationId) cancelAnimationFrame(upgradeAnimationId);
-                        return; // 升級面板關閉，停止動畫
-                    }
-
-                    const ctx = canvas.getContext('2d');
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    ctx.fillStyle = "#ffffff";
-                    ctx.fillRect(0, 0, size, size);
-                    drawQualityBorder(ctx, 0, 0, size, dice.id);
-                    drawDiceFeature(ctx, 0, 0, size, dice.pattern || dice.id, dice.baseColor);
-                    drawDiceStars(ctx, 0, 0, size, 1, "#333333");
-
-                    upgradeAnimationId = requestAnimationFrame(animateUpgradeCanvas);
-                };
-                animateUpgradeCanvas();
-            }
         }
         function confirmUpgrade() {
             if (!tempUpgradeId) return;
