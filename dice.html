@@ -1087,19 +1087,68 @@
             ctx.save();
 
             if (quality === 'legend') {
-                // 傳說：金色呼吸光環
-                const pulse = 0.5 + Math.abs(Math.sin(time * 2)) * 0.5; // 0.5-1.0
+                // 傳說：金色龍紋邊框
+                const pulse = 0.5 + Math.abs(Math.sin(time * 2)) * 0.5;
 
-                ctx.shadowColor = '#eab308'; // 金色
-                ctx.shadowBlur = 10 + pulse * 8; // 10-18 呼吸效果
-                ctx.strokeStyle = `rgba(234, 179, 8, ${0.6 + pulse * 0.4})`; // 透明度也跳動
+                // 1. 基礎光環
+                ctx.shadowColor = '#eab308';
+                ctx.shadowBlur = 10 + pulse * 8;
+                ctx.strokeStyle = `rgba(234, 179, 8, ${0.6 + pulse * 0.4})`;
                 ctx.lineWidth = Math.max(2, size * 0.05);
 
                 ctx.beginPath();
                 ctx.strokeRect(x + 2, y + 2, size - 4, size - 4);
                 ctx.stroke();
 
-                // 額外的內圈光暈
+                // 2. 四角龍爪裝飾
+                const clawSize = size * 0.15;
+                const corners = [
+                    { cx: x + 10, cy: y + 10, angle: -Math.PI / 4 },
+                    { cx: x + size - 10, cy: y + 10, angle: Math.PI / 4 },
+                    { cx: x + 10, cy: y + size - 10, angle: -3 * Math.PI / 4 },
+                    { cx: x + size - 10, cy: y + size - 10, angle: 3 * Math.PI / 4 }
+                ];
+
+                ctx.strokeStyle = `rgba(234, 179, 8, ${0.8 + pulse * 0.2})`;
+                ctx.lineWidth = Math.max(1, size * 0.025);
+
+                corners.forEach(corner => {
+                    ctx.save();
+                    ctx.translate(corner.cx, corner.cy);
+                    ctx.rotate(corner.angle);
+
+                    // 龍爪形狀（三叉）
+                    for (let i = -1; i <= 1; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(0, 0);
+                        ctx.lineTo(i * 3, -8);
+                        ctx.lineTo(i * 4, -12);
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+                });
+
+                // 3. 龍鱗紋路（邊框裝飾）
+                ctx.strokeStyle = `rgba(250, 204, 21, ${0.4 + pulse * 0.3})`;
+                ctx.lineWidth = Math.max(1, size * 0.02);
+
+                // 上邊龍鱗
+                for (let i = 0; i < 4; i++) {
+                    const sx = x + 20 + i * (size - 40) / 3;
+                    ctx.beginPath();
+                    ctx.arc(sx, y + 5, 6, 0, Math.PI);
+                    ctx.stroke();
+                }
+
+                // 下邊龍鱗
+                for (let i = 0; i < 4; i++) {
+                    const sx = x + 20 + i * (size - 40) / 3;
+                    ctx.beginPath();
+                    ctx.arc(sx, y + size - 5, 6, Math.PI, Math.PI * 2);
+                    ctx.stroke();
+                }
+
+                // 4. 內圈光暈
                 ctx.shadowBlur = 5;
                 ctx.strokeStyle = `rgba(250, 204, 21, ${0.4 + pulse * 0.3})`;
                 ctx.lineWidth = Math.max(1, size * 0.025);
@@ -1107,13 +1156,13 @@
                 ctx.stroke();
             }
             else if (quality === 'mythic') {
-                // 神話：彩虹流光
-                const hueShift = (time * 60) % 360; // 每6秒完整循環
+                // 神話：宇宙星辰邊框
+                const hueShift = (time * 60) % 360;
 
-                // 多層光環營造流光效果
+                // 1. 彩虹流光（保持原有）
                 for (let i = 0; i < 3; i++) {
-                    const layerHue = (hueShift + i * 120) % 360; // 三個顏色層
-                    const offset = Math.sin(time * 3 + i * Math.PI / 1.5) * 2; // 流動偏移
+                    const layerHue = (hueShift + i * 120) % 360;
+                    const offset = Math.sin(time * 3 + i * Math.PI / 1.5) * 2;
 
                     ctx.shadowColor = `hsl(${layerHue}, 90%, 60%)`;
                     ctx.shadowBlur = 12 + i * 3;
@@ -1125,24 +1174,83 @@
                     ctx.stroke();
                 }
 
-                // 粒子點綴（角落閃爍點）
+                // 2. 星座連線（邊框星點）
                 ctx.shadowBlur = 8;
-                const corners = [
+                const stars = [
+                    { sx: x + size * 0.25, sy: y + 3 },
+                    { sx: x + size * 0.5, sy: y + 2 },
+                    { sx: x + size * 0.75, sy: y + 3 },
+                    { sx: x + size - 3, sy: y + size * 0.25 },
+                    { sx: x + size - 2, sy: y + size * 0.5 },
+                    { sx: x + size - 3, sy: y + size * 0.75 },
+                    { sx: x + size * 0.75, sy: y + size - 3 },
+                    { sx: x + size * 0.5, sy: y + size - 2 },
+                    { sx: x + size * 0.25, sy: y + size - 3 },
+                    { sx: x + 3, sy: y + size * 0.75 },
+                    { sx: x + 2, sy: y + size * 0.5 },
+                    { sx: x + 3, sy: y + size * 0.25 }
+                ];
+
+                // 繪製星點
+                stars.forEach((star, idx) => {
+                    const starHue = (hueShift + idx * 30) % 360;
+                    const twinkle = Math.sin(time * 3 + idx * 0.5) * 0.3 + 0.7;
+
+                    ctx.fillStyle = `hsla(${starHue}, 100%, 80%, ${twinkle})`;
+                    ctx.beginPath();
+                    ctx.arc(star.sx, star.sy, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+
+                // 繪製星座連線
+                ctx.strokeStyle = `hsla(${hueShift}, 80%, 70%, 0.3)`;
+                ctx.lineWidth = 1;
+                for (let i = 0; i < stars.length - 1; i++) {
+                    if (i % 3 !== 2) {
+                        ctx.beginPath();
+                        ctx.moveTo(stars[i].sx, stars[i].sy);
+                        ctx.lineTo(stars[i + 1].sx, stars[i + 1].sy);
+                        ctx.stroke();
+                    }
+                }
+
+                // 3. 四角星芒
+                const starCorners = [
                     [x + 8, y + 8],
                     [x + size - 8, y + 8],
                     [x + 8, y + size - 8],
                     [x + size - 8, y + size - 8]
                 ];
 
-                corners.forEach((corner, idx) => {
+                starCorners.forEach((corner, idx) => {
                     const particleHue = (hueShift + idx * 90) % 360;
                     const twinkle = Math.sin(time * 4 + idx) * 0.5 + 0.5;
 
-                    if (twinkle > 0.7) { // 只在閃爍時顯示
+                    if (twinkle > 0.5) {
+                        ctx.save();
+                        ctx.translate(corner[0], corner[1]);
+
+                        // 繪製星芒（8條射線）
+                        ctx.strokeStyle = `hsla(${particleHue}, 100%, 70%, ${twinkle * 0.6})`;
+                        ctx.lineWidth = 1;
+
+                        for (let i = 0; i < 8; i++) {
+                            ctx.save();
+                            ctx.rotate(i * Math.PI / 4 + time);
+                            ctx.beginPath();
+                            ctx.moveTo(0, 0);
+                            ctx.lineTo(0, -6 * twinkle);
+                            ctx.stroke();
+                            ctx.restore();
+                        }
+
+                        // 中心發光點
                         ctx.fillStyle = `hsla(${particleHue}, 100%, 70%, ${twinkle})`;
                         ctx.beginPath();
-                        ctx.arc(corner[0], corner[1], 2, 0, Math.PI * 2);
+                        ctx.arc(0, 0, 2, 0, Math.PI * 2);
                         ctx.fill();
+
+                        ctx.restore();
                     }
                 });
             }
