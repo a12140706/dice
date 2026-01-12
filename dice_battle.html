@@ -193,7 +193,7 @@
         </button>
     </div>
     <script>
-        const userData = JSON.parse(localStorage.getItem('dice_game_data')) || {
+        let userData = JSON.parse(localStorage.getItem('dice_game_data')) || {
             deck: ['fire', 'wind', 'ice', 'electric', 'poison'],
             diceLevels: { 'fire': 1, 'wind': 1, 'ice': 1, 'electric': 1, 'poison': 1 },
             tickets: 0,
@@ -908,7 +908,7 @@
                 damagePopups.push({
                     x: target.x,
                     y: target.y,
-                    val: Math.floor(finalDamage),
+                    val: Math.floor(p.damage),
                     life: 30,
                     color: target.vulnerability ? "#f87171" : "#ffffff"
                 });
@@ -969,7 +969,7 @@
                 case 'galaxy':
                     // 產生一個小型黑洞效果
                     const pullRange = 100; // 吸引半徑
-                    const spec = getDiceSpecialValue('galaxy'); // 假設你用 special.value 當作拉力倍率
+                  
 
                     enemies.forEach(e => {
                         if (e !== target && e.hp > 0) {
