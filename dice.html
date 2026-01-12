@@ -518,22 +518,23 @@
                 roomId: roomId,
                 status: 'waiting',
                 gameStarted: false,
-                host: userData.userId || 'Guest_' + Math.random().toString(36).substr(2, 5),
+                host: userData.uid || 'Guest', // 修正為 userData.uid
                 createdAt: Date.now(),
                 wave: 1,
                 hp: 3,
                 players: {
-                    p1: { uid: userData.userId || 'host', sp: 100, isReady: true }
+                    p1: {
+                        uid: userData.uid || 'host',
+                        name: userData.playerName || "房主", // 新增這行
+                        sp: 100,
+                        isReady: true
+                    }
                 }
             };
 
             try {
                 await firebase.database().ref('coop_rooms/' + roomId).set(roomData);
-
-                // 切換 UI 到等待狀態
                 showLobbyUI(roomId, "等待隊友加入...");
-
-                // 開始監聽房間變化
                 listenForRoomUpdates(roomId);
             } catch (error) {
                 console.error("建立失敗", error);
@@ -558,14 +559,14 @@
             isHost = false;
 
             await roomRef.child('players/p2').set({
-                uid: userData.userId || 'guest',
+                uid: userData.uid || 'guest',
+                name: userData.playerName || "挑戰者", // 新增這行
                 sp: 100,
                 isReady: true
             });
 
             await roomRef.update({ status: 'ready' });
 
-            // 加入者也切換 UI 到等待狀態
             showLobbyUI(roomId, "等待房主開始...");
             listenForRoomUpdates(roomId);
         }

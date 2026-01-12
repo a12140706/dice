@@ -309,6 +309,7 @@
             // 啟動迴圈
             battleState.isStarted = true;
             requestAnimationFrame(gameLoop);
+            battleState.gameOverHandled = false;
         }
 
         function resetRoomData() {
@@ -400,15 +401,24 @@
                 const data = snap.val();
                 if (!data) return;
 
-                // 共同狀態
+                // --- A. 優先檢查遊戲結束 ---
+                if (data.gameover === true) {
+                    if (battleState.isStarted) {
+                        battleState.hp = 0;
+                        handleGameOver();
+                    }
+                    return;
+                }
+
+                // --- B. 共同狀態同步 (波數、血量) ---
                 if (data.wave) battleState.wave = data.wave;
                 if (data.hp !== undefined) battleState.hp = data.hp;
 
+                // --- C. SP 邏輯處理 (原本的差值計算法) ---
                 if (role === 'guest' && data.gameStats && data.gameStats.totalSpP2) {
                     const newTotal = data.gameStats.totalSpP2;
                     let diff = newTotal - (stateCache.lastTotalSpP2 || 0);
 
-                    // 如果伺服器重置 (數值變小)，視為新局，不加卻也不扣
                     if (diff < 0) {
                         stateCache.lastTotalSpP2 = newTotal;
                         diff = 0;
@@ -421,65 +431,50 @@
                     }
                 }
 
-                // 監聽結束信號
-                // 只要收到 gameover 為 true 就結束，不需檢查本地 HP (避免同步落差)
-                if (data.gameover === true && battleState.isStarted) {
-                    battleState.hp = 0; // 強制歸零
-                    handleGameOver();
-                }
-
-                // 敵人同步 (Host 寫入，Guest 讀取)
-                // 敵人同步 (Host 寫入，Guest 讀取)
-                if (role === 'guest' && data.enemies) {
-                    const remoteEnemies = data.enemies || [];
-
-                    // 1. 標記所有現有敵人為"未更新"
-                    const currentMap = new Map();
-                    enemies.forEach(e => currentMap.set(e.id, e));
-
-                    const newEnemies = [];
-
-                    remoteEnemies.forEach(r => {
-                        if (currentMap.has(r.id)) {
-                            // 更新舊物件屬性 (保留 references)
-                            const local = currentMap.get(r.id);
-                            local.x = r.x;
-                            local.y = r.y;
-                            local.hp = r.hp;
-                            local.pathIndex = r.pathIndex;
-                            // 其他屬性視需要同步
-                            newEnemies.push(local);
-                        } else {
-                            // 新增
-                            newEnemies.push(r);
-                        }
-                    });
-
-                    // 替換列表 (此時 newEnemies 包含更新後的舊物件 + 新物件)
-                    // 這樣 projectiles 持有的 target 引用依然有效
-                    enemies = newEnemies;
-                }
-
-                if (role === 'host') {
-                    if (data.players?.p2) {
-                        updateSlotsFromSync(partnerSlots, data.players.p2.slots);
-                        // 同步夥伴等級
-                        if (data.players.p2.powerUpLevels) {
-                            partnerPowerUpLevels = data.players.p2.powerUpLevels;
-                        }
+                // --- D. 角色特定同步 ---
+                if (role === 'guest') {
+                    // 1. 敵人同步 (包含補間動畫的座標承接)
+                    if (data.enemies) {
+                        const remoteEnemies = data.enemies || [];
+                        remoteEnemies.forEach(newE => {
+                            // 在現有的 enemies 中尋找同一個 ID 的怪
+                            const oldE = enemies.find(o => o.id === newE.id);
+                            if (oldE) {
+                                // 【關鍵】承接舊的視覺座標 vX, vY，這樣 draw 的時候才不會瞬移
+                                newE.vX = oldE.vX;
+                                newE.vY = oldE.vY;
+                            }
+                        });
+                        enemies = remoteEnemies;
                     }
-                } else {
+
+                    // 2. 子彈同步 (由 Host 提供，Guest 直接接收)
+                    //projectiles = data.projectiles || [];
+
+                    // 3. 夥伴 (Host) 骰子與等級同步
                     if (data.players?.p1) {
                         updateSlotsFromSync(partnerSlots, data.players.p1.slots);
                         if (data.players.p1.powerUpLevels) {
                             partnerPowerUpLevels = data.players.p1.powerUpLevels;
                         }
                     }
+                } else {
+                    // Host 監聽 Guest 的數據
+                    if (data.players?.p2) {
+                        updateSlotsFromSync(partnerSlots, data.players.p2.slots);
+                        // 同步夥伴等級
+                        if (data.players.p2.powerUpLevels) {
+                            partnerPowerUpLevels = data.players.p2.powerUpLevels;
+                        }
+                        // 同步 SP 用的 Cache
+                        stateCache.totalSpP2 = data.gameStats?.totalSpP2 || 0;
+                    }
                 }
+
                 updateUILive();
             });
 
-            // 立即同步一次初始資料 (包含 Deck 與 Levels)
+            // 立即同步一次初始資料 (Deck 與 Levels)
             syncMyData();
         }
 
@@ -522,19 +517,22 @@
 
         // 夥伴的等級資訊
         let partnerPowerUpLevels = {};
-
+        let lastSyncTime = 0;
+        const SYNC_INTERVAL = 100;
 
         // --- 6. 遊戲迴圈 ---
         function gameLoop() {
             if (!battleState.isStarted) return;
             frameCount++;
 
-            // 1. 邏輯更新
             if (role === 'host') {
-                updateHostLogic(); // 生怪、移動、傷害結算
-                if (frameCount % 3 === 0) { // 每 3 幀同步一次，減少寫入頻率
+                updateHostLogic(); // 生怪、移動
+                updateCombat();    // 房主計算全場戰鬥（包含幫 P2 發射子彈）
+
+                if (frameCount % 10 === 0) {
                     db.ref(`coop_rooms/${roomId}`).update({
                         enemies: enemies,
+                        // ❌ 移除 projectiles 同步
                         wave: battleState.wave,
                         hp: battleState.hp,
                         gameover: battleState.hp <= 0,
@@ -542,26 +540,58 @@
                     });
                 }
             } else {
-                updateGuestLogic(); // 預測移動
+                updateGuestLogic(); // Guest 只負責讓怪滑行移動（平滑化）
+                updateCombat();
+                // --- 關鍵修正 ---
+                // Guest 不要跑 updateCombat (不處理邏輯扣血)，
+                // 但可以跑一個視覺用的 updateProjectiles()，
+                // 讓接收到的子彈座標能「動」起來，而不是等 Firebase 下一次傳座標。
+                //updateProjectilesLocal();
             }
 
-            // 2. 戰鬥判定 (雙方都要跑，因為要發射子彈和特效)
-            updateCombat();
-
-            // 3. 渲染
-            draw();
-
+            draw(); // 這裡已經有你寫好的視覺翻轉
             requestAnimationFrame(gameLoop);
         }
+        // 專門給 Guest 用的子彈平滑移動 (純視覺)
+        function updateProjectilesLocal() {
+            projectiles.forEach(p => {
+                // 根據子彈原本的速度向量移動
+                // 如果你的子彈物件有 vx, vy，就直接加
+                if (p.vx !== undefined && p.vy !== undefined) {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                } else {
+                    // 如果沒有向量，則讓它向目標位置滑行 (簡單處理)
+                    // 這部分取決於你原本 updateCombat 裡怎麼移動子彈的
+                    // 建議保留原本 updateCombat 裡的子彈移動邏輯即可
+                }
+            });
 
+            // 移除飛出邊界的子彈，避免 Guest 畫面堆積太多沒用的子彈
+            projectiles = projectiles.filter(p =>
+                p.x >= 0 && p.x <= canvas.width &&
+                p.y >= 0 && p.y <= canvas.height
+            );
+        }
         // Guest 邏輯: 本地預測移動 (避免卡頓)
         function updateGuestLogic() {
             enemies.forEach(e => {
                 if (e.hp <= 0) return;
 
                 const path = e.owner === 'p1' ? paths.p1 : paths.p2;
-                // 防呆
-                if (!path || e.pathIndex >= path.length) return;
+
+                // 初始化視覺座標
+                if (e.vX === undefined) {
+                    e.vX = e.x;
+                    e.vY = e.y;
+                }
+
+                // 如果路徑無效，至少更新視覺座標
+                if (!path || e.pathIndex >= path.length) {
+                    e.vX += (e.x - e.vX) * 0.25;
+                    e.vY += (e.y - e.vY) * 0.25;
+                    return;
+                }
 
                 const target = path[e.pathIndex];
                 if (target) {
@@ -569,17 +599,17 @@
                     let dy = target.y - e.y;
                     let dist = Math.hypot(dx, dy);
 
-                    // 簡單移動
-                    // 注意：e.speed 也是 sync 過來的，如果有 buff 會自動同步
                     if (dist < e.speed) {
                         e.pathIndex++;
-                        // 不做移除或扣血，只負責移動
-                        // 如果超出路徑，就停在終點等待 Host 移除
                     } else {
                         e.x += (dx / dist) * e.speed;
                         e.y += (dy / dist) * e.speed;
                     }
                 }
+
+                // 平滑追蹤
+                e.vX += (e.x - e.vX) * 0.25;
+                e.vY += (e.y - e.vY) * 0.25;
             });
         }
 
@@ -798,39 +828,34 @@
             // 我方攻擊
             processSlotsCombat(mySlots, role === 'host' ? 'p1' : 'p2');
 
-            // 隊友攻擊 (只做視覺特效，傷害設為 0 或忽略) - 為了簡化，這裡 Client 端只運算自己的攻擊
-            // Host 端因為擁有完整數據，其實可以運算所有人的攻擊，但為了效能，
-            // 這裡採用：Host 算 P1 + P2 的真實傷害，Guest 算 P2 的視覺 + P1 視覺？
-            // 最佳解：雙方都各自算自己的攻擊並扣減 enemy.virtualHp，
-            // Host 最終確認 enemy.hp。Guest 看到的 hp 是 sync 過來的。
-
-            // 修正策略：
-            // Host: 執行 mySlots (P1) 攻擊 -> 扣 HP。執行 partnerSlots (P2) 攻擊 -> 扣 HP。
-            // Guest: 執行 mySlots (P2) 攻擊 -> 發射子彈 (不扣真實 HP，等待 Host 同步)。
-
             if (role === 'host') {
                 processSlotsCombat(partnerSlots, 'p2');
             }
 
-            // 子彈移動
+            // 子彈移動（雙方各自計算，不同步）
             for (let i = projectiles.length - 1; i >= 0; i--) {
                 let p = projectiles[i];
                 if (!enemies.includes(p.target) || p.target.hp <= 0) {
-                    projectiles.splice(i, 1); continue;
+                    projectiles.splice(i, 1);
+                    continue;
                 }
                 let dx = p.target.x - p.x, dy = p.target.y - p.y;
                 let dist = Math.hypot(dx, dy);
                 if (dist < p.speed) {
-                    // 擊中
                     projectiles.splice(i, 1);
                     AudioManager.playHit();
 
-                    // 視覺跳字
                     if (damagePopups.length < 20) {
-                        damagePopups.push({ x: p.target.x, y: p.target.y, val: Math.floor(p.damage), life: 30, color: '#fff' });
+                        damagePopups.push({
+                            x: p.target.x,
+                            y: p.target.y,
+                            val: Math.floor(p.damage),
+                            life: 30,
+                            color: '#fff'
+                        });
                     }
 
-                    // 實際扣血 (僅 Host)
+                    // 只有 Host 計算傷害
                     if (role === 'host') {
                         applyDamageLogic(p.target, p.damage, p.diceId, p.attackerRole);
                     }
@@ -902,16 +927,28 @@
         }
 
         function createProjectile(start, target, dice, owner) {
-            const dmg = getDiceDamage(dice, owner); // 傳入 owner 以讀取正確等級
+            const dmg = getDiceDamage(dice, owner);
+
+            // 計算速度向量
+            const dx = target.x - start.x;
+            const dy = target.y - start.y;
+            const dist = Math.hypot(dx, dy);
+            const speed = 12;
+            const vx = dist > 0 ? (dx / dist) * speed : 0;
+            const vy = dist > 0 ? (dy / dist) * speed : 0;
+
             projectiles.push({
-                x: start.x, y: start.y,
+                x: start.x,
+                y: start.y,
+                vx: vx,  // 加入速度向量
+                vy: vy,  // 加入速度向量
                 target: target,
-                speed: 12, // Changed from 15 to 12 to match previous hardcoded value
+                speed: speed,
                 damage: dmg,
                 color: dice.baseColor,
-                life: 1, // alive
-                diceId: dice.id, // 用於判斷特效
-                attackerRole: owner // 標記是誰發射的
+                life: 1,
+                diceId: dice.id,
+                attackerRole: owner
             });
         }
 
@@ -1111,7 +1148,15 @@
         function draw() {
             // 清空畫布
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save(); // 【新增】保存目前座標狀態
 
+            if (role === 'guest') {
+                // 【新增】如果是 Guest，將畫布轉 180 度
+                // 這會讓你原本寫的 tx(e.x), ty(e.y) 等座標自動在視覺上「上下顛倒」
+                ctx.translate(canvas.width / 2, canvas.height / 2);
+                ctx.rotate(Math.PI);
+                ctx.translate(-canvas.width / 2, -canvas.height / 2);
+            }
             // 0. 畫背景路徑
             // 路徑點也需要轉換
             const drawTransformedPath = (path, color) => {
@@ -1166,39 +1211,58 @@
 
             // 3. 畫敵人
             enemies.forEach(e => {
-                const drawX = tx(e.x);
-                const drawY = ty(e.y);
-                const size = e.isBoss ? e.size : 20; // 確保 size 有值
-                const renderSize = size || 20;
+                // 【平滑移動處理】
+                if (role === 'guest') {
+                    // 如果還沒有視覺座標，初始化它
+                    if (e.vX === undefined) { e.vX = e.x; e.vY = e.y; }
+                    // 視覺座標追蹤邏輯座標 (0.25 為平滑係數，讓移動不卡頓)
+                    e.vX += (e.x - e.vX) * 0.25;
+                    e.vY += (e.y - e.vY) * 0.25;
+                } else {
+                    // 房主直接使用邏輯座標
+                    e.vX = e.x;
+                    e.vY = e.y;
+                }
 
+                // 使用視覺座標進行 tx/ty 轉換
+                const drawX = tx(e.vX);
+                const drawY = ty(e.vY);
+
+                const size = e.isBoss ? (e.size || 60) : 20;
+                const renderSize = size;
+
+                // 顏色判斷：Boss 顏色或玩家所屬顏色
                 const color = e.isBoss ? (BOSS_TYPES[e.bossType]?.color || '#f00') : (e.owner === 'p1' ? '#3b82f6' : '#f472b6');
 
                 if (e.isBoss) {
                     const bossImg = BOSS_TYPES[e.bossType]?.img;
                     if (bossImg && bossImg.complete) {
                         ctx.save();
+                        // Boss 的呼吸縮放特效
                         const scale = 1 + Math.sin(Date.now() / 200) * 0.05;
                         ctx.translate(drawX, drawY);
                         ctx.scale(scale, scale);
-                        // Guest 視角是否需要旋轉 Boss 圖片? 
-                        // 不用，圖片本身朝向無所謂，甚至我們希望它看起來是正的
                         ctx.drawImage(bossImg, -renderSize / 2, -renderSize / 2, renderSize, renderSize);
                         ctx.restore();
                     } else {
+                        // 圖片未載入完成時的備援圓形
                         ctx.fillStyle = color;
-                        ctx.beginPath(); ctx.arc(drawX, drawY, renderSize / 2, 0, Math.PI * 2); ctx.fill();
+                        ctx.beginPath();
+                        ctx.arc(drawX, drawY, renderSize / 2, 0, Math.PI * 2);
+                        ctx.fill();
                     }
                 } else {
+                    // 普通小怪畫正方形
                     ctx.fillStyle = color;
                     ctx.fillRect(drawX - renderSize / 2, drawY - renderSize / 2, renderSize, renderSize);
                 }
 
-                // 血條 (始終在上方)
+                // 血條繪製 (位於怪物上方)
                 const percent = Math.max(0, e.hp / e.maxHp);
                 ctx.fillStyle = '#333';
-                ctx.fillRect(drawX - 12, drawY - renderSize / 2 - 8, 24, 4);
+                ctx.fillRect(drawX - 12, drawY - renderSize / 2 - 8, 24, 4); // 背景黑條
                 ctx.fillStyle = '#22c55e';
-                ctx.fillRect(drawX - 12, drawY - renderSize / 2 - 8, 24 * percent, 4);
+                ctx.fillRect(drawX - 12, drawY - renderSize / 2 - 8, 24 * percent, 4); // 綠色血量
             });
 
             // 4. 畫子彈
@@ -1248,6 +1312,7 @@
                 // 這裡單純畫拖曳物，直接畫在滑鼠位置即可
                 renderDice(ctx, drag.currentX - grid.slotSize / 2, drag.currentY - grid.slotSize / 2, drag.dice, false);
             }
+            ctx.restore();
         }
 
         function drawPath(path, color) {
@@ -1364,13 +1429,21 @@
                 const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                 const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-                // 轉換為邏輯座標 (500 width base)
-                return {
-                    x: (clientX - rect.left) * scaleFactor,
-                    y: (clientY - rect.top) * scaleFactor
-                };
+                // 1. 先轉換為基礎邏輯座標 (500 width base)
+                let x = (clientX - rect.left) * scaleFactor;
+                let y = (clientY - rect.top) * scaleFactor;
+
+                // 2. 【核心修正】如果是 Guest，點擊座標必須旋轉 180 度轉回邏輯座標
+                // 因為視覺上你點的是下方，但邏輯上 P2 的骰子區是在上方
+                if (role === 'guest') {
+                    x = canvas.width - x;
+                    y = canvas.height - y;
+                }
+
+                return { x, y };
             };
 
+            // --- 以下監聽器部分維持你原本的代碼，不用動 ---
             canvas.addEventListener('mousedown', e => {
                 const p = getPos(e);
                 handleInputStart(p.x, p.y);
@@ -1382,7 +1455,7 @@
             window.addEventListener('mouseup', handleInputEnd);
 
             canvas.addEventListener('touchstart', e => {
-                e.preventDefault(); // 防止滾動
+                e.preventDefault();
                 const p = getPos(e);
                 handleInputStart(p.x, p.y);
             }, { passive: false });
@@ -1395,39 +1468,23 @@
         }
 
         function handleInputStart(x, y) {
-            // 轉換座標 (若為 Guest，輸入座標要反轉去對應邏輯座標?)
-            // 我們的 mySlots 在邏輯上永遠是 P1 (Host) 的那塊區域嗎？
-            // 不，mySlots 的渲染位置由 drawDiceGrid 決定。
-            // Host: mySlots 在下方。 Input(x,y) 直接對應。
-            // Guest: mySlots 在下方 (視覺上)。Input(x,y) 是手指位置。
-            // 但因為 draw 時做了 rotate，所以 Guest 看到的「下方」其實是 Canvas 座標的「上方」(0,0 附近) 還是「下方」？
-            // 讓我們釐清：
-            // Guest Rotate 180: 原點 (0,0) 變右下，(w,h) 變左上。
-            // 所以 Guest 點擊畫面下方 (高 Y)，對應到 Canvas 座標應該是 低 Y (因為被轉了)。
-            // Canvas 邏輯座標系中，P2 (Guest) 的區域被定義在上方 (Y 小)。
-            // 輸入座標 x, y 是 Canvas 上的像素座標
-            // 我們比對 Slot 的視覺位置 = tx(Slot.rawX), ty(Slot.rawY)
-            // 現在 tx(x) = x，所以視覺 X = 邏輯 X
-            // ty(y) = H - y (if guest)
+            // x, y 已經是邏輯座標（getPos 轉換過了）
 
             const clicked = mySlots.find(slot => {
-                // 取得 Slot 的 Raw 座標 (邏輯座標)
+                // 直接取得邏輯座標
                 const sx = getSlotPixelX(slot, role === 'host' ? 'p1' : 'p2');
                 const sy = getSlotPixelY(slot, role === 'host' ? 'p1' : 'p2');
 
-                // 轉成視覺座標
-                const visualX = tx(sx);
-                const visualY = ty(sy);
-
-                // 判定距離
-                return Math.abs(x - visualX) < grid.slotSize / 2 + 5 && Math.abs(y - visualY) < grid.slotSize / 2 + 5;
+                // 不需要 tx/ty 轉換，直接比對邏輯座標
+                return Math.abs(x - sx) < grid.slotSize / 2 + 5 &&
+                    Math.abs(y - sy) < grid.slotSize / 2 + 5;
             });
 
             if (clicked && clicked.dice && !clicked.isLocked) {
                 drag.isDragging = true;
                 drag.fromSlot = clicked;
                 drag.dice = { ...clicked.dice };
-                drag.currentX = x; // 視覺座標
+                drag.currentX = x;
                 drag.currentY = y;
                 clicked.isBeingDragged = true;
             }
@@ -1446,20 +1503,19 @@
             const lx = drag.currentX;
             const ly = drag.currentY;
 
-            // 判定目標格 (由視覺座標比對)
+            // 判定目標格（用邏輯座標比對）
             const target = mySlots.find(slot => {
                 const sx = getSlotPixelX(slot, role === 'host' ? 'p1' : 'p2');
                 const sy = getSlotPixelY(slot, role === 'host' ? 'p1' : 'p2');
-                const visualX = tx(sx);
-                const visualY = ty(sy);
 
-                return Math.abs(lx - visualX) < grid.slotSize / 2 + 10 && Math.abs(ly - visualY) < grid.slotSize / 2 + 10;
+                // 不需要 tx/ty 轉換
+                return Math.abs(lx - sx) < grid.slotSize / 2 + 10 &&
+                    Math.abs(ly - sy) < grid.slotSize / 2 + 10;
             });
 
             if (target && target !== drag.fromSlot) {
                 // 合成邏輯
                 if (target.dice && target.dice.id === drag.dice.id && target.dice.lv === drag.dice.lv && target.dice.lv < 7) {
-                    // 成功合成
                     const newId = userData.deck[Math.floor(Math.random() * userData.deck.length)];
                     const db = ALL_DICES.find(d => d.id === newId);
                     target.dice = {
@@ -1467,7 +1523,6 @@
                         baseColor: db.baseColor
                     };
                     drag.fromSlot.dice = null;
-
                     syncMyData();
                 } else if (!target.dice) {
                     // 移動
@@ -1611,43 +1666,53 @@
         init();
 
         function handleGameOver() {
+            // 預防機制：如果已經處理過 GameOver 就跳過，避免重複上傳排行榜
+            if (battleState.gameOverHandled) return;
+            battleState.gameOverHandled = true;
+
             battleState.isStarted = false;
 
-            // 1. 更新本地紀錄
+            // 1. 更新本地紀錄 (遵守你的 LocalStorage 保護原則)
             if (battleState.wave > userData.maxWave) {
                 userData.maxWave = battleState.wave;
                 localStorage.setItem('dice_game_data', JSON.stringify(userData));
             }
 
-            // 2. 上傳排行榜 (僅由 Host 執行一次)
+            // 2. 斷開 Firebase 監聽 (重要！節省流量與手機電力)
+            if (roomRef) {
+                roomRef.off(); // 停止接收數據更新
+            }
+
+            // 3. 上傳排行榜 (僅由 Host 執行一次)
             if (role === 'host') {
-                // 取得雙方名稱 (或 ID)
-                // 這裡我們需要從 currentRoomId 取得房間資訊，或者假設我們已經有雙方資料
-                // 暫時用本地變數
-                const p1Name = "Player 1"; // 可優化：從 userData 拿名字
-                const p2Name = "Player 2";
+                // 先在 Realtime DB 標記遊戲結束，讓 Guest 也能跳出視窗
+                db.ref(`coop_rooms/${roomId}`).update({ gameover: true });
 
                 db.ref(`coop_rooms/${roomId}`).once('value').then(snap => {
                     const data = snap.val();
-                    const p1Id = data.players.p1?.uid || 'unknown';
-                    const p2Id = data.players.p2?.uid || 'unknown';
+                    if (!data) return;
 
-                    // 寫入 Firestore 排行榜集合
-                    fs.collection('leaderboard').add({
-                        p1: p1Id,
-                        p2: p2Id,
-                        wave: battleState.wave,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                        roomId: roomId
-                    }).then(() => {
-                        console.log("排行榜紀錄已上傳");
-                    }).catch(err => {
-                        console.error("上傳失敗", err);
-                    });
+                    const p1Name = data.players.p1?.name || "房主";
+                    const p2Name = data.players.p2?.name || "隊友";
+
+                    const namesElement = document.getElementById('player-names');
+                    if (namesElement) {
+                        namesElement.innerText = `${p1Name} & ${p2Name}`;
+                    }
+                    // 只有波數大於 1 才紀錄，避免無效數據佔用 Firestore 配額
+                    if (battleState.wave > 1) {
+                        fs.collection('leaderboard').add({
+                            playerNames: winnerText, // 存入組合名稱
+                            p1Name: p1Name,
+                            p2Name: p2Name,
+                            wave: battleState.wave,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    }
                 });
             }
 
-            // 3. 顯示結算畫面
+            // 4. 顯示結算畫面
             document.getElementById('final-wave').innerText = battleState.wave;
             document.getElementById('game-over-modal').classList.remove('hidden');
         }
@@ -1827,8 +1892,16 @@
         class="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] hidden backdrop-blur-sm">
         <div class="bg-slate-800 p-8 rounded-2xl border border-slate-600 text-center max-w-sm mx-4 shadow-2xl">
             <h2 class="text-3xl font-black text-white mb-2 tracking-wider">GAME OVER</h2>
-            <p class="text-slate-400 mb-8 text-lg">共堅持了 <span id="final-wave"
-                    class="text-yellow-400 font-bold text-3xl mx-1">0</span> 波</p>
+
+            <p class="text-slate-400 mb-2 text-lg">共堅持了
+                <span id="final-wave" class="text-yellow-400 font-bold text-3xl mx-1">0</span> 波
+            </p>
+
+            <div class="mb-8 py-2 px-4 bg-slate-900/50 rounded-lg inline-block">
+                <p class="text-slate-500 text-xs uppercase tracking-widest mb-1">團隊</p>
+                <div id="player-names" class="text-blue-300 font-medium">載入中...</div>
+            </div>
+
             <button onclick="location.href='dice.html'"
                 class="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl font-bold text-white text-xl shadow-lg active:scale-95 transition-all hover:scale-105">
                 返回大廳
