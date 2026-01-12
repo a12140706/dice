@@ -882,12 +882,45 @@
             ctx.lineJoin = "round";
 
             switch (pattern) {
-                case 'laser_beam': // 雷射：三條匯聚線
+                case 'laser_beam': // 雷射：科技感十字準星 + 脈衝光環
+                    // 1. 外圈旋轉光環
+                    ctx.save();
+                    ctx.translate(m, m);
+                    ctx.rotate(Date.now() / 500);
+                    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.4)`;
+                    ctx.lineWidth = Math.max(1, size * 0.03);
                     ctx.beginPath();
-                    ctx.moveTo(size * 0.2, size * 0.2); ctx.lineTo(m, m);
-                    ctx.moveTo(size * 0.2, size * 0.8); ctx.lineTo(m, m);
-                    ctx.moveTo(size * 0.8, m); ctx.lineTo(m, m);
-                    ctx.stroke(); ctx.beginPath(); ctx.arc(m, m, size * 0.08, 0, Math.PI * 2); ctx.fill();
+                    ctx.arc(0, 0, size * 0.35, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+
+                    // 2. 中心十字線 (準星)
+                    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.8)`;
+                    ctx.lineWidth = Math.max(1, size * 0.045);
+                    ctx.beginPath();
+                    ctx.moveTo(m - size * 0.2, m); ctx.lineTo(m + size * 0.2, m);
+                    ctx.moveTo(m, m - size * 0.2); ctx.lineTo(m, m + size * 0.2);
+                    ctx.stroke();
+
+                    // 3. 四個角落定位點
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.6)`;
+                    const corners = [
+                        [size * 0.15, size * 0.15],
+                        [size * 0.85, size * 0.15],
+                        [size * 0.15, size * 0.85],
+                        [size * 0.85, size * 0.85]
+                    ];
+                    corners.forEach(([cx, cy]) => {
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, size * 0.03, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+
+                    // 4. 中心發光點
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.9)`;
+                    ctx.beginPath();
+                    ctx.arc(m, m, size * 0.08, 0, Math.PI * 2);
+                    ctx.fill();
                     break;
                 case 'fire':
                     ctx.beginPath();
@@ -977,21 +1010,39 @@
                     ctx.stroke();
                     ctx.beginPath(); ctx.arc(m, m, size * 0.08, 0, Math.PI * 2); ctx.fill();
                     break;
-                // --- 易傷 (Crack) 外觀：盾牌加裂痕 ---
+                // --- 易傷 (Crack) 外觀：碎裂水晶效果 ---
                 case 'crack':
+                    // 1. 中心爆裂點
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.5)`;
                     ctx.beginPath();
-                    // 繪製一個倒三角形（盾牌感）
-                    ctx.moveTo(m, size * 0.8);
-                    ctx.lineTo(size * 0.25, size * 0.25);
-                    ctx.lineTo(size * 0.75, size * 0.25);
-                    ctx.closePath();
-                    ctx.stroke();
-                    // 繪製中間的裂痕
-                    ctx.beginPath();
-                    ctx.moveTo(m - size * 0.1, size * 0.35);
-                    ctx.lineTo(m + size * 0.1, m);
-                    ctx.lineTo(m - size * 0.1, size * 0.65);
-                    ctx.stroke();
+                    ctx.arc(m, m, size * 0.12, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // 2. 多方向裂紋擴散
+                    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.7)`;
+                    ctx.lineWidth = Math.max(1, size * 0.04);
+                    const crackAngles = [0, 45, 90, 135, 180, 225, 270, 315];
+                    crackAngles.forEach(angle => {
+                        const rad = angle * Math.PI / 180;
+                        const x1 = m + Math.cos(rad) * size * 0.12;
+                        const y1 = m + Math.sin(rad) * size * 0.12;
+                        const x2 = m + Math.cos(rad) * size * 0.42;
+                        const y2 = m + Math.sin(rad) * size * 0.42;
+
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        ctx.lineTo(x2, y2);
+                        ctx.stroke();
+                    });
+
+                    // 3. 外圍碎片點綴
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.4)`;
+                    [0.1, 0.25, 0.75, 0.9].forEach(ratio => {
+                        ctx.beginPath();
+                        ctx.arc(size * ratio, size * 0.15, size * 0.025, 0, Math.PI * 2);
+                        ctx.arc(size * ratio, size * 0.85, size * 0.025, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
                     break;
 
                 // --- 礦山 (Mine) 外觀：一個 T 字型的鎬頭 ---
@@ -1022,6 +1073,83 @@
             }
             ctx.restore();
         }
+
+        // --- 新增：品質邊框特效 ---
+        function drawQualityBorder(ctx, x, y, size, diceId) {
+            if (!diceId) return;
+
+            const db = ALL_DICES.find(d => d.id === diceId);
+            if (!db) return;
+
+            const quality = db.quality;
+            const time = Date.now() / 1000;
+
+            ctx.save();
+
+            if (quality === 'legend') {
+                // 傳說：金色呼吸光環
+                const pulse = 0.5 + Math.abs(Math.sin(time * 2)) * 0.5; // 0.5-1.0
+
+                ctx.shadowColor = '#eab308'; // 金色
+                ctx.shadowBlur = 10 + pulse * 8; // 10-18 呼吸效果
+                ctx.strokeStyle = `rgba(234, 179, 8, ${0.6 + pulse * 0.4})`; // 透明度也跳動
+                ctx.lineWidth = Math.max(2, size * 0.05);
+
+                ctx.beginPath();
+                ctx.strokeRect(x + 2, y + 2, size - 4, size - 4);
+                ctx.stroke();
+
+                // 額外的內圈光暈
+                ctx.shadowBlur = 5;
+                ctx.strokeStyle = `rgba(250, 204, 21, ${0.4 + pulse * 0.3})`;
+                ctx.lineWidth = Math.max(1, size * 0.025);
+                ctx.strokeRect(x + 4, y + 4, size - 8, size - 8);
+                ctx.stroke();
+            }
+            else if (quality === 'mythic') {
+                // 神話：彩虹流光
+                const hueShift = (time * 60) % 360; // 每6秒完整循環
+
+                // 多層光環營造流光效果
+                for (let i = 0; i < 3; i++) {
+                    const layerHue = (hueShift + i * 120) % 360; // 三個顏色層
+                    const offset = Math.sin(time * 3 + i * Math.PI / 1.5) * 2; // 流動偏移
+
+                    ctx.shadowColor = `hsl(${layerHue}, 90%, 60%)`;
+                    ctx.shadowBlur = 12 + i * 3;
+                    ctx.strokeStyle = `hsla(${layerHue}, 90%, 60%, ${0.5 - i * 0.15})`;
+                    ctx.lineWidth = Math.max(1, size * (0.06 - i * 0.01));
+
+                    ctx.beginPath();
+                    ctx.strokeRect(x + 2 + offset, y + 2 + offset, size - 4, size - 4);
+                    ctx.stroke();
+                }
+
+                // 粒子點綴（角落閃爍點）
+                ctx.shadowBlur = 8;
+                const corners = [
+                    [x + 8, y + 8],
+                    [x + size - 8, y + 8],
+                    [x + 8, y + size - 8],
+                    [x + size - 8, y + size - 8]
+                ];
+
+                corners.forEach((corner, idx) => {
+                    const particleHue = (hueShift + idx * 90) % 360;
+                    const twinkle = Math.sin(time * 4 + idx) * 0.5 + 0.5;
+
+                    if (twinkle > 0.7) { // 只在閃爍時顯示
+                        ctx.fillStyle = `hsla(${particleHue}, 100%, 70%, ${twinkle})`;
+                        ctx.beginPath();
+                        ctx.arc(corner[0], corner[1], 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                });
+            }
+
+            ctx.restore();
+        }
+
         // --- 3. 渲染與功能 ---
         function render() {
             if (!userData) return;
@@ -1091,16 +1219,20 @@
             // --- 4. 關鍵步驟：確保 HTML 渲染後再繪圖，並修正座標 ---
             setTimeout(() => {
                 // 繪製編隊區 (主頁與備戰頁)
-                ['main', 'inv'].forEach(prefix => {
-                    userData.deck.forEach((id, index) => {
-                        const dice = ALL_DICES.find(d => d.id === id);
+                ['main', 'inv'].forEach(prefix => { // 畫出所有成員
+                    userData.deck.forEach((diceId, index) => {
                         const canvas = document.getElementById(`${prefix}-deck-canvas-${index}`);
-                        if (canvas && dice) {
-                            const ctx = canvas.getContext('2d');
-                            ctx.clearRect(0, 0, canvas.width, canvas.height);
-                            // 修正座標為 0, 0，避免歪掉
-                            drawDiceFeature(ctx, 0, 0, canvas.width, dice.pattern || dice.id, dice.baseColor);
-                            drawDiceStars(ctx, 0, 0, canvas.width, 1, dice.baseColor);
+                        if (canvas) {
+                            const dice = ALL_DICES.find(d => d.id === diceId);
+                            if (dice) {
+                                const ctx = canvas.getContext('2d');
+                                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                                // 先畫邊框特效
+                                drawQualityBorder(ctx, 0, 0, canvas.width, dice.id);
+                                // 修正座標為 0, 0，避免歪掉
+                                drawDiceFeature(ctx, 0, 0, canvas.width, dice.pattern || dice.id, dice.baseColor);
+                                drawDiceStars(ctx, 0, 0, canvas.width, 1, dice.baseColor);
+                            }
                         }
                     });
                 });
@@ -1111,6 +1243,8 @@
                     if (canvas) {
                         const ctx = canvas.getContext('2d');
                         ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        // 先畫邊框特效
+                        drawQualityBorder(ctx, 0, 0, canvas.width, dice.id);
                         // 修正座標為 0, 0
                         drawDiceFeature(ctx, 0, 0, canvas.width, dice.pattern || dice.id, dice.baseColor);
                         drawDiceStars(ctx, 0, 0, canvas.width, 1, dice.baseColor);
@@ -1221,6 +1355,8 @@
                 ctx.fillStyle = "#ffffff";
                 ctx.fillRect(0, 0, size, size);
 
+                // 先畫品質邊框特效
+                drawQualityBorder(ctx, 0, 0, size, dice.id);
                 // 呼叫你的繪圖函式
                 drawDiceFeature(ctx, 0, 0, size, dice.pattern || dice.id, dice.baseColor);
                 drawDiceStars(ctx, 0, 0, size, 1, "#333333");

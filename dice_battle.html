@@ -278,7 +278,7 @@
             },
             {
                 id: 'ice', name: '冰', quality: 'common', baseColor: '#3b82f6', pattern: 'ice',
-                stats: { atk: 5, speed: 60 }, grow: { atk: 1, speed: -1 },
+                stats: { atk: 7, speed: 60 }, grow: { atk: 1, speed: -1 },
                 special: { label: '緩速效果', value: 20, unit: '%', grow: 2 }
             },
             {
@@ -289,7 +289,7 @@
             {
                 id: 'poison', name: '毒', quality: 'common', baseColor: '#008000', pattern: 'poison',
                 stats: { atk: 4, speed: 50 }, grow: { atk: 2, speed: -1 },
-                special: { label: '中毒傷害', value: 8, unit: 'pt', grow: 4 }
+                special: { label: '中毒傷害', value: 12, unit: 'pt', grow: 4 }
             },
 
             // --- Rare (稀有) ---
@@ -302,7 +302,7 @@
             {
                 id: 'crack', name: '易傷', quality: 'rare', baseColor: '#f87171', pattern: 'crack',
                 stats: { atk: 12, speed: 50 }, grow: { atk: 3, speed: -1 },
-                special: { label: '額外受傷', value: 5, unit: '%', grow: 1 }
+                special: { label: '額外受傷', value: 8, unit: '%', grow: 1 }
             },
             // --- 礦山骰子 (經濟型) ---
             {
@@ -314,7 +314,7 @@
             // --- Epic (史詩) ---
             {
                 id: 'laser', name: '雷射', quality: 'epic', baseColor: '#ec4899', pattern: 'laser_beam',
-                stats: { atk: 5, speed: 40 }, grow: { atk: 2, speed: 0 },
+                stats: { atk: 8, speed: 40 }, grow: { atk: 2, speed: 0 },
                 special: { label: '增幅上限', value: 5, unit: '倍', grow: 1 }
                 // 功能：持續攻擊同一個目標時，傷害會隨攻擊次數不斷爬升
             },
@@ -996,7 +996,21 @@
                     target.poisonStacks = (target.poisonStacks || 0) + 1;
                     break;
                 case 'teleport':
-                    if (Math.random() < (spec / 100) && !target.isBoss) {
+                    const teleportChance = spec / 100; // 使用與小怪相同的機率
+                    if (Math.random() < teleportChance) {
+                        if (target.isBoss) {
+                            // Boss：眩暈 1 秒（鎖定移動）
+                            const originalSpeed = target.speed;
+                            target.speed = 0;
+                            setTimeout(() => {
+                                target.speed = originalSpeed;
+                            }, 1000);
+                        } else {
+                            // 小怪：傳送回起點
+                            target.x = path[0].x;
+                            target.y = path[0].y;
+                            target.pathIndex = 1;
+                        }
                         // 視覺特效：傳送觸發
                         visualEffects.push({
                             type: 'explosion',
@@ -1005,7 +1019,6 @@
                             color: '#8b5cf6', // Purple
                             life: 15, maxLife: 15
                         });
-                        target.x = path[0].x; target.y = path[0].y; target.pathIndex = 1;
                     }
                     break;
                 // 在 applyHitEffect switch 內
@@ -1705,12 +1718,45 @@
                     break;
 
                 // --- Rare & Epic ---
-                case 'laser_beam': // 雷射：三條匯聚線
+                case 'laser_beam': // 雷射：科技感十字準星 + 脈衝光環
+                    // 1. 外圈旋轉光環
+                    ctx.save();
+                    ctx.translate(m, m);
+                    ctx.rotate(Date.now() / 500);
+                    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.4)`;
+                    ctx.lineWidth = 2;
                     ctx.beginPath();
-                    ctx.moveTo(size * 0.2, size * 0.2); ctx.lineTo(m, m);
-                    ctx.moveTo(size * 0.2, size * 0.8); ctx.lineTo(m, m);
-                    ctx.moveTo(size * 0.8, m); ctx.lineTo(m, m);
-                    ctx.stroke(); ctx.beginPath(); ctx.arc(m, m, size * 0.08, 0, Math.PI * 2); ctx.fill();
+                    ctx.arc(0, 0, size * 0.35, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+
+                    // 2. 中心十字線 (準星)
+                    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.8)`;
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(m - size * 0.2, m); ctx.lineTo(m + size * 0.2, m);
+                    ctx.moveTo(m, m - size * 0.2); ctx.lineTo(m, m + size * 0.2);
+                    ctx.stroke();
+
+                    // 3. 四個角落定位點
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.6)`;
+                    const corners = [
+                        [size * 0.15, size * 0.15],
+                        [size * 0.85, size * 0.15],
+                        [size * 0.15, size * 0.85],
+                        [size * 0.85, size * 0.85]
+                    ];
+                    corners.forEach(([cx, cy]) => {
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+
+                    // 4. 中心發光點
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.9)`;
+                    ctx.beginPath();
+                    ctx.arc(m, m, size * 0.08, 0, Math.PI * 2);
+                    ctx.fill();
                     break;
                 case 'lock': // 鎖定：方框中帶一個圓點
                     ctx.strokeRect(size * 0.25, size * 0.25, size * 0.5, size * 0.5);
@@ -1789,21 +1835,39 @@
                     ctx.stroke();
                     ctx.beginPath(); ctx.arc(m, m, size * 0.1, 0, Math.PI * 2); ctx.fill();
                     break;
-                // --- 易傷 (Crack) 外觀：盾牌加裂痕 ---
+                // --- 易傷 (Crack) 外觀：碎裂水晶效果 ---
                 case 'crack':
+                    // 1. 中心爆裂點
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.5)`;
                     ctx.beginPath();
-                    // 繪製一個倒三角形（盾牌感）
-                    ctx.moveTo(m, size * 0.8);
-                    ctx.lineTo(size * 0.25, size * 0.25);
-                    ctx.lineTo(size * 0.75, size * 0.25);
-                    ctx.closePath();
-                    ctx.stroke();
-                    // 繪製中間的裂痕
-                    ctx.beginPath();
-                    ctx.moveTo(m - size * 0.1, size * 0.35);
-                    ctx.lineTo(m + size * 0.1, m);
-                    ctx.lineTo(m - size * 0.1, size * 0.65);
-                    ctx.stroke();
+                    ctx.arc(m, m, size * 0.12, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // 2. 多方向裂紋擴散
+                    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.7)`;
+                    ctx.lineWidth = 2.5;
+                    const crackAngles = [0, 45, 90, 135, 180, 225, 270, 315];
+                    crackAngles.forEach(angle => {
+                        const rad = angle * Math.PI / 180;
+                        const x1 = m + Math.cos(rad) * size * 0.12;
+                        const y1 = m + Math.sin(rad) * size * 0.12;
+                        const x2 = m + Math.cos(rad) * size * 0.42;
+                        const y2 = m + Math.sin(rad) * size * 0.42;
+
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        ctx.lineTo(x2, y2);
+                        ctx.stroke();
+                    });
+
+                    // 3. 外圍碎片點綴
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.4)`;
+                    [0.1, 0.25, 0.75, 0.9].forEach(ratio => {
+                        ctx.beginPath();
+                        ctx.arc(size * ratio, size * 0.15, 1.5, 0, Math.PI * 2);
+                        ctx.arc(size * ratio, size * 0.85, 1.5, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
                     break;
 
                 // --- 礦山 (Mine) 外觀：一個 T 字型的鎬頭 ---
@@ -1897,6 +1961,83 @@
                 ctx.fill();
             });
         }
+
+        // --- 新增：品質邊框特效 ---
+        function drawQualityBorder(ctx, x, y, size, diceId) {
+            if (!diceId) return;
+
+            const db = ALL_DICES.find(d => d.id === diceId);
+            if (!db) return;
+
+            const quality = db.quality;
+            const time = Date.now() / 1000;
+
+            ctx.save();
+
+            if (quality === 'legend') {
+                // 傳說：金色呼吸光環
+                const pulse = 0.5 + Math.abs(Math.sin(time * 2)) * 0.5; // 0.5-1.0
+
+                ctx.shadowColor = '#eab308'; // 金色
+                ctx.shadowBlur = 10 + pulse * 8; // 10-18 呼吸效果
+                ctx.strokeStyle = `rgba(234, 179, 8, ${0.6 + pulse * 0.4})`; // 透明度也跳動
+                ctx.lineWidth = 4;
+
+                ctx.beginPath();
+                drawRoundedRect(ctx, x + 2, y + 2, size - 4, size - 4, 10);
+                ctx.stroke();
+
+                // 額外的內圈光暈
+                ctx.shadowBlur = 5;
+                ctx.strokeStyle = `rgba(250, 204, 21, ${0.4 + pulse * 0.3})`;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+            else if (quality === 'mythic') {
+                // 神話：彩虹流光
+                // 使用 HSL 色相旋轉創造彩虹效果
+                const hueShift = (time * 60) % 360; // 每6秒完整循環
+
+                // 多層光環營造流光效果
+                for (let i = 0; i < 3; i++) {
+                    const layerHue = (hueShift + i * 120) % 360; // 三個顏色層
+                    const offset = Math.sin(time * 3 + i * Math.PI / 1.5) * 2; // 流動偏移
+
+                    ctx.shadowColor = `hsl(${layerHue}, 90%, 60%)`;
+                    ctx.shadowBlur = 12 + i * 3;
+                    ctx.strokeStyle = `hsla(${layerHue}, 90%, 60%, ${0.5 - i * 0.15})`;
+                    ctx.lineWidth = 5 - i;
+
+                    ctx.beginPath();
+                    drawRoundedRect(ctx, x + 2 + offset, y + 2 + offset, size - 4, size - 4, 10);
+                    ctx.stroke();
+                }
+
+                // 粒子點綴（角落閃爍點）
+                ctx.shadowBlur = 8;
+                const corners = [
+                    [x + 8, y + 8],
+                    [x + size - 8, y + 8],
+                    [x + 8, y + size - 8],
+                    [x + size - 8, y + size - 8]
+                ];
+
+                corners.forEach((corner, idx) => {
+                    const particleHue = (hueShift + idx * 90) % 360;
+                    const twinkle = Math.sin(time * 4 + idx) * 0.5 + 0.5;
+
+                    if (twinkle > 0.7) { // 只在閃爍時顯示
+                        ctx.fillStyle = `hsla(${particleHue}, 100%, 70%, ${twinkle})`;
+                        ctx.beginPath();
+                        ctx.arc(corner[0], corner[1], 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                });
+            }
+
+            ctx.restore();
+        }
+
         function renderDice(ctx, x, y, dice, isLocked) {
             if (!dice) return;
             const slotSize = grid.slotSize;
@@ -1920,6 +2061,11 @@
             const drawX = x + 6;
             const drawY = y + 6;
             const drawSize = slotSize - 12;
+
+            // 2.5. 繪製品質邊框特效（傳說/神話）
+            if (typeof drawQualityBorder === 'function') {
+                drawQualityBorder(ctx, x, y, slotSize, dice.id);
+            }
 
             // 3. 畫特徵圖案
             if (typeof drawDiceFeature === 'function') {
