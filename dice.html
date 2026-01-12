@@ -1255,114 +1255,67 @@
                 ctx.strokeRect(x + 1, y + 1, size - 2, size - 2);
             }
             else if (quality === 'mythic') {
-                // 神話：璀璨星環（外擴）
-                const hueShift = (time * 120) % 360;
+                // 神話：簡化版彩虹光環（優化手機效能）
+                const hueShift = (time * 80) % 360; // 減慢色彩循環速度
 
-                // 多層彩虹光環（向外擴）
-                for (let i = 0; i < 5; i++) {
-                    const layerHue = (hueShift + i * 72) % 360;
-                    const offset = Math.sin(time * 5 + i * Math.PI / 2.5) * 4;
-                    const expansion = i * 2;
+                // 1. 簡化為2層彩虹光環（原本5層）
+                for (let i = 0; i < 2; i++) {
+                    const layerHue = (hueShift + i * 180) % 360;
+                    const expansion = i * 3;
 
                     ctx.shadowColor = `hsl(${layerHue}, 100%, 70%)`;
-                    ctx.shadowBlur = 18 + i * 3;
-                    ctx.strokeStyle = `hsla(${layerHue}, 100%, 75%, ${0.7 - i * 0.12})`;
-                    ctx.lineWidth = Math.max(1, size * (0.09 - i * 0.015));
+                    ctx.shadowBlur = 10;
+                    ctx.strokeStyle = `hsla(${layerHue}, 100%, 75%, ${0.6 - i * 0.2})`;
+                    ctx.lineWidth = Math.max(1, size * (0.07 - i * 0.02));
 
                     ctx.strokeRect(
-                        x - expansion + offset,
-                        y - expansion + offset,
+                        x - expansion,
+                        y - expansion,
                         size + expansion * 2,
                         size + expansion * 2
                     );
                 }
 
-                // 外圍星座
-                ctx.shadowBlur = 12;
-                const starRadius = size / 2 + 15;
+                // 2. 簡化星點（8個，原本16個，移除連線和擺動）
+                ctx.shadowBlur = 8;
+                const starRadius = size / 2 + 12;
                 const centerX = x + size / 2;
                 const centerY = y + size / 2;
-                const starCount = 16;
-                const stars = [];
+                const starCount = 8; // 減少星點數量
 
                 for (let i = 0; i < starCount; i++) {
                     const angle = (i / starCount) * Math.PI * 2;
-                    const wobble = Math.sin(time * 3 + i) * 3;
-                    stars.push({
-                        sx: centerX + Math.cos(angle) * (starRadius + wobble),
-                        sy: centerY + Math.sin(angle) * (starRadius + wobble)
-                    });
-                }
+                    const starHue = (hueShift + i * 45) % 360;
 
-                // 星點
-                stars.forEach((star, idx) => {
-                    const starHue = (hueShift + idx * 360 / starCount) % 360;
-                    const twinkle = Math.sin(time * 6 + idx * 0.5) * 0.4 + 0.6;
-
-                    ctx.fillStyle = `hsla(${starHue}, 100%, 90%, ${twinkle})`;
+                    ctx.fillStyle = `hsla(${starHue}, 100%, 85%, 0.7)`;
                     ctx.beginPath();
-                    ctx.arc(star.sx, star.sy, 3, 0, Math.PI * 2);
+                    ctx.arc(
+                        centerX + Math.cos(angle) * starRadius,
+                        centerY + Math.sin(angle) * starRadius,
+                        2, 0, Math.PI * 2
+                    );
                     ctx.fill();
-                });
-
-                // 星座連線
-                ctx.strokeStyle = `hsla(${hueShift}, 95%, 80%, 0.35)`;
-                ctx.lineWidth = 1.5;
-                for (let i = 0; i < stars.length; i++) {
-                    const nextIdx = (i + 1) % stars.length;
-                    ctx.beginPath();
-                    ctx.moveTo(stars[i].sx, stars[i].sy);
-                    ctx.lineTo(stars[nextIdx].sx, stars[nextIdx].sy);
-                    ctx.stroke();
                 }
 
-                // 四角超級星芒
+                // 3. 簡化四角光點（移除旋轉射線，只保留發光點）
                 const starCorners = [
-                    { cx: x - 6, cy: y - 6 },
-                    { cx: x + size + 6, cy: y - 6 },
-                    { cx: x - 6, cy: y + size + 6 },
-                    { cx: x + size + 6, cy: y + size + 6 }
+                    { cx: x - 5, cy: y - 5 },
+                    { cx: x + size + 5, cy: y - 5 },
+                    { cx: x - 5, cy: y + size + 5 },
+                    { cx: x + size + 5, cy: y + size + 5 }
                 ];
 
                 starCorners.forEach((corner, idx) => {
                     const particleHue = (hueShift + idx * 90) % 360;
-                    const twinkle = Math.sin(time * 7 + idx) * 0.5 + 0.5;
 
-                    if (twinkle > 0.2) {
-                        ctx.save();
-                        ctx.translate(corner.cx, corner.cy);
-
-                        // 雙層射線
-                        for (let layer = 0; layer < 2; layer++) {
-                            const rayCount = layer === 0 ? 16 : 8;
-                            const rayLength = layer === 0 ? 12 : 8;
-
-                            ctx.strokeStyle = `hsla(${particleHue}, 100%, ${80 - layer * 10}%, ${twinkle * (0.9 - layer * 0.3)})`;
-                            ctx.lineWidth = 2 - layer * 0.5;
-
-                            for (let i = 0; i < rayCount; i++) {
-                                ctx.save();
-                                ctx.rotate(i * Math.PI / rayCount + time * 3 * (layer === 0 ? 1 : -1));
-                                ctx.beginPath();
-                                ctx.moveTo(0, 0);
-                                ctx.lineTo(0, -rayLength * twinkle);
-                                ctx.stroke();
-                                ctx.restore();
-                            }
-                        }
-
-                        // 光球漸變
-                        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 5);
-                        gradient.addColorStop(0, `hsla(${particleHue}, 100%, 95%, ${twinkle})`);
-                        gradient.addColorStop(0.5, `hsla(${particleHue}, 100%, 80%, ${twinkle * 0.6})`);
-                        gradient.addColorStop(1, `hsla(${particleHue}, 100%, 60%, 0)`);
-                        ctx.fillStyle = gradient;
-                        ctx.beginPath();
-                        ctx.arc(0, 0, 5, 0, Math.PI * 2);
-                        ctx.fill();
-
-                        ctx.restore();
-                    }
+                    // 只繪製簡單的發光點，移除複雜的射線動畫
+                    const gradient = ctx.createRadialGradient(corner.cx, corner.cy, 0, corner.cx, corner.cy, 4);
+                    gradient.addColorStop(0, `hsla(${particleHue}, 100%, 90%, 0.8)`);
+                    gradient.addColorStop(1, `hsla(${particleHue}, 100%, 70%, 0)`);
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(corner.cx, corner.cy, 4, 0, Math.PI * 2);
+                    ctx.fill();
                 });
             }
 
@@ -1470,7 +1423,74 @@
                     }
                 });
             }, 0);
+
+            // 啟動邊框動畫（如果有傳說/神話骰子且動畫未運行）
+            setTimeout(() => {
+                if (shouldAnimate() && !animationFrameId) {
+                    animateDiceBorders();
+                }
+            }, 50);
         }
+
+        // --- 動畫循環：持續更新傳說/神話品質骰子的邊框特效 ---
+        let animationFrameId = null;
+
+        function shouldAnimate() {
+            // 檢查是否有傳說或神話品質的骰子需要動畫
+            return userData.deck.some(id => {
+                const dice = ALL_DICES.find(d => d.id === id);
+                return dice && (dice.quality === 'legend' || dice.quality === 'mythic');
+            });
+        }
+
+        function animateDiceBorders() {
+            if (!shouldAnimate()) {
+                animationFrameId = null;
+                return; // 沒有需要動畫的骰子，停止循環
+            }
+
+            // 更新所有 canvas 中的骰子
+            ['main', 'inv'].forEach(prefix => {
+                userData.deck.forEach((diceId, index) => {
+                    const canvas = document.getElementById(`${prefix}-deck-canvas-${index}`);
+                    if (canvas) {
+                        const dice = ALL_DICES.find(d => d.id === diceId);
+                        if (dice && (dice.quality === 'legend' || dice.quality === 'mythic')) {
+                            const ctx = canvas.getContext('2d');
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            drawQualityBorder(ctx, 0, 0, canvas.width, dice.id);
+                            drawDiceFeature(ctx, 0, 0, canvas.width, dice.pattern || dice.id, dice.baseColor);
+                            drawDiceStars(ctx, 0, 0, canvas.width, 1, dice.baseColor);
+                        }
+                    }
+                });
+            });
+
+            // 更新倉庫區的傳說/神話骰子
+            ALL_DICES.forEach(dice => {
+                if (dice.quality === 'legend' || dice.quality === 'mythic') {
+                    const canvas = document.getElementById(`inv-canvas-${dice.id}`);
+                    if (canvas) {
+                        const ctx = canvas.getContext('2d');
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        drawQualityBorder(ctx, 0, 0, canvas.width, dice.id);
+                        drawDiceFeature(ctx, 0, 0, canvas.width, dice.pattern || dice.id, dice.baseColor);
+                        drawDiceStars(ctx, 0, 0, canvas.width, 1, dice.baseColor);
+                    }
+                }
+            });
+
+            animationFrameId = requestAnimationFrame(animateDiceBorders);
+        }
+
+        // 啟動動畫循環（在頁面載入後）
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                if (shouldAnimate() && !animationFrameId) {
+                    animateDiceBorders();
+                }
+            }, 100);
+        });
 
         async function saveData() {
             // 1. 本地儲存
@@ -1582,6 +1602,29 @@
             }
 
             document.getElementById('upgradeOverlay').classList.remove('hidden');
+
+            // 如果是傳說或神話骰子，啟動動畫
+            if ((dice.quality === 'legend' || dice.quality === 'mythic') && canvas) {
+                let upgradeAnimationId = null;
+                const animateUpgradeCanvas = () => {
+                    const overlay = document.getElementById('upgradeOverlay');
+                    if (!overlay || overlay.classList.contains('hidden')) {
+                        if (upgradeAnimationId) cancelAnimationFrame(upgradeAnimationId);
+                        return; // 升級面板關閉，停止動畫
+                    }
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fillRect(0, 0, size, size);
+                    drawQualityBorder(ctx, 0, 0, size, dice.id);
+                    drawDiceFeature(ctx, 0, 0, size, dice.pattern || dice.id, dice.baseColor);
+                    drawDiceStars(ctx, 0, 0, size, 1, "#333333");
+
+                    upgradeAnimationId = requestAnimationFrame(animateUpgradeCanvas);
+                };
+                animateUpgradeCanvas();
+            }
         }
         function confirmUpgrade() {
             if (!tempUpgradeId) return;
