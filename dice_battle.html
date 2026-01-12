@@ -137,7 +137,7 @@
             <span class="text-red-500 font-bold">HP: <span id="hpText">3</span></span>
             <span class="text-blue-400 font-bold">SP: <span id="spText">100</span></span>
         </div>
-        <div class="text-slate-400 font-bold text-sm">LEVEL: <span id="currentLevelText">1</span></div>
+        <div class="text-slate-400 font-bold text-sm">LEVEL: <span id="headerLevelText">1</span></div>
         <div class="text-slate-400 font-bold text-sm">WAVE: <span id="waveText">1</span></div>
     </div>
 
@@ -202,6 +202,7 @@
         };
         if (userData.tickets === undefined) userData.tickets = 0;
         document.getElementById('currentLevelText').innerText = userData.unlockLevel || 1;
+        document.getElementById('headerLevelText').innerText = userData.unlockLevel || 1;
         const AudioManager = {
             ctx: new (window.AudioContext || window.webkitAudioContext)(),
             buffers: {},
