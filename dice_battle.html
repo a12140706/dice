@@ -378,7 +378,7 @@
             //BOSS_SPEED_BASE: 1.0,      // Boss 初始移速
             // BOSS_SPEED_WAVE_ADD: 0.01  // Boss 每波增加的移速
         };
-        
+
         let battleState = { hp: 3, sp: 100, wave: 1, summonCost: 10, difficulty: 'normal', isStarted: false };
         let powerUpLevels = {};
         userData.deck.forEach(id => { powerUpLevels[id] = 1; });
@@ -471,30 +471,45 @@
         function handleGameOver(isVictory) {
             let earnedTickets = 0;
 
-            // 更新最高層數紀錄 (之後做排行榜用)
-            // 這裡紀錄的是該關卡的進度層數
-            if (battleState.wave > userData.maxWave) {
+            // 1. 更新最高層數紀錄 (目前的波數進度)
+            if (battleState.wave > (userData.maxWave || 0)) {
                 userData.maxWave = battleState.wave;
             }
 
+            // 2. 處理勝負與獎勵邏輯
             if (isVictory) {
-                // 20層完全通關獎勵 (目前統一為通關獎勵 5 張)
-                earnedTickets = 5;
-                // 通關了，解鎖下一關
-                userData.unlockLevel += 1;
-                // 重置最高層數紀錄（因為進入新關卡了）
+                // --- 成功通關 ---
+                // 獎勵改為：當前關卡 * 2 (例如第 3 關通關給 6 張)
+                earnedTickets = (userData.unlockLevel || 1) * 2;
+
+                // 解鎖下一關
+                userData.unlockLevel = (userData.unlockLevel || 1) + 1;
+
+                // 重置最高層數 (因為挑戰新關卡了)
                 userData.maxWave = 0;
             } else {
-                // 失敗則按比例給予：每 5 層給 1 張
+                // --- 失敗 ---
+                // 失敗獎勵可以保留原本的「每 5 層給 1 張」，或是你也可以改成 0
                 earnedTickets = Math.floor(battleState.wave / 5);
             }
 
-            // 存檔 (確保不影響原本資料)
+            // 3. 累加金幣/券 並 存檔
             userData.tickets = (userData.tickets || 0) + earnedTickets;
             localStorage.setItem('dice_game_data', JSON.stringify(userData));
 
-            // 傳入「當前關卡」與「層數」給結算畫面
-            showResultModal(isVictory, userData.unlockLevel, battleState.wave, earnedTickets);
+            // 4. 強制更新 HTML 上的文字 (解決你提到的顯示沒變的問題)
+            // 這裡我們同時更新你那兩個 id (header 和 overlay)
+            const currentLv = userData.unlockLevel || 1;
+            if (document.getElementById('currentLevelText')) {
+                document.getElementById('currentLevelText').innerText = currentLv;
+            }
+            // 假設你後來改了 ID 區分
+            if (document.getElementById('headerLevelText')) {
+                document.getElementById('headerLevelText').innerText = currentLv;
+            }
+
+            // 5. 顯示結算畫面
+            showResultModal(isVictory, currentLv, battleState.wave, earnedTickets);
         }
         function showResultModal(isVictory, level, wave, tickets) {
             const modal = document.getElementById('resultModal');
