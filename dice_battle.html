@@ -410,6 +410,7 @@
         let drag = { isDragging: false, fromSlot: null, currentX: 0, currentY: 0, dice: null };
         let waveState = { totalEnemiesPerWave: 10, spawnedCount: 0, isWaiting: false, timer: 0 };
         let projectiles = [], enemies = [], path = [], damagePopups = [];
+        let visualEffects = []; // 新增：視覺特效列表
 
         function startGame(diff) {
             // --- 新增：解鎖音訊 (iPhone 關鍵) ---
@@ -846,8 +847,19 @@
                 // --- 2. AOE 傷害與 Popup ---
                 const tx = target.x;
                 const ty = target.y;
+
+                // 視覺：加入一個持續擴散的圓圈特效
+                visualEffects.push({
+                    type: 'explosion',
+                    x: tx, y: ty,
+                    radius: 80,
+                    color: 'rgba(251, 146, 60, 0.6)',
+                    life: 20, maxLife: 20
+                });
+
                 enemies.forEach(e => {
                     const dx = Math.abs(e.x - tx);
+
                     const dy = Math.abs(e.y - ty);
                     // 範圍判斷
                     if (e.hp > 0 && dx < 65 && dy < 65) {
@@ -866,6 +878,30 @@
                             });
                         }
                     }
+                });
+                return;
+            }
+
+            if (dice.id === 'laser') {
+                // 雷射是即時傷害，不產子彈，直接畫線 + 扣血
+                // 如果原本邏輯是產 bullet，我們可以改成：
+                // 1. 產生一個雷射特效
+                visualEffects.push({
+                    type: 'laser',
+                    start: { x: startX, y: startY },
+                    end: { x: target.x, y: target.y },
+                    color: '#ec4899', // Pink
+                    life: 5, maxLife: 5
+                });
+                // 2. 為了相容原本的 applyHitEffect 邏輯 (扣血、特效)，我們直接呼叫 applyHitEffect
+                // 但 applyHitEffect 需要一個 projectile 物件
+                applyHitEffect({
+                    target: target,
+                    damage: damage,
+                    diceId: dice.id,
+                    diceUid: `slot_${dice.tempSlotIdx}`,
+                    // 模擬位置
+                    x: target.x, y: target.y
                 });
                 return;
             }
@@ -940,6 +976,15 @@
                             let chainDmg = p.damage * 0.5;
                             e.hp -= chainDmg;
                             e.virtualHp -= chainDmg;
+
+                            // --- 新增：電擊連線特效 ---
+                            visualEffects.push({
+                                type: 'lightning',
+                                start: { x: target.x, y: target.y },
+                                end: { x: e.x, y: e.y },
+                                life: 10, maxLife: 10
+                            });
+
                             if (damagePopups.length < 10) {
                                 damagePopups.push({ x: e.x, y: e.y, val: Math.floor(chainDmg), life: 20, color: "#fde047" });
                             }
@@ -952,6 +997,14 @@
                     break;
                 case 'teleport':
                     if (Math.random() < (spec / 100) && !target.isBoss) {
+                        // 視覺特效：傳送觸發
+                        visualEffects.push({
+                            type: 'explosion',
+                            x: target.x, y: target.y,
+                            radius: 40,
+                            color: '#8b5cf6', // Purple
+                            life: 15, maxLife: 15
+                        });
                         target.x = path[0].x; target.y = path[0].y; target.pathIndex = 1;
                     }
                     break;
@@ -969,7 +1022,7 @@
                 case 'galaxy':
                     // 產生一個小型黑洞效果
                     const pullRange = 100; // 吸引半徑
-                  
+
 
                     enemies.forEach(e => {
                         if (e !== target && e.hp > 0) {
@@ -1255,6 +1308,9 @@
                     ctx.fill();
                 });
 
+                // --- 畫瞬時特效 (電擊、爆炸) ---
+                drawVisualEffects(ctx);
+
                 // --- 畫敵人 (含 Boss PNG 邏輯) ---
                 enemies.forEach(e => {
                     const s = e.isBoss ? e.size : 20;
@@ -1285,6 +1341,29 @@
                     ctx.fillRect(e.x - 15, e.y - (s / 2 + 8), 30, 3);
                     ctx.fillStyle = "#22c55e";
                     ctx.fillRect(e.x - 15, e.y - (s / 2 + 8), (e.hp / e.maxHp) * 30, 3);
+
+                    // --- 新增：狀態圖示 (冰凍、鎖定、毒、易傷) ---
+                    let iconOffset = 0;
+                    if (e.iceTimer > 0) {
+                        drawStatusIcon(ctx, e.x - 10 + iconOffset, e.y - s / 2 - 20, '❄️');
+                        iconOffset += 15;
+                    }
+                    if (e.lockTimer > 0) { // 假設鎖定也有 Timer
+                        // e.lockTimer might not be defined in updateEnemies loop but applyHitEffect sets speed directly or sets timer? 
+                        // Check boss skill logic: `target.isLocked = true` with timeout. For mobs `target.speed=0`.
+                        // Let's assume if speed is 0 and hp > 0, it's locked.
+                        if (e.speed === 0) {
+                            drawStatusIcon(ctx, e.x - 10 + iconOffset, e.y - s / 2 - 20, '🔒');
+                            iconOffset += 15;
+                        }
+                    }
+                    if (e.poisonStacks > 0) {
+                        drawStatusIcon(ctx, e.x - 10 + iconOffset, e.y - s / 2 - 20, '☠️');
+                        iconOffset += 15;
+                    }
+                    if (e.vulnerability) {
+                        drawStatusIcon(ctx, e.x - 10 + iconOffset, e.y - s / 2 - 20, '💔');
+                    }
                 });
 
                 // --- 畫傷害字體 (確保在敵人之上) ---
@@ -1318,6 +1397,9 @@
                         }
                         if (slot.dice.id === 'gear' && slot.dice.isPowered) {
                             drawEffect(slot, "#00ccff");
+
+                            // --- 新增：齒輪連線特效 ---
+                            drawGearConnections(ctx, slot);
                         }
                         // 繪製骰子主體與星數
                         renderDice(ctx, slot.x, slot.y, slot.dice, slot.isLocked);
@@ -1335,6 +1417,167 @@
             // 啟動循環
             frame();
         }
+
+        // ---移植自 dice_cooper.html 的傳送門繪製函式---
+        function drawPortal(ctx, x, y, color, angle, isStart) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+
+            // 外圈光環
+            const gradient = ctx.createRadialGradient(0, 0, 10, 0, 0, 30);
+            gradient.addColorStop(0, color);
+            gradient.addColorStop(1, 'rgba(0,0,0,0)');
+
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(0, 0, 30, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 旋轉紋路
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 4; i++) {
+                ctx.rotate(Math.PI / 2);
+                ctx.beginPath();
+                ctx.moveTo(10, 0);
+                ctx.quadraticCurveTo(20, 10, 25, 0);
+                ctx.stroke();
+            }
+
+            // 中心黑洞/亮點
+            ctx.fillStyle = isStart ? '#000' : '#fff';
+            ctx.beginPath();
+            ctx.arc(0, 0, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // --- 新增：繪製各種瞬時視覺特效 ---
+        function drawVisualEffects(ctx) {
+            for (let i = visualEffects.length - 1; i >= 0; i--) {
+                const fx = visualEffects[i];
+                fx.life--;
+                if (fx.life <= 0) {
+                    visualEffects.splice(i, 1);
+                    continue;
+                }
+
+                ctx.save();
+                if (fx.type === 'lightning') {
+                    // 閃電：畫多段折線
+                    ctx.strokeStyle = '#fde047'; // 黃色
+                    ctx.lineWidth = 2;
+                    ctx.shadowBlur = 5;
+                    ctx.shadowColor = '#fde047';
+                    ctx.beginPath();
+                    ctx.moveTo(fx.start.x, fx.start.y);
+
+                    const steps = 5;
+                    const dx = (fx.end.x - fx.start.x) / steps;
+                    const dy = (fx.end.y - fx.start.y) / steps;
+
+                    for (let j = 1; j < steps; j++) {
+                        const offset = (Math.random() - 0.5) * 20; // 偏移量
+                        ctx.lineTo(
+                            fx.start.x + dx * j + (Math.random() - 0.5) * 10,
+                            fx.start.y + dy * j + (Math.random() - 0.5) * 10
+                        );
+                    }
+                    ctx.lineTo(fx.end.x, fx.end.y);
+                    ctx.stroke();
+                }
+                else if (fx.type === 'explosion') {
+                    // 爆炸：擴散圓圈
+                    const progress = 1 - (fx.life / fx.maxLife); // 0 -> 1
+                    ctx.beginPath();
+                    ctx.arc(fx.x, fx.y, fx.radius * progress, 0, Math.PI * 2);
+                    ctx.fillStyle = fx.color || 'orange';
+                    ctx.globalAlpha = 1 - progress;
+                    ctx.fill();
+
+                    // 衝擊波邊框
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+                else if (fx.type === 'laser') {
+                    // 雷射：直線光束
+                    ctx.beginPath();
+                    ctx.moveTo(fx.start.x, fx.start.y);
+                    ctx.lineTo(fx.end.x, fx.end.y);
+                    ctx.strokeStyle = fx.color || '#ff0000';
+                    ctx.lineWidth = 3 + Math.sin(Date.now() / 50) * 1; // 脈衝寬度
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = fx.color || '#ff0000';
+                    ctx.lineCap = 'round';
+                    ctx.stroke();
+
+                    // 擊中點光暈
+                    ctx.beginPath();
+                    ctx.arc(fx.end.x, fx.end.y, 6, 0, Math.PI * 2);
+                    ctx.fillStyle = '#fff';
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+        }
+
+        // --- 新增：繪製狀態小圖示 ---
+        function drawStatusIcon(ctx, x, y, text) {
+            ctx.save();
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.shadowColor = '#000';
+            ctx.shadowBlur = 2;
+            ctx.fillStyle = '#fff';
+            ctx.fillText(text, x, y);
+            ctx.restore();
+        }
+
+        // --- 新增：繪製齒輪連線 ---
+        function drawGearConnections(ctx, slot) {
+            // 只畫向右和向下的連線，避免重複繪製
+            const idx = grid.slots.indexOf(slot);
+            if (idx === -1) return;
+
+            const col = idx % grid.cols;
+            const row = Math.floor(idx / grid.cols);
+
+            // 右邊鄰居
+            if (col < grid.cols - 1) {
+                const rightSlot = grid.slots[idx + 1];
+                if (rightSlot.dice && rightSlot.dice.id === 'gear') {
+                    drawGearLine(ctx, slot, rightSlot);
+                }
+            }
+            // 下方鄰居
+            if (row < grid.rows - 1) {
+                const downSlot = grid.slots[idx + grid.cols];
+                if (downSlot.dice && downSlot.dice.id === 'gear') {
+                    drawGearLine(ctx, slot, downSlot);
+                }
+            }
+        }
+
+        function drawGearLine(ctx, a, b) {
+            ctx.save();
+            ctx.strokeStyle = '#94a3b8'; // 鐵灰色
+            ctx.lineWidth = 6;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(a.x + grid.slotSize / 2, a.y + grid.slotSize / 2);
+            ctx.lineTo(b.x + grid.slotSize / 2, b.y + grid.slotSize / 2);
+            ctx.stroke();
+
+            // 亮芯
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.restore();
+        }
+
         // A. 繪製發光軌道與起終點
         function drawEnhancedPath(ctx, path) {
             if (!path || path.length < 2) return;
@@ -1360,17 +1603,11 @@
             ctx.stroke();
             ctx.setLineDash([]);
 
-            // 3. 起點：傳送門 (Portal)
+            // 3. 起點：傳送門 (Portal) - 使用新樣式
             const start = path[0];
-            const time = Date.now() / 500;
-            ctx.beginPath();
-            ctx.arc(start.x, start.y, 20, 0, Math.PI * 2);
-            ctx.strokeStyle = "#3b82f6";
-            ctx.lineWidth = 3;
-            ctx.setLineDash([5, 5]);
-            ctx.lineDashOffset = -time * 20;
-            ctx.stroke();
-            ctx.setLineDash([]);
+            const angle = (Date.now() / 1000) % (Math.PI * 2);
+            drawPortal(ctx, start.x, start.y, '#3b82f6', angle, true);
+
 
             // 4. 終點：核心 (Core)
             const end = path[path.length - 1];
