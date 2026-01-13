@@ -810,13 +810,17 @@
                     if (!db) return;
                     // 在 updateCombat 函數內，grid.slots.forEach 循環中
                     if (slot.dice.id === 'mighty_wind') {
-                        const cycle = (Date.now() % 8000); // 7秒一輪
-                        const burstTime = getDiceSpecialValue('mighty_wind') * 1000;
+                        const cycle = (Date.now() % 8000); // 8秒一輪
+                        const specValue = getDiceSpecialValue('mighty_wind'); // 取得狂暴秒數
+                        const burstTime = specValue * 1000;
                         if (cycle < burstTime) {
-                            spd = 6; // 極速模式
-                            slot.dice.color = "#ffffff"; // 視覺變化
+                            spd = 6; // 極速攻擊速度
+                            slot.dice.isBurst = true;
+                            // 計算呼吸動畫數值：利用 sine 波產生 -0.05 ~ 0.05 的縮放偏移量
+                            slot.dice.animScale = Math.sin(now / 100) * 0.05;
                         } else {
-                            slot.dice.color = db.baseColor;
+                            slot.dice.isBurst = false;
+                            slot.dice.animScale = 0;
                         }
                     }
                     if (slot.dice.id === 'mine') {
@@ -1583,7 +1587,6 @@
             const ctx = canvas.getContext('2d');
 
             function frame() {
-                // 1. 如果遊戲沒開始或已結束，停止循環
                 if (!battleState.isStarted) return;
                 const modal = document.getElementById('resultModal');
                 if (modal && modal.style.display === 'flex') return;
@@ -1594,17 +1597,15 @@
                 // --- 邏輯更新 ---
                 updateEnemies();
                 updateWave();
-                updateCombat();
+                updateCombat(); // 內部會計算 dice.isBurst 與 dice.animScale
                 updateLiveStats();
 
-                // --- 背景與底層裝飾 ---
+                // --- 背景層 ---
                 drawDynamicBackground(ctx, canvas.width, canvas.height);
-                // 畫 3x5 科技感 L 邊框與凹槽
                 drawEnhancedGridBase(ctx, grid);
-                // 畫發光軌道與傳送門
                 drawEnhancedPath(ctx, path);
 
-                // --- 畫子彈 ---
+                // --- 子彈層 ---
                 projectiles.forEach(p => {
                     ctx.fillStyle = p.color;
                     ctx.beginPath();
@@ -1612,80 +1613,55 @@
                     ctx.fill();
                 });
 
-                // --- 畫瞬時特效 (電擊、爆炸) ---
+                // --- 特效層 ---
                 drawVisualEffects(ctx);
 
-                // --- 畫敵人 (含 Boss PNG 邏輯) ---
-                // --- 畫敵人 (含 Boss PNG 邏輯與晃動特效) ---
+                // --- 敵人層 (含 Boss 晃動) ---
                 enemies.forEach(e => {
                     const s = e.isBoss ? e.size : 20;
-
-                    // 1. 設定基礎渲染座標
                     let renderX = e.x;
                     let renderY = e.y;
 
-                    // 2. 如果正在晃動 (shakeTimer > 0)，隨機偏移座標
                     if (e.shakeTimer > 0) {
-                        renderX += (Math.random() * 16 - 8); 
+                        renderX += (Math.random() * 16 - 8);
                         renderY += (Math.random() * 16 - 8);
                     }
 
-                    // 3. 繪製 Boss
                     if (e.isBoss && e.bossType && BOSS_TYPES[e.bossType]) {
                         ctx.save();
-                        // 幫 Boss PNG 加外發光
                         ctx.shadowBlur = 10;
                         ctx.shadowColor = e.color || BOSS_TYPES[e.bossType].color;
-
                         const bossImg = BOSS_TYPES[e.bossType].img;
-                        // 確保圖片已載入完成才繪製，否則畫色塊
                         if (bossImg && bossImg.complete && bossImg.naturalWidth !== 0) {
                             ctx.drawImage(bossImg, renderX - s / 2, renderY - s / 2, s, s);
                         } else {
                             ctx.fillStyle = e.color || "#ef4444";
                             ctx.beginPath();
-                            ctx.arc(renderX, renderY, s/2, 0, Math.PI * 2);
+                            ctx.arc(renderX, renderY, s / 2, 0, Math.PI * 2);
                             ctx.fill();
                         }
                         ctx.restore();
                     } else {
-                        // 一般小怪維持原樣 (紅色方塊，不晃動)
                         ctx.fillStyle = "#ef4444";
                         ctx.fillRect(e.x - s / 2, e.y - s / 2, s, s);
                     }
 
-                    // 4. 血條邏輯 (居中於敵人上方，Boss 的血條要跟著晃)
-                    // 如果是 Boss，血條位置跟隨 renderX/Y；小怪跟隨 e.x/e.y
+                    // 血條與狀態圖示
                     const barX = e.isBoss ? renderX : e.x;
                     const barY = e.isBoss ? renderY : e.y;
-
                     ctx.fillStyle = "rgba(0,0,0,0.5)";
                     ctx.fillRect(barX - 15, barY - (s / 2 + 8), 30, 3);
-                    
-                    // Boss 血條金色，小怪綠色
-                    ctx.fillStyle = e.isBoss ? "#f1c40f" : "#22c55e"; 
+                    ctx.fillStyle = e.isBoss ? "#f1c40f" : "#22c55e";
                     ctx.fillRect(barX - 15, barY - (s / 2 + 8), (e.hp / e.maxHp) * 30, 3);
 
-                    // --- 狀態圖示 (跟隨座標) ---
                     let iconOffset = 0;
-                    if (e.iceTimer > 0) {
-                        drawStatusIcon(ctx, barX - 10 + iconOffset, barY - s / 2 - 20, '❄️');
-                        iconOffset += 15;
-                    }
-                    if (e.speed === 0 && e.hp > 0) { // 簡單判定鎖定
-                        drawStatusIcon(ctx, barX - 10 + iconOffset, barY - s / 2 - 20, '🔒');
-                        iconOffset += 15;
-                    }
-                    if (e.poisonStacks > 0) {
-                        drawStatusIcon(ctx, barX - 10 + iconOffset, barY - s / 2 - 20, '☠️');
-                        iconOffset += 15;
-                    }
-                    if (e.vulnerability) {
-                        drawStatusIcon(ctx, barX - 10 + iconOffset, barY - s / 2 - 20, '💔');
-                    }
+                    if (e.iceTimer > 0) { drawStatusIcon(ctx, barX - 10 + iconOffset, barY - s / 2 - 20, '❄️'); iconOffset += 15; }
+                    if (e.speed === 0 && e.hp > 0) { drawStatusIcon(ctx, barX - 10 + iconOffset, barY - s / 2 - 20, '🔒'); iconOffset += 15; }
+                    if (e.poisonStacks > 0) { drawStatusIcon(ctx, barX - 10 + iconOffset, barY - s / 2 - 20, '☠️'); iconOffset += 15; }
+                    if (e.vulnerability) { drawStatusIcon(ctx, barX - 10 + iconOffset, barY - s / 2 - 20, '💔'); }
                 });
 
-                // --- 畫傷害字體 (確保在敵人之上) ---
+                // --- 傷害彈出層 ---
                 for (let i = damagePopups.length - 1; i >= 0; i--) {
                     let d = damagePopups[i];
                     ctx.save();
@@ -1694,20 +1670,16 @@
                     ctx.textAlign = "center";
                     ctx.fillText(d.val, d.x, d.y);
                     ctx.restore();
-
-                    // 傷害動畫：向上飄移與生命週期遞減
-                    d.y -= 1;
-                    d.life--;
+                    d.y -= 1; d.life--;
                     if (d.life <= 0) damagePopups.splice(i, 1);
                 }
 
-                // --- 畫骰子 (原本邏輯) ---
+                // --- 骰子層 (整合強風視覺) ---
                 grid.slots.forEach(slot => {
                     if (slot.dice && !slot.isBeingDragged) {
-                        // 太陽/齒輪特效
+                        // 底層特效
                         if (slot.dice.id === 'sun' && isSunActivated) {
                             ctx.save();
-                            ctx.beginPath();
                             ctx.setLineDash([5, 5]);
                             ctx.strokeStyle = "orange";
                             ctx.lineWidth = 3;
@@ -1716,24 +1688,24 @@
                         }
                         if (slot.dice.id === 'gear' && slot.dice.isPowered) {
                             drawEffect(slot, "#00ccff");
-
-                            // --- 新增：齒輪連線特效 ---
                             drawGearConnections(ctx, slot);
                         }
-                        // 繪製骰子主體與星數
-                        renderDice(ctx, slot.x, slot.y, slot.dice, slot.isLocked);
+
+                        // 強風變色邏輯
+                        const overrideColor = (slot.dice.id === 'mighty_wind' && slot.dice.isBurst) ? "#ffffff" : null;
+
+                        // 呼叫整合後的 renderDice
+                        renderDice(ctx, slot.x, slot.y, slot.dice, slot.isLocked, overrideColor);
                     }
                 });
 
-                // --- 畫正在拖拽中的骰子 (最頂層) ---
+                // --- 拖拽層 ---
                 if (drag.isDragging) {
                     renderDice(ctx, drag.currentX - grid.slotSize / 2, drag.currentY - grid.slotSize / 2, drag.dice, false);
                 }
 
                 requestAnimationFrame(frame);
             }
-
-            // 啟動循環
             frame();
         }
 
@@ -2535,59 +2507,86 @@
 
             ctx.restore();
         }
-
-        function renderDice(ctx, x, y, dice, isLocked) {
+        function renderDice(ctx, x, y, dice, isLocked, overrideColor = null) {
             if (!dice) return;
             const slotSize = grid.slotSize;
+            const centerX = x + slotSize / 2;
+            const centerY = y + slotSize / 2;
 
-            // 為了取得品質顏色
+            // 優先順序：覆蓋色 > 骰子目前色 > 基礎色
+            const finalColor = overrideColor || dice.color || dice.baseColor;
+
+            // 強風狂暴狀態判定
+            const isBursting = (dice.id === 'mighty_wind' && dice.isBurst);
+
+            ctx.save();
+
+            // --- 1. 特效與縮放處理 ---
+            if (isBursting) {
+                // 高性能呼吸縮放
+                const s = 1 + (dice.animScale || 0);
+                ctx.translate(centerX, centerY);
+                ctx.scale(s, s);
+                ctx.translate(-centerX, -centerY);
+
+                // 高性能發光：使用徑向漸層替代 ShadowBlur
+                const grad = ctx.createRadialGradient(centerX, centerY, slotSize * 0.2, centerX, centerY, slotSize * 0.8);
+                grad.addColorStop(0, 'rgba(255, 255, 255, 0.7)');   // 中心亮白
+                grad.addColorStop(0.4, 'rgba(165, 243, 252, 0.4)'); // 強風淡藍
+                grad.addColorStop(1, 'rgba(165, 243, 252, 0)');     // 邊緣透明
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, slotSize * 0.8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // --- 2. 基礎外框與背景 ---
             const dbRef = ALL_DICES.find(d => d.id === dice.id);
             const q = QUALITIES[dbRef ? dbRef.quality : 'common'];
 
-            // 1. 畫外框 (普通品質顏色)
+            // 畫外框
             ctx.beginPath();
             ctx.strokeStyle = q.color || '#fff';
             ctx.lineWidth = 3;
             drawRoundedRect(ctx, x + 4, y + 4, slotSize - 8, slotSize - 8, 8);
             ctx.stroke();
 
-            // 2. 畫填充背景 (白色)
+            // 畫填充背景 (白色)
             ctx.beginPath();
             ctx.fillStyle = "#ffffff";
             drawRoundedRect(ctx, x + 6, y + 6, slotSize - 12, slotSize - 12, 6);
             ctx.fill();
 
-            // --- 新增：先畫品質特效 (傳說/神話) ---
-            // 這樣特效會墊在圖案下面，不會遮住內容，也不會變成一片白
+            // --- 3. 品質特效 (傳說/神話) ---
             if (typeof drawQualityBorder === 'function') {
-                // 注意：這裡不使用 setTransform，直接傳入 x, y
                 drawQualityBorder(ctx, x, y, slotSize, dice.id);
             }
 
-            // 準備繪圖參數
-            const dColor = dice.baseColor || dice.color || "#333";
-            const pattern = (dbRef && dbRef.pattern) ? dbRef.pattern : dice.id;
+            // --- 4. 繪製特徵圖案與星級 ---
             const drawX = x + 6;
             const drawY = y + 6;
             const drawSize = slotSize - 12;
+            const dColor = dice.baseColor || dice.color || "#333";
+            const pattern = (dbRef && dbRef.pattern) ? dbRef.pattern : dice.id;
 
-            // 3. 畫特徵圖案
             if (typeof drawDiceFeature === 'function') {
-                drawDiceFeature(ctx, drawX, drawY, drawSize, pattern, dColor);
+                drawDiceFeature(ctx, drawX, drawY, drawSize, pattern, finalColor); // 使用 finalColor 狂暴時才會變色
             }
 
-            // 4. 畫點數 (星級)
             if (typeof drawDiceStars === 'function') {
                 drawDiceStars(ctx, drawX, drawY, drawSize, dice.lv, dColor, dice.id);
             }
 
-            // 5. 鎖定遮罩
+            ctx.restore(); // 恢復縮放狀態
+
+            // --- 5. 鎖定遮罩 (不隨縮放變動) ---
             if (isLocked) {
                 ctx.save();
-                ctx.beginPath();
                 ctx.fillStyle = "rgba(15, 23, 42, 0.75)";
+                ctx.beginPath();
                 drawRoundedRect(ctx, x + 5, y + 5, slotSize - 10, slotSize - 10, 8);
                 ctx.fill();
+
                 ctx.beginPath();
                 ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
                 ctx.lineWidth = 2;
@@ -2598,7 +2597,6 @@
                 ctx.restore();
             }
         }
-
         function drawRoundedRect(ctx, x, y, w, h, r) {
             ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
             ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h); ctx.lineTo(x + r, y + h);
