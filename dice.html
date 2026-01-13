@@ -60,7 +60,7 @@
             display: none;
         }
 
- 
+
 
         @keyframes rainbow {
             0% {
@@ -128,7 +128,7 @@
             <span id="goldText" class="text-lg text-yellow-500">0</span>
         </div>
         <div class="flex-1 flex justify-end px-3">
-            <button onclick="toggleRank()" 
+            <button onclick="toggleRank()"
                 class="flex items-center gap-1 bg-slate-900 hover:bg-slate-700 text-yellow-400 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-600 transition-all active:scale-95 shadow-sm">
                 <span class="text-sm">🏆</span>
                 <span>榜單</span>
@@ -362,7 +362,8 @@
             <span class="text-[10px] font-bold">備戰</span>
         </button>
     </div>
-<div id="rankSidebar" class="fixed right-0 top-0 h-full w-80 bg-slate-900 border-l border-slate-700 transform translate-x-full transition-transform duration-300 z-50 flex flex-col shadow-2xl">
+    <div id="rankSidebar"
+        class="fixed right-0 top-0 h-full w-80 bg-slate-900 border-l border-slate-700 transform translate-x-full transition-transform duration-300 z-50 flex flex-col shadow-2xl">
         <div class="p-4 border-b border-slate-700 bg-slate-800 flex justify-between items-center">
             <h2 class="text-xl font-bold text-white flex items-center gap-2">
                 <span class="text-yellow-400">🏆</span> 榮譽殿堂
@@ -371,15 +372,15 @@
         </div>
 
         <div class="flex border-b border-slate-700 bg-slate-800/50">
-            <button onclick="switchRankTab('adventure')" id="tab-adventure" 
+            <button onclick="switchRankTab('adventure')" id="tab-adventure"
                 class="flex-1 py-3 text-sm font-bold text-yellow-400 border-b-2 border-yellow-400 bg-slate-800 transition-colors">
                 ⚔️ 關卡榜
             </button>
-            <button onclick="switchRankTab('coop')" id="tab-coop" 
+            <button onclick="switchRankTab('coop')" id="tab-coop"
                 class="flex-1 py-3 text-sm font-bold text-slate-400 border-b-2 border-transparent hover:text-white transition-colors">
                 🤝 合作榜
             </button>
-            <button onclick="switchRankTab('pvp')" id="tab-pvp" 
+            <button onclick="switchRankTab('pvp')" id="tab-pvp"
                 class="flex-1 py-3 text-sm font-bold text-slate-400 border-b-2 border-transparent hover:text-white transition-colors">
                 ⚔️ PVP榜
             </button>
@@ -460,42 +461,42 @@
         }
         const db = firebase.database(); // 使用 Realtime Database
         const fs = firebase.firestore(); // 依然可以用來存玩家的等級、骰子等長期資料
- const SHOP_DATA = {
-      title: [
-        { id: 't_new', name: '🌱初出茅廬', price: 50000 },
-        { id: 't_hunter', name: '🏹賭場獵人', price: 200000 },
-        { id: 't_rich', name: '💰土豪', price: 1000000 },
-        { id: 't_lady', name: '👗千金大小姐', price: 5000000 },
-        { id: 't_lucky', name: '🌟幸運星', price: 100000000 },
-        { id: 't_sir', name: '🎩豪門大少爺', price: 5000000 },
-        { id: 't_king', name: '👑梟雄', price: 10000000 },
-        { id: 't_shit', name: '💩狗屎運', price: 30000000 },
-        { id: 't_legend', name: '🐉賭城傳奇', price: 50000000 },
-        { id: 't_red', name: '🧧鴻運當頭', price: 50000000 },
-        { id: 't_sleep', name: '💤 躺平大師', price: 100000000 },
-        { id: 't_god', name: '⚖️富可敵國', price: 100000000 },
-        { id: 't_beauty', name: '🧚可愛美麗小仙女', price: 200000000 },
-        { id: 't_sky', name: '🍀天選之人', price: 500000000 },
-        { id: 't_world', name: '🪐賭神', price: 500000000 },
-        { id: 't_ultimate', name: '𒁂至尊', price: 500000000,},
-        { id: 't_koi', name: '🌌幸運錦鯉', price: 0, lottoOnly: true }
-      ],
-      effect: [
-        { id: 'e_thunder', name: '⚡ 電閃雷鳴', price: 20000000, class: 'fx-thunder' },
-        { id: 'e_void', name: '🌀 湮滅黑洞', price: 50000000, class: 'fx-void' },
-        { id: 'e_gold', name: '✨ 黃金呼吸', price: 80000000, class: 'fx-gold' },
-        { id: 'e_lightning', name: '⚡ 暗影雷電', price: 100000000, class: 'fx-lightning' },
-        { id: 'e_fire', name: '🔥 地獄火', price: 200000000, class: 'fx-fire' },
-        { id: 'e_ice', name: '❄️ 絕對零度', price: 200000000, class: 'fx-ice' },
-        { id: 'e_neon', name: '🌈 彩虹極光', price: 500000000, class: 'fx-neon' },
-        { id: 'e_hacker', name: '💻 駭客任務', price: 500000000, class: 'fx-hacker' },
-        { id: 'e_nebula', name: '🌌 廣闊星雲', price: 500000000, class: 'fx-nebula' },
-        { id: 'e_timelord', name: '⏳ 時光領域', price: 500000000, class: 'fx-timelord' },
-        { id: 'e_god_king', name: '🔱 眾神之巔', price: 1000000000, class: 'fx-god-king' },
-        { id: 'e_ultimate', name: '𒁂 傳奇至尊', price: 1000000000, class: 'fx-ultimate-legend' },
-        { id: 'e_koi', name: '🌊 錦鯉躍遷', price: 0, class: 'fx-cosmic-koi', lottoOnly: true }
-      ]
-    };
+        const SHOP_DATA = {
+            title: [
+                { id: 't_new', name: '🌱初出茅廬', price: 50000 },
+                { id: 't_hunter', name: '🏹賭場獵人', price: 200000 },
+                { id: 't_rich', name: '💰土豪', price: 1000000 },
+                { id: 't_lady', name: '👗千金大小姐', price: 5000000 },
+                { id: 't_lucky', name: '🌟幸運星', price: 100000000 },
+                { id: 't_sir', name: '🎩豪門大少爺', price: 5000000 },
+                { id: 't_king', name: '👑梟雄', price: 10000000 },
+                { id: 't_shit', name: '💩狗屎運', price: 30000000 },
+                { id: 't_legend', name: '🐉賭城傳奇', price: 50000000 },
+                { id: 't_red', name: '🧧鴻運當頭', price: 50000000 },
+                { id: 't_sleep', name: '💤 躺平大師', price: 100000000 },
+                { id: 't_god', name: '⚖️富可敵國', price: 100000000 },
+                { id: 't_beauty', name: '🧚可愛美麗小仙女', price: 200000000 },
+                { id: 't_sky', name: '🍀天選之人', price: 500000000 },
+                { id: 't_world', name: '🪐賭神', price: 500000000 },
+                { id: 't_ultimate', name: '𒁂至尊', price: 500000000, },
+                { id: 't_koi', name: '🌌幸運錦鯉', price: 0, lottoOnly: true }
+            ],
+            effect: [
+                { id: 'e_thunder', name: '⚡ 電閃雷鳴', price: 20000000, class: 'fx-thunder' },
+                { id: 'e_void', name: '🌀 湮滅黑洞', price: 50000000, class: 'fx-void' },
+                { id: 'e_gold', name: '✨ 黃金呼吸', price: 80000000, class: 'fx-gold' },
+                { id: 'e_lightning', name: '⚡ 暗影雷電', price: 100000000, class: 'fx-lightning' },
+                { id: 'e_fire', name: '🔥 地獄火', price: 200000000, class: 'fx-fire' },
+                { id: 'e_ice', name: '❄️ 絕對零度', price: 200000000, class: 'fx-ice' },
+                { id: 'e_neon', name: '🌈 彩虹極光', price: 500000000, class: 'fx-neon' },
+                { id: 'e_hacker', name: '💻 駭客任務', price: 500000000, class: 'fx-hacker' },
+                { id: 'e_nebula', name: '🌌 廣闊星雲', price: 500000000, class: 'fx-nebula' },
+                { id: 'e_timelord', name: '⏳ 時光領域', price: 500000000, class: 'fx-timelord' },
+                { id: 'e_god_king', name: '🔱 眾神之巔', price: 1000000000, class: 'fx-god-king' },
+                { id: 'e_ultimate', name: '𒁂 傳奇至尊', price: 1000000000, class: 'fx-ultimate-legend' },
+                { id: 'e_koi', name: '🌊 錦鯉躍遷', price: 0, class: 'fx-cosmic-koi', lottoOnly: true }
+            ]
+        };
         // --- 1. 基礎資料定義 ---
         const QUALITIES = {
             common: { name: '普通', color: '#9ca3af', chance: 0.50 },
@@ -1281,10 +1282,10 @@
         // --- 純粹裝飾版：高品質靜態邊框 (強調設計感與階級差異) ---
         function drawQualityBorder(ctx, x, y, size, diceId) {
             if (!diceId || size < 1) return;
-            
+
             // 為了效能，我們這裡簡單讀取
             // 實際專案中建議把 quality 屬性直接傳進來，不用每次 find
-            const db = ALL_DICES.find(d => d.id === diceId); 
+            const db = ALL_DICES.find(d => d.id === diceId);
             if (!db) return;
             const quality = db.quality;
             if (quality !== 'legend' && quality !== 'mythic') return;
@@ -1311,7 +1312,7 @@
                 // ==========================================
                 // 傳說 (Legend)：皇家黃金浮雕 (厚重、傳統、財富)
                 // ==========================================
-                
+
                 // 1. 外框 (深色打底，製造陰影感)
                 ctx.strokeStyle = '#B8860B'; // 暗金色
                 ctx.lineWidth = lw * 2.5;
@@ -1324,7 +1325,7 @@
                 grad.addColorStop(0.3, '#D19C1D'); // 中金
                 grad.addColorStop(0.6, '#FFD700'); // 純金高光
                 grad.addColorStop(1, '#8A6E2F'); // 暗角
-                
+
                 ctx.strokeStyle = grad;
                 ctx.lineWidth = lw * 1.5;
                 pathRound(2, 2, size - 4, size - 4, size * 0.17);
@@ -1336,11 +1337,11 @@
                 // 左上
                 ctx.beginPath(); ctx.moveTo(0, cSize); ctx.lineTo(cSize, 0); ctx.lineTo(0, 0); ctx.fill();
                 // 右上
-                ctx.beginPath(); ctx.moveTo(size-cSize, 0); ctx.lineTo(size, 0); ctx.lineTo(size, cSize); ctx.fill();
+                ctx.beginPath(); ctx.moveTo(size - cSize, 0); ctx.lineTo(size, 0); ctx.lineTo(size, cSize); ctx.fill();
                 // 右下
-                ctx.beginPath(); ctx.moveTo(size, size-cSize); ctx.lineTo(size, size); ctx.lineTo(size-cSize, size); ctx.fill();
+                ctx.beginPath(); ctx.moveTo(size, size - cSize); ctx.lineTo(size, size); ctx.lineTo(size - cSize, size); ctx.fill();
                 // 左下
-                ctx.beginPath(); ctx.moveTo(0, size-cSize); ctx.lineTo(0, size); ctx.lineTo(cSize, size); ctx.fill();
+                ctx.beginPath(); ctx.moveTo(0, size - cSize); ctx.lineTo(0, size); ctx.lineTo(cSize, size); ctx.fill();
 
                 // 4. 內描邊 (精緻感)
                 ctx.strokeStyle = '#FFF8DC'; // 米白金
@@ -1365,23 +1366,23 @@
                 ctx.lineWidth = lw * 1.2;
                 ctx.lineCap = "round";
                 const gap = size * 0.25; // 缺口大小
-                
+
                 ctx.beginPath();
                 // 上邊
                 ctx.moveTo(gap, 2); ctx.lineTo(size - gap, 2);
                 // 下邊
-                ctx.moveTo(gap, size-2); ctx.lineTo(size - gap, size-2);
+                ctx.moveTo(gap, size - 2); ctx.lineTo(size - gap, size - 2);
                 // 左邊
                 ctx.moveTo(2, gap); ctx.lineTo(2, size - gap);
                 // 右邊
-                ctx.moveTo(size-2, gap); ctx.lineTo(size-2, size - gap);
+                ctx.moveTo(size - 2, gap); ctx.lineTo(size - 2, size - gap);
                 ctx.stroke();
 
                 // 2. 角落懸浮矩陣 (取代傳統護角)
                 // 畫四個 L 型的雙線結構
                 const cLen = size * 0.18;
                 const offset = 3;
-                
+
                 // 雙層線條：底層深色
                 ctx.strokeStyle = '#4c1d95'; // 深紫襯底
                 ctx.lineWidth = lw * 2;
@@ -1405,12 +1406,12 @@
                 ctx.fillStyle = grad;
                 const dotSize = size * 0.04;
                 const dotOff = size * 0.08;
-                
+
                 ctx.beginPath();
-                ctx.arc(dotOff, dotOff, dotSize, 0, Math.PI*2);
-                ctx.arc(size - dotOff, dotOff, dotSize, 0, Math.PI*2);
-                ctx.arc(size - dotOff, size - dotOff, dotSize, 0, Math.PI*2);
-                ctx.arc(dotOff, size - dotOff, dotSize, 0, Math.PI*2);
+                ctx.arc(dotOff, dotOff, dotSize, 0, Math.PI * 2);
+                ctx.arc(size - dotOff, dotOff, dotSize, 0, Math.PI * 2);
+                ctx.arc(size - dotOff, size - dotOff, dotSize, 0, Math.PI * 2);
+                ctx.arc(dotOff, size - dotOff, dotSize, 0, Math.PI * 2);
                 ctx.fill();
 
                 // 4. 內部幾何裝飾 (細線框)
@@ -1422,7 +1423,7 @@
 
             ctx.restore();
         }
-// --- 補上缺失的工具函式 ---
+        // --- 補上缺失的工具函式 ---
         function drawRoundedRect(ctx, x, y, w, h, r) {
             if (w < 2 * r) r = w / 2;
             if (h < 2 * r) r = h / 2;
@@ -1459,13 +1460,13 @@
                     const isReplacing = selectedInventoryId !== null;
 
                     return `
-        <div onclick="selectDeckSlot(${index})" 
-            class="w-14 h-14 rounded-lg flex items-center justify-center relative shadow-lg border-2 transition-all overflow-hidden
-            ${dice.quality === 'mythic' ? 'q-mythic' : ''} ${isReplacing ? 'deck-slot-highlight' : ''}" 
-            style="background-color: #ffffff; border-color: ${q.color}">
-            <canvas id="${prefix}-deck-canvas-${index}" width="56" height="56" style="width:56px; height:56px;"></canvas>
-            <div class="absolute bottom-0 right-0 text-[8px] bg-black/50 text-white px-1 rounded z-10">Lv.${lv}</div>
-        </div>`;
+<div onclick="selectDeckSlot(${index})" 
+    class="w-14 h-14 rounded-lg flex items-center justify-center relative shadow-lg border-2 transition-all overflow-hidden
+    ${dice.quality === 'mythic' ? 'q-mythic' : ''} ${isReplacing ? 'deck-slot-highlight' : ''}" 
+    style="background-color: #ffffff; border-color: ${q.color}">
+    <canvas id="${prefix}-deck-canvas-${index}" width="56" height="56" style="width:56px; height:56px;"></canvas>
+    <div class="absolute bottom-0 right-0 text-[8px] bg-black/50 text-white px-1 rounded z-10">Lv.${lv}</div>
+</div>`;
                 }).join('');
             };
 
@@ -1475,7 +1476,8 @@
             const inventoryDeckContainer = document.getElementById('inventoryDeckContainer');
             if (inventoryDeckContainer) inventoryDeckContainer.innerHTML = generateDeckHtml('inv');
 
-            // 3. 更新骰子倉庫 (Inventory)
+            // --- 3. 更新骰子倉庫 (Inventory) [修改重點] ---
+            // --- 3. 更新骰子倉庫 (Inventory) ---
             const inventorySection = document.getElementById('inventorySection');
             if (inventorySection) {
                 inventorySection.innerHTML = ALL_DICES.map(dice => {
@@ -1485,25 +1487,58 @@
                     const isOwned = count > 0 || userData.deck.includes(dice.id);
                     const isSelected = selectedInventoryId === dice.id;
 
+                    // --- [修改] 進度條與滿級判斷邏輯 ---
+                    const MAX_LEVEL = 10; // 設定滿級等級
+                    let percent = 0;
+                    let barColor = '';
+                    let progressText = '';
+
+                    if (lv >= MAX_LEVEL) {
+                        // --- 情況 A: 已滿級 ---
+                        percent = 100;
+                        barColor = 'bg-blue-500'; // 滿級用藍色 (代表畢業)
+                        progressText = 'MAX';
+                    } else {
+                        // --- 情況 B: 未滿級，計算碎片 ---
+                        const config = UPGRADE_CONFIG[lv] || [9999, 999999];
+                        const reqFrags = config[0];
+                        const isReady = count >= reqFrags;
+
+                        percent = Math.min((count / reqFrags) * 100, 100);
+                        // 可升級用綠色，不夠用琥珀色
+                        barColor = isReady ? 'bg-green-500' : 'bg-amber-500';
+                        progressText = `${count} / ${reqFrags}`;
+                    }
+
                     return `
         <div onclick="${isOwned ? `openUpgradeUI('${dice.id}')` : ''}" 
             class="bg-slate-800 p-2 rounded-xl text-center border-2 transition-all dice-card 
-            ${isSelected ? 'selected-dice' : (isOwned ? 'border-slate-700' : 'opacity-20 grayscale pointer-events-none')}">
+            ${isSelected ? 'selected-dice' : (isOwned ? 'border-slate-700' : 'opacity-40 grayscale pointer-events-none')}">
+            
             <div class="w-12 h-12 mx-auto mb-1 flex items-center justify-center relative rounded-lg bg-white overflow-hidden" 
                  style="border: 2px solid ${q.color}">
                 <canvas id="inv-canvas-${dice.id}" width="48" height="48" style="width:48px; height:48px;"></canvas>
             </div>
+            
             <div class="text-[10px] font-bold text-white truncate mb-0.5">${dice.name}</div>
-            <div class="text-[9px] text-slate-300">Lv.${lv}</div>
-            <div class="text-[8px] text-slate-400">${count} 碎片</div>
+            <div class="text-[9px] text-slate-300 mb-1">Lv.${lv}</div>
+            
+            <div class="relative w-full h-3 bg-slate-900 rounded-full overflow-hidden mt-1">
+                <div class="${barColor} h-full transition-all duration-300" style="width: ${percent}%"></div>
+                
+                <div class="absolute inset-0 flex items-center justify-center text-[8px] font-bold text-white drop-shadow-md leading-none">
+                    ${progressText}
+                </div>
+            </div>
+
         </div>`;
                 }).join('');
             }
 
-            // --- 4. 關鍵步驟：確保 HTML 渲染後再繪圖，並修正座標 ---
+            // 4. 關鍵步驟：確保 HTML 渲染後再繪圖，並修正座標
             setTimeout(() => {
                 // 繪製編隊區 (主頁與備戰頁)
-                ['main', 'inv'].forEach(prefix => { // 畫出所有成員
+                ['main', 'inv'].forEach(prefix => {
                     userData.deck.forEach((diceId, index) => {
                         const canvas = document.getElementById(`${prefix}-deck-canvas-${index}`);
                         if (canvas) {
@@ -1511,9 +1546,7 @@
                             if (dice) {
                                 const ctx = canvas.getContext('2d');
                                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                                // 先畫邊框特效
                                 drawQualityBorder(ctx, 0, 0, canvas.width, dice.id);
-                                // 修正座標為 0, 0，避免歪掉
                                 drawDiceFeature(ctx, 0, 0, canvas.width, dice.pattern || dice.id, dice.baseColor);
                                 drawDiceStars(ctx, 0, 0, canvas.width, 1, dice.baseColor);
                             }
@@ -1527,16 +1560,14 @@
                     if (canvas) {
                         const ctx = canvas.getContext('2d');
                         ctx.clearRect(0, 0, canvas.width, canvas.height);
-                        // 先畫邊框特效
                         drawQualityBorder(ctx, 0, 0, canvas.width, dice.id);
-                        // 修正座標為 0, 0
                         drawDiceFeature(ctx, 0, 0, canvas.width, dice.pattern || dice.id, dice.baseColor);
                         drawDiceStars(ctx, 0, 0, canvas.width, 1, dice.baseColor);
                     }
                 });
             }, 0);
 
-            // 啟動邊框動畫（如果有傳說/神話骰子且動畫未運行）
+            // 啟動邊框動畫
             setTimeout(() => {
                 if (shouldAnimate() && !animationFrameId) {
                     animateDiceBorders();
@@ -1921,131 +1952,131 @@
             // 如果切換到備戰或戰鬥，重新渲染陣容或清單 (確保數據最新)
             render();
         }
-// 當前排行榜模式
-    let currentRankMode = 'adventure'; 
+        // 當前排行榜模式
+        let currentRankMode = 'adventure';
 
-    // 開關排行榜側邊欄
-    function toggleRank() {
-    const sidebar = document.getElementById('rankSidebar');
-    const overlay = document.getElementById('rankOverlay');
+        // 開關排行榜側邊欄
+        function toggleRank() {
+            const sidebar = document.getElementById('rankSidebar');
+            const overlay = document.getElementById('rankOverlay');
 
-    if (!sidebar) return;
+            if (!sidebar) return;
 
-    // 修改這裡：使用 toggle 切換 'active' class
-    sidebar.classList.toggle('active');
+            // 修改這裡：使用 toggle 切換 'active' class
+            sidebar.classList.toggle('active');
 
-    // 遮罩層的邏輯
-    if (sidebar.classList.contains('active')) {
-        // 如果打開了側邊欄，顯示遮罩
-        if (overlay) overlay.style.display = 'block';
-        // 載入資料
-        switchRankTab(currentRankMode);
-    } else {
-        // 如果關閉了，隱藏遮罩
-        if (overlay) overlay.style.display = 'none';
-    }
-}
-
-    // 切換分頁邏輯
-    function switchRankTab(mode) {
-        currentRankMode = mode;
-        const tabs = ['adventure', 'coop', 'pvp'];
-        const rankList = document.getElementById('rankList');
-
-        // 1. 更新按鈕樣式
-        tabs.forEach(t => {
-            const btn = document.getElementById(`tab-${t}`);
-            if (t === mode) {
-                // 激活樣式
-                btn.className = "flex-1 py-3 text-sm font-bold text-yellow-400 border-b-2 border-yellow-400 bg-slate-800 transition-colors";
+            // 遮罩層的邏輯
+            if (sidebar.classList.contains('active')) {
+                // 如果打開了側邊欄，顯示遮罩
+                if (overlay) overlay.style.display = 'block';
+                // 載入資料
+                switchRankTab(currentRankMode);
             } else {
-                // 非激活樣式
-                btn.className = "flex-1 py-3 text-sm font-bold text-slate-400 border-b-2 border-transparent hover:text-white transition-colors";
+                // 如果關閉了，隱藏遮罩
+                if (overlay) overlay.style.display = 'none';
             }
-        });
+        }
 
-        // 2. 根據模式載入內容
-        if (mode === 'adventure') {
-            loadAdventureRanking();
-        } else if (mode === 'coop') {
-            rankList.innerHTML = `
+        // 切換分頁邏輯
+        function switchRankTab(mode) {
+            currentRankMode = mode;
+            const tabs = ['adventure', 'coop', 'pvp'];
+            const rankList = document.getElementById('rankList');
+
+            // 1. 更新按鈕樣式
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                if (t === mode) {
+                    // 激活樣式
+                    btn.className = "flex-1 py-3 text-sm font-bold text-yellow-400 border-b-2 border-yellow-400 bg-slate-800 transition-colors";
+                } else {
+                    // 非激活樣式
+                    btn.className = "flex-1 py-3 text-sm font-bold text-slate-400 border-b-2 border-transparent hover:text-white transition-colors";
+                }
+            });
+
+            // 2. 根據模式載入內容
+            if (mode === 'adventure') {
+                loadAdventureRanking();
+            } else if (mode === 'coop') {
+                rankList.innerHTML = `
                 <div class="flex flex-col items-center justify-center h-64 text-slate-500">
                     <div class="text-4xl mb-4">🤝</div>
                     <p>合作模式排行榜</p>
                     <p class="text-xs mt-2 text-slate-600">即將推出</p>
                 </div>`;
-        } else if (mode === 'pvp') {
-            rankList.innerHTML = `
+            } else if (mode === 'pvp') {
+                rankList.innerHTML = `
                 <div class="flex flex-col items-center justify-center h-64 text-slate-500">
                     <div class="text-4xl mb-4">⚔️</div>
                     <p>PVP 對戰排行榜</p>
                     <p class="text-xs mt-2 text-slate-600">即將推出</p>
                 </div>`;
+            }
         }
-    }
 
-    // --- 讀取【關卡榜】邏輯 ---
-    async function loadAdventureRanking() {
-        const rankList = document.getElementById('rankList');
-        rankList.innerHTML = '<div class="text-center text-slate-500 mt-10"><div class="animate-spin text-2xl mb-2">🎲</div>載入數據中...</div>';
-        
-        try {
-           const snapshot = await fs.collection("users")
-                .where("dice_data.unlockLevel", ">", 1) // 條件：只抓取解鎖等級 > 1 的人 (即通過第1關)
-                .orderBy("dice_data.unlockLevel", "desc") 
-                .limit(10) 
-                .get();
+        // --- 讀取【關卡榜】邏輯 ---
+        async function loadAdventureRanking() {
+            const rankList = document.getElementById('rankList');
+            rankList.innerHTML = '<div class="text-center text-slate-500 mt-10"><div class="animate-spin text-2xl mb-2">🎲</div>載入數據中...</div>';
 
-            let html = '';
-            let i = 1;
-            const now = Date.now();
+            try {
+                const snapshot = await fs.collection("users")
+                    .where("dice_data.unlockLevel", ">", 1) // 條件：只抓取解鎖等級 > 1 的人 (即通過第1關)
+                    .orderBy("dice_data.unlockLevel", "desc")
+                    .limit(10)
+                    .get();
 
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                const userAssets = data.assets || {};
-                
-                // 防呆：如果該玩家還沒玩過，可能沒有 dice_data
-                const diceData = data.dice_data || {};
-                // 預設關卡為 1
-                const maxStage = diceData.unlockLevel || 1; 
+                let html = '';
+                let i = 1;
+                const now = Date.now();
 
-                // --- 稱號過期判斷 ---
-                let titleText = data.equipped_title || "";
-                if (titleText) {
-                    const titleObj = SHOP_DATA.title.find(t => t.name === titleText);
-                    // 如果找不到商品ID 或 當前時間 > 到期時間，則移除稱號
-                    if (titleObj && userAssets[titleObj.id] && now > userAssets[titleObj.id]) {
-                        titleText = "";
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const userAssets = data.assets || {};
+
+                    // 防呆：如果該玩家還沒玩過，可能沒有 dice_data
+                    const diceData = data.dice_data || {};
+                    // 預設關卡為 1
+                    const maxStage = diceData.unlockLevel || 1;
+
+                    // --- 稱號過期判斷 ---
+                    let titleText = data.equipped_title || "";
+                    if (titleText) {
+                        const titleObj = SHOP_DATA.title.find(t => t.name === titleText);
+                        // 如果找不到商品ID 或 當前時間 > 到期時間，則移除稱號
+                        if (titleObj && userAssets[titleObj.id] && now > userAssets[titleObj.id]) {
+                            titleText = "";
+                        }
                     }
-                }
 
-                // --- 特效過期判斷 ---
-                let fxClass = data.equipped_fx || "";
-                if (fxClass) {
-                    const effectObj = SHOP_DATA.effect.find(e => e.class === fxClass);
-                    if (effectObj && userAssets[effectObj.id] && now > userAssets[effectObj.id]) {
-                        fxClass = "";
+                    // --- 特效過期判斷 ---
+                    let fxClass = data.equipped_fx || "";
+                    if (fxClass) {
+                        const effectObj = SHOP_DATA.effect.find(e => e.class === fxClass);
+                        if (effectObj && userAssets[effectObj.id] && now > userAssets[effectObj.id]) {
+                            fxClass = "";
+                        }
                     }
-                }
 
-                // --- 稱號顏色處理 ---
-                let titleColorClass = "t-blue";
-                if (titleText.includes("幸運錦鯉")) titleColorClass = "t-koi-color";
-                else if (titleText.includes("賭神") || titleText.includes("富可敵國") || titleText.includes("至尊")) titleColorClass = "t-red";
-                else if (titleText.includes("傳奇") || titleText.includes("天選")) titleColorClass = "t-orange";
-                else if (titleText.includes("土豪") || titleText.includes("千金")) titleColorClass = "t-purple";
-                else if (titleText.includes("幸運")) titleColorClass = "t-yellow";
+                    // --- 稱號顏色處理 ---
+                    let titleColorClass = "t-blue";
+                    if (titleText.includes("幸運錦鯉")) titleColorClass = "t-koi-color";
+                    else if (titleText.includes("賭神") || titleText.includes("富可敵國") || titleText.includes("至尊")) titleColorClass = "t-red";
+                    else if (titleText.includes("傳奇") || titleText.includes("天選")) titleColorClass = "t-orange";
+                    else if (titleText.includes("土豪") || titleText.includes("千金")) titleColorClass = "t-purple";
+                    else if (titleText.includes("幸運")) titleColorClass = "t-yellow";
 
-                const titleHTML = titleText ? `<span class="player-title ${titleColorClass}">【${titleText}】</span>` : "";
+                    const titleHTML = titleText ? `<span class="player-title ${titleColorClass}">【${titleText}】</span>` : "";
 
-                // --- 產生 HTML (單人榜樣式) ---
-                // 前三名有不同顏色的獎盃或數字
-                let rankDisplay = `<span class="text-slate-500 font-bold">${i}</span>`;
-                if (i === 1) rankDisplay = `<span class="text-2xl">🥇</span>`;
-                if (i === 2) rankDisplay = `<span class="text-2xl">🥈</span>`;
-                if (i === 3) rankDisplay = `<span class="text-2xl">🥉</span>`;
+                    // --- 產生 HTML (單人榜樣式) ---
+                    // 前三名有不同顏色的獎盃或數字
+                    let rankDisplay = `<span class="text-slate-500 font-bold">${i}</span>`;
+                    if (i === 1) rankDisplay = `<span class="text-2xl">🥇</span>`;
+                    if (i === 2) rankDisplay = `<span class="text-2xl">🥈</span>`;
+                    if (i === 3) rankDisplay = `<span class="text-2xl">🥉</span>`;
 
-                html += `
+                    html += `
                     <div class="rank-item ${fxClass} flex items-center bg-slate-800 p-3 rounded-lg border border-slate-700 relative overflow-hidden transition-transform hover:scale-[1.02]">
                         <div class="w-10 text-center flex-shrink-0">
                             ${rankDisplay}
@@ -2062,21 +2093,21 @@
                         </div>
                     </div>
                 `;
-                i++;
-            });
+                    i++;
+                });
 
-            if (html === '') {
-                rankList.innerHTML = '<p class="text-center text-slate-500 mt-10">尚無玩家資料</p>';
-            } else {
-                rankList.innerHTML = html;
+                if (html === '') {
+                    rankList.innerHTML = '<p class="text-center text-slate-500 mt-10">尚無玩家資料</p>';
+                } else {
+                    rankList.innerHTML = html;
+                }
+
+            } catch (e) {
+                console.error("載入失敗:", e);
+                // 提示索引錯誤
+                rankList.innerHTML = '<p class="text-center text-red-400 mt-10 text-sm">載入失敗<br>請檢查 Firebase 索引設定</p>';
             }
-
-        } catch (e) {
-            console.error("載入失敗:", e);
-            // 提示索引錯誤
-            rankList.innerHTML = '<p class="text-center text-red-400 mt-10 text-sm">載入失敗<br>請檢查 Firebase 索引設定</p>';
         }
-    }
         function startBattle() {
             saveData();
             window.location.href = 'dice_battle.html';
