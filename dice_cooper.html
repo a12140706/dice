@@ -143,23 +143,120 @@
         };
 
         const ALL_DICES = [
-            // --- Common ---
-            { id: 'fire', name: '火', quality: 'common', baseColor: '#ef4444', pattern: 'fire', stats: { atk: 18, speed: 55 }, grow: { atk: 6, speed: -1 }, special: { label: '濺射範圍', value: 1.0, unit: '格', grow: 0.1 } },
-            { id: 'wind', name: '風', quality: 'common', baseColor: '#10b981', pattern: 'wind', stats: { atk: 8, speed: 35 }, grow: { atk: 2, speed: -1.5 }, special: { label: '連擊機率', value: 10, unit: '%', grow: 3 } },
-            { id: 'ice', name: '冰', quality: 'common', baseColor: '#3b82f6', pattern: 'ice', stats: { atk: 5, speed: 60 }, grow: { atk: 1, speed: -1 }, special: { label: '緩速效果', value: 20, unit: '%', grow: 2 } },
-            { id: 'electric', name: '電', quality: 'common', baseColor: '#f59e0b', pattern: 'electric', stats: { atk: 6, speed: 45 }, grow: { atk: 2, speed: -1 }, special: { label: '連鎖目標', value: 3, unit: '體', grow: 1 } },
-            { id: 'poison', name: '毒', quality: 'common', baseColor: '#008000', pattern: 'poison', stats: { atk: 4, speed: 50 }, grow: { atk: 2, speed: -1 }, special: { label: '中毒傷害', value: 8, unit: 'pt', grow: 4 } },
-            // --- Rare ---
-            { id: 'lock', name: '鎖定', quality: 'rare', baseColor: '#64748b', pattern: 'lock', stats: { atk: 12, speed: 55 }, grow: { atk: 4, speed: -1 }, special: { label: '禁錮時長', value: 0.8, unit: '秒', grow: 0.2 } },
-            // --- Epic ---
-            { id: 'teleport', name: '傳送', quality: 'epic', baseColor: '#8b5cf6', pattern: 'teleport', stats: { atk: 10, speed: 65 }, grow: { atk: 3, speed: -1 }, special: { label: '傳送回起點', value: 5, unit: '%', grow: 2 } },
-            { id: 'gear', name: '齒輪', quality: 'epic', baseColor: '#475569', pattern: 'gear', stats: { atk: 15, speed: 50 }, grow: { atk: 8, speed: -1 }, special: { label: '連結加成', value: 12, unit: '%', grow: 6 } },
-            // --- Legend ---
-            { id: 'joker', name: '小丑', quality: 'legend', baseColor: '#f87171', pattern: 'joker', stats: { atk: 5, speed: 50 }, grow: { atk: 1, speed: 0 }, special: { label: '繼承比例', value: 80, unit: '%', grow: 2 } },
-            { id: 'growth', name: '成長', quality: 'legend', baseColor: '#f472b6', pattern: 'growth', stats: { atk: 5, speed: 50 }, grow: { atk: 1, speed: -1 }, special: { label: '成長時間', value: 40, unit: '秒', grow: -2 } },
-            { id: 'sun', name: '太陽', quality: 'legend', baseColor: '#fbbf24', pattern: 'sun', stats: { atk: 35, speed: 55 }, grow: { atk: 15, speed: -0.5 }, special: { label: '濺射傷害', value: 100, unit: '%', grow: 25 } },
-            // --- Mythic ---
-            { id: 'galaxy', name: '銀河', quality: 'mythic', baseColor: '#6366f1', pattern: 'galaxy', stats: { atk: 60, speed: 50 }, grow: { atk: 30, speed: -1 }, special: { label: '黑洞吞噬', value: 2, unit: '%', grow: 1 } }
+            // --- Common (普通) ---
+            {
+                id: 'fire', name: '火', quality: 'common', baseColor: '#ef4444', pattern: 'fire',
+                stats: { atk: 18, speed: 55 }, grow: { atk: 6, speed: -1 },
+                special: { label: '濺射範圍', value: 1.0, unit: '格', grow: 0.1 }
+            },
+            {
+                id: 'wind', name: '風', quality: 'common', baseColor: '#10b981', pattern: 'wind',
+                stats: { atk: 8, speed: 35 }, grow: { atk: 2, speed: -1.5 }, // 削弱基礎，讓出前期霸主位置
+                special: { label: '連擊機率', value: 10, unit: '%', grow: 3 }
+            },
+            {
+                id: 'ice', name: '冰', quality: 'common', baseColor: '#3b82f6', pattern: 'ice',
+                stats: { atk: 7, speed: 60 }, grow: { atk: 1, speed: -1 },
+                special: { label: '緩速效果', value: 20, unit: '%', grow: 2 }
+            },
+            {
+                id: 'electric', name: '電', quality: 'common', baseColor: '#f59e0b', pattern: 'electric',
+                stats: { atk: 6, speed: 45 }, grow: { atk: 2, speed: -1 },
+                special: { label: '連鎖目標', value: 3, unit: '體', grow: 1 }
+            },
+            {
+                id: 'poison', name: '毒', quality: 'common', baseColor: '#008000', pattern: 'poison',
+                stats: { atk: 4, speed: 50 }, grow: { atk: 2, speed: -1 },
+                special: { label: '中毒傷害', value: 12, unit: 'pt', grow: 4 }
+            },
+
+            // --- Rare (稀有) ---
+            {
+                id: 'lock', name: '鎖定', quality: 'rare', baseColor: '#64748b', pattern: 'lock',
+                stats: { atk: 12, speed: 55 }, grow: { atk: 4, speed: -1 },
+                special: { label: '禁錮時長', value: 0.8, unit: '秒', grow: 0.2 }
+            },
+            // --- 易傷骰子 (替代原本的破甲) ---
+            {
+                id: 'crack', name: '易傷', quality: 'rare', baseColor: '#f87171', pattern: 'crack',
+                stats: { atk: 12, speed: 50 }, grow: { atk: 3, speed: -1 },
+                special: { label: '額外受傷', value: 8, unit: '%', grow: 1 }
+            },
+            // --- 礦山骰子 (經濟型) ---
+            {
+                id: 'mine', name: '礦山', quality: 'rare', baseColor: '#fbbf24', pattern: 'mine',
+                stats: { atk: 0, speed: 40 }, grow: { atk: 0, speed: -5 }, // 不攻擊，速度代表產錢間隔
+                special: { label: '產出SP', value: 10, unit: 'pt', grow: 5 }
+            },
+
+            // --- Epic (史詩) ---
+            {
+                id: 'laser', name: '雷射', quality: 'epic', baseColor: '#ec4899', pattern: 'laser_beam',
+                stats: { atk: 8, speed: 40 }, grow: { atk: 2, speed: 0 },
+                special: { label: '增幅上限', value: 5, unit: '倍', grow: 1 }
+                // 功能：持續攻擊同一個目標時，傷害會隨攻擊次數不斷爬升
+            },
+            {
+                id: 'teleport', name: '傳送', quality: 'epic', baseColor: '#8b5cf6', pattern: 'teleport',
+                stats: { atk: 10, speed: 65 }, grow: { atk: 3, speed: -1 },
+                special: { label: '傳送回起點', value: 5, unit: '%', grow: 2 }
+            },
+            {
+                id: 'gear', name: '齒輪', quality: 'epic', baseColor: '#475569', pattern: 'gear',
+                stats: { atk: 15, speed: 50 }, grow: { atk: 8, speed: -1 },
+                special: { label: '連結加成', value: 12, unit: '%', grow: 6 }
+            },
+
+            // --- Legend (傳說) ---
+            {
+                id: 'mighty_wind', name: '強風', quality: 'legend', baseColor: '#a5f3fc', pattern: 'mighty_wind',
+                stats: { atk: 15, speed: 40 }, grow: { atk: 6, speed: -1 },
+                special: { label: '狂暴時長', value: 2, unit: '秒', grow: 0.5 }
+            },
+            {
+                id: 'joker', name: '小丑', quality: 'legend', baseColor: '#f87171', pattern: 'joker',
+                stats: { atk: 5, speed: 50 }, grow: { atk: 1, speed: 0 },
+                special: { label: '繼承比例', value: 80, unit: '%', grow: 2 } // 依照你的測試保留 80%
+            },
+            {
+                id: 'growth', name: '成長', quality: 'legend', baseColor: '#f472b6', pattern: 'growth',
+                stats: { atk: 5, speed: 50 }, grow: { atk: 1, speed: -1 },
+                special: { label: '成長時間', value: 40, unit: '秒', grow: -2 } // 因應節奏調快，縮短至 40 秒
+            },
+            {
+                id: 'sun', name: '太陽', quality: 'legend', baseColor: '#fbbf24', pattern: 'sun',
+                stats: { atk: 35, speed: 55 }, grow: { atk: 15, speed: -0.5 },
+                special: { label: '濺射傷害', value: 100, unit: '%', grow: 25 }
+            },
+            {
+                id: 'sanctuary', name: '聖域', quality: 'legend', baseColor: '#fbbf24', pattern: 'sanctuary',
+                stats: { atk: 15, speed: 60 }, grow: { atk: 6, speed: -1 },
+                special: { label: '加速範圍', value: 30, unit: '%', grow: 5 }
+            },
+            {
+                id: 'comet', name: '彗星', quality: 'legend', baseColor: '#3b82f6', pattern: 'comet',
+                stats: { atk: 18, speed: 45 }, grow: { atk: 7, speed: -1 },
+                special: { label: '充能倍率', value: 500, unit: '%', grow: 100 }
+            },
+
+            // --- Epic (史詩) 新增 ---
+            {
+                id: 'chain', name: '連鎖', quality: 'epic', baseColor: '#8b5cf6', pattern: 'chain',
+                stats: { atk: 15, speed: 50 }, grow: { atk: 5, speed: -1 },
+                special: { label: '彈射增傷', value: 50, unit: '%', grow: 10 }
+            },
+
+            // --- Mythic (神話) ---
+            {
+                id: 'doom', name: '毀滅', quality: 'mythic', baseColor: '#7c3aed', pattern: 'doom',
+                stats: { atk: 45, speed: 50 }, grow: { atk: 20, speed: -1 },
+                special: { label: '斬殺比例', value: 35, unit: '%', grow: 5 }
+            },
+            {
+                id: 'galaxy', name: '銀河', quality: 'mythic', baseColor: '#6366f1', pattern: 'galaxy',
+                stats: { atk: 60, speed: 50 }, grow: { atk: 30, speed: -1 },
+                special: { label: '黑洞吞噬', value: 2, unit: '%', grow: 1 }
+            }
         ];
 
         const BOSS_TYPES = {
@@ -167,22 +264,33 @@
                 name: '粉碎者', color: '#ff4444',
                 img: (() => { const i = new Image(); i.src = 'dice-boss/lock.png'; return i; })(),
                 skillInterval: 300,
+                // 在 BOSS_TYPES 內的 'CRUSHER' 修改 onSkill
                 onSkill: (boss) => {
-                    // Boss 的鎖定技能同時針對雙方玩家進行判定 (房主負責)
-                    // 這裡簡化為隨機鎖定其中一方的一個骰子
-                    const p1Slots = mySlots; // 在 Host 邏輯中，mySlots 是 P1
-                    const p2Slots = partnerSlots; // P2
+                    // 限制：Host 只能運算技能，但透過事件通知
+                    // 規則：Boss 是誰的，就鎖定誰的骰子
+                    let targetPool = [];
 
-                    const targets = [];
-                    p1Slots.forEach(s => { if (s.dice && !s.isLocked) targets.push(s); });
-                    p2Slots.forEach(s => { if (s.dice && !s.isLocked) targets.push(s); });
+                    // 根據 boss.owner 決定目標池
+                    if (boss.owner === 'p1') {
+                        targetPool = mySlots; // Host 自己的骰子
+                    } else if (boss.owner === 'p2') {
+                        targetPool = partnerSlots; // Host 眼中 隊友的骰子
+                    }
 
-                    if (targets.length > 0) {
-                        const target = targets[Math.floor(Math.random() * targets.length)];
-                        target.isLocked = true;
-                        // 鎖定持續 4 秒
-                        setTimeout(() => { target.isLocked = false; syncMyData(); }, 4000);
-                        syncMyData();
+                    // 找出該玩家沒被鎖定的骰子
+                    const validTargets = targetPool.filter(s => s.dice && !s.isLocked);
+
+                    if (validTargets.length > 0) {
+                        const target = validTargets[Math.floor(Math.random() * validTargets.length)];
+
+                        // 【流量優化】只寫入一個短暫的事件，而不是更新整個玩家狀態
+                        // 寫入路徑：coop_rooms/{roomId}/bossEvent
+                        db.ref(`coop_rooms/${roomId}/bossEvent`).set({
+                            type: 'lock',
+                            targetOwner: boss.owner, // 指定受害者
+                            slotIndex: target.index, // 指定格子 ID
+                            timestamp: Date.now() // 用於過濾舊事件
+                        });
                     }
                 }
             },
@@ -191,8 +299,24 @@
                 img: (() => { const i = new Image(); i.src = 'dice-boss/speed.png'; return i; })(),
                 skillInterval: 240,
                 onSkill: (boss) => {
-                    enemies.forEach(e => e.speed *= 1.5);
-                    setTimeout(() => { enemies.forEach(e => e.speed /= 1.5); }, 2000);
+                    // --- 修改這裡：只加速「屬於該 BOSS 擁有者」的怪物 ---
+
+                    // 1. 篩選出同陣營的敵人 (Host 的怪 或 Guest 的怪)
+                    const targetEnemies = enemies.filter(e => e.owner === boss.owner);
+
+                    // 2. 執行加速
+                    targetEnemies.forEach(e => e.speed *= 1.5);
+
+                    // 3. 2秒後恢復 (Host 端執行即可，Guest 會自動跟隨座標變慢)
+                    setTimeout(() => {
+                        // 注意：這裡要重新篩選，因為 2 秒後可能有新怪，或者怪死掉了
+                        // 但為了簡單與效能，我們直接對當下還活著的同陣營怪物減速
+                        enemies.filter(e => e.owner === boss.owner).forEach(e => {
+                            // 簡單防止速度變成 0 或過低，重置回基礎速度的邏輯比較安全
+                            // 但這裡用除法還原是原版邏輯，維持原樣
+                            e.speed /= 1.5;
+                        });
+                    }, 2000);
                 }
             }
         };
@@ -473,6 +597,42 @@
 
                 updateUILive();
             });
+            db.ref(`coop_rooms/${roomId}/bossEvent`).on('value', (snap) => {
+                const event = snap.val();
+                if (!event) return;
+
+                // 防止重複處理舊事件 (超過 2 秒前的事件不理會)
+                if (Date.now() - event.timestamp > 2000) return;
+
+                // 判斷我是誰
+                const me = role === 'host' ? 'p1' : 'p2';
+
+                // 情況 1：受害者是我 (我鎖定我自己 -> 上傳狀態 -> 對方看到我被鎖)
+                if (event.targetOwner === me) {
+                    const slot = mySlots[event.slotIndex];
+                    if (slot && slot.dice && !slot.isLocked) {
+                        slot.isLocked = true;
+
+                        // 鎖定 4 秒後解鎖
+                        setTimeout(() => {
+                            slot.isLocked = false;
+                            syncMyData(); // 解鎖後同步
+                        }, 4000);
+
+                        syncMyData(); // 鎖定當下立刻同步，讓對方看到
+                    }
+                }
+
+                // 情況 2：受害者是隊友 (我只做視覺更新，實際狀態等他的 syncMyData)
+                // 這樣可以確保「兩方看到的都要一樣」，因為會有視覺回饋
+                else {
+                    const slot = partnerSlots[event.slotIndex];
+                    if (slot && slot.dice) {
+                        slot.isLocked = true; // 視覺上先鎖，等對方 Firebase 資料傳來會再次確認
+                        // 這裡不設定 setTimeout 解鎖，因為會由對方的資料同步來解除
+                    }
+                }
+            });
 
             // 立即同步一次初始資料 (Deck 與 Levels)
             syncMyData();
@@ -526,13 +686,26 @@
             frameCount++;
 
             if (role === 'host') {
-                updateHostLogic(); // 生怪、移動
-                updateCombat();    // 房主計算全場戰鬥（包含幫 P2 發射子彈）
+                updateHostLogic();
+                updateCombat();
 
-                if (frameCount % 10 === 0) {
+                // 【流量優化】每 15 幀 (約 0.25秒) 同步一次即可，不用太頻繁
+                if (frameCount % 15 === 0) {
+                    // 瘦身：只上傳必要欄位
+                    const minifiedEnemies = enemies.map(e => ({
+                        id: e.id,
+                        x: Math.round(e.x), // 座標取整數，省字元
+                        y: Math.round(e.y),
+                        hp: Math.floor(e.hp),
+                        maxHp: Math.floor(e.maxHp),
+                        type: e.isBoss ? e.bossType : null, // Boss 才傳類型
+                        isBoss: e.isBoss,
+                        owner: e.owner,
+                        // speed, pathIndex 等 Guest 可以自己推算或不需要
+                    }));
+
                     db.ref(`coop_rooms/${roomId}`).update({
-                        enemies: enemies,
-                        // ❌ 移除 projectiles 同步
+                        enemies: minifiedEnemies,
                         wave: battleState.wave,
                         hp: battleState.hp,
                         gameover: battleState.hp <= 0,
@@ -540,16 +713,11 @@
                     });
                 }
             } else {
-                updateGuestLogic(); // Guest 只負責讓怪滑行移動（平滑化）
+                updateGuestLogic(); // 現在只負責平滑插值
                 updateCombat();
-                // --- 關鍵修正 ---
-                // Guest 不要跑 updateCombat (不處理邏輯扣血)，
-                // 但可以跑一個視覺用的 updateProjectiles()，
-                // 讓接收到的子彈座標能「動」起來，而不是等 Firebase 下一次傳座標。
-                //updateProjectilesLocal();
             }
 
-            draw(); // 這裡已經有你寫好的視覺翻轉
+            draw();
             requestAnimationFrame(gameLoop);
         }
         // 專門給 Guest 用的子彈平滑移動 (純視覺)
@@ -574,42 +742,27 @@
             );
         }
         // Guest 邏輯: 本地預測移動 (避免卡頓)
+        // 修正：Guest 不計算邏輯移動，只做「視覺平滑跟隨」
         function updateGuestLogic() {
             enemies.forEach(e => {
-                if (e.hp <= 0) return;
-
-                const path = e.owner === 'p1' ? paths.p1 : paths.p2;
-
-                // 初始化視覺座標
+                // 如果是剛生成的怪，還沒有視覺座標，直接初始化
                 if (e.vX === undefined) {
                     e.vX = e.x;
                     e.vY = e.y;
                 }
 
-                // 如果路徑無效，至少更新視覺座標
-                if (!path || e.pathIndex >= path.length) {
-                    e.vX += (e.x - e.vX) * 0.25;
-                    e.vY += (e.y - e.vY) * 0.25;
-                    return;
+                // 核心算法：讓視覺座標 (vX, vY) 每次往 真實座標 (x, y) 靠近 15%
+                // 這樣即使 Firebase 數據每 0.2 秒才來一次，怪物看起來也是滑順移動的
+                const smoothFactor = 0.15;
+
+                e.vX += (e.x - e.vX) * smoothFactor;
+                e.vY += (e.y - e.vY) * smoothFactor;
+
+                // 防瞬移機制：如果距離太遠（例如剛傳送），直接跳過去，避免飛越螢幕
+                if (Math.hypot(e.x - e.vX, e.y - e.vY) > 100) {
+                    e.vX = e.x;
+                    e.vY = e.y;
                 }
-
-                const target = path[e.pathIndex];
-                if (target) {
-                    let dx = target.x - e.x;
-                    let dy = target.y - e.y;
-                    let dist = Math.hypot(dx, dy);
-
-                    if (dist < e.speed) {
-                        e.pathIndex++;
-                    } else {
-                        e.x += (dx / dist) * e.speed;
-                        e.y += (dy / dist) * e.speed;
-                    }
-                }
-
-                // 平滑追蹤
-                e.vX += (e.x - e.vX) * 0.25;
-                e.vY += (e.y - e.vY) * 0.25;
             });
         }
 
@@ -867,6 +1020,7 @@
         }
 
         // 處理一組插槽對敵人的攻擊
+        // 處理一組插槽對敵人的攻擊
         function processSlotsCombat(slots, slotOwner) { // slotOwner: 'p1' or 'p2'
             // 計算太陽個數
             const sunCount = slots.filter(s => s.dice && s.dice.id === 'sun').length;
@@ -889,37 +1043,23 @@
                         slot.attackCooldown = 0;
                         const dmg = getDiceDamage(slot.dice, slotOwner);
 
-                        // 太陽特殊攻擊
+                        // 太陽特殊攻擊 (AOE)
                         if (slot.dice.id === 'sun' && isSun) {
                             createSunExplosion(target, dmg, slotOwner);
                         } else {
-                            // 發射子彈
-                            // 注意：如果是 Host 算 Partner 的攻擊，視覺起始點要正確
-                            // 這裡簡化：只顯示「自己」畫面上看到的子彈
-                            // 如果我是 Guest，Host 幫我算的 P2 攻擊不需要產生子彈 (我看不到)
-                            // 相反，我是 Guest，我自己算的 P2 攻擊才要產子彈
+                            // 發射子彈 (一般攻擊)
 
-                            const isMyVisual = (role === 'host' && slotOwner === 'p1') || (role === 'guest' && slotOwner === 'p2');
-                            if (isMyVisual) {
-                                createProjectile(
-                                    { x: getSlotPixelX(slot, slotOwner), y: getSlotPixelY(slot, slotOwner) },
-                                    target,
-                                    slot.dice,
-                                    slotOwner
-                                );
-                            } else if (role === 'host') {
-                                // Host 幫 P2 算傷害，但不產子彈，直接扣血 (或設法模擬擊中?)
-                                // 為了精確，Host 還是要產隱形子彈來計時，或者直接瞬傷?
-                                // 這裡採用: Host 產子彈，但如果不繪製可能會看不見。
-                                // 簡單解法：全部產子彈，Render 時過濾？還是直接讓他飛
-                                // 為了同步感，Host 應該也要看到 P2 的子彈
-                                createProjectile(
-                                    { x: getSlotPixelX(slot, slotOwner), y: getSlotPixelY(slot, slotOwner) },
-                                    target,
-                                    slot.dice,
-                                    slotOwner
-                                );
-                            }
+                            // --- 修正後的邏輯 ---
+                            // 無論我是 Host 還是 Guest，也無論這個骰子是誰的 (P1 或 P2)，
+                            // 只要判定攻擊冷卻結束且有目標，就在本地畫面產生一顆「視覺子彈」。
+                            // 這樣做不消耗網路流量，且能確保雙方畫面看起來一樣熱鬧。
+
+                            createProjectile(
+                                { x: getSlotPixelX(slot, slotOwner), y: getSlotPixelY(slot, slotOwner) },
+                                target,
+                                slot.dice,
+                                slotOwner
+                            );
                         }
                     }
                 }
@@ -1664,6 +1804,40 @@
 
         // 啟動
         init();
+        // ... (原本的 init();) ...
+
+        // --- 新增：安全離開與資料庫清理 ---
+
+        function quitGame() {
+            // 觸發頁面跳轉，這會自動呼叫下方的 beforeunload 事件
+            window.location.href = 'dice.html';
+        }
+
+        // 確保有房號才執行清理註冊
+        if (roomId) {
+            const roomRef = db.ref('coop_rooms/' + roomId);
+
+            if (role === 'host') {
+                // 【房主 HOST】
+                // 1. 設定 "意外斷線" (由 Firebase 伺服器端執行) 自動刪除整個房間
+                roomRef.onDisconnect().remove();
+
+                // 2. 設定 "正常離開/關閉視窗" (由瀏覽器端執行) 立即刪除
+                window.addEventListener('beforeunload', () => {
+                    roomRef.remove();
+                });
+            } else {
+                // 【訪客 GUEST】
+                // 1. 設定 "意外斷線" 只刪除 p2 節點
+                const p2Ref = roomRef.child('players/p2');
+                p2Ref.onDisconnect().remove();
+
+                // 2. 設定 "正常離開/關閉視窗" 立即刪除 p2
+                window.addEventListener('beforeunload', () => {
+                    p2Ref.remove();
+                });
+            }
+        }
 
         function handleGameOver() {
             // 預防機制：如果已經處理過 GameOver 就跳過，避免重複上傳排行榜
@@ -1720,11 +1894,13 @@
         // --- 繪圖函式 (移植自 dice_battle) ---
         function renderDice(ctx, x, y, dice, isLocked) {
             if (!dice) return;
-            // 確保 slotSize 存在
             const slotSize = grid.slotSize;
-            const q = QUALITIES[ALL_DICES.find(d => d.id === dice.id)?.quality || 'common'];
 
-            // 1. 畫外框 (品質顏色)
+            // 為了取得品質顏色 (Common/Rare/Epic 的白框)
+            const dbRef = ALL_DICES.find(d => d.id === dice.id);
+            const q = QUALITIES[dbRef ? dbRef.quality : 'common'];
+
+            // 1. 畫外框 (普通品質顏色)
             ctx.beginPath();
             ctx.strokeStyle = q.color || '#fff';
             ctx.lineWidth = 3;
@@ -1738,16 +1914,26 @@
             ctx.fill();
 
             const dColor = dice.baseColor || "#333";
-            const pattern = ALL_DICES.find(d => d.id === dice.id)?.pattern || dice.id;
+            const pattern = (dbRef && dbRef.pattern) ? dbRef.pattern : dice.id;
             const drawX = x + 6;
             const drawY = y + 6;
             const drawSize = slotSize - 12;
 
             // 3. 畫特徵圖案
-            drawDiceFeature(ctx, drawX, drawY, drawSize, pattern, dColor);
+            if (typeof drawDiceFeature === 'function') {
+                drawDiceFeature(ctx, drawX, drawY, drawSize, pattern, dColor);
+            }
+
+            // --- 新增：這裡是關鍵，呼叫剛才加的特效函式 ---
+            // 放在特徵之後、星星之前，這樣特效框會蓋在圖案上但不會遮住星星
+            if (typeof drawQualityBorder === 'function') {
+                drawQualityBorder(ctx, x, y, slotSize, dice.id);
+            }
 
             // 4. 畫點數 (星級)
-            drawDiceStars(ctx, drawX, drawY, drawSize, dice.lv, dColor);
+            if (typeof drawDiceStars === 'function') {
+                drawDiceStars(ctx, drawX, drawY, drawSize, dice.lv, dColor);
+            }
 
             // 5. 鎖定遮罩
             if (isLocked) {
@@ -1768,6 +1954,8 @@
         }
 
         function drawDiceFeature(ctx, x, y, size, pattern, diceColor) {
+            if (!pattern) return;
+
             const m = size / 2;
             ctx.save();
             ctx.translate(x, y);
@@ -1775,13 +1963,14 @@
             const r = parseInt(diceColor.slice(1, 3), 16);
             const g = parseInt(diceColor.slice(3, 5), 16);
             const b = parseInt(diceColor.slice(5, 7), 16);
-            ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.3)`;
+            ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.3)`; // 稍微加深一點點，更明顯
             ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.12)`;
             ctx.lineWidth = 4;
             ctx.lineCap = "round";
             ctx.lineJoin = "round";
 
             switch (pattern) {
+                // --- Common ---
                 case 'fire':
                     ctx.beginPath();
                     ctx.moveTo(m, size * 0.2); ctx.lineTo(size * 0.8, size * 0.8); ctx.lineTo(size * 0.2, size * 0.8);
@@ -1812,41 +2001,299 @@
                     ctx.lineTo(m, size * 0.8); ctx.lineTo(size * 0.25, m);
                     ctx.closePath(); ctx.stroke(); ctx.fill();
                     break;
-                case 'lock':
+
+                // --- Rare & Epic ---
+                case 'laser_beam': // 雷射：科技感十字準星 + 脈衝光環
+                    // 1. 外圈旋轉光環
+                    ctx.save();
+                    ctx.translate(m, m);
+                    ctx.rotate(Date.now() / 500);
+                    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.4)`;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, size * 0.35, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+
+                    // 2. 中心十字線 (準星)
+                    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.8)`;
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(m - size * 0.2, m); ctx.lineTo(m + size * 0.2, m);
+                    ctx.moveTo(m, m - size * 0.2); ctx.lineTo(m, m + size * 0.2);
+                    ctx.stroke();
+
+                    // 3. 四個角落定位點
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.6)`;
+                    const corners = [
+                        [size * 0.15, size * 0.15],
+                        [size * 0.85, size * 0.15],
+                        [size * 0.15, size * 0.85],
+                        [size * 0.85, size * 0.85]
+                    ];
+                    corners.forEach(([cx, cy]) => {
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+
+                    // 4. 中心發光點
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.9)`;
+                    ctx.beginPath();
+                    ctx.arc(m, m, size * 0.08, 0, Math.PI * 2);
+                    ctx.fill();
+                    break;
+                case 'lock': // 鎖定：方框中帶一個圓點
                     ctx.strokeRect(size * 0.25, size * 0.25, size * 0.5, size * 0.5);
                     ctx.beginPath(); ctx.arc(m, m, 4, 0, Math.PI * 2); ctx.fill();
                     break;
-                case 'teleport':
-                    ctx.beginPath(); ctx.arc(size * 0.3, m, size * 0.3, -Math.PI / 2, Math.PI / 2); ctx.stroke();
-                    ctx.beginPath(); ctx.arc(size * 0.7, m, size * 0.3, Math.PI / 2, -Math.PI / 2); ctx.stroke();
+                case 'teleport': // 傳送：兩個漩渦括號
+                    ctx.beginPath();
+                    ctx.arc(size * 0.3, m, size * 0.3, -Math.PI / 2, Math.PI / 2);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(size * 0.7, m, size * 0.3, Math.PI / 2, -Math.PI / 2);
+                    ctx.stroke();
                     break;
-                case 'gear':
-                    ctx.beginPath(); ctx.setLineDash([5, 5]); ctx.arc(m, m, size * 0.35, 0, Math.PI * 2); ctx.stroke();
-                    ctx.setLineDash([]); ctx.beginPath(); ctx.arc(m, m, size * 0.15, 0, Math.PI * 2); ctx.stroke();
+                case 'gear': // 齒輪：外圈八個齒（用虛線模擬）
+                    ctx.beginPath();
+                    ctx.setLineDash([5, 5]);
+                    ctx.arc(m, m, size * 0.35, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.setLineDash([]); // 恢復實線
+                    ctx.beginPath(); ctx.arc(m, m, size * 0.15, 0, Math.PI * 2); ctx.stroke();
                     break;
-                case 'joker':
-                    ctx.beginPath(); ctx.moveTo(size * 0.2, size * 0.3); ctx.lineTo(size * 0.8, size * 0.3); ctx.lineTo(m, size * 0.8); ctx.closePath(); ctx.stroke();
+
+                // --- Legend ---
+                case 'mighty_wind': // 強風：多重氣流線條
+                    ctx.beginPath();
+                    for (let i = -1; i <= 1; i++) {
+                        ctx.moveTo(size * 0.2, m + i * size * 0.15);
+                        ctx.bezierCurveTo(m, m + i * size * 0.4, m, m - i * size * 0.4, size * 0.8, m + i * size * 0.15);
+                    }
+                    ctx.stroke();
+                    break;
+
+                // --- 聖域 (Sanctuary) 光環圓圈 ---
+                case 'sanctuary':
+                    // 1. 外圈光環
+                    ctx.beginPath();
+                    ctx.arc(m, m, size * 0.35, 0, Math.PI * 2);
+                    ctx.stroke();
+                    // 2. 中圈光環
+                    ctx.beginPath();
+                    ctx.arc(m, m, size * 0.25, 0, Math.PI * 2);
+                    ctx.stroke();
+                    // 3. 中心十字
+                    ctx.beginPath();
+                    ctx.moveTo(m - size * 0.1, m); ctx.lineTo(m + size * 0.1, m);
+                    ctx.moveTo(m, m - size * 0.1); ctx.lineTo(m, m + size * 0.1);
+                    ctx.stroke();
+                    // 4. 四個光點
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.6)`;
+                    [0, 90, 180, 270].forEach(angle => {
+                        const rad = angle * Math.PI / 180;
+                        const px = m + Math.cos(rad) * size * 0.3;
+                        const py = m + Math.sin(rad) * size * 0.3;
+                        ctx.beginPath();
+                        ctx.arc(px, py, size * 0.04, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                    break;
+
+                // --- 彗星 (Comet) 彗星拖尾 ---
+                case 'comet':
+                    // 1. 彗星本體
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.8)`;
+                    ctx.beginPath();
+                    ctx.arc(size * 0.65, size * 0.35, size * 0.12, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                    // 2. 拖尾（三條流光）
+                    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.5)`;
+                    for (let i = -1; i <= 1; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(size * 0.65, size * 0.35);
+                        ctx.quadraticCurveTo(
+                            size * 0.4, size * 0.5 + i * size * 0.1,
+                            size * 0.15, size * 0.7 + i * size * 0.15
+                        );
+                        ctx.stroke();
+                    }
+                    // 3. 尾部星點
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.4)`;
+                    [[0.3, 0.55], [0.2, 0.65], [0.15, 0.75]].forEach(([px, py]) => {
+                        ctx.beginPath();
+                        ctx.arc(size * px, size * py, size * 0.03, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                    break;
+
+                // --- 連鎖 (Chain) 閃電鏈 ---
+                case 'chain':
+                    // 三個目標點
+                    const chainPoints = [
+                        [size * 0.2, size * 0.25],
+                        [size * 0.5, size * 0.65],
+                        [size * 0.8, size * 0.35]
+                    ];
+                    // 繪製閃電連線
+                    ctx.lineWidth = 2.5;
+                    for (let i = 0; i < chainPoints.length - 1; i++) {
+                        const [x1, y1] = chainPoints[i];
+                        const [x2, y2] = chainPoints[i + 1];
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        // 鋸齒效果
+                        const segments = 3;
+                        for (let s = 1; s <= segments; s++) {
+                            const t = s / segments;
+                            const mx = x1 + (x2 - x1) * t;
+                            const my = y1 + (y2 - y1) * t;
+                            const offset = (s % 2 === 0 ? 1 : -1) * size * 0.08;
+                            ctx.lineTo(mx + offset, my);
+                        }
+                        ctx.lineTo(x2, y2);
+                        ctx.stroke();
+                    }
+                    // 繪製目標點
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.7)`;
+                    chainPoints.forEach(([px, py]) => {
+                        ctx.beginPath();
+                        ctx.arc(px, py, size * 0.06, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                    break;
+
+                // --- 毀滅 (Doom) 末日時鐘 ---
+                case 'doom':
+                    // 1. 時鐘外圈
+                    ctx.beginPath();
+                    ctx.arc(m, m, size * 0.35, 0, Math.PI * 2);
+                    ctx.stroke();
+                    // 2. 12點刻度
+                    [0, 90, 180, 270].forEach(angle => {
+                        const rad = angle * Math.PI / 180 - Math.PI / 2;
+                        const x1 = m + Math.cos(rad) * size * 0.3;
+                        const y1 = m + Math.sin(rad) * size * 0.3;
+                        const x2 = m + Math.cos(rad) * size * 0.35;
+                        const y2 = m + Math.sin(rad) * size * 0.35;
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        ctx.lineTo(x2, y2);
+                        ctx.stroke();
+                    });
+                    // 3. 指針（指向12點 - 死亡象徵）
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.9)`;
+                    ctx.beginPath();
+                    ctx.moveTo(m, m);
+                    ctx.lineTo(m, m - size * 0.25);
+                    ctx.stroke();
+                    // 4. 中心點
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.8)`;
+                    ctx.beginPath();
+                    ctx.arc(m, m, size * 0.06, 0, Math.PI * 2);
+                    ctx.fill();
+                    break;
+                case 'joker': // 小丑：倒三角形加上上方兩點
+                    ctx.beginPath();
+                    ctx.moveTo(size * 0.2, size * 0.3); ctx.lineTo(size * 0.8, size * 0.3);
+                    ctx.lineTo(m, size * 0.8); ctx.closePath(); ctx.stroke();
                     ctx.beginPath(); ctx.arc(size * 0.35, size * 0.2, 3, 0, Math.PI * 2); ctx.fill();
                     ctx.beginPath(); ctx.arc(size * 0.65, size * 0.2, 3, 0, Math.PI * 2); ctx.fill();
                     break;
-                case 'growth':
-                    ctx.beginPath(); ctx.moveTo(m, size * 0.15); ctx.lineTo(m, size * 0.85);
+                case 'growth': // 成長：向上的箭頭
+                    ctx.beginPath();
+                    ctx.moveTo(m, size * 0.15); ctx.lineTo(m, size * 0.85);
                     ctx.moveTo(m, size * 0.15); ctx.lineTo(size * 0.3, size * 0.4);
                     ctx.moveTo(m, size * 0.15); ctx.lineTo(size * 0.7, size * 0.4);
                     ctx.stroke();
                     break;
-                case 'sun':
-                    ctx.beginPath(); ctx.arc(m, m, size * 0.15, 0, Math.PI * 2); ctx.stroke(); ctx.fill();
-                    ctx.lineWidth = 2;
+                case 'sun': // 太陽：圓形放射狀 (優化版：縮小射線範圍，避開星數點點)
+                    // 1. 中心圓縮小一點點
+                    ctx.beginPath();
+                    ctx.arc(m, m, size * 0.15, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.fill();
+
+                    // 2. 射線調整：縮短長度，並將線條變細，避免干擾
+                    ctx.lineWidth = 2; // 射線用細線
                     for (let i = 0; i < 8; i++) {
-                        ctx.save(); ctx.translate(m, m); ctx.rotate((i * Math.PI / 4) + (Math.PI / 8));
-                        ctx.beginPath(); ctx.moveTo(0, -size * 0.22); ctx.lineTo(0, -size * 0.32); ctx.stroke(); ctx.restore();
+                        ctx.save();
+                        ctx.translate(m, m);
+                        // 旋轉 22.5 度 (Math.PI / 8)，讓射線錯開正方形的四角與正中心
+                        ctx.rotate((i * Math.PI / 4) + (Math.PI / 8));
+                        ctx.beginPath();
+                        // 射線從中心 0.22 延伸到 0.32，確保它留在骰子中間區域，不碰到邊緣的星點
+                        ctx.moveTo(0, -size * 0.22);
+                        ctx.lineTo(0, -size * 0.32);
+                        ctx.stroke();
+                        ctx.restore();
                     }
+                    // 恢復原始線寬供後續圖形使用
                     ctx.lineWidth = 4;
                     break;
-                case 'galaxy':
-                    ctx.beginPath(); ctx.moveTo(m, size * 0.1); ctx.bezierCurveTo(size * 0.9, size * 0.1, size * 0.1, size * 0.9, m, size * 0.9); ctx.stroke();
+
+                // --- Mythic ---
+                case 'galaxy': // 銀河：旋渦狀 S 型
+                    ctx.beginPath();
+                    ctx.moveTo(m, size * 0.1);
+                    ctx.bezierCurveTo(size * 0.9, size * 0.1, size * 0.1, size * 0.9, m, size * 0.9);
+                    ctx.stroke();
                     ctx.beginPath(); ctx.arc(m, m, size * 0.1, 0, Math.PI * 2); ctx.fill();
+                    break;
+                // --- 易傷 (Crack) 外觀：碎裂水晶效果 ---
+                case 'crack':
+                    // 1. 中心爆裂點
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.5)`;
+                    ctx.beginPath();
+                    ctx.arc(m, m, size * 0.12, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // 2. 多方向裂紋擴散
+                    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.7)`;
+                    ctx.lineWidth = 2.5;
+                    const crackAngles = [0, 45, 90, 135, 180, 225, 270, 315];
+                    crackAngles.forEach(angle => {
+                        const rad = angle * Math.PI / 180;
+                        const x1 = m + Math.cos(rad) * size * 0.12;
+                        const y1 = m + Math.sin(rad) * size * 0.12;
+                        const x2 = m + Math.cos(rad) * size * 0.42;
+                        const y2 = m + Math.sin(rad) * size * 0.42;
+
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        ctx.lineTo(x2, y2);
+                        ctx.stroke();
+                    });
+
+                    // 3. 外圍碎片點綴
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.4)`;
+                    [0.1, 0.25, 0.75, 0.9].forEach(ratio => {
+                        ctx.beginPath();
+                        ctx.arc(size * ratio, size * 0.15, 1.5, 0, Math.PI * 2);
+                        ctx.arc(size * ratio, size * 0.85, 1.5, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                    break;
+
+                // --- 礦山 (Mine) 外觀：一個 T 字型的鎬頭 ---
+                case 'mine':
+                    ctx.beginPath();
+                    // 鎬頭的弧形金屬部分
+                    ctx.moveTo(size * 0.25, size * 0.35);
+                    ctx.quadraticCurveTo(m, size * 0.15, size * 0.75, size * 0.35);
+                    ctx.stroke();
+                    // 鎬頭的木柄
+                    ctx.beginPath();
+                    ctx.moveTo(m, size * 0.25);
+                    ctx.lineTo(m, size * 0.75);
+                    ctx.stroke();
+                    // 裝飾一個小錢幣圓點
+                    ctx.beginPath();
+                    ctx.arc(m + size * 0.15, size * 0.7, size * 0.08, 0, Math.PI * 2);
+                    ctx.fill(); ctx.stroke();
                     break;
             }
             ctx.restore();
@@ -1885,7 +2332,104 @@
                 ctx.fill();
             });
         }
+        // --- 新增：品質邊框特效 (從 Dice Battle 移植) ---
+        function drawQualityBorder(ctx, x, y, size, diceId) {
+            if (!diceId) return;
+            const db = ALL_DICES.find(d => d.id === diceId);
+            if (!db) return;
 
+            const quality = db.quality;
+            if (quality !== 'legend' && quality !== 'mythic') return;
+
+            const time = Date.now() / 1000;
+
+            ctx.save();
+            ctx.translate(x, y);
+
+            if (quality === 'legend') {
+                // --- 傳說 (Legend) ---
+                const shimmer = (Math.sin(time * 3) + 1) / 2;
+
+                // 1. 底層光暈
+                ctx.strokeStyle = `rgba(234, 179, 8, ${0.3 + shimmer * 0.2})`;
+                ctx.lineWidth = 6;
+                ctx.beginPath();
+                drawRoundedRect(ctx, 1, 1, size - 2, size - 2, 8);
+                ctx.stroke();
+
+                // 2. 核心金框
+                const grad = ctx.createLinearGradient(0, 0, size, size);
+                grad.addColorStop(0, '#B8860B');
+                grad.addColorStop(0.5 + Math.sin(time) * 0.2, '#FFD700');
+                grad.addColorStop(1, '#B8860B');
+
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                drawRoundedRect(ctx, 3, 3, size - 6, size - 6, 8);
+                ctx.stroke();
+
+                // 3. 實體黃金護角
+                ctx.fillStyle = "#FFD700";
+                const offset = 4; const cornerW = 3.5;
+                // 左上
+                ctx.fillRect(0, offset, cornerW, cornerW); ctx.fillRect(offset, 0, cornerW, cornerW);
+                // 右上
+                ctx.fillRect(size - cornerW, offset, cornerW, cornerW); ctx.fillRect(size - offset - cornerW, 0, cornerW, cornerW);
+                // 右下
+                ctx.fillRect(size - cornerW, size - offset - cornerW, cornerW, cornerW); ctx.fillRect(size - offset - cornerW, size - cornerW, cornerW, cornerW);
+                // 左下
+                ctx.fillRect(0, size - offset - cornerW, cornerW, cornerW); ctx.fillRect(offset, size - cornerW, cornerW, cornerW);
+
+            } else if (quality === 'mythic') {
+                // --- 神話 (Mythic) ---
+                const hue = (time * 60) % 360;
+
+                // 1. 霓虹底光
+                ctx.strokeStyle = `hsla(${hue}, 100%, 50%, 0.25)`;
+                ctx.lineWidth = 6;
+                ctx.beginPath();
+                drawRoundedRect(ctx, 2, 2, size - 4, size - 4, 10);
+                ctx.stroke();
+
+                // 2. 虛線流動
+                ctx.strokeStyle = `hsla(${hue}, 100%, 80%, 0.9)`;
+                ctx.lineWidth = 2;
+                ctx.setLineDash([8, 6]);
+                ctx.lineDashOffset = -time * 25;
+                ctx.beginPath();
+                drawRoundedRect(ctx, 2, 2, size - 4, size - 4, 10);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // 3. 懸浮能量支架 (L型)
+                ctx.strokeStyle = `hsla(${(hue + 180) % 360}, 100%, 75%, 0.9)`;
+                ctx.lineCap = "round"; ctx.lineWidth = 3;
+                const cLen = size * 0.15; const cOff = 1.5;
+
+                ctx.beginPath();
+                // 左上 L
+                ctx.moveTo(cOff, cOff + cLen); ctx.lineTo(cOff, cOff); ctx.lineTo(cOff + cLen, cOff);
+                // 右上 L
+                ctx.moveTo(size - cOff - cLen, cOff); ctx.lineTo(size - cOff, cOff); ctx.lineTo(size - cOff, cOff + cLen);
+                // 右下 L
+                ctx.moveTo(size - cOff, size - cOff - cLen); ctx.lineTo(size - cOff, size - cOff); ctx.lineTo(size - cOff - cLen, size - cOff);
+                // 左下 L
+                ctx.moveTo(cOff + cLen, size - cOff); ctx.lineTo(cOff, size - cOff); ctx.lineTo(cOff, size - cOff - cLen);
+                ctx.stroke();
+
+                // 4. 角落能量點
+                ctx.fillStyle = "#fff";
+                const dotSize = 1.5;
+                ctx.beginPath();
+                ctx.arc(cOff, cOff, dotSize, 0, Math.PI * 2);
+                ctx.arc(size - cOff, cOff, dotSize, 0, Math.PI * 2);
+                ctx.arc(size - cOff, size - cOff, dotSize, 0, Math.PI * 2);
+                ctx.arc(cOff, size - cOff, dotSize, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
     </script>
     <!-- Game Over Modal -->
     <div id="game-over-modal"
@@ -1902,7 +2446,7 @@
                 <div id="player-names" class="text-blue-300 font-medium">載入中...</div>
             </div>
 
-            <button onclick="location.href='dice.html'"
+            <button onclick="quitGame()"
                 class="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl font-bold text-white text-xl shadow-lg active:scale-95 transition-all hover:scale-105">
                 返回大廳
             </button>
