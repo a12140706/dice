@@ -1215,112 +1215,107 @@
         // --- 新增：品質邊框特效 ---
         // --- 全新的傳說/神話邊框渲染函式 ---
        // --- 高效能版：品質邊框特效 (Mobile Optimized - Final Polish) ---
-function drawQualityBorder(ctx, x, y, size, diceId) {
-    if (!diceId) return;
-    const db = ALL_DICES.find(d => d.id === diceId);
-    if (!db) return;
+// --- 高效能版：品質邊框特效 (移除 setTransform 通用版) ---
+        function drawQualityBorder(ctx, x, y, size, diceId) {
+            if (!diceId) return;
+            const db = ALL_DICES.find(d => d.id === diceId);
+            if (!db) return;
 
-    const quality = db.quality;
-    if (quality !== 'legend' && quality !== 'mythic') return;
+            const quality = db.quality;
+            if (quality !== 'legend' && quality !== 'mythic') return;
 
-    const time = Date.now() / 1000;
-    
-    ctx.save();
-    ctx.setTransform(1, 0, 0, 1, 0, 0); 
-    ctx.translate(x, y);
+            const time = Date.now() / 1000;
 
-    if (quality === 'legend') {
-        // --- 傳說 (Legend)：厚重金屬風格 ---
-        const shimmer = (Math.sin(time * 3) + 1) / 2; 
+            ctx.save();
+            // 修正：移除 setTransform，直接 translate 即可
+            // 這樣無論是在大廳(dice.html)還是戰鬥(dice_battle.html)都通用
+            ctx.translate(x, y);
 
-        // 1. 底層光暈 (模擬發光)
-        ctx.strokeStyle = `rgba(234, 179, 8, ${0.3 + shimmer * 0.2})`;
-        ctx.lineWidth = 6;
-        ctx.beginPath();
-        drawRoundedRect(ctx, 1, 1, size - 2, size - 2, 8);
-        ctx.stroke();
+            if (quality === 'legend') {
+                // --- 傳說 (Legend) ---
+                const shimmer = (Math.sin(time * 3) + 1) / 2;
 
-        // 2. 核心金框
-        const grad = ctx.createLinearGradient(0, 0, size, size);
-        grad.addColorStop(0, '#B8860B');
-        grad.addColorStop(0.5 + Math.sin(time)*0.2, '#FFD700');
-        grad.addColorStop(1, '#B8860B');
+                // 1. 底層光暈
+                ctx.strokeStyle = `rgba(234, 179, 8, ${0.3 + shimmer * 0.2})`;
+                ctx.lineWidth = 6;
+                ctx.beginPath();
+                drawRoundedRect(ctx, 1, 1, size - 2, size - 2, 8);
+                ctx.stroke();
 
-        ctx.strokeStyle = grad;
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-        drawRoundedRect(ctx, 3, 3, size - 6, size - 6, 8);
-        ctx.stroke();
+                // 2. 核心金框
+                const grad = ctx.createLinearGradient(0, 0, size, size);
+                grad.addColorStop(0, '#B8860B');
+                grad.addColorStop(0.5 + Math.sin(time) * 0.2, '#FFD700');
+                grad.addColorStop(1, '#B8860B');
 
-        // 3. 實體黃金護角 (實心正方形)
-        ctx.fillStyle = "#FFD700";
-        const offset = 4;
-        const cornerW = 3.5;
-        // 左上
-        ctx.fillRect(0, offset, cornerW, cornerW); ctx.fillRect(offset, 0, cornerW, cornerW);
-        // 右上
-        ctx.fillRect(size - cornerW, offset, cornerW, cornerW); ctx.fillRect(size - offset - cornerW, 0, cornerW, cornerW);
-        // 右下
-        ctx.fillRect(size - cornerW, size - offset - cornerW, cornerW, cornerW); ctx.fillRect(size - offset - cornerW, size - cornerW, cornerW, cornerW);
-        // 左下
-        ctx.fillRect(0, size - offset - cornerW, cornerW, cornerW); ctx.fillRect(offset, size - cornerW, cornerW, cornerW);
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                drawRoundedRect(ctx, 3, 3, size - 6, size - 6, 8);
+                ctx.stroke();
 
-    } else if (quality === 'mythic') {
-        // --- 神話 (Mythic)：虛空科技風格 ---
-        const hue = (time * 60) % 360; 
-        
-        // 1. 霓虹流動外框
-        // 底層 (Glow)
-        ctx.strokeStyle = `hsla(${hue}, 100%, 50%, 0.25)`;
-        ctx.lineWidth = 6;
-        ctx.beginPath();
-        drawRoundedRect(ctx, 2, 2, size - 4, size - 4, 10);
-        ctx.stroke();
+                // 3. 實體黃金護角
+                ctx.fillStyle = "#FFD700";
+                const offset = 4;
+                const cornerW = 3.5;
+                
+                ctx.fillRect(0, offset, cornerW, cornerW); ctx.fillRect(offset, 0, cornerW, cornerW); // 左上
+                ctx.fillRect(size - cornerW, offset, cornerW, cornerW); ctx.fillRect(size - offset - cornerW, 0, cornerW, cornerW); // 右上
+                ctx.fillRect(size - cornerW, size - offset - cornerW, cornerW, cornerW); ctx.fillRect(size - offset - cornerW, size - cornerW, cornerW, cornerW); // 右下
+                ctx.fillRect(0, size - offset - cornerW, cornerW, cornerW); ctx.fillRect(offset, size - cornerW, cornerW, cornerW); // 左下
 
-        // 上層虛線 (流動能量)
-        ctx.strokeStyle = `hsla(${hue}, 100%, 80%, 0.9)`;
-        ctx.lineWidth = 2;
-        ctx.setLineDash([8, 6]); // 虛線間隔
-        ctx.lineDashOffset = -time * 25; // 流動速度
-        ctx.beginPath();
-        drawRoundedRect(ctx, 2, 2, size - 4, size - 4, 10);
-        ctx.stroke();
-        ctx.setLineDash([]); // 重置
+            } else if (quality === 'mythic') {
+                // --- 神話 (Mythic) ---
+                const hue = (time * 60) % 360;
 
-        // 2. 四角懸浮能量支架 (Tech Brackets)
-        // 這是神話專屬的裝飾：類似科幻 HUD 的 L 型護角
-        ctx.lineCap = "round";
-        ctx.lineWidth = 3;
-        // 讓角落顏色跟著流動變色，但稍微亮一點
-        ctx.strokeStyle = `hsla(${(hue + 180) % 360}, 100%, 75%, 0.9)`; 
-        
-        const cLen = size * 0.15; // 護角長度
-        const cOff = 1.5; // 稍微向外懸浮，包覆住內框
+                // 1. 霓虹底光
+                ctx.strokeStyle = `hsla(${hue}, 100%, 50%, 0.25)`;
+                ctx.lineWidth = 6;
+                ctx.beginPath();
+                drawRoundedRect(ctx, 2, 2, size - 4, size - 4, 10);
+                ctx.stroke();
 
-        ctx.beginPath();
-        // 左上 L
-        ctx.moveTo(cOff, cOff + cLen); ctx.lineTo(cOff, cOff); ctx.lineTo(cOff + cLen, cOff);
-        // 右上 L
-        ctx.moveTo(size - cOff - cLen, cOff); ctx.lineTo(size - cOff, cOff); ctx.lineTo(size - cOff, cOff + cLen);
-        // 右下 L
-        ctx.moveTo(size - cOff, size - cOff - cLen); ctx.lineTo(size - cOff, size - cOff); ctx.lineTo(size - cOff - cLen, size - cOff);
-        // 左下 L
-        ctx.moveTo(cOff + cLen, size - cOff); ctx.lineTo(cOff, size - cOff); ctx.lineTo(cOff, size - cOff - cLen);
-        ctx.stroke();
+                // 2. 虛線流動
+                ctx.strokeStyle = `hsla(${hue}, 100%, 80%, 0.9)`;
+                ctx.lineWidth = 2;
+                ctx.setLineDash([8, 6]);
+                ctx.lineDashOffset = -time * 25;
+                ctx.beginPath();
+                drawRoundedRect(ctx, 2, 2, size - 4, size - 4, 10);
+                ctx.stroke();
+                ctx.setLineDash([]);
 
-        // 3. 四個頂點能量點 (裝飾在 L 型轉角處)
-        ctx.fillStyle = "#fff";
-        const dotSize = 1.5;
-        ctx.beginPath();
-        ctx.arc(cOff, cOff, dotSize, 0, Math.PI*2); // 左上
-        ctx.arc(size-cOff, cOff, dotSize, 0, Math.PI*2); // 右上
-        ctx.arc(size-cOff, size-cOff, dotSize, 0, Math.PI*2); // 右下
-        ctx.arc(cOff, size-cOff, dotSize, 0, Math.PI*2); // 左下
-        ctx.fill();
-    }
+                // 3. 懸浮能量支架 (L型)
+                ctx.strokeStyle = `hsla(${(hue + 180) % 360}, 100%, 75%, 0.9)`;
+                ctx.lineCap = "round";
+                ctx.lineWidth = 3;
+                const cLen = size * 0.15;
+                const cOff = 1.5;
 
-    ctx.restore();
-}
+                ctx.beginPath();
+                // 左上 L
+                ctx.moveTo(cOff, cOff + cLen); ctx.lineTo(cOff, cOff); ctx.lineTo(cOff + cLen, cOff);
+                // 右上 L
+                ctx.moveTo(size - cOff - cLen, cOff); ctx.lineTo(size - cOff, cOff); ctx.lineTo(size - cOff, cOff + cLen);
+                // 右下 L
+                ctx.moveTo(size - cOff, size - cOff - cLen); ctx.lineTo(size - cOff, size - cOff); ctx.lineTo(size - cOff - cLen, size - cOff);
+                // 左下 L
+                ctx.moveTo(cOff + cLen, size - cOff); ctx.lineTo(cOff, size - cOff); ctx.lineTo(cOff, size - cOff - cLen);
+                ctx.stroke();
+
+                // 4. 角落能量點
+                ctx.fillStyle = "#fff";
+                const dotSize = 1.5;
+                ctx.beginPath();
+                ctx.arc(cOff, cOff, dotSize, 0, Math.PI * 2);
+                ctx.arc(size - cOff, cOff, dotSize, 0, Math.PI * 2);
+                ctx.arc(size - cOff, size - cOff, dotSize, 0, Math.PI * 2);
+                ctx.arc(cOff, size - cOff, dotSize, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.restore();
+        }
 // --- 補上缺失的工具函式 ---
         function drawRoundedRect(ctx, x, y, w, h, r) {
             if (w < 2 * r) r = w / 2;

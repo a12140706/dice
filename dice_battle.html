@@ -2276,6 +2276,7 @@
         // --- 新增：品質邊框特效 ---
         // --- 全新的傳說/神話邊框渲染函式 ---
         // --- 高效能版：品質邊框特效 (Mobile Optimized - Final Polish) ---
+        // --- 高效能版：品質邊框特效 (移除 setTransform 以適配戰鬥畫布) ---
         function drawQualityBorder(ctx, x, y, size, diceId) {
             if (!diceId) return;
             const db = ALL_DICES.find(d => d.id === diceId);
@@ -2287,14 +2288,14 @@
             const time = Date.now() / 1000;
 
             ctx.save();
-            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            // 修正：移除 setTransform，直接 translate 即可
             ctx.translate(x, y);
 
             if (quality === 'legend') {
-                // --- 傳說 (Legend)：厚重金屬風格 ---
+                // --- 傳說 (Legend) ---
                 const shimmer = (Math.sin(time * 3) + 1) / 2;
 
-                // 1. 底層光暈 (模擬發光)
+                // 1. 底層光暈
                 ctx.strokeStyle = `rgba(234, 179, 8, ${0.3 + shimmer * 0.2})`;
                 ctx.lineWidth = 6;
                 ctx.beginPath();
@@ -2313,50 +2314,43 @@
                 drawRoundedRect(ctx, 3, 3, size - 6, size - 6, 8);
                 ctx.stroke();
 
-                // 3. 實體黃金護角 (實心正方形)
+                // 3. 實體黃金護角
                 ctx.fillStyle = "#FFD700";
                 const offset = 4;
                 const cornerW = 3.5;
-                // 左上
-                ctx.fillRect(0, offset, cornerW, cornerW); ctx.fillRect(offset, 0, cornerW, cornerW);
-                // 右上
-                ctx.fillRect(size - cornerW, offset, cornerW, cornerW); ctx.fillRect(size - offset - cornerW, 0, cornerW, cornerW);
-                // 右下
-                ctx.fillRect(size - cornerW, size - offset - cornerW, cornerW, cornerW); ctx.fillRect(size - offset - cornerW, size - cornerW, cornerW, cornerW);
-                // 左下
-                ctx.fillRect(0, size - offset - cornerW, cornerW, cornerW); ctx.fillRect(offset, size - cornerW, cornerW, cornerW);
+                
+                ctx.fillRect(0, offset, cornerW, cornerW); ctx.fillRect(offset, 0, cornerW, cornerW); // 左上
+                ctx.fillRect(size - cornerW, offset, cornerW, cornerW); ctx.fillRect(size - offset - cornerW, 0, cornerW, cornerW); // 右上
+                ctx.fillRect(size - cornerW, size - offset - cornerW, cornerW, cornerW); ctx.fillRect(size - offset - cornerW, size - cornerW, cornerW, cornerW); // 右下
+                ctx.fillRect(0, size - offset - cornerW, cornerW, cornerW); ctx.fillRect(offset, size - cornerW, cornerW, cornerW); // 左下
 
             } else if (quality === 'mythic') {
-                // --- 神話 (Mythic)：虛空科技風格 ---
+                // --- 神話 (Mythic) ---
                 const hue = (time * 60) % 360;
 
-                // 1. 霓虹流動外框
-                // 底層 (Glow)
+                // 1. 霓虹底光
                 ctx.strokeStyle = `hsla(${hue}, 100%, 50%, 0.25)`;
                 ctx.lineWidth = 6;
                 ctx.beginPath();
                 drawRoundedRect(ctx, 2, 2, size - 4, size - 4, 10);
                 ctx.stroke();
 
-                // 上層虛線 (流動能量)
+                // 2. 虛線流動
                 ctx.strokeStyle = `hsla(${hue}, 100%, 80%, 0.9)`;
                 ctx.lineWidth = 2;
-                ctx.setLineDash([8, 6]); // 虛線間隔
-                ctx.lineDashOffset = -time * 25; // 流動速度
+                ctx.setLineDash([8, 6]);
+                ctx.lineDashOffset = -time * 25;
                 ctx.beginPath();
                 drawRoundedRect(ctx, 2, 2, size - 4, size - 4, 10);
                 ctx.stroke();
-                ctx.setLineDash([]); // 重置
+                ctx.setLineDash([]);
 
-                // 2. 四角懸浮能量支架 (Tech Brackets)
-                // 這是神話專屬的裝飾：類似科幻 HUD 的 L 型護角
+                // 3. 懸浮能量支架 (L型)
+                ctx.strokeStyle = `hsla(${(hue + 180) % 360}, 100%, 75%, 0.9)`;
                 ctx.lineCap = "round";
                 ctx.lineWidth = 3;
-                // 讓角落顏色跟著流動變色，但稍微亮一點
-                ctx.strokeStyle = `hsla(${(hue + 180) % 360}, 100%, 75%, 0.9)`;
-
-                const cLen = size * 0.15; // 護角長度
-                const cOff = 1.5; // 稍微向外懸浮，包覆住內框
+                const cLen = size * 0.15;
+                const cOff = 1.5;
 
                 ctx.beginPath();
                 // 左上 L
@@ -2369,27 +2363,31 @@
                 ctx.moveTo(cOff + cLen, size - cOff); ctx.lineTo(cOff, size - cOff); ctx.lineTo(cOff, size - cOff - cLen);
                 ctx.stroke();
 
-                // 3. 四個頂點能量點 (裝飾在 L 型轉角處)
+                // 4. 角落能量點
                 ctx.fillStyle = "#fff";
                 const dotSize = 1.5;
                 ctx.beginPath();
-                ctx.arc(cOff, cOff, dotSize, 0, Math.PI * 2); // 左上
-                ctx.arc(size - cOff, cOff, dotSize, 0, Math.PI * 2); // 右上
-                ctx.arc(size - cOff, size - cOff, dotSize, 0, Math.PI * 2); // 右下
-                ctx.arc(cOff, size - cOff, dotSize, 0, Math.PI * 2); // 左下
+                ctx.arc(cOff, cOff, dotSize, 0, Math.PI * 2);
+                ctx.arc(size - cOff, cOff, dotSize, 0, Math.PI * 2);
+                ctx.arc(size - cOff, size - cOff, dotSize, 0, Math.PI * 2);
+                ctx.arc(cOff, size - cOff, dotSize, 0, Math.PI * 2);
                 ctx.fill();
             }
 
             ctx.restore();
         }
 
-        function renderDice(ctx, x, y, dice, isLocked) {
+       function renderDice(ctx, x, y, dice, isLocked) {
             if (!dice) return;
             const slotSize = grid.slotSize;
 
-            // 1. 畫外框 (品質顏色)
+            // 為了取得品質顏色
+            const dbRef = ALL_DICES.find(d => d.id === dice.id);
+            const q = QUALITIES[dbRef ? dbRef.quality : 'common'];
+
+            // 1. 畫外框 (普通品質顏色)
             ctx.beginPath();
-            ctx.strokeStyle = dice.qualityColor || '#fff';
+            ctx.strokeStyle = q.color || '#fff';
             ctx.lineWidth = 3;
             drawRoundedRect(ctx, x + 4, y + 4, slotSize - 8, slotSize - 8, 8);
             ctx.stroke();
@@ -2400,47 +2398,43 @@
             drawRoundedRect(ctx, x + 6, y + 6, slotSize - 12, slotSize - 12, 6);
             ctx.fill();
 
+            // --- 新增：先畫品質特效 (傳說/神話) ---
+            // 這樣特效會墊在圖案下面，不會遮住內容，也不會變成一片白
+            if (typeof drawQualityBorder === 'function') {
+                // 注意：這裡不使用 setTransform，直接傳入 x, y
+                drawQualityBorder(ctx, x, y, slotSize, dice.id);
+            }
+
             // 準備繪圖參數
             const dColor = dice.baseColor || dice.color || "#333";
-            const pattern = dice.pattern || dice.id;
+            const pattern = (dbRef && dbRef.pattern) ? dbRef.pattern : dice.id;
             const drawX = x + 6;
             const drawY = y + 6;
             const drawSize = slotSize - 12;
-
-
 
             // 3. 畫特徵圖案
             if (typeof drawDiceFeature === 'function') {
                 drawDiceFeature(ctx, drawX, drawY, drawSize, pattern, dColor);
             }
 
-            // 4. 畫點數
+            // 4. 畫點數 (星級)
             if (typeof drawDiceStars === 'function') {
                 drawDiceStars(ctx, drawX, drawY, drawSize, dice.lv, dColor, dice.id);
             }
-            // 2.5. 繪製品質邊框特效（傳說/神話）
-            if (typeof drawQualityBorder === 'function') {
-                drawQualityBorder(ctx, x, y, slotSize, dice.id);
-            }
 
-            // 5. 畫 Boss 鎖定/禁錮遮罩
+            // 5. 鎖定遮罩
             if (isLocked) {
                 ctx.save();
-                // 畫一個深色的半透明層，代表被封印
                 ctx.beginPath();
-                ctx.fillStyle = "rgba(15, 23, 42, 0.75)"; // 使用深色 Slate 色調
+                ctx.fillStyle = "rgba(15, 23, 42, 0.75)";
                 drawRoundedRect(ctx, x + 5, y + 5, slotSize - 10, slotSize - 10, 8);
                 ctx.fill();
-
-                // 畫一個簡單的「X」符號，表示功能停用
                 ctx.beginPath();
                 ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
                 ctx.lineWidth = 2;
-                const padding = slotSize * 0.3;
-                ctx.moveTo(x + padding, y + padding);
-                ctx.lineTo(x + slotSize - padding, y + slotSize - padding);
-                ctx.moveTo(x + slotSize - padding, y + padding);
-                ctx.lineTo(x + padding, y + slotSize - padding);
+                const p = slotSize * 0.3;
+                ctx.moveTo(x + p, y + p); ctx.lineTo(x + slotSize - p, y + slotSize - p);
+                ctx.moveTo(x + slotSize - p, y + p); ctx.lineTo(x + p, y + slotSize - p);
                 ctx.stroke();
                 ctx.restore();
             }

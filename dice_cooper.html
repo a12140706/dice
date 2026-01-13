@@ -770,12 +770,12 @@
         let blackHoles = [];
 
         // --- Host 邏輯: 生怪與移動 ---
+        // --- Host 邏輯: 生怪、移動、狀態更新與擊殺判定 ---
         function updateHostLogic() {
-            // Wave 管理
+            // 1. Wave 管理 (生怪邏輯)
             if (!waveState.waiting) {
                 waveState.timer++;
                 let spawnRate = Math.max(15, 40 - battleState.wave);
-                // Boss 關卡只生成一次 (因為一次 spawnBoss 會生成兩隻)
                 const isBossWave = battleState.wave % 10 === 0;
                 const waveLimit = isBossWave ? 1 : waveState.total;
 
@@ -792,46 +792,53 @@
                 }
             } else {
                 waveState.timer++;
-                if (waveState.timer > 120) { // 休息 2 秒
+                if (waveState.timer > 120) { // 休息 2 秒進下一波
                     battleState.wave++;
-                    waveState.total += 2;
+                    waveState.total += 2; // 每波多兩隻
                     waveState.spawned = 0;
                     waveState.waiting = false;
                     waveState.timer = 0;
                 }
             }
 
-            // 黑洞邏輯
+            // 2. 黑洞邏輯 (Galaxy)
             for (let i = blackHoles.length - 1; i >= 0; i--) {
                 const bh = blackHoles[i];
                 bh.timer++;
-                if (bh.timer > 120) { // 持續 2 秒
+                
+                // 持續 2 秒 (120 frames)
+                if (bh.timer > 120) { 
                     blackHoles.splice(i, 1);
                     continue;
                 }
 
-                // 吸附敌人
+                // 吸附敵人
                 enemies.forEach(e => {
-                    // 判斷權限: 只能吸"能打的怪"
+                    // 權限判斷：只能吸 "屬於該黑洞主人的怪" 或 "公共區域的怪"
+                    // 避免 P1 的黑洞把 P2 的怪吸過來卡住
                     let canHit = false;
                     if (e.owner === bh.owner) canHit = true;
-                    else if (e.pathIndex >= 3) canHit = true;
+                    else if (e.pathIndex >= 3) canHit = true; // 假設 pathIndex >= 3 是公共區
 
                     if (canHit) {
                         const dx = bh.x - e.x;
                         const dy = bh.y - e.y;
                         const dist = Math.hypot(dx, dy);
+                        // 吸力範圍 150
                         if (dist < 150 && dist > 10) {
-                            e.x += dx * 0.05; // 吸力
+                            e.x += dx * 0.05; // 吸力強度
                             e.y += dy * 0.05;
-                            e.hp -= 0.5; // 黑洞傷害
+                            
+                            // 黑洞每幀造成微量傷害 (0.5 * 60 = 30 DPS)
+                            // 這裡設定較低是因為黑洞主要功能是控場
+                            e.hp -= 0.5; 
 
-                            // 黑洞傷害數字 (每 0.5 秒跳一次，深藍色)
+                            // 視覺：每 0.5 秒跳一次傷害數字
                             if (frameCount % 30 === 0) {
                                 damagePopups.push({
                                     x: e.x + (Math.random() * 20 - 10),
                                     y: e.y - 10,
-                                    val: 15, // 0.5 * 30 frames = 15 total dmg approx
+                                    val: 15, 
                                     color: '#6366f1', // Indigo
                                     life: 30
                                 });
@@ -841,38 +848,64 @@
                 });
             }
 
-            // 敵人移動與效果
+            // 3. 敵人狀態更新迴圈 (核心邏輯)
             for (let i = enemies.length - 1; i >= 0; i--) {
                 let e = enemies[i];
 
-                // 1. DOT 傷害 (毒)
+                // --- 狀態效果：毒 (Poison) ---
                 if (e.poisonStacks > 0) {
+                    // 每秒傷害 = 層數 * 2
                     e.hp -= (e.poisonStacks * 2) / 60;
-                    // 每秒跳一次毒傷數字 (紫色)
                     if (frameCount % 60 === 0) {
                         damagePopups.push({
-                            x: e.x, y: e.y - 10,
+                            x: e.x, y: e.y - 15,
                             val: Math.floor(e.poisonStacks * 2),
-                            color: '#a855f7', // Purple
+                            color: '#a855f7',
                             life: 40
                         });
                     }
                 }
 
-                // 狀態恢復
-                if (e.iceTimer > 0) {
-                    e.iceTimer--;
-                    if (e.iceTimer <= 0) e.speed = 1.5; // 恢復速度 (須考慮 Boss 加成?)
-                }
-                if (e.lockTimer > 0) {
-                    e.lockTimer--;
-                    e.speed = 0;
-                } else if (e.iceTimer <= 0 && !e.lockTimer) {
-                    // 這裡簡單恢復，如果有多重 buff 系統可能要改
-                    e.speed = 1.5;
+                // --- 狀態效果：毀滅 (Doom) ---
+                if (e.doomMark) {
+                    // 檢查是否過了持續時間 (15秒)
+                    if (Date.now() - e.doomMark.startTime >= e.doomMark.duration) {
+                        // 時間到：執行斬殺傷害
+                        e.hp -= e.doomMark.damage;
+                        
+                        // 視覺特效：大爆炸與文字
+                        damagePopups.push({ x: e.x, y: e.y, val: "DOOM", color: "#7c3aed", life: 60 });
+                        visualEffects.push({ 
+                            type: 'explosion', 
+                            x: e.x, y: e.y, 
+                            radius: 100, 
+                            color: 'rgba(124, 58, 237, 0.9)', 
+                            life: 30, maxLife: 30 
+                        });
+                        
+                        // 移除標記，避免重複觸發
+                        delete e.doomMark;
+                    }
                 }
 
-                // 2. Boss 技能
+                // --- 狀態恢復 (解凍、解鎖) ---
+                // 優先權：鎖定 (Lock) > 冰凍 (Ice) > 正常
+                if (e.lockTimer > 0) {
+                    e.lockTimer--;
+                    e.speed = 0; // 鎖定時完全靜止
+                } else if (e.iceTimer > 0) {
+                    e.iceTimer--;
+                    // 冰凍時速度尚未恢復，維持被 ice 骰子設定的低速
+                    // 這裡不需要特別設 e.speed，因為 applyDamageLogic 裡已經設了
+                } else {
+                    // 沒有任何異常狀態，恢復基礎速度
+                    // 注意：如果有 Boss 加速 (Snake)，這裡可能會覆蓋掉
+                    // 為了嚴謹，應該要有一個 baseSpeed，但為了簡化，我們先恢復為 1.5
+                    // 如果場上有 Snake Boss 發動技能，onSkill 會再次覆蓋這個值
+                    e.speed = 1.5; 
+                }
+
+                // --- Boss 技能觸發 ---
                 if (e.isBoss) {
                     e.skillTimer = (e.skillTimer || 0) + 1;
                     if (e.skillTimer >= BOSS_TYPES[e.bossType].skillInterval) {
@@ -881,7 +914,7 @@
                     }
                 }
 
-                // 3. 移動
+                // --- 移動邏輯 ---
                 const path = e.owner === 'p1' ? paths.p1 : paths.p2;
                 const target = path[e.pathIndex];
 
@@ -892,42 +925,43 @@
 
                     if (dist < e.speed) {
                         e.pathIndex++;
-                        // 修正位置避免瞬移
-                        if (e.pathIndex < path.length) {
-                            // 還沒到終點
-                        } else {
-                            // 到終點
+                        // 如果超出路徑長度，代表進入終點
+                        if (e.pathIndex >= path.length) {
                             battleState.hp--;
+                            // 檢查是否 Game Over
                             if (battleState.hp <= 0) {
                                 handleGameOver();
                             }
+                            // 移除敵人
                             enemies.splice(i, 1);
-                            continue;
+                            continue; // 進入下一次迴圈
                         }
                     } else {
+                        // 正常移動
                         e.x += (dx / dist) * e.speed;
                         e.y += (dy / dist) * e.speed;
                     }
                 }
 
-                // 死亡移除
+                // --- 死亡判定與 SP 分配 ---
                 if (e.hp <= 0) {
+                    // 1. 根據是誰的怪，給誰 SP
+                    if (e.owner === 'p1') {
+                        battleState.sp += e.rewardSp;
+                        stateCache.sp = battleState.sp; // 更新快取供 Firebase 上傳
+                    } else {
+                        // 如果是 P2 的怪，Host 不能直接改 P2 的 battleState.sp (那是 Guest 本地的)
+                        // Host 必須把這筆錢記在 "公帳" (totalSpP2) 上
+                        // Guest 端會監聽這個值，發現變多了就加自己的錢
+                        stateCache.totalSpP2 = (stateCache.totalSpP2 || 0) + e.rewardSp;
+                    }
+                    
+                    // 2. 移除敵人
                     enemies.splice(i, 1);
-                    // 根據擊殺者給 SP? 目前簡化為 Host 通通拿到 (需改進：共享 SP 或各自擊殺)
-                    // 這版本簡化：擊殺不給 SP，SP 靠時間自動回復或 Pve 獎勵? 
-                    // 為了合作樂趣，我們設定：每殺一隻怪，雙方都加 SP (Host 寫入)
-                    // 這裡先簡單增加 Host 的，並透過 sync 同步給 Guest? 
-                    // 不，Guest 的 SP 是本地維護的。
-                    // 暫定：Host 廣播 "enemy_killed" 事件較複雜，這裡先讓 Host 拿到 SP，Guest 透過模擬擊殺拿 SP
                 }
             }
         }
 
-        // Guest 邏輯: 簡單插值
-        function updateGuestLogic() {
-            // 這裡其實只要依賴 Firebase 數據即可
-            // 但為了流暢，可以做本地預測移動
-        }
 
         // 生成唯一 ID
         function generateId() {
@@ -1179,60 +1213,163 @@
             }
         }
 
-        function applyDamageLogic(target, dmg, type, attackerRole) {
-            target.hp -= dmg;
-            if (target.hp <= 0 && role === 'host') {
-                // 改為：誰的怪就加誰的 SP (不看誰殺的)
-                if (target.owner === 'p1') {
-                    battleState.sp += 10;
-                } else if (target.owner === 'p2') {
-                    // P2 (Guest) 的怪，累積到 P2 獎勵池
-                    stateCache.totalSpP2 = (stateCache.totalSpP2 || 0) + 10;
-                }
+        // --- 完整版傷害邏輯 (與單人模式 1:1 一致) ---
+        function applyDamageLogic(target, dmg, diceId, diceUid, attackerRole) {
+            if (!target || target.hp <= 0) return;
+
+            // 1. 易傷效果 (Crack) 計算
+            if (target.vulnerability) {
+                dmg *= (1 + target.vulnerability / 100);
             }
 
-            // 特殊效果
-            if (type === 'ice') {
-                target.speed = 1.5 * 0.7;
-                target.iceTimer = 60; // 1秒
-            } else if (type === 'poison') {
-                target.poisonStacks = (target.poisonStacks || 0) + 1;
-            } else if (type === 'lock') {
-                if (Math.random() < 0.2) target.lockTimer = 60; // 1秒
-            } else if (type === 'teleport') {
-                if (Math.random() < 0.1 && !target.isBoss) {
-                    // 傳送回起點
-                    target.pathIndex = 1;
-                    const path = target.owner === 'p1' ? paths.p1 : paths.p2;
-                    target.x = path[0].x;
-                    target.y = path[0].y;
+            // 2. 雷射 (Laser) 堆疊計算
+            if (diceId === 'laser') {
+                const spec = getDiceSpecialValue('laser'); // 增幅上限
+                if (target.lastHitId === diceUid) {
+                    target.laserStack = Math.min((target.laserStack || 1) + 1, spec);
+                } else {
+                    target.laserStack = 1;
+                    target.lastHitId = diceUid;
                 }
-            } else if (type === 'electric') {
-                // 連鎖
-                let chainCount = 0;
-                enemies.forEach(e => {
-                    if (chainCount >= 3) return;
-                    if (e === target) return;
-                    // 權限檢查
-                    if (e.owner !== attackerRole && e.pathIndex < 3) return;
+                dmg *= target.laserStack;
+            }
 
-                    if (Math.hypot(e.x - target.x, e.y - target.y) < 150) {
-                        let chainDmg = dmg * 0.5;
-                        e.hp -= chainDmg;
-                        chainCount++;
-                        // 視覺連線與傷害數字
-                        damagePopups.push({
-                            x: e.x, y: e.y - 15,
-                            val: Math.floor(chainDmg),
-                            color: '#facc15', // Yellow
-                            life: 30
+            // 3. 扣血
+            target.hp -= dmg;
+
+            // 4. 擊殺判定與 SP 分配
+            if (target.hp <= 0 && role === 'host') {
+                if (target.owner === 'p1') {
+                    battleState.sp += target.rewardSp || 10;
+                    stateCache.sp = battleState.sp; 
+                } else if (target.owner === 'p2') {
+                    stateCache.totalSpP2 = (stateCache.totalSpP2 || 0) + (target.rewardSp || 10);
+                }
+                // 注意：這裡只處理直接傷害擊殺，狀態傷害擊殺在 updateHostLogic 處理
+            }
+
+            // 5. 顯示傷害數字
+            if (damagePopups.length < 20) {
+                const color = target.vulnerability ? "#f87171" : "#ffffff";
+                damagePopups.push({ 
+                    x: target.x, y: target.y, 
+                    val: Math.floor(dmg), 
+                    life: 30, 
+                    color: color 
+                });
+            }
+
+            // 6. 觸發骰子特殊效果
+            const specVal = getDiceSpecialValue(diceId);
+
+            switch (diceId) {
+                case 'ice': // 冰：緩速
+                    const slowFactor = (1 - specVal / 100);
+                    target.speed = Math.max(0.3, 1.5 * slowFactor);
+                    if (target.iceTimer) clearTimeout(target.iceTimer);
+                    target.iceTimer = setTimeout(() => {
+                        if (target && target.hp > 0) target.speed = 1.5;
+                    }, 1000);
+                    break;
+
+                case 'lock': // 鎖定：機率暈眩
+                    if (Math.random() < 0.2) {
+                        target.speed = 0;
+                        target.lockTimer = specVal * 60; // 轉為 frame (specVal是秒)
+                    }
+                    break;
+
+                case 'crack': // 易傷
+                    target.vulnerability = Math.max(target.vulnerability || 0, specVal);
+                    break;
+
+                case 'poison': // 毒
+                    target.poisonStacks = (target.poisonStacks || 0) + 1;
+                    break;
+
+                case 'electric': // 電：連鎖
+                    const chainRange = 150;
+                    const chainMax = Math.floor(specVal); 
+                    let chained = 0;
+                    
+                    enemies.forEach(e => {
+                        if (chained >= chainMax) return;
+                        if (e === target || e.hp <= 0) return;
+                        
+                        // 權限判斷：只能電自己的怪或公共怪
+                        let canHit = false;
+                        if (e.owner === attackerRole) canHit = true;
+                        else if (e.pathIndex >= 3) canHit = true;
+                        
+                        if (!canHit) return;
+
+                        if (Math.hypot(e.x - target.x, e.y - target.y) < chainRange) {
+                            const chainDmg = dmg * 0.5;
+                            e.hp -= chainDmg;
+                            
+                            // 視覺特效
+                            visualEffects.push({
+                                type: 'lightning',
+                                start: { x: target.x, y: target.y },
+                                end: { x: e.x, y: e.y },
+                                life: 10, maxLife: 10
+                            });
+                            damagePopups.push({ 
+                                x: e.x, y: e.y - 15, 
+                                val: Math.floor(chainDmg), 
+                                life: 20, color: "#fde047" 
+                            });
+                            chained++;
+                        }
+                    });
+                    break;
+
+                case 'teleport': // 傳送
+                    if (Math.random() < (specVal / 100)) {
+                        if (target.isBoss) {
+                            // Boss 免疫傳送，改為暫停
+                            const oldSpd = target.speed;
+                            target.speed = 0;
+                            setTimeout(() => { if(target) target.speed = oldSpd; }, 1000);
+                        } else {
+                            // 傳送回該怪物所屬路徑的起點
+                            target.pathIndex = 1;
+                            const path = target.owner === 'p1' ? paths.p1 : paths.p2;
+                            target.x = path[0].x;
+                            target.y = path[0].y;
+                        }
+                        visualEffects.push({ 
+                            type: 'explosion', x: target.x, y: target.y, 
+                            radius: 40, color: '#8b5cf6', life: 15, maxLife: 15 
                         });
                     }
-                });
-            } else if (type === 'galaxy') {
-                if (Math.random() < 0.05) { // 5% 機率觸發黑洞
-                    blackHoles.push({ x: target.x, y: target.y, timer: 0, owner: attackerRole });
-                }
+                    break;
+
+                case 'galaxy': // 銀河：黑洞
+                    if (Math.random() < 0.05) { // 觸發機率可視需求調整
+                         blackHoles.push({ 
+                             x: target.x, y: target.y, 
+                             timer: 0, 
+                             owner: attackerRole,
+                             force: specVal 
+                         });
+                    }
+                    break;
+
+                case 'doom': // 毀滅：斬殺標記
+                    if (!target.doomMark) {
+                        const doomDmg = target.maxHp * (specVal / 100);
+                        target.doomMark = {
+                            damage: doomDmg,
+                            duration: 15000, // 15秒
+                            startTime: Date.now()
+                        };
+                        visualEffects.push({
+                            type: 'explosion', x: target.x, y: target.y,
+                            radius: 50, color: '#7c3aed', life: 20, maxLife: 20
+                        });
+                    }
+                    break;
             }
         }
 
@@ -1713,7 +1850,19 @@
                 updateUI(); // 重新繪製按鈕
             }
         }
-
+// 取得骰子特殊能力數值 (根據等級計算)
+        function getDiceSpecialValue(diceId, diceLv = 1) {
+            const dice = ALL_DICES.find(d => d.id === diceId);
+            if (!dice || !dice.special) return 0;
+            const userDataLvs = (userData && userData.diceLevels) ? userData.diceLevels : {};
+            // 這裡的 Level 是指「帳號該骰子的等級」(power up level)，不是遊戲內的星數
+            // 但為了簡單，這裡通常用外部等級。若要嚴謹應傳入 userData.diceLevels[diceId]
+            const pLv = userDataLvs[diceId] || 1; 
+            
+            const base = dice.special.value || 0;
+            const grow = dice.special.grow || 0;
+            return base + (pLv - 1) * grow;
+        }
         function updateUILive() {
             // 1. 同步純文字狀態
             document.getElementById('hpText').innerText = battleState.hp;
@@ -2333,6 +2482,7 @@
             });
         }
         // --- 新增：品質邊框特效 (從 Dice Battle 移植) ---
+       // --- 高效能版：品質邊框特效 (移除 setTransform 通用版) ---
         function drawQualityBorder(ctx, x, y, size, diceId) {
             if (!diceId) return;
             const db = ALL_DICES.find(d => d.id === diceId);
@@ -2344,6 +2494,8 @@
             const time = Date.now() / 1000;
 
             ctx.save();
+            // 修正：移除 setTransform，直接 translate 即可
+            // 這樣無論是在大廳(dice.html)還是戰鬥(dice_battle.html)都通用
             ctx.translate(x, y);
 
             if (quality === 'legend') {
@@ -2371,15 +2523,13 @@
 
                 // 3. 實體黃金護角
                 ctx.fillStyle = "#FFD700";
-                const offset = 4; const cornerW = 3.5;
-                // 左上
-                ctx.fillRect(0, offset, cornerW, cornerW); ctx.fillRect(offset, 0, cornerW, cornerW);
-                // 右上
-                ctx.fillRect(size - cornerW, offset, cornerW, cornerW); ctx.fillRect(size - offset - cornerW, 0, cornerW, cornerW);
-                // 右下
-                ctx.fillRect(size - cornerW, size - offset - cornerW, cornerW, cornerW); ctx.fillRect(size - offset - cornerW, size - cornerW, cornerW, cornerW);
-                // 左下
-                ctx.fillRect(0, size - offset - cornerW, cornerW, cornerW); ctx.fillRect(offset, size - cornerW, cornerW, cornerW);
+                const offset = 4;
+                const cornerW = 3.5;
+                
+                ctx.fillRect(0, offset, cornerW, cornerW); ctx.fillRect(offset, 0, cornerW, cornerW); // 左上
+                ctx.fillRect(size - cornerW, offset, cornerW, cornerW); ctx.fillRect(size - offset - cornerW, 0, cornerW, cornerW); // 右上
+                ctx.fillRect(size - cornerW, size - offset - cornerW, cornerW, cornerW); ctx.fillRect(size - offset - cornerW, size - cornerW, cornerW, cornerW); // 右下
+                ctx.fillRect(0, size - offset - cornerW, cornerW, cornerW); ctx.fillRect(offset, size - cornerW, cornerW, cornerW); // 左下
 
             } else if (quality === 'mythic') {
                 // --- 神話 (Mythic) ---
@@ -2404,8 +2554,10 @@
 
                 // 3. 懸浮能量支架 (L型)
                 ctx.strokeStyle = `hsla(${(hue + 180) % 360}, 100%, 75%, 0.9)`;
-                ctx.lineCap = "round"; ctx.lineWidth = 3;
-                const cLen = size * 0.15; const cOff = 1.5;
+                ctx.lineCap = "round";
+                ctx.lineWidth = 3;
+                const cLen = size * 0.15;
+                const cOff = 1.5;
 
                 ctx.beginPath();
                 // 左上 L
@@ -2428,6 +2580,7 @@
                 ctx.arc(cOff, size - cOff, dotSize, 0, Math.PI * 2);
                 ctx.fill();
             }
+
             ctx.restore();
         }
     </script>
