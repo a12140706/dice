@@ -1350,7 +1350,7 @@
 
                 // 1. 外框 (深色打底，製造陰影感)
                 ctx.strokeStyle = '#B8860B'; // 暗金色
-                ctx.lineWidth = lw * 2.5;
+                ctx.lineWidth = lw * 1.2; // 減薄外框
                 pathRound(1, 1, size - 2, size - 2, size * 0.18);
                 ctx.stroke();
 
@@ -1362,7 +1362,7 @@
                 grad.addColorStop(1, '#8A6E2F'); // 暗角
 
                 ctx.strokeStyle = grad;
-                ctx.lineWidth = lw * 1.5;
+                ctx.lineWidth = lw * 0.9; // 減薄主框
                 pathRound(2, 2, size - 4, size - 4, size * 0.17);
                 ctx.stroke();
 

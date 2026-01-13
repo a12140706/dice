@@ -1492,7 +1492,27 @@
             if (hpEl) hpEl.innerText = battleState.hp;
             if (waveEl) waveEl.innerText = battleState.wave;
 
-            // (選做) 這裡還可以即時檢查按鈕是否該變亮/變暗，而不重新繪製按鈕
+            // 即時更新強化按鈕的邊框顏色（不重新生成 HTML，只改 class）
+            userData.deck.forEach(id => {
+                const btn = document.querySelector(`button[onclick*="powerUpDice('${id}')"]`);
+                if (!btn) return;
+
+                const lv = powerUpLevels[id] || 1;
+                const cost = 100 * Math.pow(2, lv - 1);
+                const isMax = lv >= 5;
+
+                // 移除所有可能的邊框 class
+                btn.classList.remove('border-blue-500', 'border-slate-700', 'border-yellow-500', 'shadow-[0_0_5px_rgba(234,179,8,0.3)]');
+
+                // 根據當前狀態添加對應的 class
+                if (isMax) {
+                    btn.classList.add('border-yellow-500', 'shadow-[0_0_5px_rgba(234,179,8,0.3)]');
+                } else if (battleState.sp >= cost) {
+                    btn.classList.add('border-blue-500');
+                } else {
+                    btn.classList.add('border-slate-700');
+                }
+            });
         }
 
         // 只有在「強化等級改變」或「召喚骰子」時才呼叫這個
@@ -2405,7 +2425,7 @@
 
                 // 1. 外框 (深色打底，製造陰影感)
                 ctx.strokeStyle = '#B8860B'; // 暗金色
-                ctx.lineWidth = lw * 2.5;
+                ctx.lineWidth = lw * 1.2; // 減薄外框
                 pathRound(1, 1, size - 2, size - 2, size * 0.18);
                 ctx.stroke();
 
@@ -2417,7 +2437,7 @@
                 grad.addColorStop(1, '#8A6E2F'); // 暗角
 
                 ctx.strokeStyle = grad;
-                ctx.lineWidth = lw * 1.5;
+                ctx.lineWidth = lw * 0.9; // 減薄主框
                 pathRound(2, 2, size - 4, size - 4, size * 0.17);
                 ctx.stroke();
 
@@ -2557,9 +2577,9 @@
             drawRoundedRect(ctx, x + 4, y + 4, slotSize - 8, slotSize - 8, 8);
             ctx.stroke();
 
-            // 畫填充背景 (白色)
+            // 畫填充背景 (白色或淡藍色)
             ctx.beginPath();
-            ctx.fillStyle = "#ffffff";
+            ctx.fillStyle = isBursting ? "#e0f2fe" : "#ffffff"; // 狂暴時淡藍色背景
             drawRoundedRect(ctx, x + 6, y + 6, slotSize - 12, slotSize - 12, 6);
             ctx.fill();
 
