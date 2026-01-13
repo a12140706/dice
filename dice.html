@@ -898,6 +898,41 @@
                 console.error("❌ 從雲端抓取失敗:", error);
             }
         }
+
+        // 上傳本地數據至 Firebase
+        async function saveData() {
+            if (userId === 'guest') {
+                console.log('🚫 Guest 用戶，跳過雲端上傳');
+                return;
+            }
+
+            try {
+                // 從 localStorage 讀取最新的 dice_game_data
+                const localData = localStorage.getItem('dice_game_data');
+                if (!localData) {
+                    console.warn('⚠️ 本地無存檔，跳過上傳');
+                    return;
+                }
+
+                const gameData = JSON.parse(localData);
+
+                // 上傳至 Firebase (使用 merge 避免覆蓋其他欄位)
+                await fs.collection('users').doc(userId).set({
+                    dice_data: {
+                        deck: gameData.deck || [],
+                        inventory: gameData.inventory || {},
+                        diceLevels: gameData.diceLevels || {},
+                        tickets: gameData.tickets || 0,
+                        unlockLevel: gameData.unlockLevel || 1,
+                        maxWave: gameData.maxWave || 0
+                    }
+                }, { merge: true });
+
+                console.log('✅ 本地數據已上傳至雲端');
+            } catch (error) {
+                console.error('❌ 上傳失敗:', error);
+            }
+        }
         const UPGRADE_CONFIG = {
             1: [5, 50000], 2: [10, 100000], 3: [20, 200000], 4: [50, 500000],
             5: [100, 1000000], 6: [200, 5000000], 7: [500, 10000000], 8: [800, 50000000],
@@ -2109,7 +2144,6 @@
             }
         }
         function startBattle() {
-            saveData();
             window.location.href = 'dice_battle.html';
         }
 
@@ -2122,7 +2156,17 @@
             // 3. 先畫出介面
             render();
 
-            // 4. 從雲端同步最新進度 (包含 dice_data 與 balance)
+            // 4. 檢查是否從戰鬥回來，如果是才上傳本地變更
+            const urlParams = new URLSearchParams(window.location.search);
+            const fromBattle = urlParams.get('fromBattle');
+
+            if (fromBattle === '1') {
+                await saveData();
+                // 清除 URL 參數避免重複上傳
+                window.history.replaceState({}, document.title, 'dice.html');
+            }
+
+            // 5. 從雲端同步最新進度 (包含 dice_data 與 balance)
             await syncFromCloud();
         };
     </script>

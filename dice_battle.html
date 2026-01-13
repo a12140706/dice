@@ -187,7 +187,7 @@
             </div>
         </div>
 
-        <button onclick="location.href='dice.html'"
+        <button onclick="location.href='dice.html?fromBattle=1'"
             style="margin-top:30px; padding:12px 35px; font-size:18px; background:#3b82f6; color:white; border:none; border-radius:8px; font-weight:bold;">
             領取並回大廳
         </button>
@@ -814,11 +814,12 @@
                         const specValue = getDiceSpecialValue('mighty_wind'); // 取得狂暴秒數
                         const burstTime = specValue * 1000;
                         if (cycle < burstTime) {
-                            spd = 6; // 極速攻擊速度
+                            slot.dice.burstSpeed = 6; // 極速攻擊速度
                             slot.dice.isBurst = true;
                             // 計算呼吸動畫數值：利用 sine 波產生 -0.05 ~ 0.05 的縮放偏移量
-                            slot.dice.animScale = Math.sin(now / 100) * 0.05;
+                            slot.dice.animScale = Math.sin(Date.now() / 100) * 0.05;
                         } else {
+                            slot.dice.burstSpeed = null;
                             slot.dice.isBurst = false;
                             slot.dice.animScale = 0;
                         }
@@ -875,6 +876,11 @@
                     // --- B. 攻速與攻擊 ---
                     const pLv = userData.diceLevels[slot.dice.id] || 1;
                     let spd = Math.max(10, db.stats.speed + (pLv - 1) * db.grow.speed);
+
+                    // 強風狂暴模式覆蓋攻速
+                    if (slot.dice.id === 'mighty_wind' && slot.dice.burstSpeed) {
+                        spd = slot.dice.burstSpeed;
+                    }
 
                     // 聖域加速
                     if (sanctuaryBoost > 0 && slot.dice.id !== 'sanctuary') {
