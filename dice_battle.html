@@ -385,7 +385,6 @@
             'CRUSHER': {
                 name: '粉碎者',
                 color: '#ff4444',
-                // 更新為 PNG 檔案路徑
                 img: (() => { const i = new Image(); i.src = 'dice-boss/lock.png'; return i; })(),
                 skillInterval: 300,
                 onSkill: (boss) => {
@@ -405,6 +404,96 @@
                 onSkill: (boss) => {
                     enemies.forEach(e => e.speed *= 1.5);
                     setTimeout(() => { enemies.forEach(e => e.speed /= 1.5); }, 2000);
+                }
+            },
+            'HACKER': {
+                name: '混亂者',
+                color: '#a855f7',
+                img: (() => { const i = new Image(); i.src = 'dice-boss/hack.png'; return i; })(),
+                skillInterval: 500, // 影響全場，間隔設長一點
+                onSkill: (boss) => {
+                    // 技能：全場隨機化！將場上「所有」骰子隨機變成同星級的其他骰子
+                    const occupied = grid.slots.filter(s => s.dice);
+                    if (occupied.length > 0) {
+                        const availableDiceKeys = Object.keys(DICE_DATA);
+                        occupied.forEach(slot => {
+                            const newId = availableDiceKeys[Math.floor(Math.random() * availableDiceKeys.length)];
+                            // 保持原本星級，但種類隨機化
+                            slot.dice = { ...DICE_DATA[newId], star: slot.dice.star };
+                        });
+                        // 視覺提示：全場閃一下紫光
+                        const container = document.getElementById('canvas-container');
+                        if (container) {
+                            container.style.boxShadow = 'inset 0 0 50px #a855f7';
+                            setTimeout(() => container.style.boxShadow = '', 500);
+                        }
+                    }
+                }
+            },
+            'GRAVITY': {
+                name: '重力者',
+                color: '#1e293b',
+                img: (() => { const i = new Image(); i.src = 'dice-boss/gravity.png'; return i; })(),
+                skillInterval: 450,
+                onSkill: (boss) => {
+                    // 技能：強大重力場，隨機讓場上一個骰子降 1 星
+                    const occupied = grid.slots.filter(s => s.dice);
+                    if (occupied.length > 0) {
+                        const target = occupied[Math.floor(Math.random() * occupied.length)];
+
+                        // 降星
+                        target.dice.star -= 1;
+
+                        // 判斷：如果星級降到 0，則骰子消失
+                        if (target.dice.star <= 0) {
+                            target.dice = null;
+                            // 視覺提示：骰子消失處冒出一點灰煙
+                            visualEffects.push({
+                                type: 'explosion',
+                                x: target.x + grid.slotSize / 2,
+                                y: target.y + grid.slotSize / 2,
+                                radius: 40,
+                                color: 'rgba(30, 41, 59, 0.5)', // 深色煙霧
+                                life: 15, maxLife: 15
+                            });
+                        }
+
+                        // 更新 UI 與太陽陣型狀態
+                        updateUI();
+                        if (typeof refreshSunState === 'function') refreshSunState();
+                    }
+                }
+            },
+            'GLITCH': {
+                name: '干擾者',
+                color: '#3b82f6',
+                img: (() => { const i = new Image(); i.src = 'dice-boss/glitch.png'; return i; })(),
+                skillInterval: 400,
+                onSkill: (boss) => {
+                    // 取得目前所有有骰子的格子
+                    let occupiedSlots = grid.slots.filter(s => s.dice);
+                    if (occupiedSlots.length < 2) return;
+
+                    // 提取所有骰子數據
+                    let allDiceData = occupiedSlots.map(s => ({ ...s.dice }));
+
+                    // 洗牌演算法 (Fisher-Yates Shuffle)
+                    for (let i = allDiceData.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [allDiceData[i], allDiceData[j]] = [allDiceData[j], allDiceData[i]];
+                    }
+
+                    // 將洗好的骰子重新放回原本有骰子的格子中
+                    occupiedSlots.forEach((slot, index) => {
+                        slot.dice = allDiceData[index];
+                    });
+
+                    // 視覺特效：藍色電子干擾感
+                    const container = document.getElementById('canvas-container');
+                    if (container) {
+                        container.style.filter = 'hue-rotate(90deg) contrast(1.5)';
+                        setTimeout(() => container.style.filter = '', 400);
+                    }
                 }
             }
         };
@@ -1252,13 +1341,27 @@
                 }
 
                 // --- 2. Boss 技能邏輯 ---
-                if (e.isBoss) {
-                    if (!e.skillTimer) e.skillTimer = 0; // 確保 timer 存在
+                // --- 2. Boss 技能邏輯 ---
+                if (e.isBoss && e.hp > 0) {
+                    if (!e.skillTimer) e.skillTimer = 0;
                     e.skillTimer++;
-                    if (e.skillTimer >= BOSS_TYPES[e.bossType].skillInterval) {
-                        BOSS_TYPES[e.bossType].onSkill(e);
+
+                    const bossConfig = BOSS_TYPES[e.bossType];
+                    if (bossConfig && e.skillTimer >= bossConfig.skillInterval) {
+                        // --- [新增] 開啟晃動計時 (持續 20 幀，約 0.3 秒) ---
+                        e.shakeTimer = 20;
+
+                        bossConfig.onSkill(e);
                         e.skillTimer = 0;
+
+                        updateUI();
+                        if (typeof refreshSunState === 'function') refreshSunState();
                     }
+                }
+
+                // --- [新增] 遞減晃動計時 ---
+                if (e.shakeTimer > 0) {
+                    e.shakeTimer--;
                 }
 
                 // --- 2.5. 毀滅標記倒數檢查 ---
@@ -1513,57 +1616,72 @@
                 drawVisualEffects(ctx);
 
                 // --- 畫敵人 (含 Boss PNG 邏輯) ---
+                // --- 畫敵人 (含 Boss PNG 邏輯與晃動特效) ---
                 enemies.forEach(e => {
                     const s = e.isBoss ? e.size : 20;
 
+                    // 1. 設定基礎渲染座標
+                    let renderX = e.x;
+                    let renderY = e.y;
+
+                    // 2. 如果正在晃動 (shakeTimer > 0)，隨機偏移座標
+                    if (e.shakeTimer > 0) {
+                        renderX += (Math.random() * 16 - 8); 
+                        renderY += (Math.random() * 16 - 8);
+                    }
+
+                    // 3. 繪製 Boss
                     if (e.isBoss && e.bossType && BOSS_TYPES[e.bossType]) {
                         ctx.save();
-                        // 幫 Boss PNG 加一點符合屬性的外發光
+                        // 幫 Boss PNG 加外發光
                         ctx.shadowBlur = 10;
                         ctx.shadowColor = e.color || BOSS_TYPES[e.bossType].color;
 
                         const bossImg = BOSS_TYPES[e.bossType].img;
-                        // 確保圖片已載入完成才繪製，否則畫色塊墊底
+                        // 確保圖片已載入完成才繪製，否則畫色塊
                         if (bossImg && bossImg.complete && bossImg.naturalWidth !== 0) {
-                            ctx.drawImage(bossImg, e.x - s / 2, e.y - s / 2, s, s);
+                            ctx.drawImage(bossImg, renderX - s / 2, renderY - s / 2, s, s);
                         } else {
                             ctx.fillStyle = e.color || "#ef4444";
-                            ctx.fillRect(e.x - s / 2, e.y - s / 2, s, s);
+                            ctx.beginPath();
+                            ctx.arc(renderX, renderY, s/2, 0, Math.PI * 2);
+                            ctx.fill();
                         }
                         ctx.restore();
                     } else {
-                        // 一般小怪維持原樣 (紅色方塊)
+                        // 一般小怪維持原樣 (紅色方塊，不晃動)
                         ctx.fillStyle = "#ef4444";
                         ctx.fillRect(e.x - s / 2, e.y - s / 2, s, s);
                     }
 
-                    // 血條邏輯 (居中於敵人上方)
-                    ctx.fillStyle = "rgba(0,0,0,0.5)";
-                    ctx.fillRect(e.x - 15, e.y - (s / 2 + 8), 30, 3);
-                    ctx.fillStyle = "#22c55e";
-                    ctx.fillRect(e.x - 15, e.y - (s / 2 + 8), (e.hp / e.maxHp) * 30, 3);
+                    // 4. 血條邏輯 (居中於敵人上方，Boss 的血條要跟著晃)
+                    // 如果是 Boss，血條位置跟隨 renderX/Y；小怪跟隨 e.x/e.y
+                    const barX = e.isBoss ? renderX : e.x;
+                    const barY = e.isBoss ? renderY : e.y;
 
-                    // --- 新增：狀態圖示 (冰凍、鎖定、毒、易傷) ---
+                    ctx.fillStyle = "rgba(0,0,0,0.5)";
+                    ctx.fillRect(barX - 15, barY - (s / 2 + 8), 30, 3);
+                    
+                    // Boss 血條金色，小怪綠色
+                    ctx.fillStyle = e.isBoss ? "#f1c40f" : "#22c55e"; 
+                    ctx.fillRect(barX - 15, barY - (s / 2 + 8), (e.hp / e.maxHp) * 30, 3);
+
+                    // --- 狀態圖示 (跟隨座標) ---
                     let iconOffset = 0;
                     if (e.iceTimer > 0) {
-                        drawStatusIcon(ctx, e.x - 10 + iconOffset, e.y - s / 2 - 20, '❄️');
+                        drawStatusIcon(ctx, barX - 10 + iconOffset, barY - s / 2 - 20, '❄️');
                         iconOffset += 15;
                     }
-                    if (e.lockTimer > 0) { // 假設鎖定也有 Timer
-                        // e.lockTimer might not be defined in updateEnemies loop but applyHitEffect sets speed directly or sets timer? 
-                        // Check boss skill logic: `target.isLocked = true` with timeout. For mobs `target.speed=0`.
-                        // Let's assume if speed is 0 and hp > 0, it's locked.
-                        if (e.speed === 0) {
-                            drawStatusIcon(ctx, e.x - 10 + iconOffset, e.y - s / 2 - 20, '🔒');
-                            iconOffset += 15;
-                        }
+                    if (e.speed === 0 && e.hp > 0) { // 簡單判定鎖定
+                        drawStatusIcon(ctx, barX - 10 + iconOffset, barY - s / 2 - 20, '🔒');
+                        iconOffset += 15;
                     }
                     if (e.poisonStacks > 0) {
-                        drawStatusIcon(ctx, e.x - 10 + iconOffset, e.y - s / 2 - 20, '☠️');
+                        drawStatusIcon(ctx, barX - 10 + iconOffset, barY - s / 2 - 20, '☠️');
                         iconOffset += 15;
                     }
                     if (e.vulnerability) {
-                        drawStatusIcon(ctx, e.x - 10 + iconOffset, e.y - s / 2 - 20, '💔');
+                        drawStatusIcon(ctx, barX - 10 + iconOffset, barY - s / 2 - 20, '💔');
                     }
                 });
 
@@ -2273,13 +2391,13 @@
             });
         }
 
-       // --- 純粹裝飾版：高品質靜態邊框 (強調設計感與階級差異) ---
+        // --- 純粹裝飾版：高品質靜態邊框 (強調設計感與階級差異) ---
         function drawQualityBorder(ctx, x, y, size, diceId) {
             if (!diceId || size < 1) return;
-            
+
             // 為了效能，我們這裡簡單讀取
             // 實際專案中建議把 quality 屬性直接傳進來，不用每次 find
-            const db = ALL_DICES.find(d => d.id === diceId); 
+            const db = ALL_DICES.find(d => d.id === diceId);
             if (!db) return;
             const quality = db.quality;
             if (quality !== 'legend' && quality !== 'mythic') return;
@@ -2306,7 +2424,7 @@
                 // ==========================================
                 // 傳說 (Legend)：皇家黃金浮雕 (厚重、傳統、財富)
                 // ==========================================
-                
+
                 // 1. 外框 (深色打底，製造陰影感)
                 ctx.strokeStyle = '#B8860B'; // 暗金色
                 ctx.lineWidth = lw * 2.5;
@@ -2319,7 +2437,7 @@
                 grad.addColorStop(0.3, '#D19C1D'); // 中金
                 grad.addColorStop(0.6, '#FFD700'); // 純金高光
                 grad.addColorStop(1, '#8A6E2F'); // 暗角
-                
+
                 ctx.strokeStyle = grad;
                 ctx.lineWidth = lw * 1.5;
                 pathRound(2, 2, size - 4, size - 4, size * 0.17);
@@ -2331,11 +2449,11 @@
                 // 左上
                 ctx.beginPath(); ctx.moveTo(0, cSize); ctx.lineTo(cSize, 0); ctx.lineTo(0, 0); ctx.fill();
                 // 右上
-                ctx.beginPath(); ctx.moveTo(size-cSize, 0); ctx.lineTo(size, 0); ctx.lineTo(size, cSize); ctx.fill();
+                ctx.beginPath(); ctx.moveTo(size - cSize, 0); ctx.lineTo(size, 0); ctx.lineTo(size, cSize); ctx.fill();
                 // 右下
-                ctx.beginPath(); ctx.moveTo(size, size-cSize); ctx.lineTo(size, size); ctx.lineTo(size-cSize, size); ctx.fill();
+                ctx.beginPath(); ctx.moveTo(size, size - cSize); ctx.lineTo(size, size); ctx.lineTo(size - cSize, size); ctx.fill();
                 // 左下
-                ctx.beginPath(); ctx.moveTo(0, size-cSize); ctx.lineTo(0, size); ctx.lineTo(cSize, size); ctx.fill();
+                ctx.beginPath(); ctx.moveTo(0, size - cSize); ctx.lineTo(0, size); ctx.lineTo(cSize, size); ctx.fill();
 
                 // 4. 內描邊 (精緻感)
                 ctx.strokeStyle = '#FFF8DC'; // 米白金
@@ -2360,23 +2478,23 @@
                 ctx.lineWidth = lw * 1.2;
                 ctx.lineCap = "round";
                 const gap = size * 0.25; // 缺口大小
-                
+
                 ctx.beginPath();
                 // 上邊
                 ctx.moveTo(gap, 2); ctx.lineTo(size - gap, 2);
                 // 下邊
-                ctx.moveTo(gap, size-2); ctx.lineTo(size - gap, size-2);
+                ctx.moveTo(gap, size - 2); ctx.lineTo(size - gap, size - 2);
                 // 左邊
                 ctx.moveTo(2, gap); ctx.lineTo(2, size - gap);
                 // 右邊
-                ctx.moveTo(size-2, gap); ctx.lineTo(size-2, size - gap);
+                ctx.moveTo(size - 2, gap); ctx.lineTo(size - 2, size - gap);
                 ctx.stroke();
 
                 // 2. 角落懸浮矩陣 (取代傳統護角)
                 // 畫四個 L 型的雙線結構
                 const cLen = size * 0.18;
                 const offset = 3;
-                
+
                 // 雙層線條：底層深色
                 ctx.strokeStyle = '#4c1d95'; // 深紫襯底
                 ctx.lineWidth = lw * 2;
@@ -2400,12 +2518,12 @@
                 ctx.fillStyle = grad;
                 const dotSize = size * 0.04;
                 const dotOff = size * 0.08;
-                
+
                 ctx.beginPath();
-                ctx.arc(dotOff, dotOff, dotSize, 0, Math.PI*2);
-                ctx.arc(size - dotOff, dotOff, dotSize, 0, Math.PI*2);
-                ctx.arc(size - dotOff, size - dotOff, dotSize, 0, Math.PI*2);
-                ctx.arc(dotOff, size - dotOff, dotSize, 0, Math.PI*2);
+                ctx.arc(dotOff, dotOff, dotSize, 0, Math.PI * 2);
+                ctx.arc(size - dotOff, dotOff, dotSize, 0, Math.PI * 2);
+                ctx.arc(size - dotOff, size - dotOff, dotSize, 0, Math.PI * 2);
+                ctx.arc(dotOff, size - dotOff, dotSize, 0, Math.PI * 2);
                 ctx.fill();
 
                 // 4. 內部幾何裝飾 (細線框)
@@ -2418,7 +2536,7 @@
             ctx.restore();
         }
 
-       function renderDice(ctx, x, y, dice, isLocked) {
+        function renderDice(ctx, x, y, dice, isLocked) {
             if (!dice) return;
             const slotSize = grid.slotSize;
 
@@ -2582,11 +2700,6 @@
                         updateUI();
                         refreshSunState();
                     }
-                }
-                // --- 移到空位 ---
-                else if (targetSlot && !targetSlot.dice) {
-                    targetSlot.dice = { ...drag.dice, growthTimer: drag.dice.growthTimer || 0 };
-                    drag.fromSlot.dice = null;
                 }
 
                 // 統一重置狀態
