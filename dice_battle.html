@@ -715,7 +715,8 @@
                 pattern: db.pattern || diceId, // 確保有圖騰資訊
                 qualityColor: QUALITIES[db.quality].color,
                 growthTimer: 0,
-                isPowered: false
+                isPowered: false,
+                spawnTime: Date.now() // 記錄召喚時間，讓每個骰子有獨立的狂暴周期
             };
 
             // 如果 slot 物件本身沒有 x, y 像素值，要在這裡計算給 updateCombat 用
@@ -810,7 +811,10 @@
                     if (!db) return;
                     // 在 updateCombat 函數內，grid.slots.forEach 循環中
                     if (slot.dice.id === 'mighty_wind') {
-                        const cycle = (Date.now() % 8000); // 8秒一輪
+                        // 使用骰子自己的召喚時間來計算獨立的狂暴周期
+                        const spawnTime = slot.dice.spawnTime || Date.now();
+                        const elapsed = Date.now() - spawnTime;
+                        const cycle = elapsed % 8000; // 每個骰子有自己的 8 秒循環
                         const specValue = getDiceSpecialValue('mighty_wind'); // 取得狂暴秒數
                         const burstTime = specValue * 1000;
                         if (cycle < burstTime) {
@@ -865,7 +869,8 @@
                                     color: newDb.baseColor,
                                     qualityColor: QUALITIES[newDb.quality].color,
                                     growthTimer: 0,
-                                    attackCooldown: 0
+                                    attackCooldown: 0,
+                                    spawnTime: Date.now() // 成長進化後重設時間
                                 };
                                 if (typeof updateUI === 'function') updateUI();
                                 if (typeof refreshSunState === 'function') refreshSunState();
@@ -2697,7 +2702,8 @@
                             color: db.baseColor,
                             qualityColor: QUALITIES[db.quality].color,
                             growthTimer: 0,
-                            attackCooldown: 0
+                            attackCooldown: 0,
+                            spawnTime: Date.now() // 變身後重設時間
                         };
 
                         drag.isDragging = false;
@@ -2718,7 +2724,8 @@
                             color: db.baseColor,
                             qualityColor: QUALITIES[db.quality].color,
                             growthTimer: 0,
-                            attackCooldown: 0
+                            attackCooldown: 0,
+                            spawnTime: Date.now() // 合成後重設時間
                         };
                         drag.fromSlot.dice = null;
                         updateUI();
