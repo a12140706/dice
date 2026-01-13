@@ -2274,132 +2274,96 @@
         }
 
         // --- 新增：品質邊框特效 ---
-        function drawQualityBorder(ctx, x, y, size, diceId) {
-            if (!diceId) return;
+       // --- 全新的傳說/神話邊框渲染函式 ---
+function drawQualityBorder(ctx, x, y, size, diceId) {
+    if (!diceId) return;
+    const db = ALL_DICES.find(d => d.id === diceId);
+    if (!db) return;
 
-            const db = ALL_DICES.find(d => d.id === diceId);
-            if (!db) return;
+    const quality = db.quality;
+    // 如果不是傳說或神話，直接返回 (普通邊框由 HTML CSS 處理)
+    if (quality !== 'legend' && quality !== 'mythic') return;
 
-            const quality = db.quality;
-            const time = Date.now() / 1000;
+    const time = Date.now() / 1000;
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0); // 確保座標系
+    ctx.translate(x, y);
 
-            ctx.save();
+    if (quality === 'legend') {
+        // --- 傳說：流金金屬邊框 ---
+        // 1. 建立金色線性漸層 (模擬反光)
+        // 漸層角度隨時間緩慢旋轉
+        const grad = ctx.createLinearGradient(0, 0, size, size);
+        const shimmer = (Math.sin(time * 2) + 1) / 2; // 0~1 呼吸
+        
+        grad.addColorStop(0, '#B8860B');   // 深金
+        grad.addColorStop(0.3 + shimmer * 0.1, '#FFD700'); // 亮金
+        grad.addColorStop(0.5, '#FFF8DC'); // 幾乎白的高光
+        grad.addColorStop(0.7 - shimmer * 0.1, '#FFD700'); // 亮金
+        grad.addColorStop(1, '#B8860B');   // 深金
 
-            if (quality === 'legend') {
-                // 傳說：優雅金框（向外擴展，不遮擋內部）
-                const pulse = 0.6 + Math.abs(Math.sin(time * 1.5)) * 0.3;
+        // 2. 外發光 (光暈)
+        ctx.shadowColor = '#FFD700';
+        ctx.shadowBlur = 10;
+        
+        // 3. 繪製邊框
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 3; // 邊框厚度
+        ctx.strokeRect(1.5, 1.5, size - 3, size - 3);
 
-                // 1. 外框金邊（擴展到外側）
-                ctx.shadowColor = '#eab308';
-                ctx.shadowBlur = 8 + pulse * 5;
-                ctx.strokeStyle = `rgba(234, 179, 8, ${0.5 + pulse * 0.3})`;
-                ctx.lineWidth = 3;
+        // 4. 四角裝飾 (銳利的金屬護角)
+        const cornerLen = size * 0.2;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        // 左上
+        ctx.moveTo(0, cornerLen); ctx.lineTo(0, 0); ctx.lineTo(cornerLen, 0);
+        // 右上
+        ctx.moveTo(size - cornerLen, 0); ctx.lineTo(size, 0); ctx.lineTo(size, cornerLen);
+        // 右下
+        ctx.moveTo(size, size - cornerLen); ctx.lineTo(size, size); ctx.lineTo(size - cornerLen, size);
+        // 左下
+        ctx.moveTo(cornerLen, size); ctx.lineTo(0, size); ctx.lineTo(0, size - cornerLen);
+        ctx.stroke();
 
-                ctx.beginPath();
-                drawRoundedRect(ctx, x - 2, y - 2, size + 4, size + 4, 12); // 向外擴展2px
-                ctx.stroke();
+    } else if (quality === 'mythic') {
+        // --- 神話：虛空霓虹流動邊框 ---
+        // 1. 動態色相流動 (Magenta -> Cyan -> Purple)
+        const hue = (time * 50) % 360;
+        const color1 = `hsl(${hue}, 100%, 60%)`;
+        const color2 = `hsl(${(hue + 180) % 360}, 100%, 60%)`;
 
-                // 2. 四角裝飾（小型光點，在外側角落）
-                const cornerSize = 8;
-                const corners = [
-                    { cx: x - 3, cy: y - 3 },           // 左上外側
-                    { cx: x + size + 3, cy: y - 3 },    // 右上外側
-                    { cx: x - 3, cy: y + size + 3 },    // 左下外側
-                    { cx: x + size + 3, cy: y + size + 3 } // 右下外側
-                ];
+        // 2. 霓虹外發光
+        ctx.shadowColor = color1;
+        ctx.shadowBlur = 15;
+        ctx.strokeStyle = color1;
+        ctx.lineWidth = 2.5;
 
-                ctx.fillStyle = `rgba(250, 204, 21, ${0.6 + pulse * 0.4})`;
-                ctx.shadowBlur = 10;
-                corners.forEach(corner => {
-                    // 繪製菱形光點
-                    ctx.beginPath();
-                    ctx.moveTo(corner.cx, corner.cy - cornerSize / 2);
-                    ctx.lineTo(corner.cx + cornerSize / 2, corner.cy);
-                    ctx.lineTo(corner.cx, corner.cy + cornerSize / 2);
-                    ctx.lineTo(corner.cx - cornerSize / 2, corner.cy);
-                    ctx.closePath();
-                    ctx.fill();
-                });
+        // 3. 繪製流動邊框 (使用虛線偏移模擬流動)
+        ctx.setLineDash([size * 0.5, size * 0.2]); // 長虛線
+        ctx.lineDashOffset = -time * 30; // 流動速度
+        ctx.strokeRect(2, 2, size - 4, size - 4);
+        
+        // 4. 疊加第二層反向流動 (增加層次感)
+        ctx.strokeStyle = color2;
+        ctx.setLineDash([size * 0.2, size * 0.5]);
+        ctx.lineDashOffset = time * 30;
+        ctx.strokeRect(2, 2, size - 4, size - 4);
+        ctx.setLineDash([]); // 重置虛線
 
-                // 3. 內框（淡金色細線，緊貼骰子邊緣）
-                ctx.shadowBlur = 3;
-                ctx.strokeStyle = `rgba(250, 204, 21, ${0.3 + pulse * 0.2})`;
-                ctx.lineWidth = 1.5;
-                ctx.beginPath();
-                drawRoundedRect(ctx, x + 1, y + 1, size - 2, size - 2, 8);
-                ctx.stroke();
-            }
-            else if (quality === 'mythic') {
-                // 神話：簡化版彩虹光環（優化手機效能）
-                const hueShift = (time * 80) % 360; // 減慢色彩循環速度
+        // 5. 四角漂浮粒子 (神秘感)
+        const breathe = (Math.sin(time * 3) + 1) * 0.5; // 呼吸大小
+        ctx.fillStyle = "#fff";
+        ctx.shadowBlur = 5;
+        const corners = [[3, 3], [size-3, 3], [size-3, size-3], [3, size-3]];
+        corners.forEach(p => {
+            ctx.beginPath();
+            ctx.arc(p[0], p[1], 1.5 + breathe, 0, Math.PI * 2);
+            ctx.fill();
+        });
+    }
 
-                // 1. 簡化為2層彩虹光環（原本5層）
-                for (let i = 0; i < 2; i++) {
-                    const layerHue = (hueShift + i * 180) % 360;
-                    const expansion = i * 3;
-
-                    ctx.shadowColor = `hsl(${layerHue}, 100%, 70%)`;
-                    ctx.shadowBlur = 10;
-                    ctx.strokeStyle = `hsla(${layerHue}, 100%, 75%, ${0.6 - i * 0.2})`;
-                    ctx.lineWidth = 4 - i;
-
-                    ctx.beginPath();
-                    drawRoundedRect(
-                        ctx,
-                        x - expansion,
-                        y - expansion,
-                        size + expansion * 2,
-                        size + expansion * 2,
-                        12
-                    );
-                    ctx.stroke();
-                }
-
-                // 2. 簡化星點（8個，原本16個，移除連線和擺動）
-                ctx.shadowBlur = 8;
-                const starRadius = size / 2 + 12;
-                const centerX = x + size / 2;
-                const centerY = y + size / 2;
-                const starCount = 8; // 減少星點數量
-
-                for (let i = 0; i < starCount; i++) {
-                    const angle = (i / starCount) * Math.PI * 2;
-                    const starHue = (hueShift + i * 45) % 360;
-
-                    ctx.fillStyle = `hsla(${starHue}, 100%, 85%, 0.7)`;
-                    ctx.beginPath();
-                    ctx.arc(
-                        centerX + Math.cos(angle) * starRadius,
-                        centerY + Math.sin(angle) * starRadius,
-                        2, 0, Math.PI * 2
-                    );
-                    ctx.fill();
-                }
-
-                // 3. 簡化四角光點（移除旋轉射線，只保留發光點）
-                const starCorners = [
-                    { cx: x - 5, cy: y - 5 },
-                    { cx: x + size + 5, cy: y - 5 },
-                    { cx: x - 5, cy: y + size + 5 },
-                    { cx: x + size + 5, cy: y + size + 5 }
-                ];
-
-                starCorners.forEach((corner, idx) => {
-                    const particleHue = (hueShift + idx * 90) % 360;
-
-                    // 只繪製簡單的發光點，移除複雜的射線動畫
-                    const gradient = ctx.createRadialGradient(corner.cx, corner.cy, 0, corner.cx, corner.cy, 4);
-                    gradient.addColorStop(0, `hsla(${particleHue}, 100%, 90%, 0.8)`);
-                    gradient.addColorStop(1, `hsla(${particleHue}, 100%, 70%, 0)`);
-                    ctx.fillStyle = gradient;
-                    ctx.beginPath();
-                    ctx.arc(corner.cx, corner.cy, 4, 0, Math.PI * 2);
-                    ctx.fill();
-                });
-            }
-
-            ctx.restore();
-        }
+    ctx.restore();
+}
 
         function renderDice(ctx, x, y, dice, isLocked) {
             if (!dice) return;
@@ -2425,10 +2389,7 @@
             const drawY = y + 6;
             const drawSize = slotSize - 12;
 
-            // 2.5. 繪製品質邊框特效（傳說/神話）
-            if (typeof drawQualityBorder === 'function') {
-                drawQualityBorder(ctx, x, y, slotSize, dice.id);
-            }
+            
 
             // 3. 畫特徵圖案
             if (typeof drawDiceFeature === 'function') {
@@ -2438,6 +2399,10 @@
             // 4. 畫點數
             if (typeof drawDiceStars === 'function') {
                 drawDiceStars(ctx, drawX, drawY, drawSize, dice.lv, dColor, dice.id);
+            }
+            // 2.5. 繪製品質邊框特效（傳說/神話）
+            if (typeof drawQualityBorder === 'function') {
+                drawQualityBorder(ctx, x, y, slotSize, dice.id);
             }
 
             // 5. 畫 Boss 鎖定/禁錮遮罩
