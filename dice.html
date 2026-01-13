@@ -1345,49 +1345,7 @@
 
             if (quality === 'legend') {
                 // ==========================================
-                // 傳說 (Legend)：皇家黃金浮雕 (厚重、傳統、財富)
-                // ==========================================
-
-                // 1. 外框 (深色打底，製造陰影感)
-                ctx.strokeStyle = '#B8860B'; // 暗金色
-                ctx.lineWidth = lw * 1.2; // 減薄外框
-                pathRound(1, 1, size - 2, size - 2, size * 0.18);
-                ctx.stroke();
-
-                // 2. 主框體 (金屬漸層，製造立體感)
-                const grad = ctx.createLinearGradient(0, 0, size, size);
-                grad.addColorStop(0, '#FDB931'); // 亮金
-                grad.addColorStop(0.3, '#D19C1D'); // 中金
-                grad.addColorStop(0.6, '#FFD700'); // 純金高光
-                grad.addColorStop(1, '#8A6E2F'); // 暗角
-
-                ctx.strokeStyle = grad;
-                ctx.lineWidth = lw * 0.9; // 減薄主框
-                pathRound(2, 2, size - 4, size - 4, size * 0.17);
-                ctx.stroke();
-
-                // 3. 四角裝飾 (三角形護角)
-                ctx.fillStyle = grad;
-                const cSize = size * 0.12;
-                // 左上
-                ctx.beginPath(); ctx.moveTo(0, cSize); ctx.lineTo(cSize, 0); ctx.lineTo(0, 0); ctx.fill();
-                // 右上
-                ctx.beginPath(); ctx.moveTo(size - cSize, 0); ctx.lineTo(size, 0); ctx.lineTo(size, cSize); ctx.fill();
-                // 右下
-                ctx.beginPath(); ctx.moveTo(size, size - cSize); ctx.lineTo(size, size); ctx.lineTo(size - cSize, size); ctx.fill();
-                // 左下
-                ctx.beginPath(); ctx.moveTo(0, size - cSize); ctx.lineTo(0, size); ctx.lineTo(cSize, size); ctx.fill();
-
-                // 4. 內描邊 (精緻感)
-                ctx.strokeStyle = '#FFF8DC'; // 米白金
-                ctx.lineWidth = 1;
-                pathRound(size * 0.12, size * 0.12, size * 0.76, size * 0.76, size * 0.1);
-                ctx.stroke();
-
-            } else if (quality === 'mythic') {
-                // ==========================================
-                // 神話 (Mythic)：虛空矩陣 (懸浮、科技、神秘)
-                // 結構上完全包覆傳說，且更加複雜
+                // 傳說 (Legend)：虛空矩陣 (懸浮、科技、神秘)
                 // ==========================================
 
                 // 定義神秘漸層 (紫 -> 青 -> 白)
@@ -1396,48 +1354,37 @@
                 grad.addColorStop(0.5, '#22d3ee'); // 青色
                 grad.addColorStop(1, '#e879f9');   // 粉紫
 
-                // 1. 斷裂式外框 (上下左右四條邊，不連在一起)
+                // 1. 斷裂式外框
                 ctx.strokeStyle = grad;
-                ctx.lineWidth = lw * 1.2;
+                ctx.lineWidth = lw * 0.8;
                 ctx.lineCap = "round";
-                const gap = size * 0.25; // 缺口大小
+                const gap = size * 0.25;
 
                 ctx.beginPath();
-                // 上邊
                 ctx.moveTo(gap, 2); ctx.lineTo(size - gap, 2);
-                // 下邊
                 ctx.moveTo(gap, size - 2); ctx.lineTo(size - gap, size - 2);
-                // 左邊
                 ctx.moveTo(2, gap); ctx.lineTo(2, size - gap);
-                // 右邊
                 ctx.moveTo(size - 2, gap); ctx.lineTo(size - 2, size - gap);
                 ctx.stroke();
 
-                // 2. 角落懸浮矩陣 (取代傳統護角)
-                // 畫四個 L 型的雙線結構
+                // 2. 角落懸浮矩陣
                 const cLen = size * 0.18;
                 const offset = 3;
 
-                // 雙層線條：底層深色
-                ctx.strokeStyle = '#4c1d95'; // 深紫襯底
-                ctx.lineWidth = lw * 2;
+                ctx.strokeStyle = '#4c1d95';
+                ctx.lineWidth = lw * 1.5;
                 ctx.beginPath();
-                // 左上
                 ctx.moveTo(offset, offset + cLen); ctx.lineTo(offset, offset); ctx.lineTo(offset + cLen, offset);
-                // 右上
                 ctx.moveTo(size - offset, offset + cLen); ctx.lineTo(size - offset, offset); ctx.lineTo(size - offset - cLen, offset);
-                // 右下
                 ctx.moveTo(size - offset, size - offset - cLen); ctx.lineTo(size - offset, size - offset); ctx.lineTo(size - offset - cLen, size - offset);
-                // 左下
                 ctx.moveTo(offset, size - offset - cLen); ctx.lineTo(offset, size - offset); ctx.lineTo(offset + cLen, size - offset);
                 ctx.stroke();
 
-                // 上層亮色
-                ctx.strokeStyle = '#fff'; // 純白高亮
-                ctx.lineWidth = lw * 0.8;
-                ctx.stroke(); // 重畫一次路徑
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = lw * 0.6;
+                ctx.stroke();
 
-                // 3. 能量節點 (四角的圓點)
+                // 3. 能量節點
                 ctx.fillStyle = grad;
                 const dotSize = size * 0.04;
                 const dotOff = size * 0.08;
@@ -1449,12 +1396,117 @@
                 ctx.arc(dotOff, size - dotOff, dotSize, 0, Math.PI * 2);
                 ctx.fill();
 
-                // 4. 內部幾何裝飾 (細線框)
+                // 4. 內部幾何裝飾
                 ctx.strokeStyle = `rgba(255, 255, 255, 0.3)`;
                 ctx.lineWidth = 1;
                 pathRound(size * 0.15, size * 0.15, size * 0.7, size * 0.7, size * 0.05);
                 ctx.stroke();
+
+            } else if (quality === 'mythic') {
+                // ==========================================
+                // 神話 (Mythic)：龍爪裝飾 (霸氣、神獸、至高無上)
+                // ==========================================
+
+                // 神話漸層 (深紫 -> 金 -> 紅) - 更鮮艷
+                const grad = ctx.createLinearGradient(0, 0, size, size);
+                grad.addColorStop(0, '#a855f7');   // 亮紫
+                grad.addColorStop(0.5, '#fde047'); // 明亮金色
+                grad.addColorStop(1, '#f87171');   // 明亮紅色
+
+                // 1. 雙重外框 (內外雙層) - 更粗
+                ctx.strokeStyle = '#581c87'; // 外層深紫
+                ctx.lineWidth = lw * 2;
+                pathRound(1, 1, size - 2, size - 2, size * 0.15);
+                ctx.stroke();
+
+                ctx.strokeStyle = grad; // 內層漸層
+                ctx.lineWidth = lw * 1.2;
+                pathRound(3, 3, size - 6, size - 6, size * 0.13);
+                ctx.stroke();
+
+                // 2. 龍爪裝飾 (四個角落) - 更大
+                ctx.fillStyle = grad;
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2; // 更粗的邊框
+
+                const clawSize = size * 0.25; // 從 0.15 增加到 0.25
+                const clawOffset = size * 0.02; // 從 0.05 減少到 0.02 (更靠近邊緣)
+
+                // 左上龍爪
+                ctx.beginPath();
+                ctx.moveTo(clawOffset, clawOffset + clawSize * 0.8);
+                ctx.quadraticCurveTo(clawOffset, clawOffset, clawOffset + clawSize * 0.8, clawOffset);
+                ctx.lineTo(clawOffset + clawSize * 0.6, clawOffset + clawSize * 0.2);
+                ctx.lineTo(clawOffset + clawSize * 0.2, clawOffset + clawSize * 0.6);
+                ctx.closePath();
+                ctx.fill(); ctx.stroke();
+
+                // 右上龍爪
+                ctx.beginPath();
+                ctx.moveTo(size - clawOffset - clawSize * 0.8, clawOffset);
+                ctx.quadraticCurveTo(size - clawOffset, clawOffset, size - clawOffset, clawOffset + clawSize * 0.8);
+                ctx.lineTo(size - clawOffset - clawSize * 0.2, clawOffset + clawSize * 0.6);
+                ctx.lineTo(size - clawOffset - clawSize * 0.6, clawOffset + clawSize * 0.2);
+                ctx.closePath();
+                ctx.fill(); ctx.stroke();
+
+                // 右下龍爪
+                ctx.beginPath();
+                ctx.moveTo(size - clawOffset, size - clawOffset - clawSize * 0.8);
+                ctx.quadraticCurveTo(size - clawOffset, size - clawOffset, size - clawOffset - clawSize * 0.8, size - clawOffset);
+                ctx.lineTo(size - clawOffset - clawSize * 0.6, size - clawOffset - clawSize * 0.2);
+                ctx.lineTo(size - clawOffset - clawSize * 0.2, size - clawOffset - clawSize * 0.6);
+                ctx.closePath();
+                ctx.fill(); ctx.stroke();
+
+                // 左下龍爪
+                ctx.beginPath();
+                ctx.moveTo(clawOffset + clawSize * 0.8, size - clawOffset);
+                ctx.quadraticCurveTo(clawOffset, size - clawOffset, clawOffset, size - clawOffset - clawSize * 0.8);
+                ctx.lineTo(clawOffset + clawSize * 0.2, size - clawOffset - clawSize * 0.6);
+                ctx.lineTo(clawOffset + clawSize * 0.6, size - clawOffset - clawSize * 0.2);
+                ctx.closePath();
+                ctx.fill(); ctx.stroke();
             }
+            // ==========================================
+            // 傳說 (Legend)：皇家黃金浮雕 (厚重、傳統、財富)
+            // ==========================================
+
+            // 1. 外框 (深色打底，製造陰影感)
+            ctx.strokeStyle = '#B8860B'; // 暗金色
+            ctx.lineWidth = lw * 1.2; // 減薄外框
+            pathRound(1, 1, size - 2, size - 2, size * 0.18);
+            ctx.stroke();
+
+            // 2. 主框體 (金屬漸層，製造立體感)
+            const grad = ctx.createLinearGradient(0, 0, size, size);
+            grad.addColorStop(0, '#FDB931'); // 亮金
+            grad.addColorStop(0.3, '#D19C1D'); // 中金
+            grad.addColorStop(0.6, '#FFD700'); // 純金高光
+            grad.addColorStop(1, '#8A6E2F'); // 暗角
+
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = lw * 0.9; // 減薄主框
+            pathRound(2, 2, size - 4, size - 4, size * 0.17);
+            ctx.stroke();
+
+            // 3. 四角裝飾 (三角形護角)
+            ctx.fillStyle = grad;
+            const cSize = size * 0.12;
+            // 左上
+            ctx.beginPath(); ctx.moveTo(0, cSize); ctx.lineTo(cSize, 0); ctx.lineTo(0, 0); ctx.fill();
+            // 右上
+            ctx.beginPath(); ctx.moveTo(size - cSize, 0); ctx.lineTo(size, 0); ctx.lineTo(size, cSize); ctx.fill();
+            // 右下
+            ctx.beginPath(); ctx.moveTo(size, size - cSize); ctx.lineTo(size, size); ctx.lineTo(size - cSize, size); ctx.fill();
+            // 左下
+            ctx.beginPath(); ctx.moveTo(0, size - cSize); ctx.lineTo(0, size); ctx.lineTo(cSize, size); ctx.fill();
+
+            // 4. 內描邊 (精緻感)
+            ctx.strokeStyle = '#FFF8DC'; // 米白金
+            ctx.lineWidth = 1;
+            pathRound(size * 0.12, size * 0.12, size * 0.76, size * 0.76, size * 0.1);
+            ctx.stroke();
 
             ctx.restore();
         }
