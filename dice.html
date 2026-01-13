@@ -1209,28 +1209,23 @@
         }
 
         // --- 最終修復版：品質邊框特效 (含防呆機制) ---
+        // --- 純粹裝飾版：高品質靜態邊框 (強調設計感與階級差異) ---
         function drawQualityBorder(ctx, x, y, size, diceId) {
-            // 1. 基本檢查
-            if (!diceId || !size || size < 1) return; // 防止 size 為 0 時報錯
-
-            const db = ALL_DICES.find(d => d.id === diceId);
+            if (!diceId || size < 1) return;
+            
+            // 為了效能，我們這裡簡單讀取
+            // 實際專案中建議把 quality 屬性直接傳進來，不用每次 find
+            const db = ALL_DICES.find(d => d.id === diceId); 
             if (!db) return;
-
             const quality = db.quality;
             if (quality !== 'legend' && quality !== 'mythic') return;
 
-            const time = Date.now() / 1000;
-            const lw = Math.max(1.5, size * 0.08);
+            // 基礎參數
+            const lw = Math.max(1.5, size * 0.05); // 線寬
 
-            // 2. 定義畫圓角工具 (使用 function 確保提升與範圍安全)
-            function drawSafeRound(cx, cy, w, h, r) {
-                if (w < 0) w = 0; // 防止負數寬度
-                if (h < 0) h = 0;
-                if (r < 0) r = 0;
-                // 確保圓角不超過邊長的一半
-                if (w < 2 * r) r = w / 2;
-                if (h < 2 * r) r = h / 2;
-
+            // 內建繪圖工具：畫圓角路徑 (不stroke也不fill，只建立路徑)
+            function pathRound(cx, cy, w, h, r) {
+                if (w < 2 * r) r = w / 2; if (h < 2 * r) r = h / 2;
                 ctx.beginPath();
                 ctx.moveTo(cx + r, cy);
                 ctx.arcTo(cx + w, cy, cx + w, cy + h, r);
@@ -1244,90 +1239,116 @@
             ctx.translate(x, y);
 
             if (quality === 'legend') {
-                // --- 傳說 (Legend) ---
-                const shimmer = (Math.sin(time * 3) + 1) / 2;
-
-                // 底層光暈
-                ctx.strokeStyle = `rgba(234, 179, 8, ${0.3 + shimmer * 0.2})`;
-                ctx.lineWidth = lw * 1.5;
-                drawSafeRound(1, 1, size - 2, size - 2, size * 0.15);
+                // ==========================================
+                // 傳說 (Legend)：皇家黃金浮雕 (厚重、傳統、財富)
+                // ==========================================
+                
+                // 1. 外框 (深色打底，製造陰影感)
+                ctx.strokeStyle = '#B8860B'; // 暗金色
+                ctx.lineWidth = lw * 2.5;
+                pathRound(1, 1, size - 2, size - 2, size * 0.18);
                 ctx.stroke();
 
-                // 核心金框
+                // 2. 主框體 (金屬漸層，製造立體感)
                 const grad = ctx.createLinearGradient(0, 0, size, size);
-                grad.addColorStop(0, '#B8860B');
-                grad.addColorStop(0.5 + Math.sin(time) * 0.2, '#FFD700');
-                grad.addColorStop(1, '#B8860B');
-
+                grad.addColorStop(0, '#FDB931'); // 亮金
+                grad.addColorStop(0.3, '#D19C1D'); // 中金
+                grad.addColorStop(0.6, '#FFD700'); // 純金高光
+                grad.addColorStop(1, '#8A6E2F'); // 暗角
+                
                 ctx.strokeStyle = grad;
-                ctx.lineWidth = lw * 0.6;
-                drawSafeRound(3, 3, size - 6, size - 6, size * 0.15);
+                ctx.lineWidth = lw * 1.5;
+                pathRound(2, 2, size - 4, size - 4, size * 0.17);
                 ctx.stroke();
 
-                // 黃金護角
-                ctx.fillStyle = "#FFD700";
-                const cSize = size * 0.08;
-                const gap = size * 0.05;
-                ctx.fillRect(0, gap, cSize, cSize); ctx.fillRect(gap, 0, cSize, cSize);
-                ctx.fillRect(size - cSize, gap, cSize, cSize); ctx.fillRect(size - gap - cSize, 0, cSize, cSize);
-                ctx.fillRect(size - cSize, size - gap - cSize, cSize, cSize); ctx.fillRect(size - gap - cSize, size - cSize, cSize, cSize);
-                ctx.fillRect(0, size - gap - cSize, cSize, cSize); ctx.fillRect(gap, size - cSize, cSize, cSize);
+                // 3. 四角裝飾 (三角形護角)
+                ctx.fillStyle = grad;
+                const cSize = size * 0.12;
+                // 左上
+                ctx.beginPath(); ctx.moveTo(0, cSize); ctx.lineTo(cSize, 0); ctx.lineTo(0, 0); ctx.fill();
+                // 右上
+                ctx.beginPath(); ctx.moveTo(size-cSize, 0); ctx.lineTo(size, 0); ctx.lineTo(size, cSize); ctx.fill();
+                // 右下
+                ctx.beginPath(); ctx.moveTo(size, size-cSize); ctx.lineTo(size, size); ctx.lineTo(size-cSize, size); ctx.fill();
+                // 左下
+                ctx.beginPath(); ctx.moveTo(0, size-cSize); ctx.lineTo(0, size); ctx.lineTo(cSize, size); ctx.fill();
+
+                // 4. 內描邊 (精緻感)
+                ctx.strokeStyle = '#FFF8DC'; // 米白金
+                ctx.lineWidth = 1;
+                pathRound(size * 0.12, size * 0.12, size * 0.76, size * 0.76, size * 0.1);
+                ctx.stroke();
 
             } else if (quality === 'mythic') {
-                // --- 神話 (Mythic) ---
-                // 加一層 try-catch，確保就算特效畫失敗，也不會讓整個骰子變白
-                try {
-                    const hue = (time * 60) % 360;
+                // ==========================================
+                // 神話 (Mythic)：虛空矩陣 (懸浮、科技、神秘)
+                // 結構上完全包覆傳說，且更加複雜
+                // ==========================================
 
-                    // 1. 霓虹底光
-                    ctx.strokeStyle = `hsla(${hue}, 100%, 50%, 0.4)`;
-                    ctx.lineWidth = lw * 1.2;
-                    drawSafeRound(2, 2, size - 4, size - 4, size * 0.2);
-                    ctx.stroke();
+                // 定義神秘漸層 (紫 -> 青 -> 白)
+                const grad = ctx.createLinearGradient(0, 0, size, size);
+                grad.addColorStop(0, '#7c3aed');   // 紫色
+                grad.addColorStop(0.5, '#22d3ee'); // 青色
+                grad.addColorStop(1, '#e879f9');   // 粉紫
 
-                    // 2. 虛線流動 (最容易報錯的地方)
-                    if (ctx.setLineDash) {
-                        ctx.strokeStyle = `hsla(${hue}, 100%, 80%, 0.9)`;
-                        ctx.lineWidth = lw * 0.5;
-                        // 確保數值大於 0，防止 setLineDash 報錯
-                        const dashA = Math.max(1, size * 0.15);
-                        const dashB = Math.max(1, size * 0.1);
-                        ctx.setLineDash([dashA, dashB]);
-                        ctx.lineDashOffset = -time * 25;
-                        drawSafeRound(2, 2, size - 4, size - 4, size * 0.2);
-                        ctx.stroke();
-                        ctx.setLineDash([]); // 恢復實線
-                    }
+                // 1. 斷裂式外框 (上下左右四條邊，不連在一起)
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = lw * 1.2;
+                ctx.lineCap = "round";
+                const gap = size * 0.25; // 缺口大小
+                
+                ctx.beginPath();
+                // 上邊
+                ctx.moveTo(gap, 2); ctx.lineTo(size - gap, 2);
+                // 下邊
+                ctx.moveTo(gap, size-2); ctx.lineTo(size - gap, size-2);
+                // 左邊
+                ctx.moveTo(2, gap); ctx.lineTo(2, size - gap);
+                // 右邊
+                ctx.moveTo(size-2, gap); ctx.lineTo(size-2, size - gap);
+                ctx.stroke();
 
-                    // 3. 懸浮能量支架
-                    ctx.strokeStyle = `hsla(${(hue + 180) % 360}, 100%, 75%, 0.9)`;
-                    ctx.lineCap = "round";
-                    ctx.lineWidth = lw * 0.6;
-                    const cLen = size * 0.15;
-                    const cOff = 1.5;
+                // 2. 角落懸浮矩陣 (取代傳統護角)
+                // 畫四個 L 型的雙線結構
+                const cLen = size * 0.18;
+                const offset = 3;
+                
+                // 雙層線條：底層深色
+                ctx.strokeStyle = '#4c1d95'; // 深紫襯底
+                ctx.lineWidth = lw * 2;
+                ctx.beginPath();
+                // 左上
+                ctx.moveTo(offset, offset + cLen); ctx.lineTo(offset, offset); ctx.lineTo(offset + cLen, offset);
+                // 右上
+                ctx.moveTo(size - offset, offset + cLen); ctx.lineTo(size - offset, offset); ctx.lineTo(size - offset - cLen, offset);
+                // 右下
+                ctx.moveTo(size - offset, size - offset - cLen); ctx.lineTo(size - offset, size - offset); ctx.lineTo(size - offset - cLen, size - offset);
+                // 左下
+                ctx.moveTo(offset, size - offset - cLen); ctx.lineTo(offset, size - offset); ctx.lineTo(offset + cLen, size - offset);
+                ctx.stroke();
 
-                    ctx.beginPath();
-                    ctx.moveTo(cOff, cOff + cLen); ctx.lineTo(cOff, cOff); ctx.lineTo(cOff + cLen, cOff);
-                    ctx.moveTo(size - cOff - cLen, cOff); ctx.lineTo(size - cOff, cOff); ctx.lineTo(size - cOff, cOff + cLen);
-                    ctx.moveTo(size - cOff, size - cOff - cLen); ctx.lineTo(size - cOff, size - cOff); ctx.lineTo(size - cOff - cLen, size - cOff);
-                    ctx.moveTo(cOff + cLen, size - cOff); ctx.lineTo(cOff, size - cOff); ctx.lineTo(cOff, size - cOff - cLen);
-                    ctx.stroke();
+                // 上層亮色
+                ctx.strokeStyle = '#fff'; // 純白高亮
+                ctx.lineWidth = lw * 0.8;
+                ctx.stroke(); // 重畫一次路徑
 
-                    // 4. 能量點
-                    ctx.fillStyle = "#fff";
-                    const dotR = size * 0.03;
-                    ctx.beginPath();
-                    ctx.arc(cOff, cOff, dotR, 0, Math.PI * 2);
-                    ctx.arc(size - cOff, cOff, dotR, 0, Math.PI * 2);
-                    ctx.arc(size - cOff, size - cOff, dotR, 0, Math.PI * 2);
-                    ctx.arc(cOff, size - cOff, dotR, 0, Math.PI * 2);
-                    ctx.fill();
+                // 3. 能量節點 (四角的圓點)
+                ctx.fillStyle = grad;
+                const dotSize = size * 0.04;
+                const dotOff = size * 0.08;
+                
+                ctx.beginPath();
+                ctx.arc(dotOff, dotOff, dotSize, 0, Math.PI*2);
+                ctx.arc(size - dotOff, dotOff, dotSize, 0, Math.PI*2);
+                ctx.arc(size - dotOff, size - dotOff, dotSize, 0, Math.PI*2);
+                ctx.arc(dotOff, size - dotOff, dotSize, 0, Math.PI*2);
+                ctx.fill();
 
-                } catch (err) {
-                    console.error("Mythic Effect Error:", err);
-                    // 如果報錯，至少把 setLineDash 歸零，以免影響下一個骰子
-                    if (ctx.setLineDash) ctx.setLineDash([]);
-                }
+                // 4. 內部幾何裝飾 (細線框)
+                ctx.strokeStyle = `rgba(255, 255, 255, 0.3)`;
+                ctx.lineWidth = 1;
+                pathRound(size * 0.15, size * 0.15, size * 0.7, size * 0.7, size * 0.05);
+                ctx.stroke();
             }
 
             ctx.restore();
