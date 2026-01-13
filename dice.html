@@ -354,7 +354,33 @@
             <span class="text-[10px] font-bold">備戰</span>
         </button>
     </div>
+<div id="rankSidebar" class="fixed right-0 top-0 h-full w-80 bg-slate-900 border-l border-slate-700 transform translate-x-full transition-transform duration-300 z-50 flex flex-col shadow-2xl">
+        <div class="p-4 border-b border-slate-700 bg-slate-800 flex justify-between items-center">
+            <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                <span class="text-yellow-400">🏆</span> 榮譽殿堂
+            </h2>
+            <button onclick="toggleRank()" class="text-slate-400 hover:text-white p-2">✕</button>
+        </div>
 
+        <div class="flex border-b border-slate-700 bg-slate-800/50">
+            <button onclick="switchRankTab('adventure')" id="tab-adventure" 
+                class="flex-1 py-3 text-sm font-bold text-yellow-400 border-b-2 border-yellow-400 bg-slate-800 transition-colors">
+                ⚔️ 關卡榜
+            </button>
+            <button onclick="switchRankTab('coop')" id="tab-coop" 
+                class="flex-1 py-3 text-sm font-bold text-slate-400 border-b-2 border-transparent hover:text-white transition-colors">
+                🤝 合作榜
+            </button>
+            <button onclick="switchRankTab('pvp')" id="tab-pvp" 
+                class="flex-1 py-3 text-sm font-bold text-slate-400 border-b-2 border-transparent hover:text-white transition-colors">
+                ⚔️ PVP榜
+            </button>
+        </div>
+
+        <div id="rankList" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+            <p class="text-center text-slate-500 mt-10">載入中...</p>
+        </div>
+    </div>
     <div id="rewardOverlay" class="fixed inset-0 bg-black/90 hidden z-50 flex items-center justify-center p-6">
         <div class="bg-slate-800 w-full max-w-sm rounded-3xl p-6 border border-slate-600 animate-popup">
             <h3 class="text-center text-xl font-bold text-indigo-400 mb-6">召喚結果</h3>
@@ -1852,7 +1878,158 @@
             // 如果切換到備戰或戰鬥，重新渲染陣容或清單 (確保數據最新)
             render();
         }
+// 當前排行榜模式
+    let currentRankMode = 'adventure'; 
 
+    // 開關排行榜側邊欄
+    function toggleRank() {
+        const sidebar = document.getElementById('rankSidebar');
+        const overlay = document.getElementById('rankOverlay'); // 確保 HTML 有這個遮罩 div
+
+        if (sidebar.classList.contains('translate-x-full')) {
+            // 開啟
+            sidebar.classList.remove('translate-x-full');
+            if(overlay) overlay.classList.remove('hidden');
+            // 載入當前分頁資料
+            switchRankTab(currentRankMode); 
+        } else {
+            // 關閉
+            sidebar.classList.add('translate-x-full');
+            if(overlay) overlay.classList.add('hidden');
+        }
+    }
+
+    // 切換分頁邏輯
+    function switchRankTab(mode) {
+        currentRankMode = mode;
+        const tabs = ['adventure', 'coop', 'pvp'];
+        const rankList = document.getElementById('rankList');
+
+        // 1. 更新按鈕樣式
+        tabs.forEach(t => {
+            const btn = document.getElementById(`tab-${t}`);
+            if (t === mode) {
+                // 激活樣式
+                btn.className = "flex-1 py-3 text-sm font-bold text-yellow-400 border-b-2 border-yellow-400 bg-slate-800 transition-colors";
+            } else {
+                // 非激活樣式
+                btn.className = "flex-1 py-3 text-sm font-bold text-slate-400 border-b-2 border-transparent hover:text-white transition-colors";
+            }
+        });
+
+        // 2. 根據模式載入內容
+        if (mode === 'adventure') {
+            loadAdventureRanking();
+        } else if (mode === 'coop') {
+            rankList.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-64 text-slate-500">
+                    <div class="text-4xl mb-4">🤝</div>
+                    <p>合作模式排行榜</p>
+                    <p class="text-xs mt-2 text-slate-600">即將推出</p>
+                </div>`;
+        } else if (mode === 'pvp') {
+            rankList.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-64 text-slate-500">
+                    <div class="text-4xl mb-4">⚔️</div>
+                    <p>PVP 對戰排行榜</p>
+                    <p class="text-xs mt-2 text-slate-600">即將推出</p>
+                </div>`;
+        }
+    }
+
+    // --- 讀取【關卡榜】邏輯 ---
+    async function loadAdventureRanking() {
+        const rankList = document.getElementById('rankList');
+        rankList.innerHTML = '<div class="text-center text-slate-500 mt-10"><div class="animate-spin text-2xl mb-2">🎲</div>載入數據中...</div>';
+        
+        try {
+           const snapshot = await db.collection("users")
+                .where("dice_data.unlockLevel", ">", 1) // 條件：只抓取解鎖等級 > 1 的人 (即通過第1關)
+                .orderBy("dice_data.unlockLevel", "desc") 
+                .limit(10) 
+                .get();
+
+            let html = '';
+            let i = 1;
+            const now = Date.now();
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const userAssets = data.assets || {};
+                
+                // 防呆：如果該玩家還沒玩過，可能沒有 dice_data
+                const diceData = data.dice_data || {};
+                // 預設關卡為 1
+                const maxStage = diceData.unlockLevel || 1; 
+
+                // --- 稱號過期判斷 ---
+                let titleText = data.equipped_title || "";
+                if (titleText) {
+                    const titleObj = SHOP_DATA.title.find(t => t.name === titleText);
+                    // 如果找不到商品ID 或 當前時間 > 到期時間，則移除稱號
+                    if (titleObj && userAssets[titleObj.id] && now > userAssets[titleObj.id]) {
+                        titleText = "";
+                    }
+                }
+
+                // --- 特效過期判斷 ---
+                let fxClass = data.equipped_fx || "";
+                if (fxClass) {
+                    const effectObj = SHOP_DATA.effect.find(e => e.class === fxClass);
+                    if (effectObj && userAssets[effectObj.id] && now > userAssets[effectObj.id]) {
+                        fxClass = "";
+                    }
+                }
+
+                // --- 稱號顏色處理 ---
+                let titleColorClass = "t-blue";
+                if (titleText.includes("幸運錦鯉")) titleColorClass = "t-koi-color";
+                else if (titleText.includes("賭神") || titleText.includes("富可敵國") || titleText.includes("至尊")) titleColorClass = "t-red";
+                else if (titleText.includes("傳奇") || titleText.includes("天選")) titleColorClass = "t-orange";
+                else if (titleText.includes("土豪") || titleText.includes("千金")) titleColorClass = "t-purple";
+                else if (titleText.includes("幸運")) titleColorClass = "t-yellow";
+
+                const titleHTML = titleText ? `<span class="player-title ${titleColorClass}">【${titleText}】</span>` : "";
+
+                // --- 產生 HTML (單人榜樣式) ---
+                // 前三名有不同顏色的獎盃或數字
+                let rankDisplay = `<span class="text-slate-500 font-bold">${i}</span>`;
+                if (i === 1) rankDisplay = `<span class="text-2xl">🥇</span>`;
+                if (i === 2) rankDisplay = `<span class="text-2xl">🥈</span>`;
+                if (i === 3) rankDisplay = `<span class="text-2xl">🥉</span>`;
+
+                html += `
+                    <div class="rank-item ${fxClass} flex items-center bg-slate-800 p-3 rounded-lg border border-slate-700 relative overflow-hidden transition-transform hover:scale-[1.02]">
+                        <div class="w-10 text-center flex-shrink-0">
+                            ${rankDisplay}
+                        </div>
+                        
+                        <div class="flex-1 px-2 min-w-0">
+                            <div class="text-[10px] mb-0.5 whitespace-nowrap overflow-hidden text-ellipsis">${titleHTML}</div>
+                            <div class="text-white font-bold text-sm truncate">${data.name || '無名氏'}</div>
+                        </div>
+
+                        <div class="text-right flex-shrink-0">
+                            <div class="text-blue-400 font-black text-xl leading-none">${maxStage}</div>
+                            <div class="text-[9px] text-slate-500 mt-1">關卡</div>
+                        </div>
+                    </div>
+                `;
+                i++;
+            });
+
+            if (html === '') {
+                rankList.innerHTML = '<p class="text-center text-slate-500 mt-10">尚無玩家資料</p>';
+            } else {
+                rankList.innerHTML = html;
+            }
+
+        } catch (e) {
+            console.error("載入失敗:", e);
+            // 提示索引錯誤
+            rankList.innerHTML = '<p class="text-center text-red-400 mt-10 text-sm">載入失敗<br>請檢查 Firebase 索引設定</p>';
+        }
+    }
         function startBattle() {
             saveData();
             window.location.href = 'dice_battle.html';
