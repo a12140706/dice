@@ -1950,7 +1950,7 @@
         rankList.innerHTML = '<div class="text-center text-slate-500 mt-10"><div class="animate-spin text-2xl mb-2">🎲</div>載入數據中...</div>';
         
         try {
-           const snapshot = await db.collection("users")
+           const snapshot = await fs.collection("users")
                 .where("dice_data.unlockLevel", ">", 1) // 條件：只抓取解鎖等級 > 1 的人 (即通過第1關)
                 .orderBy("dice_data.unlockLevel", "desc") 
                 .limit(10) 
