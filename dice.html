@@ -1926,21 +1926,25 @@
 
     // 開關排行榜側邊欄
     function toggleRank() {
-        const sidebar = document.getElementById('rankSidebar');
-        const overlay = document.getElementById('rankOverlay'); // 確保 HTML 有這個遮罩 div
+    const sidebar = document.getElementById('rankSidebar');
+    const overlay = document.getElementById('rankOverlay');
 
-        if (sidebar.classList.contains('translate-x-full')) {
-            // 開啟
-            sidebar.classList.remove('translate-x-full');
-            if(overlay) overlay.classList.remove('hidden');
-            // 載入當前分頁資料
-            switchRankTab(currentRankMode); 
-        } else {
-            // 關閉
-            sidebar.classList.add('translate-x-full');
-            if(overlay) overlay.classList.add('hidden');
-        }
+    if (!sidebar) return;
+
+    // 修改這裡：使用 toggle 切換 'active' class
+    sidebar.classList.toggle('active');
+
+    // 遮罩層的邏輯
+    if (sidebar.classList.contains('active')) {
+        // 如果打開了側邊欄，顯示遮罩
+        if (overlay) overlay.style.display = 'block';
+        // 載入資料
+        switchRankTab(currentRankMode);
+    } else {
+        // 如果關閉了，隱藏遮罩
+        if (overlay) overlay.style.display = 'none';
     }
+}
 
     // 切換分頁邏輯
     function switchRankTab(mode) {

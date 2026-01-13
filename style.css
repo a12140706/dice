@@ -6,24 +6,32 @@
 #rankSidebar {
     position: fixed;
     top: 0;
-    right: -100%;
-    width: 85%;
+    right: 0; /* 永遠固定在右邊框 */
+    width: 85%; /* 手機版通常不用 max-width，直接給寬度比例 */
     max-width: 350px;
     height: 100%;
     background: #1a0202;
-    border-left: 2px solid #ffd86b;
+    border-left: 2px solid var(--gold);
     z-index: 3000;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
-    padding-top: env(safe-area-inset-top);
-    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.8);
+    padding: 20px;
+    padding-top: calc(env(safe-area-inset-top) + 20px);
+    
+    /* --- 關鍵修改 --- */
+    /* 1. 使用 transform 移動，而不是 right */
+    transform: translateX(100%); /* 預設：往右移 100% (隱藏) */
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* 加速曲線更滑順 */
+    
+    /* 解決手機閃爍問題 */
+    will-change: transform; 
 }
 
-#rankSidebar:not(.translate-x-full) {
-    transform: translateX(-100%);
-    right: 0;
+/* 當加上 active class 時 */
+#rankSidebar.active {
+    transform: translateX(0); /* 歸位：回到原點 (顯示) */
 }
+
 
 #rankOverlay {
     position: fixed;
