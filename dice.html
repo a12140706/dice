@@ -459,7 +459,42 @@
         }
         const db = firebase.database(); // 使用 Realtime Database
         const fs = firebase.firestore(); // 依然可以用來存玩家的等級、骰子等長期資料
-
+ const SHOP_DATA = {
+      title: [
+        { id: 't_new', name: '🌱初出茅廬', price: 50000 },
+        { id: 't_hunter', name: '🏹賭場獵人', price: 200000 },
+        { id: 't_rich', name: '💰土豪', price: 1000000 },
+        { id: 't_lady', name: '👗千金大小姐', price: 5000000 },
+        { id: 't_lucky', name: '🌟幸運星', price: 100000000 },
+        { id: 't_sir', name: '🎩豪門大少爺', price: 5000000 },
+        { id: 't_king', name: '👑梟雄', price: 10000000 },
+        { id: 't_shit', name: '💩狗屎運', price: 30000000 },
+        { id: 't_legend', name: '🐉賭城傳奇', price: 50000000 },
+        { id: 't_red', name: '🧧鴻運當頭', price: 50000000 },
+        { id: 't_sleep', name: '💤 躺平大師', price: 100000000 },
+        { id: 't_god', name: '⚖️富可敵國', price: 100000000 },
+        { id: 't_beauty', name: '🧚可愛美麗小仙女', price: 200000000 },
+        { id: 't_sky', name: '🍀天選之人', price: 500000000 },
+        { id: 't_world', name: '🪐賭神', price: 500000000 },
+        { id: 't_ultimate', name: '𒁂至尊', price: 500000000,},
+        { id: 't_koi', name: '🌌幸運錦鯉', price: 0, lottoOnly: true }
+      ],
+      effect: [
+        { id: 'e_thunder', name: '⚡ 電閃雷鳴', price: 20000000, class: 'fx-thunder' },
+        { id: 'e_void', name: '🌀 湮滅黑洞', price: 50000000, class: 'fx-void' },
+        { id: 'e_gold', name: '✨ 黃金呼吸', price: 80000000, class: 'fx-gold' },
+        { id: 'e_lightning', name: '⚡ 暗影雷電', price: 100000000, class: 'fx-lightning' },
+        { id: 'e_fire', name: '🔥 地獄火', price: 200000000, class: 'fx-fire' },
+        { id: 'e_ice', name: '❄️ 絕對零度', price: 200000000, class: 'fx-ice' },
+        { id: 'e_neon', name: '🌈 彩虹極光', price: 500000000, class: 'fx-neon' },
+        { id: 'e_hacker', name: '💻 駭客任務', price: 500000000, class: 'fx-hacker' },
+        { id: 'e_nebula', name: '🌌 廣闊星雲', price: 500000000, class: 'fx-nebula' },
+        { id: 'e_timelord', name: '⏳ 時光領域', price: 500000000, class: 'fx-timelord' },
+        { id: 'e_god_king', name: '🔱 眾神之巔', price: 1000000000, class: 'fx-god-king' },
+        { id: 'e_ultimate', name: '𒁂 傳奇至尊', price: 1000000000, class: 'fx-ultimate-legend' },
+        { id: 'e_koi', name: '🌊 錦鯉躍遷', price: 0, class: 'fx-cosmic-koi', lottoOnly: true }
+      ]
+    };
         // --- 1. 基礎資料定義 ---
         const QUALITIES = {
             common: { name: '普通', color: '#9ca3af', chance: 0.50 },
