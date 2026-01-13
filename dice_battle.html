@@ -2425,118 +2425,7 @@
 
             if (quality === 'legend') {
                 // ==========================================
-                // 傳說 (Legend)：虛空矩陣 (懸浮、科技、神秘)
-                // 原本是神話的裝飾，現在給傳說用
-                // ==========================================
-
-                // 定義神秘漸層 (紫 -> 青 -> 白)
-                const grad = ctx.createLinearGradient(0, 0, size, size);
-                grad.addColorStop(0, '#7c3aed');   // 紫色
-                grad.addColorStop(0.5, '#22d3ee'); // 青色
-                grad.addColorStop(1, '#e879f9');   // 粉紫
-
-                // 1. 斷裂式外框 (上下左右四條邊，不連在一起)
-                ctx.strokeStyle = grad;
-                ctx.lineWidth = lw * 0.8;
-                ctx.lineCap = "round";
-                const gap = size * 0.25; // 缺口大小
-
-                ctx.beginPath();
-                // 上邊
-                ctx.moveTo(gap, 2); ctx.lineTo(size - gap, 2);
-                // 下邊
-                ctx.moveTo(gap, size - 2); ctx.lineTo(size - gap, size - 2);
-                // 左邊
-                ctx.moveTo(2, gap); ctx.lineTo(2, size - gap);
-                // 右邊
-                ctx.moveTo(size - 2, gap); ctx.lineTo(size - 2, size - gap);
-                ctx.stroke();
-
-                // 2. 角落懸浮矩陣 (取代傳統護角)
-                const cLen = size * 0.18;
-                const offset = 3;
-
-                // 雙層線條：底層深色
-                ctx.strokeStyle = '#4c1d95'; // 深紫襯底
-                ctx.lineWidth = lw * 1.5;
-                ctx.beginPath();
-                // 左上
-                ctx.moveTo(offset, offset + cLen); ctx.lineTo(offset, offset); ctx.lineTo(offset + cLen, offset);
-                // 右上
-                ctx.moveTo(size - offset, offset + cLen); ctx.lineTo(size - offset, offset); ctx.lineTo(size - offset - cLen, offset);
-                // 右下
-                ctx.moveTo(size - offset, size - offset - cLen); ctx.lineTo(size - offset, size - offset); ctx.lineTo(size - offset - cLen, size - offset);
-                // 左下
-                ctx.moveTo(offset, size - offset - cLen); ctx.lineTo(offset, size - offset); ctx.lineTo(offset + cLen, size - offset);
-                ctx.stroke();
-
-                // 上層亮色
-                ctx.strokeStyle = '#fff'; // 純白高亮
-                ctx.lineWidth = lw * 0.6;
-                ctx.stroke(); // 重畫一次路徑
-
-                // 3. 能量節點 (四角的圓點)
-                ctx.fillStyle = grad;
-                const dotSize = size * 0.04;
-                const dotOff = size * 0.08;
-
-                ctx.beginPath();
-                ctx.arc(dotOff, dotOff, dotSize, 0, Math.PI * 2);
-                ctx.arc(size - dotOff, dotOff, dotSize, 0, Math.PI * 2);
-                ctx.arc(size - dotOff, size - dotOff, dotSize, 0, Math.PI * 2);
-                ctx.arc(dotOff, size - dotOff, dotSize, 0, Math.PI * 2);
-                ctx.fill();
-
-                // 4. 內部幾何裝飾 (細線框)
-                ctx.strokeStyle = `rgba(255, 255, 255, 0.3)`;
-                ctx.lineWidth = 1;
-                pathRound(size * 0.15, size * 0.15, size * 0.7, size * 0.7, size * 0.05);
-                ctx.stroke();
-
-            } else if (quality === 'mythic') {
-                // ==========================================
-                // 傳說 (Legend)：皇家黃金浮雕 (厚重、傳統、財富)
-                // ==========================================
-
-                // 1. 外框 (深色打底，製造陰影感)
-                ctx.strokeStyle = '#B8860B'; // 暗金色
-                ctx.lineWidth = lw * 1.2; // 減薄外框
-                pathRound(1, 1, size - 2, size - 2, size * 0.18);
-                ctx.stroke();
-
-                // 2. 主框體 (金屬漸層，製造立體感)
-                const grad = ctx.createLinearGradient(0, 0, size, size);
-                grad.addColorStop(0, '#FDB931'); // 亮金
-                grad.addColorStop(0.3, '#D19C1D'); // 中金
-                grad.addColorStop(0.6, '#FFD700'); // 純金高光
-                grad.addColorStop(1, '#8A6E2F'); // 暗角
-
-                ctx.strokeStyle = grad;
-                ctx.lineWidth = lw * 0.9; // 減薄主框
-                pathRound(2, 2, size - 4, size - 4, size * 0.17);
-                ctx.stroke();
-
-                // 3. 四角裝飾 (三角形護角)
-                ctx.fillStyle = grad;
-                const cSize = size * 0.12;
-                // 左上
-                ctx.beginPath(); ctx.moveTo(0, cSize); ctx.lineTo(cSize, 0); ctx.lineTo(0, 0); ctx.fill();
-                // 右上
-                ctx.beginPath(); ctx.moveTo(size - cSize, 0); ctx.lineTo(size, 0); ctx.lineTo(size, cSize); ctx.fill();
-                // 右下
-                ctx.beginPath(); ctx.moveTo(size, size - cSize); ctx.lineTo(size, size); ctx.lineTo(size - cSize, size); ctx.fill();
-                // 左下
-                ctx.beginPath(); ctx.moveTo(0, size - cSize); ctx.lineTo(0, size); ctx.lineTo(cSize, size); ctx.fill();
-
-                // 4. 內描邊 (精緻感)
-                ctx.strokeStyle = '#FFF8DC'; // 米白金
-                ctx.lineWidth = 1;
-                pathRound(size * 0.12, size * 0.12, size * 0.76, size * 0.76, size * 0.1);
-                ctx.stroke();
-
-            } else if (quality === 'mythic') {
-                // ==========================================
-                // 神話 (Mythic)：龍爪裝飾 (霸氣、神獸、至高無上)
+                // 傳說 (Legend)：龍爪裝飾 (霸氣、神獸、至高無上)
                 // ==========================================
 
                 // 神話漸層 (深紫 -> 金 -> 紅) - 更鮮艷
@@ -2604,234 +2493,293 @@
                 ctx.fill();
                 ctx.stroke();
 
+            } else if (quality === 'mythic') {
+                // ==========================================
+                // 神話 (Mythic)：虛空矩陣 (懸浮、科技、神秘)
+                // ==========================================
 
-                ctx.restore();
-            }
-            function renderDice(ctx, x, y, dice, isLocked, overrideColor = null) {
-                if (!dice) return;
-                const slotSize = grid.slotSize;
-                const centerX = x + slotSize / 2;
-                const centerY = y + slotSize / 2;
+                // 定義神秘漸層 (紫 -> 青 -> 白)
+                const grad = ctx.createLinearGradient(0, 0, size, size);
+                grad.addColorStop(0, '#7c3aed');   // 紫色
+                grad.addColorStop(0.5, '#22d3ee'); // 青色
+                grad.addColorStop(1, '#e879f9');   // 粉紫
 
-                // 優先順序：覆蓋色 > 骰子目前色 > 基礎色
-                const finalColor = overrideColor || dice.color || dice.baseColor;
+                // 1. 斷裂式外框
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = lw * 0.8;
+                ctx.lineCap = "round";
+                const gap = size * 0.25;
 
-                // 強風狂暴狀態判定
-                const isBursting = (dice.id === 'mighty_wind' && dice.isBurst);
-
-                ctx.save();
-
-                // --- 1. 特效與縮放處理 ---
-                if (isBursting) {
-                    // 高性能呼吸縮放
-                    const s = 1 + (dice.animScale || 0);
-                    ctx.translate(centerX, centerY);
-                    ctx.scale(s, s);
-                    ctx.translate(-centerX, -centerY);
-
-                    // 高性能發光：使用徑向漸層替代 ShadowBlur
-                    const grad = ctx.createRadialGradient(centerX, centerY, slotSize * 0.2, centerX, centerY, slotSize * 0.8);
-                    grad.addColorStop(0, 'rgba(255, 255, 255, 0.7)');   // 中心亮白
-                    grad.addColorStop(0.4, 'rgba(165, 243, 252, 0.4)'); // 強風淡藍
-                    grad.addColorStop(1, 'rgba(165, 243, 252, 0)');     // 邊緣透明
-                    ctx.fillStyle = grad;
-                    ctx.beginPath();
-                    ctx.arc(centerX, centerY, slotSize * 0.8, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-
-                // --- 2. 基礎外框與背景 ---
-                const dbRef = ALL_DICES.find(d => d.id === dice.id);
-                const q = QUALITIES[dbRef ? dbRef.quality : 'common'];
-
-                // 畫外框
                 ctx.beginPath();
-                ctx.strokeStyle = q.color || '#fff';
-                ctx.lineWidth = 3;
-                drawRoundedRect(ctx, x + 4, y + 4, slotSize - 8, slotSize - 8, 8);
+                ctx.moveTo(gap, 2); ctx.lineTo(size - gap, 2);
+                ctx.moveTo(gap, size - 2); ctx.lineTo(size - gap, size - 2);
+                ctx.moveTo(2, gap); ctx.lineTo(2, size - gap);
+                ctx.moveTo(size - 2, gap); ctx.lineTo(size - 2, size - gap);
                 ctx.stroke();
 
-                // 畫填充背景 (白色或淡藍色)
+                // 2. 角落懸浮矩陣
+                const cLen = size * 0.18;
+                const offset = 3;
+
+                ctx.strokeStyle = '#4c1d95';
+                ctx.lineWidth = lw * 1.5;
                 ctx.beginPath();
-                ctx.fillStyle = isBursting ? "#e0f2fe" : "#ffffff"; // 狂暴時淡藍色背景
-                drawRoundedRect(ctx, x + 6, y + 6, slotSize - 12, slotSize - 12, 6);
+                ctx.moveTo(offset, offset + cLen); ctx.lineTo(offset, offset); ctx.lineTo(offset + cLen, offset);
+                ctx.moveTo(size - offset, offset + cLen); ctx.lineTo(size - offset, offset); ctx.lineTo(size - offset - cLen, offset);
+                ctx.moveTo(size - offset, size - offset - cLen); ctx.lineTo(size - offset, size - offset); ctx.lineTo(size - offset - cLen, size - offset);
+                ctx.moveTo(offset, size - offset - cLen); ctx.lineTo(offset, size - offset); ctx.lineTo(offset + cLen, size - offset);
+                ctx.stroke();
+
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = lw * 0.6;
+                ctx.stroke();
+
+                // 3. 能量節點
+                ctx.fillStyle = grad;
+                const dotSize = size * 0.04;
+                const dotOff = size * 0.08;
+
+                ctx.beginPath();
+                ctx.arc(dotOff, dotOff, dotSize, 0, Math.PI * 2);
+                ctx.arc(size - dotOff, dotOff, dotSize, 0, Math.PI * 2);
+                ctx.arc(size - dotOff, size - dotOff, dotSize, 0, Math.PI * 2);
+                ctx.arc(dotOff, size - dotOff, dotSize, 0, Math.PI * 2);
                 ctx.fill();
 
-                // --- 3. 品質特效 (傳說/神話) ---
-                if (typeof drawQualityBorder === 'function') {
-                    drawQualityBorder(ctx, x, y, slotSize, dice.id);
-                }
-
-                // --- 4. 繪製特徵圖案與星級 ---
-                const drawX = x + 6;
-                const drawY = y + 6;
-                const drawSize = slotSize - 12;
-                const dColor = dice.baseColor || dice.color || "#333";
-                const pattern = (dbRef && dbRef.pattern) ? dbRef.pattern : dice.id;
-
-                if (typeof drawDiceFeature === 'function') {
-                    drawDiceFeature(ctx, drawX, drawY, drawSize, pattern, finalColor); // 使用 finalColor 狂暴時才會變色
-                }
-
-                if (typeof drawDiceStars === 'function') {
-                    drawDiceStars(ctx, drawX, drawY, drawSize, dice.lv, dColor, dice.id);
-                }
-
-                ctx.restore(); // 恢復縮放狀態
-
-                // --- 5. 鎖定遮罩 (不隨縮放變動) ---
-                if (isLocked) {
-                    ctx.save();
-                    ctx.fillStyle = "rgba(15, 23, 42, 0.75)";
-                    ctx.beginPath();
-                    drawRoundedRect(ctx, x + 5, y + 5, slotSize - 10, slotSize - 10, 8);
-                    ctx.fill();
-
-                    ctx.beginPath();
-                    ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
-                    ctx.lineWidth = 2;
-                    const p = slotSize * 0.3;
-                    ctx.moveTo(x + p, y + p); ctx.lineTo(x + slotSize - p, y + slotSize - p);
-                    ctx.moveTo(x + slotSize - p, y + p); ctx.lineTo(x + p, y + slotSize - p);
-                    ctx.stroke();
-                    ctx.restore();
-                }
-            }
-            function drawRoundedRect(ctx, x, y, w, h, r) {
-                ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-                ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h); ctx.lineTo(x + r, y + h);
-                ctx.quadraticCurveTo(x, y + h, x, y + h - r); ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath();
-            }
-
-            function setupTouchEvents(canvas) {
-                const fingerPadding = 15; // 手指寬容度：增加點擊判定範圍
-
-                canvas.addEventListener('touchstart', (e) => {
-                    const touch = e.touches[0], rect = canvas.getBoundingClientRect();
-
-                    // 計算 Canvas 像素與 CSS 顯示大小的比例
-                    const scaleX = canvas.width / rect.width;
-                    const scaleY = canvas.height / rect.height;
-
-                    // 取得修正後的畫布座標
-                    const x = (touch.clientX - rect.left) * scaleX;
-                    const y = (touch.clientY - rect.top) * scaleY;
-
-                    grid.slots.forEach(slot => {
-                        // 點擊判定：加入 fingerPadding 讓判定區域往外擴張
-                        if (slot.dice &&
-                            x > slot.x - fingerPadding &&
-                            x < slot.x + grid.slotSize + fingerPadding &&
-                            y > slot.y - fingerPadding &&
-                            y < slot.y + grid.slotSize + fingerPadding) {
-
-                            drag.isDragging = true;
-                            drag.fromSlot = slot;
-                            drag.dice = { ...slot.dice }; // 淺拷貝避免直接修改原數據
-                            drag.currentX = x;
-                            drag.currentY = y;
-                            slot.isBeingDragged = true;
-                        }
-                    });
-                });
-
-                canvas.addEventListener('touchmove', (e) => {
-                    if (!drag.isDragging) return;
-                    e.preventDefault(); // 阻止手機頁面捲動
-
-                    const touch = e.touches[0], rect = canvas.getBoundingClientRect();
-                    const scaleX = canvas.width / rect.width;
-                    const scaleY = canvas.height / rect.height;
-
-                    // 更新當前拖拽位置 (同樣需要比例修正)
-                    drag.currentX = (touch.clientX - rect.left) * scaleX;
-                    drag.currentY = (touch.clientY - rect.top) * scaleY;
-                }, { passive: false });
-
-                canvas.addEventListener('touchend', () => {
-                    if (!drag.isDragging) return;
-
-                    // 尋找目標格子：同樣加入 fingerPadding 讓合成操作更輕鬆
-                    let targetSlot = grid.slots.find(s =>
-                        drag.currentX > s.x - fingerPadding &&
-                        drag.currentX < s.x + grid.slotSize + fingerPadding &&
-                        drag.currentY > s.y - fingerPadding &&
-                        drag.currentY < s.y + grid.slotSize + fingerPadding
-                    );
-
-                    if (targetSlot && targetSlot !== drag.fromSlot && targetSlot.dice) {
-                        // --- 小丑骰子變身邏輯 ---
-                        if (drag.dice.id === 'joker' && drag.dice.lv === targetSlot.dice.lv && targetSlot.dice.id !== 'joker') {
-                            const targetId = targetSlot.dice.id;
-                            const db = ALL_DICES.find(d => d.id === targetId);
-
-                            drag.fromSlot.dice = {
-                                id: targetId,
-                                lv: drag.dice.lv,
-                                color: db.baseColor,
-                                qualityColor: QUALITIES[db.quality].color,
-                                growthTimer: 0,
-                                attackCooldown: 0,
-                                spawnTime: Date.now() // 變身後重設時間
-                            };
-
-                            drag.isDragging = false;
-                            drag.fromSlot.isBeingDragged = false;
-                            updateUI();
-                            refreshSunState();
-                            return;
-                        }
-
-                        // --- 一般合成邏輯 (包含小丑碰小丑) ---
-                        if (targetSlot.dice.id === drag.dice.id && targetSlot.dice.lv === drag.dice.lv && targetSlot.dice.lv < 7) {
-                            const newId = userData.deck[Math.floor(Math.random() * userData.deck.length)];
-                            const db = ALL_DICES.find(d => d.id === newId);
-
-                            targetSlot.dice = {
-                                id: newId,
-                                lv: drag.dice.lv + 1,
-                                color: db.baseColor,
-                                qualityColor: QUALITIES[db.quality].color,
-                                growthTimer: 0,
-                                attackCooldown: 0,
-                                spawnTime: Date.now() // 合成後重設時間
-                            };
-                            drag.fromSlot.dice = null;
-                            updateUI();
-                            refreshSunState();
-                        }
-                    }
-
-                    // 統一重置狀態
-                    drag.isDragging = false;
-                    if (drag.fromSlot) drag.fromSlot.isBeingDragged = false;
-                    updateUI();
-                    refreshSunState();
-                });
-            }
-            function drawEffect(slot, color) {
-                // 1. 最基礎的安全檢查
-                if (!slot || isNaN(slot.x)) return;
-
-                // 2. 不要使用 save() 和 restore()，這在手機 Loop 中非常重
-                // 3. 直接設定屬性，畫完後手動改回來
-                ctx.globalAlpha = 0.4;
-                ctx.strokeStyle = color;
-                ctx.lineWidth = 4;
-
-                // 4. 只畫最簡單的矩形邊框 (strokeRect 是 Canvas 中效能最高的指令之一)
-                ctx.strokeRect(
-                    slot.x + 2,
-                    slot.y + 2,
-                    grid.slotSize - 4,
-                    grid.slotSize - 4
-                );
-
-                // 5. 手動重置全域屬性，避免汙染後面的繪圖
-                ctx.globalAlpha = 1.0;
+                // 4. 內部幾何裝飾
+                ctx.strokeStyle = `rgba(255, 255, 255, 0.3)`;
                 ctx.lineWidth = 1;
+                pathRound(size * 0.15, size * 0.15, size * 0.7, size * 0.7, size * 0.05);
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+        function renderDice(ctx, x, y, dice, isLocked, overrideColor = null) {
+            if (!dice) return;
+            const slotSize = grid.slotSize;
+            const centerX = x + slotSize / 2;
+            const centerY = y + slotSize / 2;
+
+            // 優先順序：覆蓋色 > 骰子目前色 > 基礎色
+            const finalColor = overrideColor || dice.color || dice.baseColor;
+
+            // 強風狂暴狀態判定
+            const isBursting = (dice.id === 'mighty_wind' && dice.isBurst);
+
+            ctx.save();
+
+            // --- 1. 特效與縮放處理 ---
+            if (isBursting) {
+                // 高性能呼吸縮放
+                const s = 1 + (dice.animScale || 0);
+                ctx.translate(centerX, centerY);
+                ctx.scale(s, s);
+                ctx.translate(-centerX, -centerY);
+
+                // 高性能發光：使用徑向漸層替代 ShadowBlur
+                const grad = ctx.createRadialGradient(centerX, centerY, slotSize * 0.2, centerX, centerY, slotSize * 0.8);
+                grad.addColorStop(0, 'rgba(255, 255, 255, 0.7)');   // 中心亮白
+                grad.addColorStop(0.4, 'rgba(165, 243, 252, 0.4)'); // 強風淡藍
+                grad.addColorStop(1, 'rgba(165, 243, 252, 0)');     // 邊緣透明
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, slotSize * 0.8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // --- 2. 基礎外框與背景 ---
+            const dbRef = ALL_DICES.find(d => d.id === dice.id);
+            const q = QUALITIES[dbRef ? dbRef.quality : 'common'];
+
+            // 畫外框
+            ctx.beginPath();
+            ctx.strokeStyle = q.color || '#fff';
+            ctx.lineWidth = 3;
+            drawRoundedRect(ctx, x + 4, y + 4, slotSize - 8, slotSize - 8, 8);
+            ctx.stroke();
+
+            // 畫填充背景 (白色或淡藍色)
+            ctx.beginPath();
+            ctx.fillStyle = isBursting ? "#e0f2fe" : "#ffffff"; // 狂暴時淡藍色背景
+            drawRoundedRect(ctx, x + 6, y + 6, slotSize - 12, slotSize - 12, 6);
+            ctx.fill();
+
+            // --- 3. 品質特效 (傳說/神話) ---
+            if (typeof drawQualityBorder === 'function') {
+                drawQualityBorder(ctx, x, y, slotSize, dice.id);
+            }
+
+            // --- 4. 繪製特徵圖案與星級 ---
+            const drawX = x + 6;
+            const drawY = y + 6;
+            const drawSize = slotSize - 12;
+            const dColor = dice.baseColor || dice.color || "#333";
+            const pattern = (dbRef && dbRef.pattern) ? dbRef.pattern : dice.id;
+
+            if (typeof drawDiceFeature === 'function') {
+                drawDiceFeature(ctx, drawX, drawY, drawSize, pattern, finalColor); // 使用 finalColor 狂暴時才會變色
+            }
+
+            if (typeof drawDiceStars === 'function') {
+                drawDiceStars(ctx, drawX, drawY, drawSize, dice.lv, dColor, dice.id);
+            }
+
+            ctx.restore(); // 恢復縮放狀態
+
+            // --- 5. 鎖定遮罩 (不隨縮放變動) ---
+            if (isLocked) {
+                ctx.save();
+                ctx.fillStyle = "rgba(15, 23, 42, 0.75)";
+                ctx.beginPath();
+                drawRoundedRect(ctx, x + 5, y + 5, slotSize - 10, slotSize - 10, 8);
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
+                ctx.lineWidth = 2;
+                const p = slotSize * 0.3;
+                ctx.moveTo(x + p, y + p); ctx.lineTo(x + slotSize - p, y + slotSize - p);
+                ctx.moveTo(x + slotSize - p, y + p); ctx.lineTo(x + p, y + slotSize - p);
+                ctx.stroke();
+                ctx.restore();
             }
         }
+        function drawRoundedRect(ctx, x, y, w, h, r) {
+            ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+            ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h); ctx.lineTo(x + r, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - r); ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath();
+        }
+
+        function setupTouchEvents(canvas) {
+            const fingerPadding = 15; // 手指寬容度：增加點擊判定範圍
+
+            canvas.addEventListener('touchstart', (e) => {
+                const touch = e.touches[0], rect = canvas.getBoundingClientRect();
+
+                // 計算 Canvas 像素與 CSS 顯示大小的比例
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+
+                // 取得修正後的畫布座標
+                const x = (touch.clientX - rect.left) * scaleX;
+                const y = (touch.clientY - rect.top) * scaleY;
+
+                grid.slots.forEach(slot => {
+                    // 點擊判定：加入 fingerPadding 讓判定區域往外擴張
+                    if (slot.dice &&
+                        x > slot.x - fingerPadding &&
+                        x < slot.x + grid.slotSize + fingerPadding &&
+                        y > slot.y - fingerPadding &&
+                        y < slot.y + grid.slotSize + fingerPadding) {
+
+                        drag.isDragging = true;
+                        drag.fromSlot = slot;
+                        drag.dice = { ...slot.dice }; // 淺拷貝避免直接修改原數據
+                        drag.currentX = x;
+                        drag.currentY = y;
+                        slot.isBeingDragged = true;
+                    }
+                });
+            });
+
+            canvas.addEventListener('touchmove', (e) => {
+                if (!drag.isDragging) return;
+                e.preventDefault(); // 阻止手機頁面捲動
+
+                const touch = e.touches[0], rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+
+                // 更新當前拖拽位置 (同樣需要比例修正)
+                drag.currentX = (touch.clientX - rect.left) * scaleX;
+                drag.currentY = (touch.clientY - rect.top) * scaleY;
+            }, { passive: false });
+
+            canvas.addEventListener('touchend', () => {
+                if (!drag.isDragging) return;
+
+                // 尋找目標格子：同樣加入 fingerPadding 讓合成操作更輕鬆
+                let targetSlot = grid.slots.find(s =>
+                    drag.currentX > s.x - fingerPadding &&
+                    drag.currentX < s.x + grid.slotSize + fingerPadding &&
+                    drag.currentY > s.y - fingerPadding &&
+                    drag.currentY < s.y + grid.slotSize + fingerPadding
+                );
+
+                if (targetSlot && targetSlot !== drag.fromSlot && targetSlot.dice) {
+                    // --- 小丑骰子變身邏輯 ---
+                    if (drag.dice.id === 'joker' && drag.dice.lv === targetSlot.dice.lv && targetSlot.dice.id !== 'joker') {
+                        const targetId = targetSlot.dice.id;
+                        const db = ALL_DICES.find(d => d.id === targetId);
+
+                        drag.fromSlot.dice = {
+                            id: targetId,
+                            lv: drag.dice.lv,
+                            color: db.baseColor,
+                            qualityColor: QUALITIES[db.quality].color,
+                            growthTimer: 0,
+                            attackCooldown: 0,
+                            spawnTime: Date.now() // 變身後重設時間
+                        };
+
+                        drag.isDragging = false;
+                        drag.fromSlot.isBeingDragged = false;
+                        updateUI();
+                        refreshSunState();
+                        return;
+                    }
+
+                    // --- 一般合成邏輯 (包含小丑碰小丑) ---
+                    if (targetSlot.dice.id === drag.dice.id && targetSlot.dice.lv === drag.dice.lv && targetSlot.dice.lv < 7) {
+                        const newId = userData.deck[Math.floor(Math.random() * userData.deck.length)];
+                        const db = ALL_DICES.find(d => d.id === newId);
+
+                        targetSlot.dice = {
+                            id: newId,
+                            lv: drag.dice.lv + 1,
+                            color: db.baseColor,
+                            qualityColor: QUALITIES[db.quality].color,
+                            growthTimer: 0,
+                            attackCooldown: 0,
+                            spawnTime: Date.now() // 合成後重設時間
+                        };
+                        drag.fromSlot.dice = null;
+                        updateUI();
+                        refreshSunState();
+                    }
+                }
+
+                // 統一重置狀態
+                drag.isDragging = false;
+                if (drag.fromSlot) drag.fromSlot.isBeingDragged = false;
+                updateUI();
+                refreshSunState();
+            });
+        }
+        function drawEffect(slot, color) {
+            // 1. 最基礎的安全檢查
+            if (!slot || isNaN(slot.x)) return;
+
+            // 2. 不要使用 save() 和 restore()，這在手機 Loop 中非常重
+            // 3. 直接設定屬性，畫完後手動改回來
+            ctx.globalAlpha = 0.4;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 4;
+
+            // 4. 只畫最簡單的矩形邊框 (strokeRect 是 Canvas 中效能最高的指令之一)
+            ctx.strokeRect(
+                slot.x + 2,
+                slot.y + 2,
+                grid.slotSize - 4,
+                grid.slotSize - 4
+            );
+
+            // 5. 手動重置全域屬性，避免汙染後面的繪圖
+            ctx.globalAlpha = 1.0;
+            ctx.lineWidth = 1;
+        }
+
     </script>
 </body>
 
