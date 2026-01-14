@@ -324,6 +324,9 @@
             unlockLevel: 1
         };
 
+        // 從大廳 (dice.html) 同步的暱稱
+        userData.nickname = localStorage.getItem('player_name') || "Player";
+
         const AudioManager = {
             ctx: new (window.AudioContext || window.webkitAudioContext)(),
             buffers: {},
@@ -416,7 +419,7 @@
                 gameover: false,
                 gameStats: { totalSp: 0, totalSpP2: 0 },
                 players: {
-                    p1: { slots: [], sp: 100, powerUpLevels: powerUpLevels },
+                    p1: { slots: [], sp: 100, powerUpLevels: powerUpLevels, name: userData.nickname || 'Host' },
                     p2: null // P2 重連後會自己更新
                 }
             });
@@ -566,6 +569,12 @@
                         }
                     }
                 } else {
+                    // Guest: 第一次連線成功時，把自己的名字寫入 P2 (如果尚未寫入)
+                    if (!battleState.guestNameSynced && data.players?.p1) {
+                        db.ref(`coop_rooms/${roomId}/players/p2/name`).set(userData.nickname || 'Guest');
+                        battleState.guestNameSynced = true;
+                    }
+
                     if (data.players?.p1) {
                         updateSlotsFromSync(partnerSlots, data.players.p1.slots);
                         if (data.players.p1.powerUpLevels) {
@@ -573,6 +582,11 @@
                         }
                     }
                 }
+
+                // 儲存雙方名字以供 Game Over 顯示
+                if (data.players?.p1?.name) battleState.p1Name = data.players.p1.name;
+                if (data.players?.p2?.name) battleState.p2Name = data.players.p2.name;
+
                 updateUILive();
             });
 
@@ -1009,6 +1023,8 @@
                 if (!slot.dice || slot.isBeingDragged || slot.isLocked) return;
 
                 const db = ALL_DICES.find(d => d.id === slot.dice.id);
+                if (!db) return; // Safety check
+
                 const pLv = (slotOwner === 'p1' && role === 'host') || (slotOwner === 'p2' && role === 'guest')
                     ? (powerUpLevels[slot.dice.id] || 1)
                     : (partnerPowerUpLevels[slot.dice.id] || 1);
@@ -1952,13 +1968,14 @@
                     // 成功合成
                     const newId = userData.deck[Math.floor(Math.random() * userData.deck.length)];
                     const db = ALL_DICES.find(d => d.id === newId);
-                    target.dice = {
-                        id: newId, lv: drag.dice.lv + 1,
-                        baseColor: db.baseColor
-                    };
-                    drag.fromSlot.dice = null;
-
-                    syncMyData();
+                    if (db) {
+                        target.dice = {
+                            id: newId, lv: drag.dice.lv + 1,
+                            baseColor: db.baseColor
+                        };
+                        drag.fromSlot.dice = null;
+                        syncMyData();
+                    }
                 } else if (!target.dice) {
                     // 移動
                     target.dice = drag.dice;
@@ -1984,9 +2001,10 @@
             const target = empties[Math.floor(Math.random() * empties.length)];
             const diceId = userData.deck[Math.floor(Math.random() * userData.deck.length)];
             const db = ALL_DICES.find(d => d.id === diceId);
+            if (!db) return;
 
             target.dice = {
-                id: diceId, lv: 1, baseColor: db.baseColor, pattern: db.pattern || diceId // 新增 pattern 屬性
+                id: diceId, lv: 1, baseColor: db.baseColor, pattern: db.pattern || diceId
             };
 
             syncMyData();
@@ -2315,6 +2333,14 @@
         class="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] hidden backdrop-blur-sm">
         <div class="bg-slate-800 p-8 rounded-2xl border border-slate-600 text-center max-w-sm mx-4 shadow-2xl">
             <h2 class="text-3xl font-black text-white mb-2 tracking-wider">GAME OVER</h2>
+            <div class="mb-6 space-y-2">
+                <div class="flex justify-between text-blue-400 font-bold text-lg">
+                    <span>P1: <span id="p1-name-display">Player 1</span></span>
+                </div>
+                <div class="flex justify-between text-pink-400 font-bold text-lg">
+                    <span>P2: <span id="p2-name-display">Player 2</span></span>
+                </div>
+            </div>
             <p class="text-slate-400 mb-8 text-lg">共堅持了 <span id="final-wave"
                     class="text-yellow-400 font-bold text-3xl mx-1">0</span> 波</p>
             <button onclick="location.href='dice.html'"
