@@ -2125,14 +2125,20 @@
                 localStorage.setItem('dice_game_data', JSON.stringify(userData));
             }
 
-            // 2. 上傳排行榜 (僅由 Host 執行一次)
+            // 2. 上傳排行榜與遊戲結束狀態 (僅由 Host 執行一次)
             if (role === 'host') {
-                // 取得雙方名稱 (或 ID)
-                // 這裡我們需要從 currentRoomId 取得房間資訊，或者假設我們已經有雙方資料
-                // 暫時用本地變數
-                const p1Name = "Player 1"; // 可優化：從 userData 拿名字
-                const p2Name = "Player 2";
+                // [FIX] 強制同步結束狀態，確保 Guest 收到
+                db.ref(`coop_rooms/${roomId}`).update({
+                    gameover: true,
+                    hp: 0,
+                    wave: battleState.wave
+                });
 
+                // 取得雙方名稱 (或 ID)
+                const p1Name = battleState.p1Name || "Player 1";
+                const p2Name = battleState.p2Name || "Player 2";
+
+                // 這裡我們需要從 currentRoomId 取得房間資訊，或者假設我們已經有雙方資料
                 db.ref(`coop_rooms/${roomId}`).once('value').then(snap => {
                     const data = snap.val();
                     const p1Id = data.players.p1?.uid || 'unknown';
@@ -2142,6 +2148,8 @@
                     fs.collection('leaderboard').add({
                         p1: p1Id,
                         p2: p2Id,
+                        p1Name: p1Name,
+                        p2Name: p2Name,
                         wave: battleState.wave,
                         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
                         roomId: roomId
@@ -2154,6 +2162,11 @@
             }
 
             // 3. 顯示結算畫面
+            const p1Display = document.getElementById('p1-name-display');
+            const p2Display = document.getElementById('p2-name-display');
+            if (p1Display) p1Display.innerText = battleState.p1Name || "Player 1";
+            if (p2Display) p2Display.innerText = battleState.p2Name || "Player 2";
+
             document.getElementById('final-wave').innerText = battleState.wave;
             document.getElementById('game-over-modal').classList.remove('hidden');
         }
