@@ -510,115 +510,115 @@
             // --- Common (普通) ---
             {
                 id: 'fire', name: '火', quality: 'common', baseColor: '#ef4444', pattern: 'fire',
-                stats: { atk: 18, speed: 55 }, grow: { atk: 6, speed: -1 },
+                stats: { atk: 18, speed: 0.92 }, grow: { atk: 6, speed: -0.017 },
                 special: { label: '濺射範圍', value: 1.0, unit: '格', grow: 0.1 }
             },
             {
                 id: 'wind', name: '風', quality: 'common', baseColor: '#10b981', pattern: 'wind',
-                stats: { atk: 8, speed: 35 }, grow: { atk: 2, speed: -1.5 }, // 削弱基礎，讓出前期霸主位置
+                stats: { atk: 8, speed: 0.58 }, grow: { atk: 2, speed: -0.025 }, // 削弱基礎，讓出前期霸主位置
                 special: { label: '連擊機率', value: 10, unit: '%', grow: 3 }
             },
             {
                 id: 'ice', name: '冰', quality: 'common', baseColor: '#3b82f6', pattern: 'ice',
-                stats: { atk: 7, speed: 60 }, grow: { atk: 1, speed: -1 },
+                stats: { atk: 7, speed: 1.0 }, grow: { atk: 1, speed: -0.017 },
                 special: { label: '緩速效果', value: 20, unit: '%', grow: 2 }
             },
             {
                 id: 'electric', name: '電', quality: 'common', baseColor: '#f59e0b', pattern: 'electric',
-                stats: { atk: 6, speed: 45 }, grow: { atk: 2, speed: -1 },
+                stats: { atk: 6, speed: 0.75 }, grow: { atk: 2, speed: -0.017 },
                 special: { label: '連鎖目標', value: 3, unit: '體', grow: 1 }
             },
             {
                 id: 'poison', name: '毒', quality: 'common', baseColor: '#008000', pattern: 'poison',
-                stats: { atk: 4, speed: 50 }, grow: { atk: 2, speed: -1 },
+                stats: { atk: 4, speed: 0.83 }, grow: { atk: 2, speed: -0.017 },
                 special: { label: '中毒傷害', value: 12, unit: 'pt', grow: 4 }
             },
 
             // --- Rare (稀有) ---
             {
                 id: 'lock', name: '鎖定', quality: 'rare', baseColor: '#64748b', pattern: 'lock',
-                stats: { atk: 12, speed: 55 }, grow: { atk: 4, speed: -1 },
+                stats: { atk: 12, speed: 0.92 }, grow: { atk: 4, speed: -0.017 },
                 special: { label: '禁錮時長', value: 0.8, unit: '秒', grow: 0.2 }
             },
             // --- 易傷骰子 (替代原本的破甲) ---
             {
                 id: 'crack', name: '易傷', quality: 'rare', baseColor: '#f87171', pattern: 'crack',
-                stats: { atk: 12, speed: 50 }, grow: { atk: 3, speed: -1 },
+                stats: { atk: 12, speed: 0.83 }, grow: { atk: 3, speed: -0.017 },
                 special: { label: '額外受傷', value: 8, unit: '%', grow: 1 }
             },
             // --- 礦山骰子 (經濟型) ---
             {
                 id: 'mine', name: '礦山', quality: 'rare', baseColor: '#fbbf24', pattern: 'mine',
-                stats: { atk: 0, speed: 180 }, grow: { atk: 0, speed: -5 }, // 不攻擊，速度代表產錢間隔
+                stats: { atk: 0, speed: 15.0 }, grow: { atk: 0, speed: -0.5 }, // 不攻擊，速度代表產錢間隔 (15秒)
                 special: { label: '產出SP', value: 10, unit: 'pt', grow: 5 }
             },
 
             // --- Epic (史詩) ---
             {
                 id: 'laser', name: '雷射', quality: 'epic', baseColor: '#ec4899', pattern: 'laser_beam',
-                stats: { atk: 8, speed: 40 }, grow: { atk: 2, speed: 0 },
+                stats: { atk: 8, speed: 0.67 }, grow: { atk: 2, speed: 0 },
                 special: { label: '增幅上限', value: 5, unit: '倍', grow: 1 }
                 // 功能：持續攻擊同一個目標時，傷害會隨攻擊次數不斷爬升
             },
             {
                 id: 'teleport', name: '傳送', quality: 'epic', baseColor: '#8b5cf6', pattern: 'teleport',
-                stats: { atk: 10, speed: 65 }, grow: { atk: 3, speed: -1 },
+                stats: { atk: 10, speed: 1.08 }, grow: { atk: 3, speed: -0.017 },
                 special: { label: '傳送回起點', value: 5, unit: '%', grow: 2 }
             },
             {
                 id: 'gear', name: '齒輪', quality: 'epic', baseColor: '#475569', pattern: 'gear',
-                stats: { atk: 15, speed: 50 }, grow: { atk: 8, speed: -1 },
+                stats: { atk: 15, speed: 0.83 }, grow: { atk: 8, speed: -0.017 },
                 special: { label: '連結加成', value: 12, unit: '%', grow: 6 }
             },
 
             // --- Legend (傳說) ---
             {
                 id: 'mighty_wind', name: '強風', quality: 'legend', baseColor: '#a5f3fc', pattern: 'mighty_wind',
-                stats: { atk: 20, speed: 40 }, grow: { atk: 6, speed: -1 },
+                stats: { atk: 20, speed: 0.67 }, grow: { atk: 6, speed: -0.017 },
                 special: { label: '狂暴時長', value: 2, unit: '秒', grow: 0.5 }
             },
             {
                 id: 'joker', name: '小丑', quality: 'legend', baseColor: '#f87171', pattern: 'joker',
-                stats: { atk: 5, speed: 50 }, grow: { atk: 1, speed: 0 },
+                stats: { atk: 5, speed: 0.83 }, grow: { atk: 1, speed: 0 },
                 special: { label: '繼承比例', value: 80, unit: '%', grow: 2 } // 依照你的測試保留 80%
             },
             {
                 id: 'growth', name: '成長', quality: 'legend', baseColor: '#f472b6', pattern: 'growth',
-                stats: { atk: 5, speed: 50 }, grow: { atk: 1, speed: -1 },
+                stats: { atk: 5, speed: 0.83 }, grow: { atk: 1, speed: -0.017 },
                 special: { label: '成長時間', value: 40, unit: '秒', grow: -2 } // 因應節奏調快，縮短至 40 秒
             },
             {
                 id: 'sun', name: '太陽', quality: 'legend', baseColor: '#fbbf24', pattern: 'sun',
-                stats: { atk: 35, speed: 55 }, grow: { atk: 15, speed: -0.5 },
+                stats: { atk: 35, speed: 0.92 }, grow: { atk: 15, speed: -0.008 },
                 special: { label: '濺射傷害', value: 100, unit: '%', grow: 25 }
             },
             {
                 id: 'sanctuary', name: '聖域', quality: 'legend', baseColor: '#fbbf24', pattern: 'sanctuary',
-                stats: { atk: 15, speed: 60 }, grow: { atk: 6, speed: -1 },
+                stats: { atk: 15, speed: 1.0 }, grow: { atk: 6, speed: -0.017 },
                 special: { label: '加速範圍', value: 30, unit: '%', grow: 5 }
             },
             {
                 id: 'comet', name: '彗星', quality: 'legend', baseColor: '#3b82f6', pattern: 'comet',
-                stats: { atk: 18, speed: 45 }, grow: { atk: 7, speed: -1 },
+                stats: { atk: 18, speed: 0.75 }, grow: { atk: 7, speed: -0.017 },
                 special: { label: '充能倍率', value: 500, unit: '%', grow: 100 }
             },
 
             // --- Epic (史詩) 新增 ---
             {
                 id: 'chain', name: '連鎖', quality: 'epic', baseColor: '#8b5cf6', pattern: 'chain',
-                stats: { atk: 15, speed: 50 }, grow: { atk: 5, speed: -1 },
+                stats: { atk: 15, speed: 0.83 }, grow: { atk: 5, speed: -0.017 },
                 special: { label: '彈射增傷', value: 50, unit: '%', grow: 10 }
             },
 
             // --- Mythic (神話) ---
             {
                 id: 'doom', name: '毀滅', quality: 'mythic', baseColor: '#7c3aed', pattern: 'doom',
-                stats: { atk: 45, speed: 50 }, grow: { atk: 20, speed: -1 },
+                stats: { atk: 45, speed: 0.83 }, grow: { atk: 20, speed: -0.017 },
                 special: { label: '斬殺比例', value: 35, unit: '%', grow: 5 }
             },
             {
                 id: 'galaxy', name: '銀河', quality: 'mythic', baseColor: '#6366f1', pattern: 'galaxy',
-                stats: { atk: 60, speed: 50 }, grow: { atk: 30, speed: -1 },
+                stats: { atk: 60, speed: 0.83 }, grow: { atk: 30, speed: -0.017 },
                 special: { label: '黑洞吞噬', value: 2, unit: '%', grow: 1 }
             }
         ];
@@ -1776,7 +1776,7 @@
             document.getElementById('u-atk').innerHTML = `
         <div class="text-xs text-slate-400">基礎攻擊</div>
         <div class="text-lg font-bold text-green-400">${curAtk} → ${nextAtk}</div>
-        <div class="text-xs text-slate-400 mt-2">攻擊間隔 (ms)</div>
+        <div class="text-xs text-slate-400 mt-2">攻擊速度(秒)</div>
         <div class="text-lg font-bold text-blue-400">${curSpd} → ${nextSpd}</div>
         ${specialHTML} 
     `;
