@@ -520,7 +520,7 @@
             },
             {
                 id: 'ice', name: '冰', quality: 'common', baseColor: '#3b82f6', pattern: 'ice',
-                stats: { atk: 5, speed: 60 }, grow: { atk: 1, speed: -1 },
+                stats: { atk: 7, speed: 60 }, grow: { atk: 1, speed: -1 },
                 special: { label: '緩速效果', value: 20, unit: '%', grow: 2 }
             },
             {
@@ -531,7 +531,7 @@
             {
                 id: 'poison', name: '毒', quality: 'common', baseColor: '#008000', pattern: 'poison',
                 stats: { atk: 4, speed: 50 }, grow: { atk: 2, speed: -1 },
-                special: { label: '中毒傷害', value: 8, unit: 'pt', grow: 4 }
+                special: { label: '中毒傷害', value: 12, unit: 'pt', grow: 4 }
             },
 
             // --- Rare (稀有) ---
@@ -544,19 +544,19 @@
             {
                 id: 'crack', name: '易傷', quality: 'rare', baseColor: '#f87171', pattern: 'crack',
                 stats: { atk: 12, speed: 50 }, grow: { atk: 3, speed: -1 },
-                special: { label: '額外受傷', value: 5, unit: '%', grow: 1 }
+                special: { label: '額外受傷', value: 8, unit: '%', grow: 1 }
             },
             // --- 礦山骰子 (經濟型) ---
             {
                 id: 'mine', name: '礦山', quality: 'rare', baseColor: '#fbbf24', pattern: 'mine',
-                stats: { atk: 0, speed: 40 }, grow: { atk: 0, speed: -5 }, // 不攻擊，速度代表產錢間隔
+                stats: { atk: 0, speed: 180 }, grow: { atk: 0, speed: -5 }, // 不攻擊，速度代表產錢間隔
                 special: { label: '產出SP', value: 10, unit: 'pt', grow: 5 }
             },
 
             // --- Epic (史詩) ---
             {
                 id: 'laser', name: '雷射', quality: 'epic', baseColor: '#ec4899', pattern: 'laser_beam',
-                stats: { atk: 5, speed: 40 }, grow: { atk: 2, speed: 0 },
+                stats: { atk: 8, speed: 40 }, grow: { atk: 2, speed: 0 },
                 special: { label: '增幅上限', value: 5, unit: '倍', grow: 1 }
                 // 功能：持續攻擊同一個目標時，傷害會隨攻擊次數不斷爬升
             },
@@ -574,7 +574,7 @@
             // --- Legend (傳說) ---
             {
                 id: 'mighty_wind', name: '強風', quality: 'legend', baseColor: '#a5f3fc', pattern: 'mighty_wind',
-                stats: { atk: 15, speed: 40 }, grow: { atk: 6, speed: -1 },
+                stats: { atk: 20, speed: 40 }, grow: { atk: 6, speed: -1 },
                 special: { label: '狂暴時長', value: 2, unit: '秒', grow: 0.5 }
             },
             {
