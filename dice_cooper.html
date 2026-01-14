@@ -934,6 +934,9 @@
 
             if (role === 'host') {
                 processSlotsCombat(partnerSlots, 'p2');
+            } else {
+                // Guest 改為也要運算 P1 (Partner) 的視覺效果
+                processSlotsCombat(partnerSlots, 'p1');
             }
 
             // 子彈移動
@@ -1188,27 +1191,15 @@
                             createSunExplosion(target, dmg, slotOwner);
                         } else {
                             // 發射子彈
-                            const isMyVisual = (role === 'host' && slotOwner === 'p1') || (role === 'guest' && slotOwner === 'p2');
-                            if (isMyVisual) {
-                                createProjectile(
-                                    { x: getSlotPixelX(slot, slotOwner), y: getSlotPixelY(slot, slotOwner) },
-                                    target,
-                                    slot.dice,
-                                    slotOwner,
-                                    dmg,
-                                    isCometCharged
-                                );
-                            } else if (role === 'host') {
-                                // Host 也要產生 P2 的子彈來計算傷害
-                                createProjectile(
-                                    { x: getSlotPixelX(slot, slotOwner), y: getSlotPixelY(slot, slotOwner) },
-                                    target,
-                                    slot.dice,
-                                    slotOwner,
-                                    dmg,
-                                    isCometCharged
-                                );
-                            }
+                            // 修正：無論 Host 或 Guest，只要有攻擊都應該產生子彈 (Guest 只做視覺，Host 做視覺+邏輯)
+                            createProjectile(
+                                { x: getSlotPixelX(slot, slotOwner), y: getSlotPixelY(slot, slotOwner) },
+                                target,
+                                slot.dice,
+                                slotOwner,
+                                dmg,
+                                isCometCharged
+                            );
                         }
                     }
                 }
@@ -1567,6 +1558,32 @@
             }
 
             return ref.special.value + (lv - 1) * (ref.special.grow || 0);
+        }
+
+        // 獲取 Slot 的像素座標 (邏輯座標系)
+        function getSlotPixelX(slot, owner) {
+            const slots = (owner === 'p1') ? mySlots : partnerSlots;
+            const idx = slots.indexOf(slot);
+            if (idx === -1) return canvas.width / 2; // 找不到就返回中心
+
+            const col = idx % grid.cols;
+            const sideMargin = canvas.width * 0.12;
+            return sideMargin + col * (grid.slotSize + grid.padding) + grid.slotSize / 2;
+        }
+
+        function getSlotPixelY(slot, owner) {
+            const slots = (owner === 'p1') ? mySlots : partnerSlots;
+            const idx = slots.indexOf(slot);
+            if (idx === -1) return canvas.height / 2; // 找不到就返回中心
+
+            const row = Math.floor(idx / grid.cols);
+            const isP1 = (owner === 'p1');
+            const totalH = grid.rows * (grid.slotSize + grid.padding);
+            const startY = isP1 ?
+                (canvas.height * 0.75) - (totalH / 2) :
+                (canvas.height * 0.25) - (totalH / 2);
+
+            return startY + row * (grid.slotSize + grid.padding) + grid.slotSize / 2;
         }
 
         // --- 8. 渲染 ---
