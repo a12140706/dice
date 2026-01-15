@@ -1978,12 +1978,14 @@
 
         function drawDiceGrid(slots, owner) {
             const isP1 = owner === 'p1';
-            // 計算區域 Offset
-            // 沿用 getSlotPixelY 的邏輯，但為了畫 Grid 整體，我們重新算
-            const totalH = grid.rows * (grid.slotSize + grid.padding);
+            // 計算區域 Offset (改為固定 Margin 定位)
+            const gridHeight = grid.rows * (grid.slotSize + grid.padding);
+            const bottomMargin = 120;
+            const topMargin = 120;
+
             const startY = isP1 ?
-                (canvas.height * 0.75) - (totalH / 2) :
-                (canvas.height * 0.25) - (totalH / 2);
+                canvas.height - gridHeight - bottomMargin :
+                topMargin;
 
             const sideMargin = canvas.width * 0.12;
 
@@ -2496,27 +2498,28 @@
     </script>
     <script>
         // --- 補強：座標計算函式 (修復 Guest 端子彈從中心發射與累積子彈導致的卡頓) ---
+        // --- 補強：座標計算函式 (已修正為與 drawDiceGrid 邏輯一致的百分比定位) ---
         function getSlotPixelX(slot, owner) {
             const sideMargin = canvas.width * 0.12;
-            // 確保 slot.col 存在
             const col = (slot && slot.col !== undefined) ? slot.col : 0;
             return sideMargin + grid.padding + col * (grid.slotSize + grid.padding) + grid.slotSize / 2;
         }
 
         function getSlotPixelY(slot, owner) {
+            // 必須與 drawDiceGrid 的邏輯完全對齊 (固定 120px Margin)
             const row = (slot && slot.row !== undefined) ? slot.row : 0;
+            const isP1 = owner === 'p1';
 
-            // P2 (Top)
-            if (owner === 'p2') {
-                // 頂部間距 (與 P2 Render 區域一致)
-                return 120 + grid.padding + row * (grid.slotSize + grid.padding) + grid.slotSize / 2;
-            } else {
-                // P1 (Bottom)
-                // 底部佈局
-                const gridHeight = 3 * grid.slotSize + 4 * grid.padding;
-                const bottomMargin = 120;
-                return canvas.height - gridHeight - bottomMargin + grid.padding + row * (grid.slotSize + grid.padding) + grid.slotSize / 2;
-            }
+            const gridHeight = grid.rows * (grid.slotSize + grid.padding);
+            const bottomMargin = 120;
+            const topMargin = 120;
+
+            // P1 (Bottom), P2 (Top)
+            const startY = isP1 ?
+                canvas.height - gridHeight - bottomMargin :
+                topMargin;
+
+            return startY + row * (grid.slotSize + grid.padding) + grid.slotSize / 2;
         }
     </script>
     <!-- Game Over Modal -->
