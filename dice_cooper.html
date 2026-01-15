@@ -1401,25 +1401,7 @@
             });
         }
 
-        function getSlotPixelX(slot, owner) {
-            // 計算插槽中心點
-            const sideMargin = canvas.width * 0.12;
-            const baseX = sideMargin + grid.padding + slot.col * (grid.slotSize + grid.padding) + grid.slotSize / 2;
-            return baseX; // X 座標對於 P1 P2 是一樣的 (僅 Y 不同)
-        }
-        function getSlotPixelY(slot, owner) {
-            // P1 (Host) 在下方，P2 (Guest) 在上方
-            // 但注意，我們在 Render 時有對 Guest 做 rotate。
-            // 這裡的邏輯座標應該是基於全局的。
-            // P1 區域：Y = canvas.height - height/3 左右
-            // P2 區域：Y = 0 + height/3 左右
 
-            const totalH = grid.rows * (grid.slotSize + grid.padding);
-            const p1Y = (canvas.height * 0.75) - (totalH / 2) + slot.row * (grid.slotSize + grid.padding) + grid.slotSize / 2;
-            const p2Y = (canvas.height * 0.25) - (totalH / 2) + slot.row * (grid.slotSize + grid.padding) + grid.slotSize / 2;
-
-            return owner === 'p1' ? p1Y : p2Y;
-        }
 
         // --- 核心：索敵邏輯 (含區域限制) ---
         function findTarget(slot, attackerRole) {
@@ -1741,30 +1723,7 @@
         }
 
         // 獲取 Slot 的像素座標 (邏輯座標系)
-        function getSlotPixelX(slot, owner) {
-            const slots = (owner === 'p1') ? mySlots : partnerSlots;
-            const idx = slots.indexOf(slot);
-            if (idx === -1) return canvas.width / 2; // 找不到就返回中心
 
-            const col = idx % grid.cols;
-            const sideMargin = canvas.width * 0.12;
-            return sideMargin + col * (grid.slotSize + grid.padding) + grid.slotSize / 2;
-        }
-
-        function getSlotPixelY(slot, owner) {
-            const slots = (owner === 'p1') ? mySlots : partnerSlots;
-            const idx = slots.indexOf(slot);
-            if (idx === -1) return canvas.height / 2; // 找不到就返回中心
-
-            const row = Math.floor(idx / grid.cols);
-            const isP1 = (owner === 'p1');
-            const totalH = grid.rows * (grid.slotSize + grid.padding);
-            const startY = isP1 ?
-                (canvas.height * 0.75) - (totalH / 2) :
-                (canvas.height * 0.25) - (totalH / 2);
-
-            return startY + row * (grid.slotSize + grid.padding) + grid.slotSize / 2;
-        }
 
         // --- 8. 渲染 ---
 
@@ -2534,6 +2493,31 @@
             });
         }
 
+    </script>
+    <script>
+        // --- 補強：座標計算函式 (修復 Guest 端子彈從中心發射與累積子彈導致的卡頓) ---
+        function getSlotPixelX(slot, owner) {
+            const sideMargin = canvas.width * 0.12;
+            // 確保 slot.col 存在
+            const col = (slot && slot.col !== undefined) ? slot.col : 0;
+            return sideMargin + grid.padding + col * (grid.slotSize + grid.padding) + grid.slotSize / 2;
+        }
+
+        function getSlotPixelY(slot, owner) {
+            const row = (slot && slot.row !== undefined) ? slot.row : 0;
+
+            // P2 (Top)
+            if (owner === 'p2') {
+                // 頂部間距 (與 P2 Render 區域一致)
+                return 120 + grid.padding + row * (grid.slotSize + grid.padding) + grid.slotSize / 2;
+            } else {
+                // P1 (Bottom)
+                // 底部佈局
+                const gridHeight = 3 * grid.slotSize + 4 * grid.padding;
+                const bottomMargin = 120;
+                return canvas.height - gridHeight - bottomMargin + grid.padding + row * (grid.slotSize + grid.padding) + grid.slotSize / 2;
+            }
+        }
     </script>
     <!-- Game Over Modal -->
     <div id="game-over-modal"
