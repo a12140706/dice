@@ -402,15 +402,31 @@
                 img: (() => { const i = new Image(); i.src = 'dice-boss/speed.png'; return i; })(),
                 skillInterval: 240,
                 onSkill: (boss) => {
-                    enemies.forEach(e => e.speed *= 1.5);
-                    setTimeout(() => { enemies.forEach(e => e.speed /= 1.5); }, 2000);
+                    // 只加速自己，不影響其他敵人
+                    const originalSpeed = boss.speed;
+                    boss.speed *= 2.5;
+                    boss.isSprinting = true;
+
+                    // 加速視覺效果：畫面邊緣閃綠光
+                    const container = document.getElementById('canvas-container');
+                    if (container) {
+                        container.style.boxShadow = 'inset 0 0 60px #22c55e';
+                    }
+
+                    setTimeout(() => {
+                        if (enemies.includes(boss)) {
+                            boss.speed = originalSpeed;
+                            boss.isSprinting = false;
+                        }
+                        if (container) container.style.boxShadow = '';
+                    }, 2500);
                 }
             },
             'HACKER': {
                 name: '混亂者',
                 color: '#a855f7',
                 img: (() => { const i = new Image(); i.src = 'dice-boss/hack.png'; return i; })(),
-                skillInterval: 3000,
+                skillInterval: 360,
                 onSkill: (boss) => {
                     // 1. 安全檢查：確保 grid 存在
                     if (!grid || !grid.slots) return;
@@ -1420,7 +1436,12 @@
                     e.pathIndex++;
                     // --- 抵達終點的強化處理 ---
                     if (e.pathIndex >= path.length) {
-                        battleState.hp--;
+                        // Boss 抵達終點 -> 直接輸掉
+                        if (e.isBoss) {
+                            battleState.hp = 0;
+                        } else {
+                            battleState.hp--;
+                        }
 
                         // 【幽靈怪修復關鍵】: 抵達終點後，強制將資料清空並立即移除實體
                         e.hp = 0;
@@ -1623,19 +1644,37 @@
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d');
 
-            function frame() {
+            let lastFrameTime = 0;
+            let accumulatedTime = 0;
+            let deltaTime = 0;
+            const TARGET_FPS = 60;
+            const TARGET_FRAME_TIME = 1000 / TARGET_FPS;
+
+            function frame(currentTime) {
                 if (!battleState.isStarted) return;
                 const modal = document.getElementById('resultModal');
                 if (modal && modal.style.display === 'flex') return;
 
-                frameCount++;
+                if (!lastFrameTime) lastFrameTime = currentTime;
+                deltaTime = currentTime - lastFrameTime;
+                lastFrameTime = currentTime;
+
+                accumulatedTime += deltaTime;
+                if (accumulatedTime > 200) accumulatedTime = 200;
+
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                // --- 邏輯更新 ---
-                updateEnemies();
-                updateWave();
-                updateCombat(); // 內部會計算 dice.isBurst 與 dice.animScale
-                updateLiveStats();
+                while (accumulatedTime >= TARGET_FRAME_TIME) {
+                    frameCount = (frameCount || 0) + 1;
+
+                    // --- 邏輯更新 ---
+                    updateEnemies();
+                    updateWave();
+                    updateCombat(); // 內部會計算 dice.isBurst 與 dice.animScale
+                    updateLiveStats();
+
+                    accumulatedTime -= TARGET_FRAME_TIME;
+                }
 
                 // --- 背景層 ---
                 drawDynamicBackground(ctx, canvas.width, canvas.height);
@@ -1664,6 +1703,30 @@
                         renderY += (Math.random() * 16 - 8);
                     }
 
+                    // --- 衝刺視覺效果 (SNAKE Boss 技能) ---
+                    if (e.isSprinting) {
+                        ctx.save();
+                        // 繪製殘影拖尾
+                        for (let trail = 3; trail > 0; trail--) {
+                            ctx.globalAlpha = 0.15 * trail;
+                            ctx.fillStyle = '#22c55e';
+                            const trailOffset = trail * 8;
+                            if (e.isBoss) {
+                                ctx.beginPath();
+                                ctx.arc(renderX - trailOffset * 0.5, renderY, s / 2, 0, Math.PI * 2);
+                                ctx.fill();
+                            } else {
+                                ctx.fillRect(e.x - s / 2 - trailOffset, e.y - s / 2, s, s);
+                            }
+                        }
+                        ctx.restore();
+
+                        // 綠色發光效果
+                        ctx.save();
+                        ctx.shadowBlur = 20;
+                        ctx.shadowColor = '#22c55e';
+                    }
+
                     if (e.isBoss && e.bossType && BOSS_TYPES[e.bossType]) {
                         ctx.save();
                         ctx.shadowBlur = 10;
@@ -1679,8 +1742,13 @@
                         }
                         ctx.restore();
                     } else {
-                        ctx.fillStyle = "#ef4444";
+                        ctx.fillStyle = e.isSprinting ? "#22c55e" : "#ef4444";
                         ctx.fillRect(e.x - s / 2, e.y - s / 2, s, s);
+                    }
+
+                    // 結束衝刺發光
+                    if (e.isSprinting) {
+                        ctx.restore();
                     }
 
                     // 血條與狀態圖示
@@ -1743,7 +1811,7 @@
 
                 requestAnimationFrame(frame);
             }
-            frame();
+            requestAnimationFrame(frame);
         }
 
         // ---移植自 dice_cooper.html 的傳送門繪製函式---

@@ -263,21 +263,17 @@
                 img: (() => { const i = new Image(); i.src = 'dice-boss/lock.png'; return i; })(),
                 skillInterval: 300,
                 onSkill: (boss) => {
-                    // Boss 的鎖定技能同時針對雙方玩家進行判定 (房主負責)
-                    // 這裡簡化為隨機鎖定其中一方的一個骰子
-                    const p1Slots = mySlots; // 在 Host 邏輯中，mySlots 是 P1
-                    const p2Slots = partnerSlots; // P2
+                    // 只鎖定對應玩家的骰子 (Host 視角: P1=mySlots, P2=partnerSlots)
+                    const isMySlots = boss.owner === 'p1';
+                    const targetSlots = isMySlots ? mySlots : partnerSlots;
+                    const syncFn = isMySlots ? syncMyData : syncPartnerData;
 
-                    const targets = [];
-                    p1Slots.forEach(s => { if (s.dice && !s.isLocked) targets.push(s); });
-                    p2Slots.forEach(s => { if (s.dice && !s.isLocked) targets.push(s); });
-
+                    const targets = targetSlots.filter(s => s.dice && !s.isLocked);
                     if (targets.length > 0) {
                         const target = targets[Math.floor(Math.random() * targets.length)];
                         target.isLocked = true;
-                        // 鎖定持續 4 秒
-                        setTimeout(() => { target.isLocked = false; syncMyData(); }, 4000);
-                        syncMyData();
+                        setTimeout(() => { target.isLocked = false; syncFn(); }, 4000);
+                        syncFn();
                     }
                 }
             },
@@ -286,8 +282,117 @@
                 img: (() => { const i = new Image(); i.src = 'dice-boss/speed.png'; return i; })(),
                 skillInterval: 240,
                 onSkill: (boss) => {
-                    enemies.forEach(e => e.speed *= 1.5);
-                    setTimeout(() => { enemies.forEach(e => e.speed /= 1.5); }, 2000);
+                    // 只加速自己，不影響其他敵人
+                    const originalSpeed = boss.speed;
+                    boss.speed *= 2.5;
+                    boss.isSprinting = true;
+
+                    setTimeout(() => {
+                        if (enemies.includes(boss)) {
+                            boss.speed = originalSpeed;
+                            boss.isSprinting = false;
+                        }
+                    }, 2500);
+                }
+            },
+            'HACKER': {
+                name: '混亂者', color: '#a855f7',
+                img: (() => { const i = new Image(); i.src = 'dice-boss/hack.png'; return i; })(),
+                skillInterval: 360,
+                onSkill: (boss) => {
+                    // 只影響對應玩家的骰子 (Host 視角)
+                    const isMySlots = boss.owner === 'p1';
+                    const targetSlots = isMySlots ? mySlots : partnerSlots;
+                    const syncFn = isMySlots ? syncMyData : syncPartnerData;
+
+                    const occupied = targetSlots.filter(s => s && s.dice);
+                    if (occupied.length > 0) {
+                        occupied.forEach(slot => {
+                            const randomId = userData.deck[Math.floor(Math.random() * userData.deck.length)];
+                            const template = ALL_DICES.find(d => d.id === randomId);
+                            if (template && slot.dice) {
+                                const currentLv = slot.dice.lv;
+                                slot.dice = {
+                                    id: template.id,
+                                    lv: currentLv,
+                                    baseColor: template.baseColor,
+                                    color: template.baseColor,
+                                    pattern: template.pattern || template.id,
+                                    qualityColor: QUALITIES[template.quality].color,
+                                    growthTimer: 0,
+                                    attackCooldown: 0
+                                };
+                            }
+                        });
+
+                        const container = document.getElementById('canvas-container');
+                        if (container) {
+                            container.style.boxShadow = 'inset 0 0 50px #a855f7';
+                            setTimeout(() => { if (container) container.style.boxShadow = ''; }, 500);
+                        }
+                        syncFn();
+                    }
+                }
+            },
+            'GRAVITY': {
+                name: '重力者', color: '#1e293b',
+                img: (() => { const i = new Image(); i.src = 'dice-boss/gravity.png'; return i; })(),
+                skillInterval: 450,
+                onSkill: (boss) => {
+                    // 只影響對應玩家的骰子 (Host 視角)
+                    const isMySlots = boss.owner === 'p1';
+                    const targetSlots = isMySlots ? mySlots : partnerSlots;
+                    const syncFn = isMySlots ? syncMyData : syncPartnerData;
+
+                    const occupied = targetSlots.filter(s => s.dice);
+                    if (occupied.length > 0) {
+                        const target = occupied[Math.floor(Math.random() * occupied.length)];
+                        target.dice.lv -= 1;
+
+                        if (target.dice.lv <= 0) {
+                            target.dice = null;
+                            // 簡化視覺效果：在畫面中央附近顯示
+                            visualEffects.push({
+                                type: 'explosion',
+                                x: canvas.width / 2 + (Math.random() - 0.5) * 100,
+                                y: canvas.height / 2 + (Math.random() - 0.5) * 100,
+                                radius: 40,
+                                color: 'rgba(30, 41, 59, 0.5)',
+                                life: 15, maxLife: 15
+                            });
+                        }
+                        syncFn();
+                    }
+                }
+            },
+            'GLITCH': {
+                name: '干擾者', color: '#3b82f6',
+                img: (() => { const i = new Image(); i.src = 'dice-boss/glitch.png'; return i; })(),
+                skillInterval: 400,
+                onSkill: (boss) => {
+                    // 只影響對應玩家的骰子 (Host 視角)
+                    const isMySlots = boss.owner === 'p1';
+                    const targetSlots = isMySlots ? mySlots : partnerSlots;
+                    const syncFn = isMySlots ? syncMyData : syncPartnerData;
+
+                    const occupiedSlots = targetSlots.filter(s => s && s.dice);
+                    if (occupiedSlots.length < 2) return;
+
+                    let allDiceData = occupiedSlots.map(s => JSON.parse(JSON.stringify(s.dice)));
+                    for (let i = allDiceData.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [allDiceData[i], allDiceData[j]] = [allDiceData[j], allDiceData[i]];
+                    }
+                    occupiedSlots.forEach((slot, index) => {
+                        slot.dice = allDiceData[index];
+                    });
+
+                    const container = document.getElementById('canvas-container');
+                    if (container) {
+                        container.style.filter = 'hue-rotate(90deg) contrast(1.5)';
+                        setTimeout(() => { if (container) container.style.filter = ''; }, 400);
+                    }
+                    syncFn();
                 }
             }
         };
@@ -377,6 +482,10 @@
         let visualEffects = []; // 視覺特效列表
         let blackHoles = []; // 黑洞列表 (Galaxy 骰子)
         let frameCount = 0;
+        let lastFrameTime = 0;
+        let deltaTime = 0;
+        const TARGET_FPS = 60;
+        const TARGET_FRAME_TIME = 1000 / TARGET_FPS; // 16.67ms
         let waveState = { total: 10, spawned: 0, timer: 0, waiting: false };
         let paths = { p1: [], p2: [] };
 
@@ -550,7 +659,14 @@
                             local.y = r.y;
                             local.hp = r.hp;
                             local.pathIndex = r.pathIndex;
-                            // 其他屬性視需要同步
+                            // 同步 Boss 與衝刺相關屬性
+                            local.speed = r.speed;
+                            local.isSprinting = r.isSprinting;
+                            local.isBoss = r.isBoss;
+                            local.bossType = r.bossType;
+                            local.size = r.size;
+                            local.color = r.color;
+                            local.owner = r.owner;
                             newEnemies.push(local);
                         } else {
                             // 新增
@@ -583,6 +699,11 @@
                         if (data.players.p1.powerUpLevels) {
                             partnerPowerUpLevels = data.players.p1.powerUpLevels;
                         }
+                    }
+
+                    // Critical Fix: Guest 也需要監聽自己的資料 (p2)，因為 Host (Boss) 可能會修改它 (例如鎖定、降級)
+                    if (data.players?.p2) {
+                        updateSlotsFromSync(mySlots, data.players.p2.slots);
                     }
                 }
 
@@ -634,35 +755,68 @@
             });
         }
 
+        // 當 Host 修改了 Partner 的資料時 (例如 Boss 技能影響 P2 骰子)
+        function syncPartnerData() {
+            if (role !== 'host') return; // 只有 Host 能同步 P2 資料
+
+            const simpleSlots = partnerSlots.map(s => ({
+                dice: s.dice ? { id: s.dice.id, lv: s.dice.lv, baseColor: s.dice.baseColor } : null,
+                isLocked: s.isLocked
+            }));
+
+            db.ref(`coop_rooms/${roomId}/players/p2`).update({
+                slots: simpleSlots
+            });
+        }
+
         // 夥伴的等級資訊
         let partnerPowerUpLevels = {};
 
 
         // --- 6. 遊戲迴圈 ---
-        function gameLoop() {
-            if (!battleState.isStarted) return;
-            frameCount++;
+        let accumulatedTime = 0;
 
-            // 1. 邏輯更新
-            if (role === 'host') {
-                updateHostLogic(); // 生怪、移動、傷害結算
-                if (frameCount % 3 === 0) { // 每 3 幀同步一次，減少寫入頻率
-                    db.ref(`coop_rooms/${roomId}`).update({
-                        enemies: enemies,
-                        wave: battleState.wave,
-                        hp: battleState.hp,
-                        gameover: battleState.hp <= 0,
-                        gameStats: { totalSpP2: stateCache.totalSpP2 || 0 }
-                    });
+        function gameLoop(currentTime) {
+            if (!battleState.isStarted) return;
+
+            // 計算 delta time
+            if (lastFrameTime === 0) lastFrameTime = currentTime;
+            deltaTime = currentTime - lastFrameTime;
+            lastFrameTime = currentTime;
+
+            // 累積時間用於固定更新頻率
+            accumulatedTime += deltaTime;
+
+            // 限制最大累積時間，防止長時間暫停後的爆發更新
+            if (accumulatedTime > 200) accumulatedTime = 200;
+
+            // 以固定時間步長更新邏輯 (60 FPS)
+            while (accumulatedTime >= TARGET_FRAME_TIME) {
+                frameCount++;
+
+                // 1. 邏輯更新
+                if (role === 'host') {
+                    updateHostLogic(); // 生怪、移動、傷害結算
+                    if (frameCount % 3 === 0) { // 每 3 幀同步一次，減少寫入頻率
+                        db.ref(`coop_rooms/${roomId}`).update({
+                            enemies: enemies,
+                            wave: battleState.wave,
+                            hp: battleState.hp,
+                            gameover: battleState.hp <= 0,
+                            gameStats: { totalSpP2: stateCache.totalSpP2 || 0 }
+                        });
+                    }
+                } else {
+                    updateGuestLogic(); // 預測移動
                 }
-            } else {
-                updateGuestLogic(); // 預測移動
+
+                // 2. 戰鬥判定 (雙方都要跑，因為要發射子彈和特效)
+                updateCombat();
+
+                accumulatedTime -= TARGET_FRAME_TIME;
             }
 
-            // 2. 戰鬥判定 (雙方都要跑，因為要發射子彈和特效)
-            updateCombat();
-
-            // 3. 渲染
+            // 3. 渲染 (每幀都渲染，保持流暢)
             draw();
 
             requestAnimationFrame(gameLoop);
@@ -855,7 +1009,11 @@
                             // 還沒到終點
                         } else {
                             // 到終點
-                            battleState.hp--;
+                            if (e.isBoss) {
+                                battleState.hp = 0;
+                            } else {
+                                battleState.hp--;
+                            }
                             if (battleState.hp <= 0) {
                                 handleGameOver();
                             }
@@ -915,7 +1073,10 @@
 
         function spawnBoss() {
             const wave = battleState.wave;
-            const typeKey = Object.keys(BOSS_TYPES)[Math.floor(Math.random() * Object.keys(BOSS_TYPES).length)];
+            // 使用波數作為確定性種子，確保 Host 和 Guest 生成相同的 Boss 類型
+            const bossKeys = Object.keys(BOSS_TYPES);
+            const typeIndex = wave % bossKeys.length; // 依照波數循環選擇
+            const typeKey = bossKeys[typeIndex];
             const type = BOSS_TYPES[typeKey];
             const hp = BALANCE.BOSS_BASE_HP * Math.pow(BALANCE.BOSS_WAVE_GROWTH, wave / 10);
 
@@ -1680,7 +1841,32 @@
                 const size = e.isBoss ? e.size : 20; // 確保 size 有值
                 const renderSize = size || 20;
 
-                const color = e.isBoss ? (BOSS_TYPES[e.bossType]?.color || '#f00') : (e.owner === 'p1' ? '#3b82f6' : '#f472b6');
+                // --- 衝刺視覺效果 (SNAKE Boss 技能) ---
+                if (e.isSprinting) {
+                    ctx.save();
+                    // 繪製殘影拖尾
+                    for (let trail = 3; trail > 0; trail--) {
+                        ctx.globalAlpha = 0.15 * trail;
+                        ctx.fillStyle = '#22c55e';
+                        const trailOffset = trail * 8;
+                        if (e.isBoss) {
+                            ctx.beginPath();
+                            ctx.arc(drawX - trailOffset * 0.5, drawY, renderSize / 2, 0, Math.PI * 2);
+                            ctx.fill();
+                        } else {
+                            ctx.fillRect(drawX - renderSize / 2 - trailOffset, drawY - renderSize / 2, renderSize, renderSize);
+                        }
+                    }
+                    ctx.restore();
+
+                    // 綠色發光效果
+                    ctx.save();
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#22c55e';
+                }
+
+                const color = e.isBoss ? (BOSS_TYPES[e.bossType]?.color || '#f00') :
+                    (e.isSprinting ? '#22c55e' : (e.owner === 'p1' ? '#3b82f6' : '#f472b6'));
 
                 if (e.isBoss) {
                     const bossImg = BOSS_TYPES[e.bossType]?.img;
@@ -1700,6 +1886,11 @@
                 } else {
                     ctx.fillStyle = color;
                     ctx.fillRect(drawX - renderSize / 2, drawY - renderSize / 2, renderSize, renderSize);
+                }
+
+                // 結束衝刺發光
+                if (e.isSprinting) {
+                    ctx.restore();
                 }
 
                 // 血條 (始終在上方)
