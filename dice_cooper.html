@@ -135,11 +135,11 @@
     <script>
         // --- 1. 遊戲基礎資料 (整合 Dice Battle) ---
         const QUALITIES = {
-            common: { name: '普通', color: '#ffffff', chance: 0.60 },
-            rare: { name: '稀有', color: '#3b82f6', chance: 0.25 },
-            epic: { name: '史詩', color: '#a855f7', chance: 0.10 },
-            legend: { name: '傳說', color: '#eab308', chance: 0.04 },
-            mythic: { name: '神話', color: '#ff00ff', chance: 0.01 }
+            common: { name: '普通', color: '#9ca3af', chance: 0.50 },
+            rare: { name: '稀有', color: '#3b82f6', chance: 0.30 },
+            epic: { name: '史詩', color: '#a855f7', chance: 0.18 },
+            legend: { name: '傳說', color: '#eab308', chance: 0.019 },
+            mythic: { name: '神話', color: '#ff00ff', chance: 0.001 }
         };
 
         const ALL_DICES = [
@@ -192,6 +192,7 @@
                 id: 'laser', name: '雷射', quality: 'epic', baseColor: '#ec4899', pattern: 'laser_beam',
                 stats: { atk: 8, speed: 0.67 }, grow: { atk: 2, speed: 0 },
                 special: { label: '增幅上限', value: 5, unit: '倍', grow: 1 }
+                // 功能：持續攻擊同一個目標時，傷害會隨攻擊次數不斷爬升
             },
             {
                 id: 'teleport', name: '傳送', quality: 'epic', baseColor: '#8b5cf6', pattern: 'teleport',
@@ -202,11 +203,6 @@
                 id: 'gear', name: '齒輪', quality: 'epic', baseColor: '#475569', pattern: 'gear',
                 stats: { atk: 15, speed: 0.83 }, grow: { atk: 8, speed: -0.017 },
                 special: { label: '連結加成', value: 12, unit: '%', grow: 6 }
-            },
-            {
-                id: 'chain', name: '連鎖', quality: 'epic', baseColor: '#8b5cf6', pattern: 'chain',
-                stats: { atk: 15, speed: 0.83 }, grow: { atk: 5, speed: -0.017 },
-                special: { label: '彈射增傷', value: 50, unit: '%', grow: 10 }
             },
 
             // --- Legend (傳說) ---
@@ -239,6 +235,13 @@
                 id: 'comet', name: '彗星', quality: 'legend', baseColor: '#3b82f6', pattern: 'comet',
                 stats: { atk: 18, speed: 0.75 }, grow: { atk: 7, speed: -0.017 },
                 special: { label: '充能倍率', value: 500, unit: '%', grow: 100 }
+            },
+
+            // --- Epic (史詩) 新增 ---
+            {
+                id: 'chain', name: '連鎖', quality: 'epic', baseColor: '#8b5cf6', pattern: 'chain',
+                stats: { atk: 15, speed: 0.83 }, grow: { atk: 5, speed: -0.017 },
+                special: { label: '彈射增傷', value: 50, unit: '%', grow: 10 }
             },
 
             // --- Mythic (神話) ---

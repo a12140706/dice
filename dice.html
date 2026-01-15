@@ -555,6 +555,11 @@
 
             // --- Epic (史詩) ---
             {
+                id: 'chain', name: '連鎖', quality: 'epic', baseColor: '#8b5cf6', pattern: 'chain',
+                stats: { atk: 15, speed: 0.83 }, grow: { atk: 5, speed: -0.017 },
+                special: { label: '彈射增傷', value: 50, unit: '%', grow: 10 }
+            },
+            {
                 id: 'laser', name: '雷射', quality: 'epic', baseColor: '#ec4899', pattern: 'laser_beam',
                 stats: { atk: 8, speed: 0.67 }, grow: { atk: 2, speed: 0 },
                 special: { label: '增幅上限', value: 5, unit: '倍', grow: 1 }
@@ -603,12 +608,7 @@
                 special: { label: '充能倍率', value: 500, unit: '%', grow: 100 }
             },
 
-            // --- Epic (史詩) 新增 ---
-            {
-                id: 'chain', name: '連鎖', quality: 'epic', baseColor: '#8b5cf6', pattern: 'chain',
-                stats: { atk: 15, speed: 0.83 }, grow: { atk: 5, speed: -0.017 },
-                special: { label: '彈射增傷', value: 50, unit: '%', grow: 10 }
-            },
+
 
             // --- Mythic (神話) ---
             {
@@ -1755,8 +1755,11 @@
             // 1. 計算屬性
             const curAtk = dice.stats.atk + (lv - 1) * dice.grow.atk;
             const nextAtk = dice.stats.atk + lv * dice.grow.atk;
-            const curSpd = dice.stats.speed + (lv - 1) * dice.grow.speed;
-            const nextSpd = dice.stats.speed + lv * dice.grow.speed;
+            const curSpdRaw = dice.stats.speed + (lv - 1) * dice.grow.speed;
+            const nextSpdRaw = dice.stats.speed + lv * dice.grow.speed;
+            // 無條件進位到小數點後兩位
+            const curSpd = (Math.ceil(curSpdRaw * 100) / 100).toFixed(2);
+            const nextSpd = (Math.ceil(nextSpdRaw * 100) / 100).toFixed(2);
 
             let specialHTML = '';
             if (dice.special) {
