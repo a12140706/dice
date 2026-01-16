@@ -2302,7 +2302,7 @@
                 });
 
                 // 寫入 Firestore 排行榜集合 (包含雙方姓名與出戰的 5 顆骰子)
-                fs.collection('leaderboard').add({
+                fs.collection('cooper_record').add({
                     p1Name: p1Name,
                     p2Name: p2Name,
                     p1Deck: role === 'host' ? dice_data.deck : (hostDeckCache || []),
