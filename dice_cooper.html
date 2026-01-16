@@ -1984,15 +1984,32 @@
         }
 
         function drawDiceGrid(slots, owner) {
-            const isP1 = owner === 'p1';
-            // 計算區域 Offset (改為固定 Margin 定位)
+            // 定義路徑的邊界 Gap (必須與 initPaths 的 gap 變數一致)
+            const pathGap = 30; 
+            
+            // 計算半個螢幕的高度
+            const halfScreen = canvas.height / 2;
+            
+            // 計算盤面實際高度
             const gridHeight = grid.rows * (grid.slotSize + grid.padding);
-            const bottomMargin = 120;
-            const topMargin = 120;
-
-            const startY = isP1 ?
-                canvas.height - gridHeight - bottomMargin :
-                topMargin;
+            
+            // --- 核心：垂直置中演算法 ---
+            // 可用空間 = 半個螢幕 - 路徑邊界
+            const availableSpace = halfScreen - pathGap;
+            // 置中偏移量 = (可用空間 - 盤面高度) / 2
+            const centeringOffset = (availableSpace - gridHeight) / 2;
+            
+            // 根據 Owner 決定起始點
+            // P2 (邏輯上方): 起點 = 頂部Gap + 置中偏移
+            // P1 (邏輯下方): 起點 = 中間線 + 置中偏移
+            // 注意：這裡完全依照邏輯座標計算，不需管視覺翻轉，ty() 會處理
+            let startY;
+            
+            if (owner === 'p2') {
+                startY = pathGap + centeringOffset;
+            } else { // p1
+                startY = halfScreen + centeringOffset;
+            }
 
             const sideMargin = canvas.width * 0.12;
 
@@ -2000,11 +2017,18 @@
                 const rawX = sideMargin + grid.padding + slot.col * (grid.slotSize + grid.padding);
                 const rawY = startY + slot.row * (grid.slotSize + grid.padding);
 
-                // 應用視角轉換
-                const drawX = tx(rawX);
-                const drawY = ty(rawY);
+                let drawX = tx(rawX);
+                let drawY = ty(rawY);
+                
+                // Guest 渲染補償：
+                // 因為 ty() 翻轉後，原本的「格子上緣」變成了視覺上的「格子下緣」
+                // 但 drawRoundedRect 還是往 Y 軸正向(向下)畫
+                // 所以必須把起點往上拉回一個格子的高度
+                if (role === 'guest') {
+                    drawY -= grid.slotSize;
+                }
 
-                // 底座
+                // 畫底座
                 ctx.fillStyle = '#1e293b';
                 drawRoundedRect(ctx, drawX, drawY, grid.slotSize, grid.slotSize, 8);
                 ctx.fill();
@@ -2507,19 +2531,20 @@
         }
 
         function getSlotPixelY(slot, owner) {
-            // 必須與 drawDiceGrid 的邏輯完全對齊 (固定 120px Margin)
-            const row = (slot && slot.row !== undefined) ? slot.row : 0;
-            const isP1 = owner === 'p1';
-
+            // 必須使用與 drawDiceGrid 完全相同的置中邏輯
+            const pathGap = 30;
+            const halfScreen = canvas.height / 2;
             const gridHeight = grid.rows * (grid.slotSize + grid.padding);
-            const bottomMargin = 120;
-            const topMargin = 120;
+            const centeringOffset = (halfScreen - pathGap - gridHeight) / 2;
 
-            // P1 (Bottom), P2 (Top)
-            const startY = isP1 ?
-                canvas.height - gridHeight - bottomMargin :
-                topMargin;
-
+            let startY;
+            if (owner === 'p2') {
+                startY = pathGap + centeringOffset;
+            } else { // p1
+                startY = halfScreen + centeringOffset;
+            }
+            
+            const row = (slot && slot.row !== undefined) ? slot.row : 0;
             return startY + row * (grid.slotSize + grid.padding) + grid.slotSize / 2;
         }
         function leaveRoomAndCleanUp() {
