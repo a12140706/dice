@@ -2087,39 +2087,36 @@
         }
 
         function handleInputStart(x, y) {
-            // 轉換座標 (若為 Guest，輸入座標要反轉去對應邏輯座標?)
-            // 我們的 mySlots 在邏輯上永遠是 P1 (Host) 的那塊區域嗎？
-            // 不，mySlots 的渲染位置由 drawDiceGrid 決定。
-            // Host: mySlots 在下方。 Input(x,y) 直接對應。
-            // Guest: mySlots 在下方 (視覺上)。Input(x,y) 是手指位置。
-            // 但因為 draw 時做了 rotate，所以 Guest 看到的「下方」其實是 Canvas 座標的「上方」(0,0 附近) 還是「下方」？
-            // 讓我們釐清：
-            // Guest Rotate 180: 原點 (0,0) 變右下，(w,h) 變左上。
-            // 所以 Guest 點擊畫面下方 (高 Y)，對應到 Canvas 座標應該是 低 Y (因為被轉了)。
-            // Canvas 邏輯座標系中，P2 (Guest) 的區域被定義在上方 (Y 小)。
-            // 輸入座標 x, y 是 Canvas 上的像素座標
-            // 我們比對 Slot 的視覺位置 = tx(Slot.rawX), ty(Slot.rawY)
-            // 現在 tx(x) = x，所以視覺 X = 邏輯 X
-            // ty(y) = H - y (if guest)
+            // 這裡的 x, y 是你的手指點擊座標 (已經經過 scaleFactor 處理)
 
             const clicked = mySlots.find(slot => {
-                // 取得 Slot 的 Raw 座標 (邏輯座標)
+                // 1. 取得該格子的「邏輯中心點」 (這就是你剛貼給我的那兩段正確函式)
                 const sx = getSlotPixelX(slot, role === 'host' ? 'p1' : 'p2');
                 const sy = getSlotPixelY(slot, role === 'host' ? 'p1' : 'p2');
 
-                // 轉成視覺座標
-                const visualX = tx(sx);
-                const visualY = ty(sy);
+                // 2. 轉換成「視覺座標」
+                // 這是電腦認為骰子應該在的位置
+                let visualX = tx(sx);
+                let visualY = ty(sy);
 
-                // 判定距離
-                return Math.abs(x - visualX) < grid.slotSize / 2 + 5 && Math.abs(y - visualY) < grid.slotSize / 2 + 5;
+                // --- 🚨 核心修正：同步 Guest 的視覺位移 🚨 ---
+                // 我們在畫圖時減去了 slotSize，這裡判定點擊時也要減掉！
+                // 這樣「點擊判定框」才會跟著圖案一起往上跑
+                if (role === 'guest') {
+                    visualY -= grid.slotSize;
+                }
+
+                // 3. 計算手指與骰子中心的距離
+                // 這裡的容許範圍 (slotSize / 2 + 5) 可以稍微調大一點讓手感更好
+                return Math.abs(x - visualX) < grid.slotSize / 2 + 5 && 
+                       Math.abs(y - visualY) < grid.slotSize / 2 + 5;
             });
 
             if (clicked && clicked.dice && !clicked.isLocked) {
                 drag.isDragging = true;
                 drag.fromSlot = clicked;
                 drag.dice = { ...clicked.dice };
-                drag.currentX = x; // 視覺座標
+                drag.currentX = x; 
                 drag.currentY = y;
                 clicked.isBeingDragged = true;
             }
@@ -2144,6 +2141,9 @@
                 const sy = getSlotPixelY(slot, role === 'host' ? 'p1' : 'p2');
                 const visualX = tx(sx);
                 const visualY = ty(sy);
+                if (role === 'guest') {
+                    visualY -= grid.slotSize;
+                }
 
                 return Math.abs(lx - visualX) < grid.slotSize / 2 + 10 && Math.abs(ly - visualY) < grid.slotSize / 2 + 10;
             });
@@ -2162,11 +2162,6 @@
                         drag.fromSlot.dice = null;
                         syncMyData();
                     }
-                } else if (!target.dice) {
-                    // 移動
-                    target.dice = drag.dice;
-                    drag.fromSlot.dice = null;
-                    syncMyData();
                 }
             }
 
