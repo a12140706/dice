@@ -431,7 +431,8 @@
             diceLevels: { 'fire': 1, 'wind': 1, 'ice': 1, 'electric': 1, 'poison': 1 },
             unlockLevel: 1
         };
-
+        let hostDeckCache = [];
+        let partnerDeckCache = [];
         // 從大廳 (dice.html) 同步的暱稱
         userData.nickname = localStorage.getItem('player_name') || "Player";
 
@@ -612,7 +613,8 @@
             roomRef.on('value', (snap) => {
                 const data = snap.val();
                 if (!data) return;
-
+                if (data.players?.p1?.deck) hostDeckCache = data.players.p1.deck;
+                if (data.players?.p2?.deck) partnerDeckCache = data.players.p2.deck;
                 // 共同狀態
                 if (data.wave) battleState.wave = data.wave;
                 if (data.hp !== undefined) battleState.hp = data.hp;
@@ -2279,55 +2281,49 @@
         function handleGameOver() {
             battleState.isStarted = false;
 
-            // 1. 更新本地紀錄
-            if (battleState.wave > userData.maxWave) {
-                userData.maxWave = battleState.wave;
-                localStorage.setItem('dice_game_data', JSON.stringify(userData));
+            // 取得雙方姓名與當前波數
+            const p1Name = battleState.p1Name || "Player 1";
+            const p2Name = battleState.p2Name || "Player 2";
+            const finalWave = battleState.wave;
+
+            // --- 1. 更新本地最高波數 (僅用於 UI 顯示) ---
+            if (finalWave > dice_data.maxWave) {
+                dice_data.maxWave = finalWave;
+                localStorage.setItem('dice_game_data', JSON.stringify(dice_data));
             }
 
-            // 2. 上傳排行榜與遊戲結束狀態 (僅由 Host 執行一次)
+            // --- 2. 房主 (Host) 負責上傳排行榜與同步狀態 ---
             if (role === 'host') {
-                // [FIX] 強制同步結束狀態，確保 Guest 收到
+                // 同步 RTDB 狀態，讓 Guest 也能觸發結束
                 db.ref(`coop_rooms/${roomId}`).update({
                     gameover: true,
                     hp: 0,
-                    wave: battleState.wave
+                    wave: finalWave
                 });
 
-                // 取得雙方名稱 (或 ID)
-                const p1Name = battleState.p1Name || "Player 1";
-                const p2Name = battleState.p2Name || "Player 2";
-
-                // 這裡我們需要從 currentRoomId 取得房間資訊，或者假設我們已經有雙方資料
-                db.ref(`coop_rooms/${roomId}`).once('value').then(snap => {
-                    const data = snap.val();
-                    const p1Id = data.players.p1?.uid || 'unknown';
-                    const p2Id = data.players.p2?.uid || 'unknown';
-
-                    // 寫入 Firestore 排行榜集合
-                    fs.collection('leaderboard').add({
-                        p1: p1Id,
-                        p2: p2Id,
-                        p1Name: p1Name,
-                        p2Name: p2Name,
-                        wave: battleState.wave,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                        roomId: roomId
-                    }).then(() => {
-                        console.log("排行榜紀錄已上傳");
-                    }).catch(err => {
-                        console.error("上傳失敗", err);
-                    });
+                // 寫入 Firestore 排行榜集合 (包含雙方姓名與出戰的 5 顆骰子)
+                fs.collection('leaderboard').add({
+                    p1Name: p1Name,
+                    p2Name: p2Name,
+                    p1Deck: role === 'host' ? dice_data.deck : (hostDeckCache || []),
+                    p2Deck: role === 'host' ? (partnerDeckCache || []) : dice_data.deck,
+                    wave: finalWave,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    roomId: roomId
+                }).then(() => {
+                    console.log("全球排行榜紀錄已上傳");
+                }).catch(err => {
+                    console.error("排行榜上傳失敗", err);
                 });
             }
 
-            // 3. 顯示結算畫面
+            // --- 3. 顯示結算畫面 ---
             const p1Display = document.getElementById('p1-name-display');
             const p2Display = document.getElementById('p2-name-display');
-            if (p1Display) p1Display.innerText = battleState.p1Name || "Player 1";
-            if (p2Display) p2Display.innerText = battleState.p2Name || "Player 2";
+            if (p1Display) p1Display.innerText = p1Name;
+            if (p2Display) p2Display.innerText = p2Name;
 
-            document.getElementById('final-wave').innerText = battleState.wave;
+            document.getElementById('final-wave').innerText = finalWave;
             document.getElementById('game-over-modal').classList.remove('hidden');
         }
 
