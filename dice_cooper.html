@@ -529,7 +529,6 @@
                 wave: 1,
                 hp: 3,
                 gameover: false,
-                gameStats: { totalSp: 0, totalSpP2: 0 },
                 players: {
                     p1: { slots: [], sp: 100, powerUpLevels: powerUpLevels, name: userData.nickname || 'Host' },
                     p2: null // P2 重連後會自己更新
@@ -655,8 +654,8 @@
                         if (currentMap.has(r.id)) {
                             // 更新舊物件屬性 (保留 references)
                             const local = currentMap.get(r.id);
-                            local.x = r.x;
-                            local.y = r.y;
+                            local.serverX = r.x;
+                            local.serverY = r.y;
                             local.hp = r.hp;
                             local.pathIndex = r.pathIndex;
                             // 同步 Boss 與衝刺相關屬性
@@ -670,6 +669,8 @@
                             newEnemies.push(local);
                         } else {
                             // 新增
+                            r.serverX = r.x;
+                            r.serverY = r.y;
                             newEnemies.push(r);
                         }
                     });
@@ -797,14 +798,14 @@
                 // 1. 邏輯更新
                 if (role === 'host') {
                     updateHostLogic(); // 生怪、移動、傷害結算
-                    if (frameCount % 3 === 0) { // 每 3 幀同步一次，減少寫入頻率
+                    if (battleState.needsImmediateSync || frameCount % 6 === 0) {
                         db.ref(`coop_rooms/${roomId}`).update({
                             enemies: enemies,
                             wave: battleState.wave,
                             hp: battleState.hp,
                             gameover: battleState.hp <= 0,
-                            gameStats: { totalSpP2: stateCache.totalSpP2 || 0 }
                         });
+                        battleState.needsImmediateSync = false; // 同步完重置
                     }
                 } else {
                     updateGuestLogic(); // 預測移動
@@ -847,6 +848,13 @@
                         e.x += (dx / dist) * e.speed;
                         e.y += (dy / dist) * e.speed;
                     }
+                }
+                if (e.serverX !== undefined) {
+                    const driftX = e.serverX - e.x;
+                    const driftY = e.serverY - e.y;
+                    // 每次更新只拉回 10% 的誤差，這樣肉眼看不出閃爍
+                    e.x += driftX * 0.1;
+                    e.y += driftY * 0.1;
                 }
             });
         }
@@ -1025,24 +1033,15 @@
                         e.y += (dy / dist) * e.speed;
                     }
                 }
-
-                // 死亡移除
+                // 修改後的 updateHostLogic 區段 (約在 650 行)
                 if (e.hp <= 0) {
                     enemies.splice(i, 1);
-                    // 根據擊殺者給 SP? 目前簡化為 Host 通通拿到 (需改進：共享 SP 或各自擊殺)
-                    // 這版本簡化：擊殺不給 SP，SP 靠時間自動回復或 Pve 獎勵? 
-                    // 為了合作樂趣，我們設定：每殺一隻怪，雙方都加 SP (Host 寫入)
-                    // 這裡先簡單增加 Host 的，並透過 sync 同步給 Guest? 
-                    // 不，Guest 的 SP 是本地維護的。
-                    // 暫定：Host 廣播 "enemy_killed" 事件較複雜，這裡先讓 Host 拿到 SP，Guest 透過模擬擊殺拿 SP
+                    // 只要有怪物死亡，標記需要立即同步
+                    battleState.needsImmediateSync = true;
+
+                    // 這裡原本加 SP 的 if (target.owner === 'p1') ... 全部刪除！
                 }
             }
-        }
-
-        // Guest 邏輯: 簡單插值
-        function updateGuestLogic() {
-            // 這裡其實只要依賴 Firebase 數據即可
-            // 但為了流暢，可以做本地預測移動
         }
 
         // 生成唯一 ID
@@ -1051,9 +1050,10 @@
         }
 
         function spawnEnemy() {
-            const level = userData.unlockLevel;
             const wave = battleState.wave;
-            const hp = Math.max(10, BALANCE.ENEMY_BASE_HP * Math.pow(BALANCE.ENEMY_LEVEL_GROWTH, 0) * Math.pow(BALANCE.ENEMY_WAVE_GROWTH, wave - 1));
+            const hp = Math.max(1,
+                BALANCE.ENEMY_BASE_HP * Math.pow(BALANCE.ENEMY_WAVE_GROWTH, wave - 1)
+            );
 
             // 同時在 P1 與 P2 路徑生成
             ['p1', 'p2'].forEach(owner => {
@@ -1066,6 +1066,7 @@
                     maxHp: hp, hp: hp, virtualHp: hp,
                     speed: 1.5,
                     poisonStacks: 0,
+                    rewardSp: 10 + Math.floor((wave - 1) / 5) * 5,
                     isBoss: false
                 });
             });
@@ -1090,7 +1091,8 @@
                     maxHp: hp, hp: hp, virtualHp: hp,
                     speed: 1.0,
                     isBoss: true, bossType: typeKey,
-                    color: type.color, size: 55, skillTimer: 0
+                    color: type.color, size: 55, skillTimer: 0,
+                    rewardSp: (10 + Math.floor((wave - 1) / 5) * 5) * 20
                 });
             });
         }
@@ -1479,12 +1481,12 @@
             // 1. 應用傷害
             target.hp -= dmg;
 
-            // 2. 死亡獎勵 (只有 Host 處理)
-            if (target.hp <= 0 && role === 'host') {
-                if (target.owner === 'p1') {
-                    battleState.sp += 10;
-                } else if (target.owner === 'p2') {
-                    stateCache.totalSpP2 = (stateCache.totalSpP2 || 0) + 10;
+            if (target.hp <= 0) {
+                const myOwner = (role === 'host' ? 'p1' : 'p2');
+                if (target.owner === myOwner) {
+                    // 取得該怪物的成長 SP
+                    battleState.sp += (target.rewardSp || 10);
+                    updateUILive();
                 }
             }
 
@@ -1795,6 +1797,7 @@
 
             // 3. 畫敵人
             enemies.forEach(e => {
+                if (e.hp <= 0) return;
                 const drawX = tx(e.x);
                 const drawY = ty(e.y);
                 const size = e.isBoss ? e.size : 20; // 確保 size 有值
