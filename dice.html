@@ -190,15 +190,15 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
-                    <button onclick="buyBox(10)"
-                        class="bg-slate-700 py-4 rounded-2xl font-bold active:scale-95 transition-all flex flex-col items-center">
-                        <span class="text-sm">10 連抽</span>
-                        <span class="text-[10px] text-yellow-500">10萬 💎</span>
-                    </button>
                     <button onclick="buyBox(100)"
-                        class="bg-slate-700 py-4 rounded-2xl font-bold active:scale-95 transition-all flex flex-col items-center border border-yellow-500/30">
+                        class="bg-slate-700 py-4 rounded-2xl font-bold active:scale-95 transition-all flex flex-col items-center">
                         <span class="text-sm">100 連抽</span>
-                        <span class="text-[10px] text-yellow-500">100萬 💎</span>
+                        <span class="text-[10px] text-yellow-500">1000萬 💎</span>
+                    </button>
+                    <button onclick="buyBox(1000)"
+                        class="bg-slate-700 py-4 rounded-2xl font-bold active:scale-95 transition-all flex flex-col items-center border border-yellow-500/30">
+                        <span class="text-sm">1000 連抽</span>
+                        <span class="text-[10px] text-yellow-500">1億 💎</span>
                     </button>
                 </div>
             </div>
@@ -1917,74 +1917,100 @@
             saveData();
             render();
         }
-        async function buyBox(count = 10) {
-            const singlePrice = 10000;
-            const totalPrice = singlePrice * count;
+       async function buyBox(count = 10) {
+    const singlePrice = 100000;
+    const totalPrice = singlePrice * count;
 
-            if (currentBalance < totalPrice) {
-                alert("鑽石不足！");
-                return;
-            }
+    if (currentBalance < totalPrice) {
+        alert("鑽石不足！");
+        return;
+    }
 
-            currentBalance -= totalPrice;
-            let rewardsSummary = {};
+    currentBalance -= totalPrice;
+    let rewardsSummary = {};
 
-            for (let i = 0; i < count; i++) {
-                const rand = Math.random();
-                let selectedQ = 'common';
-                let cum = 0;
+    // 定義品質權重用於排序 (數值越大排越後面)
+    const qualityOrder = { 'common': 1, 'rare': 2, 'epic': 3, 'legend': 4, 'mythic': 5 };
 
-                for (const [key, q] of Object.entries(QUALITIES)) {
-                    cum += q.chance;
-                    if (rand < cum) { selectedQ = key; break; }
-                }
+    for (let i = 0; i < count; i++) {
+        const rand = Math.random();
+        let selectedQ = 'common';
+        let cum = 0;
 
-                const possibleDices = ALL_DICES.filter(d => d.quality === selectedQ);
-                const dice = possibleDices[Math.floor(Math.random() * possibleDices.length)] || ALL_DICES[0];
-
-                userData.inventory[dice.id] = (userData.inventory[dice.id] || 0) + 1;
-
-                if (!rewardsSummary[dice.id]) {
-                    rewardsSummary[dice.id] = { info: dice, count: 1 };
-                } else {
-                    rewardsSummary[dice.id].count++;
-                }
-            }
-
-            await saveData();
-            showRewardUI(Object.values(rewardsSummary));
-            render();
+        for (const [key, q] of Object.entries(QUALITIES)) {
+            cum += q.chance;
+            if (rand < cum) { selectedQ = key; break; }
         }
 
-        function showRewardUI(summarizedRewards) {
-            // 修正點：將 rewardContainer 改為 rewardList (對應 HTML 中的 ID)
-            const container = document.getElementById('rewardList');
-            if (!container) return; // 增加安全性檢查
+        const possibleDices = ALL_DICES.filter(d => d.quality === selectedQ);
+        const dice = possibleDices[Math.floor(Math.random() * possibleDices.length)] || ALL_DICES[0];
 
-            container.innerHTML = '';
+        userData.inventory[dice.id] = (userData.inventory[dice.id] || 0) + 1;
 
-            summarizedRewards.forEach(item => {
-                const dice = item.info;
-                const count = item.count;
-                const div = document.createElement('div');
-                div.className = "relative flex flex-col items-center p-2 bg-slate-800 rounded-xl border border-slate-700";
+        if (!rewardsSummary[dice.id]) {
+            rewardsSummary[dice.id] = { 
+                info: dice, 
+                count: 1, 
+                order: qualityOrder[dice.quality] || 0 
+            };
+        } else {
+            rewardsSummary[dice.id].count++;
+        }
+    }
 
-                const countBadge = count > 1 ?
-                    `<div class="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full z-10">x${count}</div>` : '';
+    // 依據品質排序：高品質在後
+    const sortedRewards = Object.values(rewardsSummary).sort((a, b) => a.order - b.order);
 
-                div.innerHTML = `
+    await saveData();
+    showRewardUI(sortedRewards);
+    render();
+}
+
+function showRewardUI(summarizedRewards) {
+    const container = document.getElementById('rewardList');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    summarizedRewards.forEach((item, index) => {
+        const dice = item.info;
+        const count = item.count;
+        const q = QUALITIES[dice.quality] || QUALITIES.common;
+        
+        const div = document.createElement('div');
+        // 增加與 render 函數一致的背景與邊框處理
+        div.className = `relative flex flex-col items-center p-2 bg-slate-800 rounded-xl border-2 transition-all ${dice.quality === 'mythic' ? 'q-mythic' : ''}`;
+        div.style.borderColor = q.color;
+
+        const countBadge = count > 1 ?
+            `<div class="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full z-10 shadow-md">x${count}</div>` : '';
+
+        div.innerHTML = `
             ${countBadge}
-            <div class="w-12 h-12 rounded-lg mb-1 flex items-center justify-center shadow-lg" 
-                 style="background: ${dice.baseColor}; border: 2px solid ${QUALITIES[dice.quality].color}">
-                 <span class="text-white font-bold text-sm">${dice.name}</span>
+            <div class="w-12 h-12 bg-white rounded-lg mb-1 flex items-center justify-center relative overflow-hidden">
+                 <canvas id="reward-canvas-${index}" width="48" height="48" style="width:48px; height:48px;"></canvas>
             </div>
-            <div class="text-[10px]" style="color: ${QUALITIES[dice.quality].color}">${QUALITIES[dice.quality].name}</div>
+            <div class="text-[10px] font-bold text-white truncate w-full text-center">${dice.name}</div>
+            <div class="text-[9px]" style="color: ${q.color}">${q.name}</div>
         `;
-                container.appendChild(div);
-            });
+        container.appendChild(div);
 
-            document.getElementById('rewardOverlay').classList.remove('hidden');
+        // 立即在畫面上繪製骰子面
+        const canvas = div.querySelector('canvas');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            // 延遲一點點確保 DOM 已渲染
+            setTimeout(() => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawQualityBorder(ctx, 0, 0, canvas.width, dice.id);
+                drawDiceFeature(ctx, 0, 0, canvas.width, dice.pattern || dice.id, dice.baseColor);
+                drawDiceStars(ctx, 0, 0, canvas.width, 1, dice.baseColor);
+            }, 0);
         }
+    });
+
+    document.getElementById('rewardOverlay').classList.remove('hidden');
+}
 
         function closeReward() { document.getElementById('rewardOverlay').classList.add('hidden'); }
         function closeUpgradeUI() { document.getElementById('upgradeOverlay').classList.add('hidden'); tempUpgradeId = null; }
