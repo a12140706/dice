@@ -353,7 +353,7 @@
             {
                 id: 'sanctuary', name: '聖域', quality: 'legend', baseColor: '#fbbf24', pattern: 'sanctuary',
                 stats: { atk: 15, speed: 1.0 }, grow: { atk: 6, speed: -0.017 },
-                special: { label: '加速範圍', value: 30, unit: '%', grow: 5 }
+                special: { label: '全場攻速', value: 10, unit: '%', grow: 2 }
             },
             {
                 id: 'comet', name: '彗星', quality: 'legend', baseColor: '#3b82f6', pattern: 'comet',
@@ -1036,7 +1036,7 @@ function executeAttack(dice, target, damage, startX, startY, isSunActivated) {
     if (dice.id === 'galaxy') {
         const spec = getDiceSpecialValue('galaxy'); 
         // 觸發機率：基礎 15% + 吞噬比例 (2%...)
-        const triggerChance = 0.15 + (spec / 100);
+        const triggerChance = 0.05 + (spec / 100);
         const isBlackHoleTriggered = Math.random() < triggerChance;
 
         if (isBlackHoleTriggered) {
@@ -1447,7 +1447,7 @@ function executeAttack(dice, target, damage, startX, startY, isSunActivated) {
                     }
                     battleState.wave++;
                     waveState.spawnedCount = 0;
-                    waveState.totalEnemiesPerWave += 2;
+                    waveState.totalEnemiesPerWave += 1;
                     waveState.isWaiting = false;
                     waveState.timer = 0;
                     updateUI();
@@ -2358,7 +2358,7 @@ function executeAttack(dice, target, damage, startX, startY, isSunActivated) {
                 }
 
                 ctx.fillStyle = starColor;
-                ctx.font = `bold ${size * 0.7}px Arial`;
+                ctx.font = `bold ${size * 0.4}px Arial`;
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
 

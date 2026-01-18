@@ -600,7 +600,7 @@
             {
                 id: 'sanctuary', name: '聖域', quality: 'legend', baseColor: '#fbbf24', pattern: 'sanctuary',
                 stats: { atk: 15, speed: 1.0 }, grow: { atk: 6, speed: -0.017 },
-                special: { label: '加速範圍', value: 30, unit: '%', grow: 5 }
+                special: { label: '全場加速', value: 10, unit: '%', grow: 2 }
             },
             {
                 id: 'comet', name: '彗星', quality: 'legend', baseColor: '#3b82f6', pattern: 'comet',
@@ -1540,7 +1540,7 @@
                     const count = userData.inventory[dice.id] || 0;
                     const lv = userData.diceLevels[dice.id] || 1;
                     const q = QUALITIES[dice.quality] || QUALITIES.common;
-                    const isOwned = count > 0 || userData.deck.includes(dice.id);
+                    const isOwned = lv > 0 || count > 0 || userData.deck.includes(dice.id);
                     const isSelected = selectedInventoryId === dice.id;
 
                     // --- [修改] 進度條與滿級判斷邏輯 ---
