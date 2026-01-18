@@ -431,8 +431,7 @@
             diceLevels: { 'fire': 1, 'wind': 1, 'ice': 1, 'electric': 1, 'poison': 1 },
             unlockLevel: 1
         };
-        let hostDeckCache = [];
-        let partnerDeckCache = [];
+
         // 從大廳 (dice.html) 同步的暱稱
         userData.nickname = localStorage.getItem('player_name') || "Player";
 
@@ -530,6 +529,7 @@
                 wave: 1,
                 hp: 3,
                 gameover: false,
+                gameStats: { totalSp: 0, totalSpP2: 0 },
                 players: {
                     p1: { slots: [], sp: 100, powerUpLevels: powerUpLevels, name: userData.nickname || 'Host' },
                     p2: null // P2 重連後會自己更新
@@ -607,14 +607,11 @@
         // --- 5. Firebase 同步 ---
         function startFirebaseSync() {
             const roomRef = db.ref('coop_rooms/' + roomId);
-            if (role === 'host') {
-                roomRef.onDisconnect().remove();
-            }
+
             roomRef.on('value', (snap) => {
                 const data = snap.val();
                 if (!data) return;
-                if (data.players?.p1?.deck) hostDeckCache = data.players.p1.deck;
-                if (data.players?.p2?.deck) partnerDeckCache = data.players.p2.deck;
+
                 // 共同狀態
                 if (data.wave) battleState.wave = data.wave;
                 if (data.hp !== undefined) battleState.hp = data.hp;
@@ -658,8 +655,8 @@
                         if (currentMap.has(r.id)) {
                             // 更新舊物件屬性 (保留 references)
                             const local = currentMap.get(r.id);
-                            local.serverX = r.x;
-                            local.serverY = r.y;
+                            local.x = r.x;
+                            local.y = r.y;
                             local.hp = r.hp;
                             local.pathIndex = r.pathIndex;
                             // 同步 Boss 與衝刺相關屬性
@@ -673,8 +670,6 @@
                             newEnemies.push(local);
                         } else {
                             // 新增
-                            r.serverX = r.x;
-                            r.serverY = r.y;
                             newEnemies.push(r);
                         }
                     });
@@ -802,14 +797,14 @@
                 // 1. 邏輯更新
                 if (role === 'host') {
                     updateHostLogic(); // 生怪、移動、傷害結算
-                    if (battleState.needsImmediateSync || frameCount % 6 === 0) {
+                    if (frameCount % 3 === 0) { // 每 3 幀同步一次，減少寫入頻率
                         db.ref(`coop_rooms/${roomId}`).update({
                             enemies: enemies,
                             wave: battleState.wave,
                             hp: battleState.hp,
                             gameover: battleState.hp <= 0,
+                            gameStats: { totalSpP2: stateCache.totalSpP2 || 0 }
                         });
-                        battleState.needsImmediateSync = false; // 同步完重置
                     }
                 } else {
                     updateGuestLogic(); // 預測移動
@@ -852,13 +847,6 @@
                         e.x += (dx / dist) * e.speed;
                         e.y += (dy / dist) * e.speed;
                     }
-                }
-                if (e.serverX !== undefined) {
-                    const driftX = e.serverX - e.x;
-                    const driftY = e.serverY - e.y;
-                    // 每次更新只拉回 10% 的誤差，這樣肉眼看不出閃爍
-                    e.x += driftX * 0.1;
-                    e.y += driftY * 0.1;
                 }
             });
         }
@@ -1037,15 +1025,24 @@
                         e.y += (dy / dist) * e.speed;
                     }
                 }
-                // 修改後的 updateHostLogic 區段 (約在 650 行)
+
+                // 死亡移除
                 if (e.hp <= 0) {
                     enemies.splice(i, 1);
-                    // 只要有怪物死亡，標記需要立即同步
-                    battleState.needsImmediateSync = true;
-
-                    // 這裡原本加 SP 的 if (target.owner === 'p1') ... 全部刪除！
+                    // 根據擊殺者給 SP? 目前簡化為 Host 通通拿到 (需改進：共享 SP 或各自擊殺)
+                    // 這版本簡化：擊殺不給 SP，SP 靠時間自動回復或 Pve 獎勵? 
+                    // 為了合作樂趣，我們設定：每殺一隻怪，雙方都加 SP (Host 寫入)
+                    // 這裡先簡單增加 Host 的，並透過 sync 同步給 Guest? 
+                    // 不，Guest 的 SP 是本地維護的。
+                    // 暫定：Host 廣播 "enemy_killed" 事件較複雜，這裡先讓 Host 拿到 SP，Guest 透過模擬擊殺拿 SP
                 }
             }
+        }
+
+        // Guest 邏輯: 簡單插值
+        function updateGuestLogic() {
+            // 這裡其實只要依賴 Firebase 數據即可
+            // 但為了流暢，可以做本地預測移動
         }
 
         // 生成唯一 ID
@@ -1054,10 +1051,9 @@
         }
 
         function spawnEnemy() {
+            const level = userData.unlockLevel;
             const wave = battleState.wave;
-            const hp = Math.max(1,
-                BALANCE.ENEMY_BASE_HP * Math.pow(BALANCE.ENEMY_WAVE_GROWTH, wave - 1)
-            );
+            const hp = Math.max(10, BALANCE.ENEMY_BASE_HP * Math.pow(BALANCE.ENEMY_LEVEL_GROWTH, 0) * Math.pow(BALANCE.ENEMY_WAVE_GROWTH, wave - 1));
 
             // 同時在 P1 與 P2 路徑生成
             ['p1', 'p2'].forEach(owner => {
@@ -1070,7 +1066,6 @@
                     maxHp: hp, hp: hp, virtualHp: hp,
                     speed: 1.5,
                     poisonStacks: 0,
-                    rewardSp: 10 + Math.floor((wave - 1) / 5) * 5,
                     isBoss: false
                 });
             });
@@ -1095,8 +1090,7 @@
                     maxHp: hp, hp: hp, virtualHp: hp,
                     speed: 1.0,
                     isBoss: true, bossType: typeKey,
-                    color: type.color, size: 55, skillTimer: 0,
-                    rewardSp: (10 + Math.floor((wave - 1) / 5) * 5) * 20
+                    color: type.color, size: 55, skillTimer: 0
                 });
             });
         }
@@ -1485,12 +1479,12 @@
             // 1. 應用傷害
             target.hp -= dmg;
 
-            if (target.hp <= 0) {
-                const myOwner = (role === 'host' ? 'p1' : 'p2');
-                if (target.owner === myOwner) {
-                    // 取得該怪物的成長 SP
-                    battleState.sp += (target.rewardSp || 10);
-                    updateUILive();
+            // 2. 死亡獎勵 (只有 Host 處理)
+            if (target.hp <= 0 && role === 'host') {
+                if (target.owner === 'p1') {
+                    battleState.sp += 10;
+                } else if (target.owner === 'p2') {
+                    stateCache.totalSpP2 = (stateCache.totalSpP2 || 0) + 10;
                 }
             }
 
@@ -1729,6 +1723,28 @@
         }
 
         // 獲取 Slot 的像素座標 (邏輯座標系)
+        function getSlotPixelX(slot, owner) {
+            const sideMargin = canvas.width * 0.12;
+            const col = (slot && slot.col !== undefined) ? slot.col : 0;
+            return sideMargin + grid.padding + col * (grid.slotSize + grid.padding) + grid.slotSize / 2;
+        }
+
+        function getSlotPixelY(slot, owner) {
+            // 必須與 drawDiceGrid 的邏輯完全對齊 (固定 120px Margin)
+            const row = (slot && slot.row !== undefined) ? slot.row : 0;
+            const isP1 = owner === 'p1';
+
+            const gridHeight = grid.rows * (grid.slotSize + grid.padding);
+            const bottomMargin = 120;
+            const topMargin = 120;
+
+            // P1 (Bottom), P2 (Top)
+            const startY = isP1 ?
+                canvas.height - gridHeight - bottomMargin :
+                topMargin;
+
+            return startY + row * (grid.slotSize + grid.padding) + grid.slotSize / 2;
+        }
 
 
         // --- 8. 渲染 ---
@@ -1801,7 +1817,6 @@
 
             // 3. 畫敵人
             enemies.forEach(e => {
-                if (e.hp <= 0) return;
                 const drawX = tx(e.x);
                 const drawY = ty(e.y);
                 const size = e.isBoss ? e.size : 20; // 確保 size 有值
@@ -1984,32 +1999,15 @@
         }
 
         function drawDiceGrid(slots, owner) {
-            // 定義路徑的邊界 Gap (必須與 initPaths 的 gap 變數一致)
-            const pathGap = 30; 
-            
-            // 計算半個螢幕的高度
-            const halfScreen = canvas.height / 2;
-            
-            // 計算盤面實際高度
+            const isP1 = owner === 'p1';
+            // 計算區域 Offset (改為固定 Margin 定位)
             const gridHeight = grid.rows * (grid.slotSize + grid.padding);
-            
-            // --- 核心：垂直置中演算法 ---
-            // 可用空間 = 半個螢幕 - 路徑邊界
-            const availableSpace = halfScreen - pathGap;
-            // 置中偏移量 = (可用空間 - 盤面高度) / 2
-            const centeringOffset = (availableSpace - gridHeight) / 2;
-            
-            // 根據 Owner 決定起始點
-            // P2 (邏輯上方): 起點 = 頂部Gap + 置中偏移
-            // P1 (邏輯下方): 起點 = 中間線 + 置中偏移
-            // 注意：這裡完全依照邏輯座標計算，不需管視覺翻轉，ty() 會處理
-            let startY;
-            
-            if (owner === 'p2') {
-                startY = pathGap + centeringOffset;
-            } else { // p1
-                startY = halfScreen + centeringOffset;
-            }
+            const bottomMargin = 120;
+            const topMargin = 120;
+
+            const startY = isP1 ?
+                canvas.height - gridHeight - bottomMargin :
+                topMargin;
 
             const sideMargin = canvas.width * 0.12;
 
@@ -2017,18 +2015,11 @@
                 const rawX = sideMargin + grid.padding + slot.col * (grid.slotSize + grid.padding);
                 const rawY = startY + slot.row * (grid.slotSize + grid.padding);
 
-                let drawX = tx(rawX);
-                let drawY = ty(rawY);
-                
-                // Guest 渲染補償：
-                // 因為 ty() 翻轉後，原本的「格子上緣」變成了視覺上的「格子下緣」
-                // 但 drawRoundedRect 還是往 Y 軸正向(向下)畫
-                // 所以必須把起點往上拉回一個格子的高度
-                if (role === 'guest') {
-                    drawY -= grid.slotSize;
-                }
+                // 應用視角轉換
+                const drawX = tx(rawX);
+                const drawY = ty(rawY);
 
-                // 畫底座
+                // 底座
                 ctx.fillStyle = '#1e293b';
                 drawRoundedRect(ctx, drawX, drawY, grid.slotSize, grid.slotSize, 8);
                 ctx.fill();
@@ -2087,36 +2078,39 @@
         }
 
         function handleInputStart(x, y) {
-            // 這裡的 x, y 是你的手指點擊座標 (已經經過 scaleFactor 處理)
+            // 轉換座標 (若為 Guest，輸入座標要反轉去對應邏輯座標?)
+            // 我們的 mySlots 在邏輯上永遠是 P1 (Host) 的那塊區域嗎？
+            // 不，mySlots 的渲染位置由 drawDiceGrid 決定。
+            // Host: mySlots 在下方。 Input(x,y) 直接對應。
+            // Guest: mySlots 在下方 (視覺上)。Input(x,y) 是手指位置。
+            // 但因為 draw 時做了 rotate，所以 Guest 看到的「下方」其實是 Canvas 座標的「上方」(0,0 附近) 還是「下方」？
+            // 讓我們釐清：
+            // Guest Rotate 180: 原點 (0,0) 變右下，(w,h) 變左上。
+            // 所以 Guest 點擊畫面下方 (高 Y)，對應到 Canvas 座標應該是 低 Y (因為被轉了)。
+            // Canvas 邏輯座標系中，P2 (Guest) 的區域被定義在上方 (Y 小)。
+            // 輸入座標 x, y 是 Canvas 上的像素座標
+            // 我們比對 Slot 的視覺位置 = tx(Slot.rawX), ty(Slot.rawY)
+            // 現在 tx(x) = x，所以視覺 X = 邏輯 X
+            // ty(y) = H - y (if guest)
 
             const clicked = mySlots.find(slot => {
-                // 1. 取得該格子的「邏輯中心點」 (這就是你剛貼給我的那兩段正確函式)
+                // 取得 Slot 的 Raw 座標 (邏輯座標)
                 const sx = getSlotPixelX(slot, role === 'host' ? 'p1' : 'p2');
                 const sy = getSlotPixelY(slot, role === 'host' ? 'p1' : 'p2');
 
-                // 2. 轉換成「視覺座標」
-                // 這是電腦認為骰子應該在的位置
-                let visualX = tx(sx);
-                let visualY = ty(sy);
+                // 轉成視覺座標
+                const visualX = tx(sx);
+                const visualY = ty(sy);
 
-                // --- 🚨 核心修正：同步 Guest 的視覺位移 🚨 ---
-                // 我們在畫圖時減去了 slotSize，這裡判定點擊時也要減掉！
-                // 這樣「點擊判定框」才會跟著圖案一起往上跑
-                if (role === 'guest') {
-                    visualY -= grid.slotSize;
-                }
-
-                // 3. 計算手指與骰子中心的距離
-                // 這裡的容許範圍 (slotSize / 2 + 5) 可以稍微調大一點讓手感更好
-                return Math.abs(x - visualX) < grid.slotSize / 2 + 5 && 
-                       Math.abs(y - visualY) < grid.slotSize / 2 + 5;
+                // 判定距離
+                return Math.abs(x - visualX) < grid.slotSize / 2 + 5 && Math.abs(y - visualY) < grid.slotSize / 2 + 5;
             });
 
             if (clicked && clicked.dice && !clicked.isLocked) {
                 drag.isDragging = true;
                 drag.fromSlot = clicked;
                 drag.dice = { ...clicked.dice };
-                drag.currentX = x; 
+                drag.currentX = x; // 視覺座標
                 drag.currentY = y;
                 clicked.isBeingDragged = true;
             }
@@ -2141,9 +2135,6 @@
                 const sy = getSlotPixelY(slot, role === 'host' ? 'p1' : 'p2');
                 const visualX = tx(sx);
                 const visualY = ty(sy);
-                if (role === 'guest') {
-                    visualY -= grid.slotSize;
-                }
 
                 return Math.abs(lx - visualX) < grid.slotSize / 2 + 10 && Math.abs(ly - visualY) < grid.slotSize / 2 + 10;
             });
@@ -2162,6 +2153,11 @@
                         drag.fromSlot.dice = null;
                         syncMyData();
                     }
+                } else if (!target.dice) {
+                    // 移動
+                    target.dice = drag.dice;
+                    drag.fromSlot.dice = null;
+                    syncMyData();
                 }
             }
 
@@ -2300,49 +2296,55 @@
         function handleGameOver() {
             battleState.isStarted = false;
 
-            // 取得雙方姓名與當前波數
-            const p1Name = battleState.p1Name || "Player 1";
-            const p2Name = battleState.p2Name || "Player 2";
-            const finalWave = battleState.wave;
-
-            // --- 1. 更新本地最高波數 (僅用於 UI 顯示) ---
-            if (finalWave > dice_data.maxWave) {
-                dice_data.maxWave = finalWave;
-                localStorage.setItem('dice_game_data', JSON.stringify(dice_data));
+            // 1. 更新本地紀錄
+            if (battleState.wave > userData.maxWave) {
+                userData.maxWave = battleState.wave;
+                localStorage.setItem('dice_game_data', JSON.stringify(userData));
             }
 
-            // --- 2. 房主 (Host) 負責上傳排行榜與同步狀態 ---
+            // 2. 上傳排行榜與遊戲結束狀態 (僅由 Host 執行一次)
             if (role === 'host') {
-                // 同步 RTDB 狀態，讓 Guest 也能觸發結束
+                // [FIX] 強制同步結束狀態，確保 Guest 收到
                 db.ref(`coop_rooms/${roomId}`).update({
                     gameover: true,
                     hp: 0,
-                    wave: finalWave
+                    wave: battleState.wave
                 });
 
-                // 寫入 Firestore 排行榜集合 (包含雙方姓名與出戰的 5 顆骰子)
-                fs.collection('cooper_record').add({
-                    p1Name: p1Name,
-                    p2Name: p2Name,
-                    p1Deck: role === 'host' ? dice_data.deck : (hostDeckCache || []),
-                    p2Deck: role === 'host' ? (partnerDeckCache || []) : dice_data.deck,
-                    wave: finalWave,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                    roomId: roomId
-                }).then(() => {
-                    console.log("全球排行榜紀錄已上傳");
-                }).catch(err => {
-                    console.error("排行榜上傳失敗", err);
+                // 取得雙方名稱 (或 ID)
+                const p1Name = battleState.p1Name || "Player 1";
+                const p2Name = battleState.p2Name || "Player 2";
+
+                // 這裡我們需要從 currentRoomId 取得房間資訊，或者假設我們已經有雙方資料
+                db.ref(`coop_rooms/${roomId}`).once('value').then(snap => {
+                    const data = snap.val();
+                    const p1Id = data.players.p1?.uid || 'unknown';
+                    const p2Id = data.players.p2?.uid || 'unknown';
+
+                    // 寫入 Firestore 排行榜集合
+                    fs.collection('leaderboard').add({
+                        p1: p1Id,
+                        p2: p2Id,
+                        p1Name: p1Name,
+                        p2Name: p2Name,
+                        wave: battleState.wave,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        roomId: roomId
+                    }).then(() => {
+                        console.log("排行榜紀錄已上傳");
+                    }).catch(err => {
+                        console.error("上傳失敗", err);
+                    });
                 });
             }
 
-            // --- 3. 顯示結算畫面 ---
+            // 3. 顯示結算畫面
             const p1Display = document.getElementById('p1-name-display');
             const p2Display = document.getElementById('p2-name-display');
-            if (p1Display) p1Display.innerText = p1Name;
-            if (p2Display) p2Display.innerText = p2Name;
+            if (p1Display) p1Display.innerText = battleState.p1Name || "Player 1";
+            if (p2Display) p2Display.innerText = battleState.p2Name || "Player 2";
 
-            document.getElementById('final-wave').innerText = finalWave;
+            document.getElementById('final-wave').innerText = battleState.wave;
             document.getElementById('game-over-modal').classList.remove('hidden');
         }
 
@@ -2516,46 +2518,7 @@
         }
 
     </script>
-    <script>
-        // --- 補強：座標計算函式 (修復 Guest 端子彈從中心發射與累積子彈導致的卡頓) ---
-        // --- 補強：座標計算函式 (已修正為與 drawDiceGrid 邏輯一致的百分比定位) ---
-        function getSlotPixelX(slot, owner) {
-            const sideMargin = canvas.width * 0.12;
-            const col = (slot && slot.col !== undefined) ? slot.col : 0;
-            return sideMargin + grid.padding + col * (grid.slotSize + grid.padding) + grid.slotSize / 2;
-        }
 
-        function getSlotPixelY(slot, owner) {
-            // 必須使用與 drawDiceGrid 完全相同的置中邏輯
-            const pathGap = 30;
-            const halfScreen = canvas.height / 2;
-            const gridHeight = grid.rows * (grid.slotSize + grid.padding);
-            const centeringOffset = (halfScreen - pathGap - gridHeight) / 2;
-
-            let startY;
-            if (owner === 'p2') {
-                startY = pathGap + centeringOffset;
-            } else { // p1
-                startY = halfScreen + centeringOffset;
-            }
-            
-            const row = (slot && slot.row !== undefined) ? slot.row : 0;
-            return startY + row * (grid.slotSize + grid.padding) + grid.slotSize / 2;
-        }
-        function leaveRoomAndCleanUp() {
-            if (role === 'host') {
-                // 房主離開時，徹底刪除 RTDB 房間節點
-                db.ref(`coop_rooms/${roomId}`).remove().finally(() => {
-                    location.href = 'dice.html';
-                });
-            } else {
-                // 隊友離開時，把自己從 players/p2 移除即可
-                db.ref(`coop_rooms/${roomId}/players/p2`).remove().finally(() => {
-                    location.href = 'dice.html';
-                });
-            }
-        }
-    </script>
     <!-- Game Over Modal -->
     <div id="game-over-modal"
         class="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] hidden backdrop-blur-sm">
@@ -2571,7 +2534,7 @@
             </div>
             <p class="text-slate-400 mb-8 text-lg">共堅持了 <span id="final-wave"
                     class="text-yellow-400 font-bold text-3xl mx-1">0</span> 波</p>
-            <button onclick="leaveRoomAndCleanUp()"
+            <button onclick="location.href='dice.html'"
                 class="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl font-bold text-white text-xl shadow-lg active:scale-95 transition-all hover:scale-105">
                 返回大廳
             </button>
