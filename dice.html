@@ -391,10 +391,14 @@
         </div>
     </div>
     <div id="rewardOverlay" class="fixed inset-0 bg-black/90 hidden z-50 flex items-center justify-center p-6">
-        <div class="bg-slate-800 w-full max-w-sm rounded-3xl p-6 border border-slate-600 animate-popup">
-            <h3 class="text-center text-xl font-bold text-indigo-400 mb-6">召喚結果</h3>
-            <div id="rewardList" class="flex flex-wrap justify-center gap-4 mb-8"></div>
-            <button onclick="closeReward()" class="w-full bg-slate-700 py-3 rounded-xl font-bold">收下卡片</button>
+        <div id="rewardOverlay" class="fixed inset-0 bg-black/90 hidden z-50 flex items-center justify-center p-6">
+            <div
+                class="bg-slate-800 w-full max-w-sm rounded-3xl p-6 border border-slate-600 animate-popup flex flex-col max-h-[85vh]">
+                <h3 class="text-center text-xl font-bold text-indigo-400 mb-4 flex-shrink-0">召喚結果</h3>
+                <div id="rewardList" class="overflow-y-auto min-h-0 flex-1 mb-4 pr-1 custom-scrollbar"></div>
+                <button onclick="closeReward()"
+                    class="w-full bg-slate-700 py-3 rounded-xl font-bold flex-shrink-0">收下卡片</button>
+            </div>
         </div>
     </div>
 
@@ -406,7 +410,10 @@
                 <canvas id="u-canvas" width="80" height="80"></canvas>
             </div>
             <h3 id="u-name" class="text-2xl font-bold mb-1"></h3>
-            <p id="u-quality" class="text-xs mb-4 uppercase tracking-widest"></p>
+            <p id="u-quality" class="text-xs mb-2 uppercase tracking-widest"></p>
+            <div class="bg-slate-900/40 p-2 rounded-lg mb-4 border border-slate-700/50">
+                <p id="u-desc" class="text-sm text-slate-300 leading-relaxed text-left"></p>
+            </div>
 
             <div class="grid grid-cols-2 gap-4 mb-6">
                 <div class="bg-slate-900 p-3 rounded-2xl border border-slate-700">
@@ -511,115 +518,132 @@
             {
                 id: 'fire', name: '火', quality: 'common', baseColor: '#ef4444', pattern: 'fire',
                 stats: { atk: 18, speed: 0.92 }, grow: { atk: 6, speed: -0.017 },
-                special: { label: '濺射範圍', value: 1.0, unit: '格', grow: 0.1 }
+                special: { label: '濺射範圍', value: 1.0, unit: '格', grow: 0.1 },
+                desc: "攻擊時會產生小型爆炸，對周圍敵人造成濺射傷害。"
             },
             {
                 id: 'wind', name: '風', quality: 'common', baseColor: '#10b981', pattern: 'wind',
-                stats: { atk: 8, speed: 0.58 }, grow: { atk: 2, speed: -0.025 }, // 削弱基礎，讓出前期霸主位置
-                special: { label: '連擊機率', value: 10, unit: '%', grow: 3 }
+                stats: { atk: 8, speed: 0.58 }, grow: { atk: 2, speed: -0.025 },
+                special: { label: '連擊機率', value: 10, unit: '%', grow: 3 },
+                desc: "擁有較快的攻擊速度。"
             },
             {
                 id: 'ice', name: '冰', quality: 'common', baseColor: '#3b82f6', pattern: 'ice',
                 stats: { atk: 7, speed: 1.0 }, grow: { atk: 1, speed: -0.017 },
-                special: { label: '緩速效果', value: 20, unit: '%', grow: 2 }
+                special: { label: '緩速效果', value: 20, unit: '%', grow: 2 },
+                desc: "攻擊附帶寒氣，能使怪物移動速度降低。"
             },
             {
                 id: 'electric', name: '電', quality: 'common', baseColor: '#f59e0b', pattern: 'electric',
                 stats: { atk: 6, speed: 0.75 }, grow: { atk: 2, speed: -0.017 },
-                special: { label: '連鎖目標', value: 3, unit: '體', grow: 1 }
+                special: { label: '連鎖目標', value: 3, unit: '體', grow: 1 },
+                desc: "發出的閃電會在敵人之間跳躍，同時攻擊多個目標。"
             },
             {
                 id: 'poison', name: '毒', quality: 'common', baseColor: '#008000', pattern: 'poison',
                 stats: { atk: 4, speed: 0.83 }, grow: { atk: 2, speed: -0.017 },
-                special: { label: '中毒傷害', value: 12, unit: 'pt', grow: 4 }
+                special: { label: '中毒傷害', value: 12, unit: 'pt', grow: 4 },
+                desc: "擊中目標後施加中毒效果，造成持續性的毒素傷害。"
             },
 
             // --- Rare (稀有) ---
             {
                 id: 'lock', name: '鎖定', quality: 'rare', baseColor: '#64748b', pattern: 'lock',
                 stats: { atk: 12, speed: 0.92 }, grow: { atk: 4, speed: -0.017 },
-                special: { label: '禁錮時長', value: 0.8, unit: '秒', grow: 0.2 }
+                special: { label: '禁錮時長', value: 0.8, unit: '秒', grow: 0.2 },
+                desc: "特殊攻擊有機率將敵人禁錮在原地，使其無法移動。"
             },
             // --- 易傷骰子 (替代原本的破甲) ---
             {
                 id: 'crack', name: '易傷', quality: 'rare', baseColor: '#f87171', pattern: 'crack',
                 stats: { atk: 12, speed: 0.83 }, grow: { atk: 3, speed: -0.017 },
-                special: { label: '額外受傷', value: 8, unit: '%', grow: 1 }
+                special: { label: '額外受傷', value: 8, unit: '%', grow: 1 },
+                desc: "攻擊會破壞敵人防禦，使其受到的所有傷害增加。"
             },
             // --- 礦山骰子 (經濟型) ---
             {
                 id: 'mine', name: '礦山', quality: 'rare', baseColor: '#fbbf24', pattern: 'mine',
-                stats: { atk: 0, speed: 15.0 }, grow: { atk: 0, speed: -0.5 }, // 不攻擊，速度代表產錢間隔 (15秒)
-                special: { label: '產出SP', value: 10, unit: 'pt', grow: 5 }
+                stats: { atk: 0, speed: 15.0 }, grow: { atk: 0, speed: -0.5 },
+                special: { label: '產出SP', value: 10, unit: 'pt', grow: 5 },
+                desc: "不會攻擊敵人，但每隔一段時間會為你產出 SP。"
             },
 
             // --- Epic (史詩) ---
             {
                 id: 'chain', name: '連鎖', quality: 'epic', baseColor: '#8b5cf6', pattern: 'chain',
                 stats: { atk: 15, speed: 0.83 }, grow: { atk: 5, speed: -0.017 },
-                special: { label: '彈射增傷', value: 50, unit: '%', grow: 10 }
+                special: { label: '彈射增傷', value: 50, unit: '%', grow: 10 },
+                desc: "攻擊擊中敵人後會彈射到後方，對下一個目標造成更高傷害。"
             },
             {
                 id: 'laser', name: '雷射', quality: 'epic', baseColor: '#ec4899', pattern: 'laser_beam',
                 stats: { atk: 8, speed: 0.67 }, grow: { atk: 2, speed: 0 },
-                special: { label: '增幅上限', value: 5, unit: '倍', grow: 1 }
-                // 功能：持續攻擊同一個目標時，傷害會隨攻擊次數不斷爬升
+                special: { label: '增幅上限', value: 5, unit: '倍', grow: 1 },
+                desc: "持續攻擊同一個目標時，雷射的熱能會累積，傷害越來越高。"
             },
             {
                 id: 'teleport', name: '傳送', quality: 'epic', baseColor: '#8b5cf6', pattern: 'teleport',
                 stats: { atk: 10, speed: 1.08 }, grow: { atk: 3, speed: -0.017 },
-                special: { label: '傳送回起點', value: 5, unit: '%', grow: 2 }
+                special: { label: '傳送回起點', value: 5, unit: '%', grow: 2 },
+                desc: "掌握空間之力，攻擊時有機率將敵人傳送回起點。"
             },
             {
                 id: 'gear', name: '齒輪', quality: 'epic', baseColor: '#475569', pattern: 'gear',
                 stats: { atk: 15, speed: 0.83 }, grow: { atk: 8, speed: -0.017 },
-                special: { label: '連結加成', value: 12, unit: '%', grow: 6 }
+                special: { label: '連結加成', value: 12, unit: '%', grow: 6 },
+                desc: "當與其他齒輪骰子相鄰連接時，攻擊力會大幅提升。"
             },
 
             // --- Legend (傳說) ---
             {
                 id: 'mighty_wind', name: '強風', quality: 'legend', baseColor: '#a5f3fc', pattern: 'mighty_wind',
                 stats: { atk: 20, speed: 0.67 }, grow: { atk: 6, speed: -0.017 },
-                special: { label: '狂暴時長', value: 2, unit: '秒', grow: 0.5 }
+                special: { label: '狂暴時長', value: 2, unit: '秒', grow: 0.5 },
+                desc: "每隔一段時間會進入狂暴模式，攻擊速度獲得極大成長！"
             },
             {
                 id: 'joker', name: '小丑', quality: 'legend', baseColor: '#f87171', pattern: 'joker',
                 stats: { atk: 5, speed: 0.83 }, grow: { atk: 1, speed: 0 },
-                special: { label: '繼承比例', value: 80, unit: '%', grow: 2 } // 依照你的測試保留 80%
+                special: { label: '繼承比例', value: 80, unit: '%', grow: 2 },
+                desc: "可以與任何同星級的骰子合成，直接變身為該骰子。"
             },
             {
                 id: 'growth', name: '成長', quality: 'legend', baseColor: '#f472b6', pattern: 'growth',
                 stats: { atk: 5, speed: 0.83 }, grow: { atk: 1, speed: -0.017 },
-                special: { label: '成長時間', value: 40, unit: '秒', grow: -2 } // 因應節奏調快，縮短至 40 秒
+                special: { label: '成長時間', value: 40, unit: '秒', grow: -2 },
+                desc: "經過一段時間，會隨機變身成高一星級的任意骰子。"
             },
             {
                 id: 'sun', name: '太陽', quality: 'legend', baseColor: '#fbbf24', pattern: 'sun',
                 stats: { atk: 35, speed: 0.92 }, grow: { atk: 15, speed: -0.008 },
-                special: { label: '濺射傷害', value: 100, unit: '%', grow: 25 }
+                special: { label: '濺射傷害', value: 100, unit: '%', grow: 25 },
+                desc: "在場上只有1.4.7顆時，將會獲得太陽之力!"
             },
             {
                 id: 'sanctuary', name: '聖域', quality: 'legend', baseColor: '#fbbf24', pattern: 'sanctuary',
                 stats: { atk: 15, speed: 1.0 }, grow: { atk: 6, speed: -0.017 },
-                special: { label: '全場加速', value: 10, unit: '%', grow: 2 }
+                special: { label: '全場加速', value: 10, unit: '%', grow: 2 },
+                desc: "產生聖光立場，提升所有友方骰子的攻速。"
             },
             {
                 id: 'comet', name: '彗星', quality: 'legend', baseColor: '#3b82f6', pattern: 'comet',
                 stats: { atk: 18, speed: 0.75 }, grow: { atk: 7, speed: -0.017 },
-                special: { label: '充能倍率', value: 500, unit: '%', grow: 100 }
+                special: { label: '充能倍率', value: 500, unit: '%', grow: 100 },
+                desc: "每次攻擊累積能量，充能滿後召喚彗星，造成毀滅性範圍傷害。"
             },
-
-
 
             // --- Mythic (神話) ---
             {
                 id: 'doom', name: '毀滅', quality: 'mythic', baseColor: '#7c3aed', pattern: 'doom',
                 stats: { atk: 45, speed: 0.83 }, grow: { atk: 20, speed: -0.017 },
-                special: { label: '斬殺比例', value: 35, unit: '%', grow: 5 }
+                special: { label: '斬殺比例', value: 35, unit: '%', grow: 5 },
+                desc: "掌控死亡的骰子，對目標最大生命值造成%數傷害。"
             },
             {
                 id: 'galaxy', name: '銀河', quality: 'mythic', baseColor: '#6366f1', pattern: 'galaxy',
                 stats: { atk: 60, speed: 0.83 }, grow: { atk: 30, speed: -0.017 },
-                special: { label: '黑洞吞噬', value: 2, unit: '%', grow: 1 }
+                special: { label: '黑洞吞噬', value: 2, unit: '%', grow: 1 },
+                desc: "有機率召喚黑洞，對敵人造成%數傷害。"
             }
         ];
 
@@ -850,10 +874,17 @@
             if (data.tickets === undefined) data.tickets = 0;
             if (!data.inventory) data.inventory = {};
 
+            // --- [修正] 資料修復：移除不正確的預設等級 1 ---
             ALL_DICES.forEach(d => {
                 if (!data.diceLevels) data.diceLevels = {};
                 if (data.inventory[d.id] === undefined) data.inventory[d.id] = 0;
-                if (data.diceLevels[d.id] === undefined) data.diceLevels[d.id] = 1;
+
+                // 如果等級未定義，進行初始化
+                if (data.diceLevels[d.id] === undefined) {
+                    const starters = ['fire', 'wind', 'ice', 'electric', 'poison'];
+                    // 初始五顆骰子預設為 Lv.1，其餘為 Lv.0 (未解鎖)
+                    data.diceLevels[d.id] = starters.includes(d.id) ? 1 : 0;
+                }
             });
 
             return data;
@@ -933,10 +964,40 @@
                 console.error('❌ 上傳失敗:', error);
             }
         }
-        const UPGRADE_CONFIG = {
-            1: [5, 50000], 2: [10, 100000], 3: [20, 200000], 4: [50, 500000],
-            5: [100, 1000000], 6: [200, 5000000], 7: [500, 10000000], 8: [800, 50000000],
-            9: [1000, 100000000], 10: [1200, 500000000]
+        // --- [修改] 稀有度升級配置 ---
+        // 格式: { level: [碎片需求, 金幣需求] }
+        //Level 0 為解鎖需求
+        const RARITY_UPGRADE_CONFIG = {
+            common: {
+                0: [1, 0], // 解鎖需求
+                1: [10, 50000], 2: [30, 100000], 3: [60, 200000], 4: [120, 500000],
+                5: [250, 1000000], 6: [500, 5000000], 7: [1000, 10000000], 8: [2000, 50000000],
+                9: [4000, 100000000], 10: [9999, 500000000]
+            },
+            rare: {
+                0: [1, 0],
+                1: [10, 50000], 2: [20, 100000], 3: [40, 200000], 4: [80, 500000],
+                5: [150, 1000000], 6: [250, 5000000], 7: [500, 10000000], 8: [1000, 50000000],
+                9: [2000, 100000000], 10: [9999, 500000000]
+            },
+            epic: {
+                0: [1, 0],
+                1: [5, 50000], 2: [10, 100000], 3: [20, 200000], 4: [40, 500000],
+                5: [80, 1000000], 6: [150, 5000000], 7: [300, 10000000], 8: [600, 50000000],
+                9: [1000, 100000000], 10: [9999, 500000000]
+            },
+            legend: {
+                0: [1, 0],
+                1: [1, 50000], 2: [2, 100000], 3: [4, 200000], 4: [6, 500000],
+                5: [10, 1000000], 6: [20, 5000000], 7: [40, 10000000], 8: [70, 50000000],
+                9: [100, 100000000], 10: [9999, 500000000]
+            },
+            mythic: {
+                0: [1, 0],
+                1: [1, 50000], 2: [2, 100000], 3: [3, 200000], 4: [4, 500000],
+                5: [5, 1000000], 6: [10, 5000000], 7: [15, 10000000], 8: [25, 50000000],
+                9: [35, 100000000], 10: [9999, 500000000]
+            }
         };
         function drawDiceStars(ctx, x, y, size, stars, diceColor) {
             ctx.save();
@@ -1538,13 +1599,18 @@
             if (inventorySection) {
                 inventorySection.innerHTML = ALL_DICES.map(dice => {
                     const count = userData.inventory[dice.id] || 0;
-                    const lv = userData.diceLevels[dice.id] || 1;
+                    const lv = userData.diceLevels[dice.id] || 0; // 預設為 0
                     const q = QUALITIES[dice.quality] || QUALITIES.common;
-                    const isOwned = lv > 0 || count > 0 || userData.deck.includes(dice.id);
+
+                    // 擁有判定：等級 >= 1 或是 (等級0但碎片>=1 可解鎖)
+                    const isUnlocked = lv >= 1;
+                    const canUnlock = !isUnlocked && count >= 1;
+                    const isOwned = isUnlocked || canUnlock;
+
                     const isSelected = selectedInventoryId === dice.id;
 
                     // --- [修改] 進度條與滿級判斷邏輯 ---
-                    const MAX_LEVEL = 10; // 設定滿級等級
+                    const MAX_LEVEL = 10;
                     let percent = 0;
                     let barColor = '';
                     let progressText = '';
@@ -1552,24 +1618,30 @@
                     if (lv >= MAX_LEVEL) {
                         // --- 情況 A: 已滿級 ---
                         percent = 100;
-                        barColor = 'bg-blue-500'; // 滿級用藍色 (代表畢業)
+                        barColor = 'bg-blue-500';
                         progressText = 'MAX';
                     } else {
                         // --- 情況 B: 未滿級，計算碎片 ---
-                        const config = UPGRADE_CONFIG[lv] || [9999, 999999];
+                        const config = (RARITY_UPGRADE_CONFIG[dice.quality] || RARITY_UPGRADE_CONFIG.common)[lv] || [9999, 999999];
                         const reqFrags = config[0];
                         const isReady = count >= reqFrags;
 
                         percent = Math.min((count / reqFrags) * 100, 100);
                         // 可升級用綠色，不夠用琥珀色
-                        barColor = isReady ? 'bg-green-500' : 'bg-amber-500';
-                        progressText = `${count} / ${reqFrags}`;
+                        // 如果是未解鎖 (Lv0)，顯示解鎖提示色
+                        if (lv === 0) {
+                            barColor = isReady ? 'bg-emerald-400' : 'bg-slate-600';
+                            progressText = isReady ? '可解鎖' : '未解鎖';
+                        } else {
+                            barColor = isReady ? 'bg-green-500' : 'bg-amber-500';
+                            progressText = `${count} / ${reqFrags}`;
+                        }
                     }
 
                     return `
         <div onclick="${isOwned ? `openUpgradeUI('${dice.id}')` : ''}" 
             class="bg-slate-800 p-2 rounded-xl text-center border-2 transition-all dice-card 
-            ${isSelected ? 'selected-dice' : (isOwned ? 'border-slate-700' : 'opacity-40 grayscale pointer-events-none')}">
+            ${isSelected ? 'selected-dice' : (isUnlocked ? 'border-slate-700' : (canUnlock ? 'border-emerald-500 animate-pulse' : 'opacity-40 grayscale pointer-events-none'))}">
             
             <div class="w-12 h-12 mx-auto mb-1 flex items-center justify-center relative rounded-lg bg-white overflow-hidden" 
                  style="border: 2px solid ${q.color}">
@@ -1577,7 +1649,7 @@
             </div>
             
             <div class="text-[10px] font-bold text-white truncate mb-0.5">${dice.name}</div>
-            <div class="text-[9px] text-slate-300 mb-1">Lv.${lv}</div>
+            <div class="text-[9px] text-slate-300 mb-1">${lv === 0 ? '未取得' : 'Lv.' + lv}</div>
             
             <div class="relative w-full h-3 bg-slate-900 rounded-full overflow-hidden mt-1">
                 <div class="${barColor} h-full transition-all duration-300" style="width: ${percent}%"></div>
@@ -1750,7 +1822,8 @@
             const q = QUALITIES[dice.quality];
             const lv = userData.diceLevels[id] || 1;
             const count = userData.inventory[id] || 0;
-            const req = UPGRADE_CONFIG[lv] || [999, 999999999];
+            const config = (RARITY_UPGRADE_CONFIG[dice.quality] || RARITY_UPGRADE_CONFIG.common)[lv] || [999, 999999999];
+            const req = config;
 
             // 1. 計算屬性
             const curAtk = dice.stats.atk + (lv - 1) * dice.grow.atk;
@@ -1775,6 +1848,7 @@
             document.getElementById('u-name').innerText = dice.name + " 骰子";
             document.getElementById('u-quality').innerText = `${q.name} 品質`;
             document.getElementById('u-quality').style.color = q.color; // 讓品質文字也變色
+            document.getElementById('u-desc').innerText = dice.desc || "暫無說明"; // 填充說明
             document.getElementById('u-lv-now').innerText = `Lv. ${lv}`;
             document.getElementById('u-atk').innerHTML = `
         <div class="text-xs text-slate-400">基礎攻擊</div>
@@ -1800,6 +1874,9 @@
             if (lv >= 10) {
                 upgradeBtn.innerText = '已達最大等級';
                 upgradeBtn.className = "flex-1 bg-slate-600 py-3 rounded-xl font-bold opacity-50";
+            } else if (lv === 0) {
+                upgradeBtn.innerText = canAfford ? '解鎖骰子' : '碎片不足';
+                upgradeBtn.className = `flex-1 py-3 rounded-xl font-bold transition-colors ${canAfford ? 'bg-blue-600 hover:bg-blue-500' : 'bg-slate-700 text-slate-400'}`;
             } else {
                 upgradeBtn.innerText = canAfford ? '確認升級' : '資源不足';
                 upgradeBtn.className = `flex-1 py-3 rounded-xl font-bold transition-colors ${canAfford ? 'bg-green-600 hover:bg-green-500' : 'bg-slate-700 text-slate-400'}`;
@@ -1832,8 +1909,11 @@
         }
         function confirmUpgrade() {
             if (!tempUpgradeId) return;
+            const dice = ALL_DICES.find(d => d.id === tempUpgradeId); // 需取得骰子資訊以分辨稀有度
+            if (!dice) return;
+
             const lv = userData.diceLevels[tempUpgradeId] || 1;
-            const req = UPGRADE_CONFIG[lv];
+            const req = (RARITY_UPGRADE_CONFIG[dice.quality] || RARITY_UPGRADE_CONFIG.common)[lv];
             if (!req) return;
 
             if (userData.inventory[tempUpgradeId] >= req[0] && currentBalance >= req[1]) {
@@ -1917,100 +1997,102 @@
             saveData();
             render();
         }
-       async function buyBox(count = 10) {
-    const singlePrice = 100000;
-    const totalPrice = singlePrice * count;
+        async function buyBox(count = 10) {
+            const singlePrice = 100000;
+            const totalPrice = singlePrice * count;
 
-    if (currentBalance < totalPrice) {
-        alert("鑽石不足！");
-        return;
-    }
+            if (currentBalance < totalPrice) {
+                alert("鑽石不足！");
+                return;
+            }
 
-    currentBalance -= totalPrice;
-    let rewardsSummary = {};
+            currentBalance -= totalPrice;
+            let rewardsSummary = {};
 
-    // 定義品質權重用於排序 (數值越大排越後面)
-    const qualityOrder = { 'common': 1, 'rare': 2, 'epic': 3, 'legend': 4, 'mythic': 5 };
+            // 定義品質權重用於排序 (數值越大排越後面)
+            const qualityOrder = { 'common': 1, 'rare': 2, 'epic': 3, 'legend': 4, 'mythic': 5 };
 
-    for (let i = 0; i < count; i++) {
-        const rand = Math.random();
-        let selectedQ = 'common';
-        let cum = 0;
+            for (let i = 0; i < count; i++) {
+                const rand = Math.random();
+                let selectedQ = 'common';
+                let cum = 0;
 
-        for (const [key, q] of Object.entries(QUALITIES)) {
-            cum += q.chance;
-            if (rand < cum) { selectedQ = key; break; }
+                for (const [key, q] of Object.entries(QUALITIES)) {
+                    cum += q.chance;
+                    if (rand < cum) { selectedQ = key; break; }
+                }
+
+                const possibleDices = ALL_DICES.filter(d => d.quality === selectedQ);
+                const dice = possibleDices[Math.floor(Math.random() * possibleDices.length)] || ALL_DICES[0];
+
+                userData.inventory[dice.id] = (userData.inventory[dice.id] || 0) + 1;
+
+                if (!rewardsSummary[dice.id]) {
+                    rewardsSummary[dice.id] = {
+                        info: dice,
+                        count: 1,
+                        order: qualityOrder[dice.quality] || 0
+                    };
+                } else {
+                    rewardsSummary[dice.id].count++;
+                }
+            }
+
+            // 依據品質排序：高品質在後
+            const sortedRewards = Object.values(rewardsSummary).sort((a, b) => a.order - b.order);
+
+            await saveData();
+            showRewardUI(sortedRewards);
+            render();
         }
 
-        const possibleDices = ALL_DICES.filter(d => d.quality === selectedQ);
-        const dice = possibleDices[Math.floor(Math.random() * possibleDices.length)] || ALL_DICES[0];
+        function showRewardUI(summarizedRewards) {
+            const container = document.getElementById('rewardList');
+            if (!container) return;
 
-        userData.inventory[dice.id] = (userData.inventory[dice.id] || 0) + 1;
+            container.innerHTML = '';
 
-        if (!rewardsSummary[dice.id]) {
-            rewardsSummary[dice.id] = { 
-                info: dice, 
-                count: 1, 
-                order: qualityOrder[dice.quality] || 0 
-            };
-        } else {
-            rewardsSummary[dice.id].count++;
-        }
-    }
+            // 使用 grid 取代 flex-wrap 以獲得更好的控制
+            container.className = 'grid grid-cols-4 gap-2 w-full';
 
-    // 依據品質排序：高品質在後
-    const sortedRewards = Object.values(rewardsSummary).sort((a, b) => a.order - b.order);
+            summarizedRewards.forEach((item, index) => {
+                const dice = item.info;
+                const count = item.count;
+                const q = QUALITIES[dice.quality] || QUALITIES.common;
 
-    await saveData();
-    showRewardUI(sortedRewards);
-    render();
-}
+                const div = document.createElement('div');
+                // 移除 w-full, 改用更緊湊的 padding
+                div.className = `relative flex flex-col items-center p-1 bg-slate-800 rounded-xl border transition-all ${dice.quality === 'mythic' ? 'q-mythic' : ''}`;
+                div.style.borderColor = q.color;
 
-function showRewardUI(summarizedRewards) {
-    const container = document.getElementById('rewardList');
-    if (!container) return;
+                const countBadge = count > 1 ?
+                    `<div class="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full z-10 shadow-md">x${count}</div>` : '';
 
-    container.innerHTML = '';
-
-    summarizedRewards.forEach((item, index) => {
-        const dice = item.info;
-        const count = item.count;
-        const q = QUALITIES[dice.quality] || QUALITIES.common;
-        
-        const div = document.createElement('div');
-        // 增加與 render 函數一致的背景與邊框處理
-        div.className = `relative flex flex-col items-center p-2 bg-slate-800 rounded-xl border-2 transition-all ${dice.quality === 'mythic' ? 'q-mythic' : ''}`;
-        div.style.borderColor = q.color;
-
-        const countBadge = count > 1 ?
-            `<div class="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full z-10 shadow-md">x${count}</div>` : '';
-
-        div.innerHTML = `
+                div.innerHTML = `
             ${countBadge}
-            <div class="w-12 h-12 bg-white rounded-lg mb-1 flex items-center justify-center relative overflow-hidden">
-                 <canvas id="reward-canvas-${index}" width="48" height="48" style="width:48px; height:48px;"></canvas>
+            <div class="w-10 h-10 bg-white rounded-lg mb-1 flex items-center justify-center relative overflow-hidden">
+                 <canvas id="reward-canvas-${index}" width="40" height="40" style="width:40px; height:40px;"></canvas>
             </div>
-            <div class="text-[10px] font-bold text-white truncate w-full text-center">${dice.name}</div>
-            <div class="text-[9px]" style="color: ${q.color}">${q.name}</div>
+            <div class="text-[9px] font-bold text-white truncate w-full text-center leading-tight">${dice.name}</div>
         `;
-        container.appendChild(div);
+                container.appendChild(div);
 
-        // 立即在畫面上繪製骰子面
-        const canvas = div.querySelector('canvas');
-        if (canvas) {
-            const ctx = canvas.getContext('2d');
-            // 延遲一點點確保 DOM 已渲染
-            setTimeout(() => {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                drawQualityBorder(ctx, 0, 0, canvas.width, dice.id);
-                drawDiceFeature(ctx, 0, 0, canvas.width, dice.pattern || dice.id, dice.baseColor);
-                drawDiceStars(ctx, 0, 0, canvas.width, 1, dice.baseColor);
-            }, 0);
+                // 立即在畫面上繪製骰子面
+                const canvas = div.querySelector('canvas');
+                if (canvas) {
+                    const ctx = canvas.getContext('2d');
+                    // 延遲一點點確保 DOM 已渲染
+                    setTimeout(() => {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        drawQualityBorder(ctx, 0, 0, canvas.width, dice.id);
+                        drawDiceFeature(ctx, 0, 0, canvas.width, dice.pattern || dice.id, dice.baseColor);
+                        drawDiceStars(ctx, 0, 0, canvas.width, 1, dice.baseColor);
+                    }, 0);
+                }
+            });
+
+            document.getElementById('rewardOverlay').classList.remove('hidden');
         }
-    });
-
-    document.getElementById('rewardOverlay').classList.remove('hidden');
-}
 
         function closeReward() { document.getElementById('rewardOverlay').classList.add('hidden'); }
         function closeUpgradeUI() { document.getElementById('upgradeOverlay').classList.add('hidden'); tempUpgradeId = null; }
