@@ -283,6 +283,17 @@
                             加入
                         </button>
                     </div>
+
+                    <div class="mt-4 border-t border-slate-600/50 pt-4">
+                        <h4 class="text-xs text-slate-400 font-bold mb-2 flex items-center justify-between">
+                            <span>等待加入的房間</span>
+                            <span
+                                class="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded">LIVE</span>
+                        </h4>
+                        <div id="room-list" class="space-y-2 max-h-[150px] overflow-y-auto custom-scrollbar pr-1">
+                            <div class="text-center text-slate-500 text-xs py-4">正在搜尋房間...</div>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="coop-waiting-section" class="hidden flex flex-col items-center py-4">
@@ -650,12 +661,64 @@
         let currentBalance = parseFloat(localStorage.getItem('sicbo_balance')) || 0;
         let userData = null;
         // 彈窗控制
+        let roomListListener = null;
+
         function openCoopModal() {
             document.getElementById('coop-modal').classList.remove('hidden');
+            fetchRoomList();
         }
 
         function closeCoopModal() {
             document.getElementById('coop-modal').classList.add('hidden');
+            if (roomListListener) {
+                roomListListener.off();
+                roomListListener = null;
+            }
+        }
+
+        function fetchRoomList() {
+            const listEl = document.getElementById('room-list');
+            if (!listEl) return;
+
+            const db = firebase.database();
+            // 查詢狀態為 'waiting' 的房間
+            roomListListener = db.ref('coop_rooms').orderByChild('status').equalTo('waiting').limitToLast(20);
+
+            roomListListener.on('value', snap => {
+                const rooms = snap.val();
+                if (!rooms) {
+                    listEl.innerHTML = '<div class="text-center text-slate-500 text-xs py-4">目前沒有等待中的房間</div>';
+                    return;
+                }
+
+                listEl.innerHTML = '';
+                // Firebase does not support descending sort, so we reverse manually
+                Object.values(rooms).reverse().forEach(room => {
+                    if (!room.roomId || !room.hostName) return;
+
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center justify-between bg-slate-700/30 p-2.5 rounded-lg border border-slate-600/50 hover:border-emerald-500/50 hover:bg-slate-700/80 transition-all group';
+                    div.innerHTML = `
+                        <div class="flex flex-col">
+                            <div class="flex items-center gap-2">
+                                <span class="bg-slate-800 text-white font-mono font-bold text-xs px-1.5 rounded border border-slate-600">${room.roomId}</span>
+                                <span class="text-slate-300 text-xs font-bold truncate max-w-[80px]">${room.hostName}</span>
+                            </div>
+                            <span class="text-[10px] text-emerald-500 mt-0.5 font-bold">● 等待隊友中</span>
+                        </div>
+                        <button onclick="quickJoin('${room.roomId}')" 
+                            class="bg-emerald-600/20 hover:bg-emerald-500 text-emerald-400 hover:text-white text-[10px] font-bold px-3 py-1.5 rounded border border-emerald-500/50 transition-all">
+                            加入
+                        </button>
+                    `;
+                    listEl.appendChild(div);
+                });
+            });
+        }
+
+        function quickJoin(id) {
+            document.getElementById('room-code-input').value = id;
+            joinCoopRoom();
         }
 
         // --- Firebase 合作邏輯 ---
