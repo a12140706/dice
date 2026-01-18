@@ -147,113 +147,132 @@
             {
                 id: 'fire', name: '火', quality: 'common', baseColor: '#ef4444', pattern: 'fire',
                 stats: { atk: 18, speed: 0.92 }, grow: { atk: 6, speed: -0.017 },
-                special: { label: '濺射範圍', value: 1.0, unit: '格', grow: 0.1 }
+                special: { label: '濺射範圍', value: 1.0, unit: '格', grow: 0.1 },
+                desc: "攻擊時會產生小型爆炸，對周圍敵人造成濺射傷害。"
             },
             {
                 id: 'wind', name: '風', quality: 'common', baseColor: '#10b981', pattern: 'wind',
                 stats: { atk: 8, speed: 0.58 }, grow: { atk: 2, speed: -0.025 },
-                special: { label: '連擊機率', value: 10, unit: '%', grow: 3 }
+                special: { label: '連擊機率', value: 10, unit: '%', grow: 3 },
+                desc: "擁有較快的攻擊速度。"
             },
             {
                 id: 'ice', name: '冰', quality: 'common', baseColor: '#3b82f6', pattern: 'ice',
                 stats: { atk: 7, speed: 1.0 }, grow: { atk: 1, speed: -0.017 },
-                special: { label: '緩速效果', value: 20, unit: '%', grow: 2 }
+                special: { label: '緩速效果', value: 20, unit: '%', grow: 2 },
+                desc: "攻擊附帶寒氣，能使怪物移動速度降低。"
             },
             {
                 id: 'electric', name: '電', quality: 'common', baseColor: '#f59e0b', pattern: 'electric',
                 stats: { atk: 6, speed: 0.75 }, grow: { atk: 2, speed: -0.017 },
-                special: { label: '連鎖目標', value: 3, unit: '體', grow: 1 }
+                special: { label: '連鎖目標', value: 3, unit: '體', grow: 1 },
+                desc: "發出的閃電會在敵人之間跳躍，同時攻擊多個目標。"
             },
             {
                 id: 'poison', name: '毒', quality: 'common', baseColor: '#008000', pattern: 'poison',
                 stats: { atk: 4, speed: 0.83 }, grow: { atk: 2, speed: -0.017 },
-                special: { label: '中毒傷害', value: 12, unit: 'pt', grow: 4 }
+                special: { label: '中毒傷害', value: 12, unit: 'pt', grow: 4 },
+                desc: "擊中目標後施加中毒效果，造成持續性的毒素傷害。"
             },
 
             // --- Rare (稀有) ---
             {
                 id: 'lock', name: '鎖定', quality: 'rare', baseColor: '#64748b', pattern: 'lock',
                 stats: { atk: 12, speed: 0.92 }, grow: { atk: 4, speed: -0.017 },
-                special: { label: '禁錮時長', value: 0.8, unit: '秒', grow: 0.2 }
+                special: { label: '禁錮時長', value: 0.8, unit: '秒', grow: 0.2 },
+                desc: "特殊攻擊有機率將敵人禁錮在原地，使其無法移動。"
             },
+            // --- 易傷骰子 (替代原本的破甲) ---
             {
                 id: 'crack', name: '易傷', quality: 'rare', baseColor: '#f87171', pattern: 'crack',
                 stats: { atk: 12, speed: 0.83 }, grow: { atk: 3, speed: -0.017 },
-                special: { label: '額外受傷', value: 8, unit: '%', grow: 1 }
+                special: { label: '額外受傷', value: 8, unit: '%', grow: 1 },
+                desc: "攻擊會破壞敵人防禦，使其受到的所有傷害增加。"
             },
+            // --- 礦山骰子 (經濟型) ---
             {
                 id: 'mine', name: '礦山', quality: 'rare', baseColor: '#fbbf24', pattern: 'mine',
                 stats: { atk: 0, speed: 15.0 }, grow: { atk: 0, speed: -0.5 },
-                special: { label: '產出SP', value: 10, unit: 'pt', grow: 5 }
+                special: { label: '產出SP', value: 10, unit: 'pt', grow: 5 },
+                desc: "不會攻擊敵人，但每隔一段時間會為你產出 SP。"
             },
 
             // --- Epic (史詩) ---
             {
+                id: 'chain', name: '連鎖', quality: 'epic', baseColor: '#8b5cf6', pattern: 'chain',
+                stats: { atk: 15, speed: 0.83 }, grow: { atk: 5, speed: -0.017 },
+                special: { label: '彈射增傷', value: 50, unit: '%', grow: 10 },
+                desc: "攻擊擊中敵人後會彈射到後方，對下一個目標造成更高傷害。"
+            },
+            {
                 id: 'laser', name: '雷射', quality: 'epic', baseColor: '#ec4899', pattern: 'laser_beam',
                 stats: { atk: 8, speed: 0.67 }, grow: { atk: 2, speed: 0 },
-                special: { label: '增幅上限', value: 5, unit: '倍', grow: 1 }
-                // 功能：持續攻擊同一個目標時，傷害會隨攻擊次數不斷爬升
+                special: { label: '增幅上限', value: 5, unit: '倍', grow: 1 },
+                desc: "持續攻擊同一個目標時，雷射的熱能會累積，傷害越來越高。"
             },
             {
                 id: 'teleport', name: '傳送', quality: 'epic', baseColor: '#8b5cf6', pattern: 'teleport',
                 stats: { atk: 10, speed: 1.08 }, grow: { atk: 3, speed: -0.017 },
-                special: { label: '傳送回起點', value: 5, unit: '%', grow: 2 }
+                special: { label: '傳送回起點', value: 5, unit: '%', grow: 2 },
+                desc: "掌握空間之力，攻擊時有機率將敵人傳送回起點。"
             },
             {
                 id: 'gear', name: '齒輪', quality: 'epic', baseColor: '#475569', pattern: 'gear',
                 stats: { atk: 15, speed: 0.83 }, grow: { atk: 8, speed: -0.017 },
-                special: { label: '連結加成', value: 12, unit: '%', grow: 6 }
+                special: { label: '連結加成', value: 12, unit: '%', grow: 6 },
+                desc: "當與其他齒輪骰子相鄰連接時，攻擊力會大幅提升。"
             },
 
             // --- Legend (傳說) ---
             {
                 id: 'mighty_wind', name: '強風', quality: 'legend', baseColor: '#a5f3fc', pattern: 'mighty_wind',
                 stats: { atk: 20, speed: 0.67 }, grow: { atk: 6, speed: -0.017 },
-                special: { label: '狂暴時長', value: 2, unit: '秒', grow: 0.5 }
+                special: { label: '狂暴時長', value: 2, unit: '秒', grow: 0.5 },
+                desc: "每隔一段時間會進入狂暴模式，攻擊速度獲得極大成長！"
             },
             {
                 id: 'joker', name: '小丑', quality: 'legend', baseColor: '#f87171', pattern: 'joker',
                 stats: { atk: 5, speed: 0.83 }, grow: { atk: 1, speed: 0 },
-                special: { label: '繼承比例', value: 80, unit: '%', grow: 2 }
+                special: { label: '繼承比例', value: 80, unit: '%', grow: 2 },
+                desc: "可以與任何同星級的骰子合成，直接變身為該骰子。"
             },
             {
                 id: 'growth', name: '成長', quality: 'legend', baseColor: '#f472b6', pattern: 'growth',
                 stats: { atk: 5, speed: 0.83 }, grow: { atk: 1, speed: -0.017 },
-                special: { label: '成長時間', value: 40, unit: '秒', grow: -2 }
+                special: { label: '成長時間', value: 40, unit: '秒', grow: -2 },
+                desc: "經過一段時間，會隨機變身成高一星級的任意骰子。"
             },
             {
                 id: 'sun', name: '太陽', quality: 'legend', baseColor: '#fbbf24', pattern: 'sun',
                 stats: { atk: 35, speed: 0.92 }, grow: { atk: 15, speed: -0.008 },
-                special: { label: '濺射傷害', value: 100, unit: '%', grow: 25 }
+                special: { label: '濺射傷害', value: 100, unit: '%', grow: 25 },
+                desc: "在場上只有1.4.7顆時，將會獲得太陽之力!"
             },
             {
                 id: 'sanctuary', name: '聖域', quality: 'legend', baseColor: '#fbbf24', pattern: 'sanctuary',
                 stats: { atk: 15, speed: 1.0 }, grow: { atk: 6, speed: -0.017 },
-                special: { label: '加速範圍', value: 30, unit: '%', grow: 5 }
+                special: { label: '全場加速', value: 10, unit: '%', grow: 2 },
+                desc: "產生聖光立場，提升所有友方骰子的攻速。"
             },
             {
                 id: 'comet', name: '彗星', quality: 'legend', baseColor: '#3b82f6', pattern: 'comet',
                 stats: { atk: 18, speed: 0.75 }, grow: { atk: 7, speed: -0.017 },
-                special: { label: '充能倍率', value: 500, unit: '%', grow: 100 }
-            },
-
-            // --- Epic (史詩) 新增 ---
-            {
-                id: 'chain', name: '連鎖', quality: 'epic', baseColor: '#8b5cf6', pattern: 'chain',
-                stats: { atk: 15, speed: 0.83 }, grow: { atk: 5, speed: -0.017 },
-                special: { label: '彈射增傷', value: 50, unit: '%', grow: 10 }
+                special: { label: '充能倍率', value: 500, unit: '%', grow: 100 },
+                desc: "每次攻擊累積能量，充能滿後召喚彗星，造成毀滅性範圍傷害。"
             },
 
             // --- Mythic (神話) ---
             {
                 id: 'doom', name: '毀滅', quality: 'mythic', baseColor: '#7c3aed', pattern: 'doom',
                 stats: { atk: 45, speed: 0.83 }, grow: { atk: 20, speed: -0.017 },
-                special: { label: '斬殺比例', value: 35, unit: '%', grow: 5 }
+                special: { label: '斬殺比例', value: 35, unit: '%', grow: 5 },
+                desc: "掌控死亡的骰子，對目標最大生命值造成%數傷害。"
             },
             {
                 id: 'galaxy', name: '銀河', quality: 'mythic', baseColor: '#6366f1', pattern: 'galaxy',
                 stats: { atk: 60, speed: 0.83 }, grow: { atk: 30, speed: -0.017 },
-                special: { label: '黑洞吞噬', value: 2, unit: '%', grow: 1 }
+                special: { label: '黑洞吞噬', value: 2, unit: '%', grow: 1 },
+                desc: "有機率召喚黑洞，對敵人造成%數傷害。"
             }
         ];
 
@@ -528,6 +547,7 @@
                 enemies: [],
                 wave: 1,
                 hp: 3,
+                hostHeight: canvas.height, // 儲存 Host 端的高度，用於座標標準化
                 gameover: false,
                 gameStats: { totalSp: 0, totalSpP2: 0 },
                 players: {
@@ -616,7 +636,7 @@
                 if (data.wave) battleState.wave = data.wave;
                 if (data.hp !== undefined) battleState.hp = data.hp;
 
-                if (role === 'guest' && data.gameStats && data.gameStats.totalSpP2) {
+                if (role === 'guest' && data.gameStats && data.gameStats.totalSpP2 !== undefined) {
                     const newTotal = data.gameStats.totalSpP2;
                     let diff = newTotal - (stateCache.lastTotalSpP2 || 0);
 
@@ -644,6 +664,8 @@
                 // 敵人同步 (Host 寫入，Guest 讀取)
                 if (role === 'guest' && data.enemies) {
                     const remoteEnemies = data.enemies || [];
+                    const hostH = data.hostHeight || canvas.height; // 取得 Host 高度，預設回退到本地
+                    const scaleY = canvas.height / hostH; // 計算 Y 軸縮放比例
 
                     // 1. 標記所有現有敵人為"未更新"
                     const currentMap = new Map();
@@ -652,11 +674,15 @@
                     const newEnemies = [];
 
                     remoteEnemies.forEach(r => {
+                        // 座標標準化轉換
+                        const syncedX = r.x; // X 軸通常不需要縮放，因為寬度固定 500
+                        const syncedY = r.y * scaleY; // Y 軸依比例轉換
+
                         if (currentMap.has(r.id)) {
                             // 更新舊物件屬性 (保留 references)
                             const local = currentMap.get(r.id);
-                            local.x = r.x;
-                            local.y = r.y;
+                            local.x = syncedX;
+                            local.y = syncedY;
                             local.hp = r.hp;
                             local.pathIndex = r.pathIndex;
                             // 同步 Boss 與衝刺相關屬性
@@ -669,8 +695,11 @@
                             local.owner = r.owner;
                             newEnemies.push(local);
                         } else {
-                            // 新增
-                            newEnemies.push(r);
+                            // 新增 (需套用轉換後的座標)
+                            const newEnemy = { ...r };
+                            newEnemy.x = syncedX;
+                            newEnemy.y = syncedY;
+                            newEnemies.push(newEnemy);
                         }
                     });
 
@@ -1730,12 +1759,12 @@
         }
 
         function getSlotPixelY(slot, owner) {
-            // 必須與 drawDiceGrid 的邏輯完全對齊 (固定 120px Margin)
+            // [FIX] 手動校正：因為不明原因導致 Host 端視覺比邏輯位置高，這裡將邏輯位置上移 60px (Margin 120 -> 180)
             const row = (slot && slot.row !== undefined) ? slot.row : 0;
             const isP1 = owner === 'p1';
 
             const gridHeight = grid.rows * (grid.slotSize + grid.padding);
-            const bottomMargin = 120;
+            const bottomMargin = 180; // 原為 120，加大 Margin 使邏輯判定區上移
             const topMargin = 120;
 
             // P1 (Bottom), P2 (Top)
@@ -2093,17 +2122,21 @@
             // 現在 tx(x) = x，所以視覺 X = 邏輯 X
             // ty(y) = H - y (if guest)
 
-            const clicked = mySlots.find(slot => {
-                // 取得 Slot 的 Raw 座標 (邏輯座標)
+            let clicked = null;
+            let minC = Infinity;
+            const threshold = grid.slotSize;
+
+            mySlots.forEach(slot => {
                 const sx = getSlotPixelX(slot, role === 'host' ? 'p1' : 'p2');
                 const sy = getSlotPixelY(slot, role === 'host' ? 'p1' : 'p2');
-
-                // 轉成視覺座標
                 const visualX = tx(sx);
                 const visualY = ty(sy);
 
-                // 判定距離
-                return Math.abs(x - visualX) < grid.slotSize / 2 + 5 && Math.abs(y - visualY) < grid.slotSize / 2 + 5;
+                const dist = Math.hypot(x - visualX, y - visualY);
+                if (dist < minC && dist < threshold) {
+                    minC = dist;
+                    clicked = slot;
+                }
             });
 
             if (clicked && clicked.dice && !clicked.isLocked) {
@@ -2129,14 +2162,22 @@
             const lx = drag.currentX;
             const ly = drag.currentY;
 
-            // 判定目標格 (由視覺座標比對)
-            const target = mySlots.find(slot => {
+            // 判定目標格 (由視覺座標比對 - 改為最近判定)
+            let target = null;
+            let minC = Infinity;
+            const threshold = grid.slotSize;
+
+            mySlots.forEach(slot => {
                 const sx = getSlotPixelX(slot, role === 'host' ? 'p1' : 'p2');
                 const sy = getSlotPixelY(slot, role === 'host' ? 'p1' : 'p2');
                 const visualX = tx(sx);
                 const visualY = ty(sy);
 
-                return Math.abs(lx - visualX) < grid.slotSize / 2 + 10 && Math.abs(ly - visualY) < grid.slotSize / 2 + 10;
+                const dist = Math.hypot(lx - visualX, ly - visualY);
+                if (dist < minC && dist < threshold) {
+                    minC = dist;
+                    target = slot;
+                }
             });
 
             if (target && target !== drag.fromSlot) {
