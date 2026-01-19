@@ -576,8 +576,26 @@
                 special: { label: '產出SP', value: 10, unit: 'pt', grow: 5 },
                 desc: "不會攻擊敵人，但每隔一段時間會為你產出 SP。"
             },
+            // --- 換位 (Switch) ---
+            {
+                id: 'switch', name: '換位', quality: 'rare', baseColor: '#fb923c', pattern: 'switch',
+                stats: { atk: 12, speed: 1.0 }, grow: { atk: 4, speed: -0.017 },
+                special: null,
+                desc: "可以與任何同星級的骰子互換位置。"
+            },
 
             // --- Epic (史詩) ---
+            {
+                id: 'gamble',
+                name: '賭博',
+                quality: 'epic',
+                baseColor: '#22c55e',
+                pattern: 'gamble',
+                stats: { atk: 20, speed: 0.83 },
+                grow: { atk: 6, speed: -0.017 },
+                special: { label: '最大倍率', value: 400, unit: '%', grow: 50 },
+                desc: "每次攻擊的傷害隨機跳動。"
+            },
             {
                 id: 'chain', name: '連鎖', quality: 'epic', baseColor: '#8b5cf6', pattern: 'chain',
                 stats: { atk: 15, speed: 0.83 }, grow: { atk: 5, speed: -0.017 },
@@ -609,6 +627,12 @@
                 stats: { atk: 20, speed: 0.67 }, grow: { atk: 6, speed: -0.017 },
                 special: { label: '狂暴時長', value: 2, unit: '秒', grow: 0.5 },
                 desc: "每隔一段時間會進入狂暴模式，攻擊速度獲得極大成長！"
+            },
+            {
+                id: 'nut', name: '營養', quality: 'legend', baseColor: '#4ade80', pattern: 'nut',
+                stats: { atk: 15, speed: 1.0 }, grow: { atk: 5, speed: -0.017 },
+                special: { label: '額外SP返還', value: 30, unit: 'pt', grow: 10 },
+                desc: "與同星級骰子合成時，目標骰子會直接提升星級，不會改變種類。"
             },
             {
                 id: 'joker', name: '小丑', quality: 'legend', baseColor: '#f87171', pattern: 'joker',
@@ -1127,8 +1151,8 @@
                 b = parseInt(diceColor.slice(5, 7), 16);
             }
 
-            ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.4)`;
-            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.15)`;
+            ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.8)`;
+            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.3)`;
             // 關鍵：線條粗細隨 size 改變，首頁才不會歪
             ctx.lineWidth = Math.max(1, size * 0.06);
             ctx.lineCap = "round";
@@ -1199,6 +1223,50 @@
                     }
                     ctx.stroke();
                     break;
+                case 'gamble': // 賭博：中央錢幣 + 隨機閃爍星
+                    // 1. 中央大圓 (錢幣)
+                    ctx.beginPath();
+                    ctx.arc(m, m, size * 0.25, 0, Math.PI * 2);
+                    ctx.stroke();
+                    // 2. 錢幣內的 $ 符號
+                    ctx.font = `bold ${size * 0.25}px Arial`;
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.5)`;
+                    ctx.fillText("$", m, m);
+                    // 3. 四周的小閃爍星
+                    const stars = [[0.2, 0.2], [0.8, 0.2], [0.2, 0.8], [0.8, 0.8]];
+                    stars.forEach(([sx, sy], i) => {
+                        // 簡單的十字閃爍，利用時間產生輪流閃爍感
+                        if ((Math.floor(Date.now() / 300) + i) % 4 === 0) {
+                            ctx.beginPath();
+                            ctx.moveTo(size * sx - 4, size * sy);
+                            ctx.lineTo(size * sx + 4, size * sy);
+                            ctx.moveTo(size * sx, size * sy - 4);
+                            ctx.lineTo(size * sx, size * sy + 4);
+                            ctx.stroke();
+                        }
+                    });
+                    break;
+
+                // --- Legend ---
+                case 'nut': // 營養：DNA 雙螺旋 (交叉曲線)
+                    ctx.lineWidth = size * 0.1;
+                    ctx.beginPath();
+                    // 兩條交叉的 S 型曲線
+                    ctx.moveTo(size * 0.3, size * 0.2);
+                    ctx.bezierCurveTo(size * 0.7, size * 0.4, size * 0.3, size * 0.6, size * 0.7, size * 0.8);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(size * 0.7, size * 0.2);
+                    ctx.bezierCurveTo(size * 0.3, size * 0.4, size * 0.7, size * 0.6, size * 0.3, size * 0.8);
+                    ctx.stroke();
+                    // 在交叉點點綴兩個小圓點
+                    ctx.beginPath();
+                    ctx.arc(m, size * 0.35, 3, 0, Math.PI * 2);
+                    ctx.arc(m, size * 0.65, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    break;
                 case 'electric':
                     ctx.beginPath();
                     ctx.moveTo(m + size * 0.1, size * 0.2);
@@ -1206,6 +1274,22 @@
                     ctx.lineTo(m + size * 0.15, m - size * 0.05);
                     ctx.lineTo(m - size * 0.1, size * 0.8);
                     ctx.stroke();
+                    break;
+                case 'switch': // 換位：左右循環互換箭頭
+                    ctx.beginPath();
+                    // 左箭頭
+                    ctx.moveTo(size * 0.3, size * 0.4);
+                    ctx.lineTo(size * 0.7, size * 0.4);
+                    ctx.lineTo(size * 0.6, size * 0.3);
+                    // 右箭頭
+                    ctx.moveTo(size * 0.7, size * 0.6);
+                    ctx.lineTo(size * 0.3, size * 0.6);
+                    ctx.lineTo(size * 0.4, size * 0.7);
+                    ctx.stroke();
+                    // 中心裝飾點
+                    ctx.beginPath();
+                    ctx.arc(m, m, 3, 0, Math.PI * 2);
+                    ctx.fill();
                     break;
                 case 'poison':
                     ctx.beginPath();
