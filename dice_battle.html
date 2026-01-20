@@ -598,12 +598,12 @@
         let powerUpLevels = {};
         userData.deck.forEach(id => { powerUpLevels[id] = 1; });
         let frameCount = 0;
+        let blackHoles = []; // [FIX] 新增：黑洞陣列，避免 render loop 崩潰
+        let visualEffects = []; // 確保 visualEffects 也有定義
         let grid = { rows: 3, cols: 5, padding: 10, slotSize: 0, slots: [], y: 0 };
         let drag = { isDragging: false, fromSlot: null, currentX: 0, currentY: 0, dice: null };
         let waveState = { totalEnemiesPerWave: 10, spawnedCount: 0, isWaiting: false, timer: 0 };
         let projectiles = [], enemies = [], path = [], damagePopups = [];
-        let blackHoles = []; // 新增：黑洞列表
-        let visualEffects = []; // 新增：視覺特效列表
 
         function startGame(diff) {
             // --- 新增：解鎖音訊 (iPhone 關鍵) ---
@@ -1161,24 +1161,8 @@
                     type: 'explosion', x: tx, y: ty, radius: 80,
                     color: 'rgba(251, 146, 60, 0.6)', life: 20, maxLife: 20
                 });
-                // 5. 畫黑洞 (Galaxy)
-                blackHoles.forEach(bh => {
-                    ctx.save();
-                    ctx.translate(bh.x, bh.y);
-                    const rot = (Date.now() / 1000) * 2;
-                    ctx.rotate(rot);
-                    ctx.beginPath(); ctx.arc(0, 0, 20, 0, Math.PI * 2);
-                    ctx.fillStyle = '#000'; ctx.fill();
-                    ctx.strokeStyle = '#6366f1'; ctx.lineWidth = 2; ctx.stroke();
+                // 5. 畫黑洞 (Galaxy) - [REMOVED] 錯誤的渲染位置
 
-                    // 吸入動畫
-                    for (let i = 0; i < 4; i++) {
-                        ctx.rotate(Math.PI / 2);
-                        ctx.beginPath(); ctx.moveTo(30 + Math.sin(Date.now() / 200) * 10, 0); ctx.lineTo(10, 0);
-                        ctx.strokeStyle = 'rgba(99, 102, 241, 0.5)'; ctx.stroke();
-                    }
-                    ctx.restore();
-                });
 
                 // 6. 畫傷害與特效
                 enemies.forEach(e => {
@@ -1354,6 +1338,33 @@
                         visualEffects.push({
                             type: 'explosion', x: target.x, y: target.y, radius: 40,
                             color: '#8b5cf6', life: 15, maxLife: 15
+                        });
+                    }
+                    break;
+                case 'galaxy': // 銀河 (新增)
+                    // 5% 機率召喚黑洞
+                    if (Math.random() < 0.05) {
+                        // 傷害計算：基於最大血量的百分比 (spec)
+                        // spec 是比如 2 (代表 2%)
+                        const dmgPercent = spec / 100;
+                        const totalDmg = target.maxHp * dmgPercent;
+                        // 持續 3 秒 (180 frames)
+                        const duration = 180;
+                        const dmgPerFrame = Math.max(1 / 60, totalDmg / duration); // 每一幀的傷害
+
+                        blackHoles.push({
+                            x: target.x, y: target.y,
+                            timer: 0,
+                            life: duration,
+                            pullRange: 120, // 吸附範圍
+                            damagePerFrame: dmgPerFrame,
+                            owner: 'player' // 標記來源
+                        });
+
+                        // 視覺特效：黑洞生成瞬間
+                        visualEffects.push({
+                            type: 'explosion', x: target.x, y: target.y, radius: 60,
+                            color: '#6366f1', life: 20, maxLife: 20
                         });
                     }
                     break;
