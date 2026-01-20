@@ -264,7 +264,7 @@
             mythic: { name: '神話', color: '#ff00ff', chance: 0.001 }
         };
 
-         const ALL_DICES = [
+        const ALL_DICES = [
             // --- Common (普通) ---
             {
                 id: 'fire', name: '火', quality: 'common', baseColor: '#ef4444', pattern: 'fire',
@@ -602,6 +602,7 @@
         let drag = { isDragging: false, fromSlot: null, currentX: 0, currentY: 0, dice: null };
         let waveState = { totalEnemiesPerWave: 10, spawnedCount: 0, isWaiting: false, timer: 0 };
         let projectiles = [], enemies = [], path = [], damagePopups = [];
+        let blackHoles = []; // 新增：黑洞列表
         let visualEffects = []; // 新增：視覺特效列表
 
         function startGame(diff) {
@@ -656,7 +657,7 @@
                 });
             }
         }
-        function getDiceSpecialValue(diceId) {
+        function getDiceSpecialValue(diceId, starLevel = 1) {
             if (!diceId) return 0;
             const dice = ALL_DICES.find(d => d.id === diceId);
             if (!dice || !dice.special) return 0;
@@ -667,10 +668,14 @@
             const base = dice.special.value || 0;
             const grow = dice.special.grow || 0;
 
-            return base + (lv - 1) * grow;
+            // 公式：基礎值 + (PowerUp等級 - 1) * 成長值 + (星數 - 1) * 成長值
+            const powerUpBonus = (lv - 1) * grow;
+            const starBonus = (starLevel - 1) * grow;
+
+            return base + powerUpBonus + starBonus;
         }
         function transformJoker(jokerDice, targetDice) {
-            const ratio = getDiceSpecialValue('joker') / 100; // 拿到 0.8, 0.82...
+            const ratio = getDiceSpecialValue('joker', jokerDice.lv) / 100; // 拿到 0.8, 0.82...
 
             jokerDice.name = targetDice.name;
             jokerDice.baseColor = targetDice.baseColor;
@@ -680,7 +685,7 @@
 
             // 如果複製的是成長骰子，時間要變長 (效率降低)
             if (targetDice.id === 'growth') {
-                const targetTime = getDiceSpecialValue('growth');
+                const targetTime = getDiceSpecialValue('growth', jokerDice.lv);
                 jokerDice.timer = targetTime / ratio; // 例如 60 / 0.8 = 75秒
             }
         }
@@ -879,9 +884,8 @@
             let sanctuaryBoost = 0;
             grid.slots.forEach(slot => {
                 if (slot.dice && slot.dice.id === 'sanctuary' && !slot.isLocked) {
-                    const pLv = userData.diceLevels['sanctuary'] || 1;
-                    const db = ALL_DICES.find(d => d.id === 'sanctuary');
-                    const boostPercent = (db.special.value + (pLv - 1) * db.special.grow) / 100;
+                    const spec = getDiceSpecialValue('sanctuary', slot.dice.lv);
+                    const boostPercent = spec / 100;
                     sanctuaryBoost = Math.max(sanctuaryBoost, boostPercent); // 取最高值，不疊加
                 }
             });
@@ -896,7 +900,7 @@
                         const spawnTime = slot.dice.spawnTime || Date.now();
                         const elapsed = Date.now() - spawnTime;
                         const cycle = elapsed % 8000; // 每個骰子有自己的 8 秒循環
-                        const specValue = getDiceSpecialValue('mighty_wind'); // 取得狂暴秒數
+                        const specValue = getDiceSpecialValue('mighty_wind', slot.dice.lv); // 取得狂暴秒數
                         const burstTime = specValue * 1000;
                         if (cycle < burstTime) {
                             slot.dice.burstSpeed = 0.1; // 極速攻擊速度 (0.1秒)
@@ -938,7 +942,7 @@
                     if (slot.dice.id === 'growth') {
                         if (!slot.dice.growthTimer) slot.dice.growthTimer = 0;
                         slot.dice.growthTimer++;
-                        const targetSeconds = getDiceSpecialValue('growth');
+                        const targetSeconds = getDiceSpecialValue('growth', slot.dice.lv);
                         if (slot.dice.growthTimer >= targetSeconds * 60) {
                             if (slot.dice.lv < 7) {
                                 const newId = userData.deck[Math.floor(Math.random() * userData.deck.length)];
@@ -1082,45 +1086,42 @@
             if (target.virtualHp === undefined) target.virtualHp = target.hp;
 
             // --- A. Galaxy (銀河)：機率黑洞 ---
+            // --- A. Galaxy (銀河)：機率黑洞 ---
             if (dice.id === 'galaxy') {
-                const spec = getDiceSpecialValue('galaxy');
+                const spec = getDiceSpecialValue('galaxy', dice.lv);
                 // 觸發機率：基礎 15% + 吞噬比例 (2%...)
                 const triggerChance = 0.05 + (spec / 100);
-                const isBlackHoleTriggered = Math.random() < triggerChance;
 
-                if (isBlackHoleTriggered) {
-                    const pullRange = 130;
-                    // 視覺：黑洞核心與引力場
-                    visualEffects.push({
-                        type: 'explosion', x: target.x, y: target.y, radius: 30,
-                        color: 'rgba(0, 0, 0, 0.8)', life: 15, maxLife: 15
-                    });
-                    visualEffects.push({
-                        type: 'explosion', x: target.x, y: target.y, radius: pullRange,
-                        color: 'rgba(99, 102, 241, 0.3)', life: 20, maxLife: 20
+                if (Math.random() < triggerChance) {
+                    // 生成持續性黑洞物件
+                    blackHoles.push({
+                        x: target.x,
+                        y: target.y,
+                        timer: 0,
+                        duration: 120, // 持續 2 秒 (60 FPS * 2)
+                        pullRange: 130,
+                        damagePerFrame: (target.maxHp * (spec / 100)) / 120 // 總傷害分攤到每一幀? 或者改為額外持續傷害
+                        // 原本邏輯是「吞噬額外傷害」，這裡是持續吸入。
+                        // 為了平衡，我們設一個固定的黑洞傷害係數，或者讓初始那一下才有大傷?
+                        // 雖然合作模式是每幀扣血，這裡我們先簡單處理：
+                        // 生成時不造成額外大傷，而是靠黑洞持續傷害。
+                        // 但原版 Battle 是 "吞噬比例"，感覺是一次性的。
+                        // 為了保持 "Battle" 的爽感，我們保留原本的直接傷害，黑洞僅作為控場？
+                        // 不，使用者要求 "改為合作模式的持續性黑洞物件"。
+                        // 合作模式黑洞邏輯：吸人 + 每幀扣 0.5。
                     });
 
-                    // 黑洞拉力邏輯
-                    enemies.forEach(e => {
-                        if (e.hp > 0) {
-                            const dist = Math.hypot(target.x - e.x, target.y - e.y);
-                            if (dist < pullRange && dist > 5) {
-                                const dx = target.x - e.x, dy = target.y - e.y;
-                                e.x += (dx / dist) * 4;
-                                e.y += (dy / dist) * 4;
-                            }
-                        }
-                    });
-                    // 吞噬額外傷害
-                    damage += target.maxHp * (spec / 100);
+                    // 為了不讓傷害變太低，我們還是給予基礎的骰子傷害
                 }
 
                 target.hp -= damage;
                 target.virtualHp = target.hp;
+
+                // 傷害顯示
                 if (damagePopups.length < 20) {
                     damagePopups.push({
                         x: target.x, y: target.y, val: Math.floor(damage),
-                        life: 30, color: isBlackHoleTriggered ? "#6366f1" : "#818cf8"
+                        life: 30, color: "#818cf8"
                     });
                 }
                 return;
@@ -1132,7 +1133,7 @@
                 dice.doomCounter = (dice.doomCounter || 0) + 1;
 
                 if (dice.doomCounter >= 10 && !target.doomMark) {
-                    const spec = getDiceSpecialValue('doom');
+                    const spec = getDiceSpecialValue('doom', dice.lv);
                     target.doomMark = {
                         damage: target.maxHp * (spec / 100),
                         timer: 10000,
@@ -1160,6 +1161,26 @@
                     type: 'explosion', x: tx, y: ty, radius: 80,
                     color: 'rgba(251, 146, 60, 0.6)', life: 20, maxLife: 20
                 });
+                // 5. 畫黑洞 (Galaxy)
+                blackHoles.forEach(bh => {
+                    ctx.save();
+                    ctx.translate(bh.x, bh.y);
+                    const rot = (Date.now() / 1000) * 2;
+                    ctx.rotate(rot);
+                    ctx.beginPath(); ctx.arc(0, 0, 20, 0, Math.PI * 2);
+                    ctx.fillStyle = '#000'; ctx.fill();
+                    ctx.strokeStyle = '#6366f1'; ctx.lineWidth = 2; ctx.stroke();
+
+                    // 吸入動畫
+                    for (let i = 0; i < 4; i++) {
+                        ctx.rotate(Math.PI / 2);
+                        ctx.beginPath(); ctx.moveTo(30 + Math.sin(Date.now() / 200) * 10, 0); ctx.lineTo(10, 0);
+                        ctx.strokeStyle = 'rgba(99, 102, 241, 0.5)'; ctx.stroke();
+                    }
+                    ctx.restore();
+                });
+
+                // 6. 畫傷害與特效
                 enemies.forEach(e => {
                     if (e.hp > 0 && Math.hypot(e.x - tx, e.y - ty) < 65) {
                         e.hp -= damage;
@@ -1174,7 +1195,7 @@
 
             // --- D. Laser (雷射) ---
             if (dice.id === 'laser') {
-                const spec = getDiceSpecialValue('laser');
+                const spec = getDiceSpecialValue('laser', dice.lv);
                 const diceUid = `slot_${dice.tempSlotIdx}`;
                 if (target.lastLaserUid === diceUid) {
                     target.laserStack = Math.min((target.laserStack || 1) + 1, spec);
@@ -1242,7 +1263,7 @@
             target.virtualHp -= damage;
             projectiles.push({
                 x: startX, y: startY, target: target, damage: damage,
-                diceId: dice.id, diceUid: `slot_${dice.tempSlotIdx}`,
+                diceId: dice.id, diceUid: `slot_${dice.tempSlotIdx}`, starLevel: dice.lv,
                 color: dice.color || "#ffffff", speed: 12
             });
         }     // 【撞擊端】處理：單體傷害、功能性效果 (減速、中毒、傳送、連鎖)
@@ -1270,7 +1291,8 @@
             }
 
             // 2. 執行子彈類的功能性效果
-            const spec = getDiceSpecialValue(p.diceId);
+            const starLv = p.starLevel || 1;
+            const spec = getDiceSpecialValue(p.diceId, starLv);
             switch (p.diceId) {
                 case 'crack': // 易傷
                     target.vulnerability = Math.max(target.vulnerability || 0, spec);
@@ -1372,7 +1394,38 @@
                     }
                 }
 
+                // --- Black Hole Logic (Galaxy) ---
+                for (let i = blackHoles.length - 1; i >= 0; i--) {
+                    let bh = blackHoles[i];
+                    bh.timer++;
+                    if (bh.timer > bh.duration) {
+                        blackHoles.splice(i, 1);
+                        continue;
+                    }
+
+                    // 吸附敵人
+                    enemies.forEach(e => {
+                        if (e.hp <= 0) return;
+
+                        const dx = bh.x - e.x;
+                        const dy = bh.y - e.y;
+                        const dist = Math.hypot(dx, dy);
+
+                        if (dist < bh.pullRange && dist > 10) {
+                            e.x += dx * 0.05; // 5% 吸力
+                            e.y += dy * 0.05;
+
+                            // 持續傷害 (模擬合作模式的物理+傷害)
+                            if (bh.damagePerFrame) {
+                                e.hp -= bh.damagePerFrame;
+                                e.virtualHp = e.hp;
+                            }
+                        }
+                    });
+                }
+
                 // --- 2. Boss 技能與晃動邏輯 ---
+
                 if (e.isBoss && e.hp > 0) {
                     if (!e.skillTimer) e.skillTimer = 0;
                     e.skillTimer++;
@@ -1673,6 +1726,25 @@
                 drawEnhancedGridBase(ctx, grid);
                 drawEnhancedPath(ctx, path);
 
+                // --- 新增：黑洞渲染 (與 Coop 同步) ---
+                blackHoles.forEach(bh => {
+                    ctx.save();
+                    ctx.translate(bh.x, bh.y);
+                    const rot = (Date.now() / 1000) * 2;
+                    ctx.rotate(rot);
+                    ctx.beginPath(); ctx.arc(0, 0, 20, 0, Math.PI * 2);
+                    ctx.fillStyle = '#000'; ctx.fill();
+                    ctx.strokeStyle = '#6366f1'; ctx.lineWidth = 2; ctx.stroke();
+
+                    // 吸入動畫
+                    for (let i = 0; i < 4; i++) {
+                        ctx.rotate(Math.PI / 2);
+                        ctx.beginPath(); ctx.moveTo(30 + Math.sin(Date.now() / 200) * 10, 0); ctx.lineTo(10, 0);
+                        ctx.strokeStyle = 'rgba(99, 102, 241, 0.5)'; ctx.stroke();
+                    }
+                    ctx.restore();
+                });
+
                 // --- 子彈層 ---
                 projectiles.forEach(p => {
                     ctx.fillStyle = p.color;
@@ -1762,7 +1834,10 @@
                 for (let i = damagePopups.length - 1; i >= 0; i--) {
                     let d = damagePopups[i];
                     ctx.save();
-                    ctx.fillStyle = `rgba(255, 255, 255, ${d.life / 30})`;
+                    // 修正：使用傳入的顏色 (若有)，否則預設白
+                    ctx.fillStyle = d.color || `rgba(255, 255, 255, ${d.life / 30})`;
+                    // 如果有顏色，透明度也要處理嗎？通常 color 是 hex string
+                    if (d.color) ctx.globalAlpha = d.life / 30;
                     ctx.font = "bold 14px Arial";
                     ctx.textAlign = "center";
                     ctx.fillText(d.val, d.x, d.y);
