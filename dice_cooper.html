@@ -956,7 +956,7 @@
                         const dx = bh.x - e.x;
                         const dy = bh.y - e.y;
                         const dist = Math.hypot(dx, dy);
-                        if (dist < 150 && dist > 10) {
+                        if (dist < 40 && dist > 10) { // 與視覺特效大小一致
                             // [NEW] 標記減速 (80% slow = 0.2x speed)
                             e.isGalaxySlowed = true;
 
@@ -1763,8 +1763,10 @@
                     break;
 
                 case 'galaxy':
-                    // 黑洞效果
-                    if (Math.random() < 0.05) {
+                    // 黑洞效果 (動態機率計算，與 battle 模式一致)
+                    const galaxySpec = getDiceSpecialValue('galaxy', attackerRole, starLv);
+                    const galaxyTriggerChance = galaxySpec / 100;
+                    if (Math.random() < galaxyTriggerChance) {
                         blackHoles.push({ x: target.x, y: target.y, timer: 0, owner: attackerRole });
                     }
                     break;

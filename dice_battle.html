@@ -1090,7 +1090,7 @@
             if (dice.id === 'galaxy') {
                 const spec = getDiceSpecialValue('galaxy', dice.lv);
                 // 觸發機率：基礎 15% + 吞噬比例 (2%...)
-                const triggerChance = 0.05 + (spec / 100);
+                const triggerChance = spec / 100;
 
                 if (Math.random() < triggerChance) {
                     // 生成持續性黑洞物件
@@ -1099,7 +1099,7 @@
                         y: target.y,
                         timer: 0,
                         duration: 120, // 持續 2 秒 (60 FPS * 2)
-                        pullRange: 130,
+                        pullRange: 40, // 與視覺特效大小（半徑20 + 吸入動畫）一致
                         damagePerFrame: (target.maxHp * (spec / 100)) / 120 // 總傷害分攤到每一幀? 或者改為額外持續傷害
                         // 原本邏輯是「吞噬額外傷害」，這裡是持續吸入。
                         // 為了平衡，我們設一個固定的黑洞傷害係數，或者讓初始那一下才有大傷?
@@ -1356,7 +1356,7 @@
                             x: target.x, y: target.y,
                             timer: 0,
                             life: duration,
-                            pullRange: 120, // 吸附範圍
+                            pullRange: 40, // 與視覺特效大小一致
                             damagePerFrame: dmgPerFrame,
                             owner: 'player' // 標記來源
                         });
