@@ -936,7 +936,7 @@
                 }
             }
 
-            // 黑洞邏輯
+            // 黑洞邏輯 (改為減速效果)
             for (let i = blackHoles.length - 1; i >= 0; i--) {
                 const bh = blackHoles[i];
                 bh.timer++;
@@ -945,9 +945,9 @@
                     continue;
                 }
 
-                // 吸附敌人
+                // 標記範圍內敵人減速
                 enemies.forEach(e => {
-                    // 判斷權限: 只能吸"能打的怪"
+                    // 判斷權限: 只能影響"能打的怪"
                     let canHit = false;
                     if (e.owner === bh.owner) canHit = true;
                     else if (e.pathIndex >= 3) canHit = true;
@@ -957,8 +957,13 @@
                         const dy = bh.y - e.y;
                         const dist = Math.hypot(dx, dy);
                         if (dist < 150 && dist > 10) {
-                            e.x += dx * 0.05; // 吸力
-                            e.y += dy * 0.05;
+                            // [NEW] 標記減速 (80% slow = 0.2x speed)
+                            e.isGalaxySlowed = true;
+
+                            // [NEW] 保留微弱視覺吸入效果
+                            e.galaxyVisualOffsetX = (e.galaxyVisualOffsetX || 0) + dx * 0.01;
+                            e.galaxyVisualOffsetY = (e.galaxyVisualOffsetY || 0) + dy * 0.01;
+
                             e.hp -= 0.5; // 黑洞傷害
 
                             // 黑洞傷害數字 (每 0.5 秒跳一次，深藍色)
@@ -966,8 +971,8 @@
                                 damagePopups.push({
                                     x: e.x + (Math.random() * 20 - 10),
                                     y: e.y - 10,
-                                    val: 15, // 0.5 * 30 frames = 15 total dmg approx
-                                    color: '#6366f1', // Indigo
+                                    val: 15,
+                                    color: '#6366f1',
                                     life: 30
                                 });
                             }
@@ -980,7 +985,12 @@
             for (let i = enemies.length - 1; i >= 0; i--) {
                 let e = enemies[i];
 
-                // 0. 防呆：清除無效座標的怪物
+                // 0.1 重置銀河減速標記 (每幀重新計算)
+                e.isGalaxySlowed = false;
+                e.galaxyVisualOffsetX = 0;
+                e.galaxyVisualOffsetY = 0;
+
+                // 0.2 防呆：清除無效座標的怪物
                 if (Number.isNaN(e.x) || Number.isNaN(e.y)) {
                     enemies.splice(i, 1);
                     continue;
@@ -1074,8 +1084,12 @@
                             continue;
                         }
                     } else {
-                        e.x += (dx / dist) * e.speed;
-                        e.y += (dy / dist) * e.speed;
+                        // [GALAXY] 計算實際移動速度 (若被黑洞減速則為 0.2x)
+                        let moveSpeed = e.speed;
+                        if (e.isGalaxySlowed) moveSpeed *= 0.2;
+
+                        e.x += (dx / dist) * moveSpeed;
+                        e.y += (dy / dist) * moveSpeed;
                     }
                 }
 

@@ -1385,7 +1385,12 @@
             for (let i = enemies.length - 1; i >= 0; i--) {
                 let e = enemies[i];
 
-                // --- 0. 防呆：清除無效座標的怪物 (防止卡波次) ---
+                // --- 0.1 重置銀河減速標記 (每幀重新計算) ---
+                e.isGalaxySlowed = false;
+                e.galaxyVisualOffsetX = 0;
+                e.galaxyVisualOffsetY = 0;
+
+                // --- 0.2 防呆：清除無效座標的怪物 (防止卡波次) ---
                 if (Number.isNaN(e.x) || Number.isNaN(e.y)) {
                     enemies.splice(i, 1);
                     continue;
@@ -1414,7 +1419,7 @@
                         continue;
                     }
 
-                    // 吸附敵人
+                    // 吸附敵人 (改為減速效果)
                     enemies.forEach(e => {
                         if (e.hp <= 0) return;
 
@@ -1423,10 +1428,14 @@
                         const dist = Math.hypot(dx, dy);
 
                         if (dist < bh.pullRange && dist > 10) {
-                            e.x += dx * 0.05; // 5% 吸力
-                            e.y += dy * 0.05;
+                            // [NEW] 標記減速 (80% slow = 0.2x speed)
+                            e.isGalaxySlowed = true;
 
-                            // 持續傷害 (模擬合作模式的物理+傷害)
+                            // [NEW] 保留微弱視覺吸入效果 (僅影響渲染，不影響邏輯)
+                            e.galaxyVisualOffsetX = (e.galaxyVisualOffsetX || 0) + dx * 0.01;
+                            e.galaxyVisualOffsetY = (e.galaxyVisualOffsetY || 0) + dy * 0.01;
+
+                            // 持續傷害
                             if (bh.damagePerFrame) {
                                 e.hp -= bh.damagePerFrame;
                                 e.virtualHp = e.hp;
@@ -1513,8 +1522,12 @@
                         continue;
                     }
                 } else if (dist > 0) {
-                    e.x += (dx / dist) * e.speed;
-                    e.y += (dy / dist) * e.speed;
+                    // [GALAXY] 計算實際移動速度 (若被黑洞減速則為 0.2x)
+                    let moveSpeed = e.speed;
+                    if (e.isGalaxySlowed) moveSpeed *= 0.2;
+
+                    e.x += (dx / dist) * moveSpeed;
+                    e.y += (dy / dist) * moveSpeed;
                 }
 
                 // --- 5. 跨波次判定保險 ---
