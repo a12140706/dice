@@ -441,8 +441,8 @@
         };
 
         const BALANCE = {
-            ENEMY_BASE_HP: 100, ENEMY_LEVEL_GROWTH: 1.25, ENEMY_WAVE_GROWTH: 1.20,
-            BOSS_BASE_HP: 3000, BOSS_LEVEL_GROWTH: 1.6, BOSS_WAVE_GROWTH: 1.8
+            ENEMY_BASE_HP: 100, ENEMY_LEVEL_GROWTH: 1.10, ENEMY_WAVE_GROWTH: 1.20,
+            BOSS_BASE_HP: 3000, BOSS_LEVEL_GROWTH: 1.35, BOSS_WAVE_GROWTH: 1.5
         };
 
         // --- 2. 初始化 ---
@@ -773,6 +773,9 @@
                             local.targetX = syncedX;
                             local.targetY = syncedY;
                             local.hp = r.hp;
+                            // [FIX] 同步時取最小值 (保留本地預測 或 接受遠端傷害)
+                            if (local.virtualHp === undefined) local.virtualHp = local.hp;
+                            if (local.hp < local.virtualHp) local.virtualHp = local.hp;
                             local.maxHp = r.maxHp;
                             local.pathIndex = r.pathIndex;
                             local.speed = r.speed;
@@ -795,7 +798,9 @@
                             newEnemy.x = syncedX;
                             newEnemy.y = syncedY;
                             newEnemy.targetX = syncedX;
+                            newEnemy.targetX = syncedX;
                             newEnemy.targetY = syncedY;
+                            newEnemy.virtualHp = newEnemy.hp; // [FIX] 初始化虛擬血量
 
                             // 狀態初始
                             newEnemy.iceTimer = r.ice ? 60 : 0;
@@ -1041,7 +1046,7 @@
                 waveState.timer++;
                 if (waveState.timer > 120) { // 休息 2 秒
                     battleState.wave++;
-                    waveState.total += 2;
+                    waveState.total += 1;
                     waveState.spawned = 0;
                     waveState.waiting = false;
                     waveState.timer = 0;
@@ -1238,7 +1243,7 @@
                     owner: owner,
                     pathIndex: 1, // 往第 1 個點走
                     maxHp: hp, hp: hp, virtualHp: hp,
-                    speed: 1.5,
+                    speed: 1,
                     poisonStacks: 0,
                     isBoss: false
                 });
@@ -1503,6 +1508,9 @@
 
                                 // 即時扣血
                                 currentTarget.hp -= currentDamage;
+                                // [FIX] 同步虛擬血量 (防止連鎖判定錯誤)
+                                if (currentTarget.virtualHp === undefined) currentTarget.virtualHp = currentTarget.hp;
+                                currentTarget.virtualHp = Math.min(currentTarget.virtualHp, currentTarget.hp);
 
                                 // 視覺特效：閃電線
                                 if (i > 0) {
@@ -1557,6 +1565,9 @@
                                 isCometCharged,
                                 index
                             );
+                            // [FIX] 預扣虛擬血量 (防止幽靈子彈)
+                            if (target.virtualHp === undefined) target.virtualHp = target.hp;
+                            target.virtualHp -= dmg;
                         }
                     }
                 }
@@ -1590,6 +1601,9 @@
 
             const validEnemies = enemies.filter(e => {
                 if (e.hp <= 0) return false;
+                // [FIX] 虛擬血量檢查：防止幽靈子彈 (Overkill)
+                if (e.virtualHp !== undefined && e.virtualHp <= 0) return false;
+
                 // 如果是我自己的怪，一定可以打
                 if (e.owner === attackerRole) return true;
 
@@ -1657,6 +1671,9 @@
 
             // 1. 應用傷害
             target.hp -= dmg;
+            // [FIX] 傷害結算時同步 (防止 hp 小於 virtualHp)
+            if (target.virtualHp === undefined) target.virtualHp = target.hp;
+            if (target.hp < target.virtualHp) target.virtualHp = target.hp;
 
             // 2. 死亡獎勵 (移除，統一在 updateHostLogic 處理)
 
