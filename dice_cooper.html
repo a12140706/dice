@@ -506,7 +506,7 @@
         // --- 3. 遊戲狀態 ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        let battleState = { hp: 3, sp: 100, wave: 1, summonCost: 10, isStarted: false };
+        let battleState = { hp: 3, sp: 100, wave: 1, summonCost: 10, isStarted: false, spEarned: { p1: 0, p2: 0 }, spentSp: 0 };
         let powerUpLevels = {};
         userData.deck.forEach(id => powerUpLevels[id] = 1);
 
@@ -649,67 +649,132 @@
         }
 
         // --- 5. Firebase 同步 ---
+        // 保存遠端 Host 的高度，用於縮放計算
+        let remoteHostHeight = 900; // 預設值，會被同步覆蓋
+
         function startFirebaseSync() {
-            const roomRef = db.ref('coop_rooms/' + roomId);
+            const roomPath = 'coop_rooms/' + roomId;
 
-            roomRef.on('value', (snap) => {
-                const data = snap.val();
-                if (!data) return;
+            // 1. Host 高度 (獨立監聽，低頻)
+            db.ref(roomPath + '/hostHeight').on('value', snap => {
+                remoteHostHeight = snap.val() || canvas.height;
+            });
 
-                // 共同狀態
-                if (data.wave) battleState.wave = data.wave;
-                if (data.hp !== undefined) battleState.hp = data.hp;
-
-                if (role === 'guest' && data.gameStats && data.gameStats.totalSpP2 !== undefined) {
-                    const newTotal = data.gameStats.totalSpP2;
-                    let diff = newTotal - (stateCache.lastTotalSpP2 || 0);
-
-                    // 如果伺服器重置 (數值變小)，視為新局，不加卻也不扣
-                    if (diff < 0) {
-                        stateCache.lastTotalSpP2 = newTotal;
-                        diff = 0;
-                    }
-
-                    if (diff > 0) {
-                        battleState.sp += diff;
-                        stateCache.lastTotalSpP2 = newTotal;
-                        updateUILive();
-                    }
+            // 2. 遊戲基礎狀態 (Wave, HP, GameOver) - 分開監聽
+            db.ref(roomPath + '/wave').on('value', snap => {
+                const val = snap.val();
+                if (val !== null) {
+                    battleState.wave = val;
+                    updateUILive();
                 }
+            });
 
-                // 監聽結束信號
-                // 只要收到 gameover 為 true 就結束，不需檢查本地 HP (避免同步落差)
-                if (data.gameover === true && battleState.isStarted) {
-                    battleState.hp = 0; // 強制歸零
+            db.ref(roomPath + '/hp').on('value', snap => {
+                const val = snap.val();
+                if (val !== null) {
+                    battleState.hp = val;
+                    updateUILive();
+                }
+            });
+
+            db.ref(roomPath + '/gameover').on('value', snap => {
+                if (snap.val() === true && battleState.isStarted) {
+                    battleState.hp = 0;
                     handleGameOver();
                 }
+            });
 
-                // 敵人同步 (Host 寫入，Guest 讀取)
-                // 敵人同步 (Host 寫入，Guest 讀取)
-                if (role === 'guest' && data.enemies) {
-                    const remoteEnemies = data.enemies || [];
-                    const hostH = data.hostHeight || canvas.height; // 取得 Host 高度，預設回退到本地
-                    const scaleY = canvas.height / hostH; // 計算 Y 軸縮放比例
+            // 3. SP 同步 (Guest 專用)
+            if (role === 'guest') {
+                db.ref(roomPath + '/gameStats').on('value', snap => {
+                    const stats = snap.val();
+                    if (stats) {
+                        // 舊邏輯: totalSpP2 (已廢棄，但保留相容性)
+                        // 新邏輯: 監聽 HOST 告訴我們賺了多少 SP (spEarnedP2)
+                        // 這樣可以保留本地的 Mine 骰子收入和消費
+                        const newEarned = stats.spEarnedP2 || 0;
+                        const diff = newEarned - (stateCache.lastSpEarnedP2 || 0);
 
-                    // 1. 標記所有現有敵人為"未更新"
+                        if (diff > 0) {
+                            battleState.sp += diff;
+                            stateCache.lastSpEarnedP2 = newEarned;
+                            updateUILive();
+                        }
+                    }
+                });
+            }
+
+            // 4. 玩家資料同步 (Slots, Names, PowerUps)
+            db.ref(roomPath + '/players').on('value', snap => {
+                const players = snap.val();
+                if (!players) return;
+
+                if (role === 'host') {
+                    if (players.p2) {
+                        updateSlotsFromSync(partnerSlots, players.p2.slots);
+                        if (players.p2.powerUpLevels) partnerPowerUpLevels = players.p2.powerUpLevels;
+                        if (players.p2.name) battleState.p2Name = players.p2.name;
+                    }
+                    if (players.p1 && players.p1.name) battleState.p1Name = players.p1.name;
+                } else {
+                    // Guest Logic
+                    // 第一次連線，寫入名字
+                    if (!battleState.guestNameSynced && players.p1) {
+                        db.ref(`coop_rooms/${roomId}/players/p2/name`).set(userData.nickname || 'Guest');
+                        battleState.guestNameSynced = true;
+                    }
+
+                    if (players.p1) {
+                        updateSlotsFromSync(partnerSlots, players.p1.slots);
+                        if (players.p1.powerUpLevels) partnerPowerUpLevels = players.p1.powerUpLevels;
+                        if (players.p1.name) battleState.p1Name = players.p1.name;
+                    }
+                    if (players.p2) {
+                        // 監聽自己的資料 (防止被 Boss 改動漏掉)
+                        updateSlotsFromSync(mySlots, players.p2.slots);
+                        if (players.p2.name) battleState.p2Name = players.p2.name;
+                    }
+                }
+                updateUILive();
+            });
+
+            // 5. 敵人與黑洞同步 (僅 Guest 需要，高頻率)
+            if (role === 'guest') {
+                db.ref(roomPath + '/enemies').on('value', snap => {
+                    const data = snap.val() || {};
+                    const remoteEnemies = Array.isArray(data) ? data : (data.list || []);
+                    const remoteBH = data.bh || [];
+
+                    const hostH = remoteHostHeight || canvas.height;
+                    const scaleY = canvas.height / hostH;
+
+                    // --- 同步黑洞 (純視覺) ---
+                    blackHoles = remoteBH.map(bh => ({
+                        x: bh.x,
+                        y: bh.y * scaleY,
+                        timer: 60, // 設為非 0 確保不被 cleanup，或者因為每次都覆蓋所以沒差
+                        owner: bh.owner,
+                        isVisual: true
+                    }));
+
+                    // --- 同步敵人 ---
+                    // 標記現有
                     const currentMap = new Map();
                     enemies.forEach(e => currentMap.set(e.id, e));
 
                     const newEnemies = [];
-
                     remoteEnemies.forEach(r => {
-                        // 座標標準化轉換
-                        const syncedX = r.x; // X 軸通常不需要縮放，因為寬度固定 500
-                        const syncedY = r.y * scaleY; // Y 軸依比例轉換
+                        const syncedX = r.x;
+                        const syncedY = r.y * scaleY;
 
                         if (currentMap.has(r.id)) {
-                            // 更新舊物件屬性 (保留 references)
                             const local = currentMap.get(r.id);
-                            local.x = syncedX;
-                            local.y = syncedY;
+                            // 只設定目標點
+                            local.targetX = syncedX;
+                            local.targetY = syncedY;
                             local.hp = r.hp;
+                            local.maxHp = r.maxHp;
                             local.pathIndex = r.pathIndex;
-                            // 同步 Boss 與衝刺相關屬性
                             local.speed = r.speed;
                             local.isSprinting = r.isSprinting;
                             local.isBoss = r.isBoss;
@@ -717,57 +782,35 @@
                             local.size = r.size;
                             local.color = r.color;
                             local.owner = r.owner;
+
+                            // 狀態同步
+                            local.iceTimer = r.ice ? 60 : 0;
+                            local.poisonStacks = r.poison || 0;
+                            local.crackMark = r.crack || 0;
+                            if (r.lock) local.speed = 0; // 鎖定視覺
+
                             newEnemies.push(local);
                         } else {
-                            // 新增 (需套用轉換後的座標)
                             const newEnemy = { ...r };
                             newEnemy.x = syncedX;
                             newEnemy.y = syncedY;
+                            newEnemy.targetX = syncedX;
+                            newEnemy.targetY = syncedY;
+
+                            // 狀態初始
+                            newEnemy.iceTimer = r.ice ? 60 : 0;
+                            newEnemy.poisonStacks = r.poison || 0;
+                            newEnemy.crackMark = r.crack || 0;
+                            if (r.lock) newEnemy.speed = 0;
+
                             newEnemies.push(newEnemy);
                         }
                     });
-
-                    // 替換列表 (此時 newEnemies 包含更新後的舊物件 + 新物件)
-                    // 這樣 projectiles 持有的 target 引用依然有效
                     enemies = newEnemies;
-                }
+                });
+            }
 
-                if (role === 'host') {
-                    if (data.players?.p2) {
-                        updateSlotsFromSync(partnerSlots, data.players.p2.slots);
-                        // 同步夥伴等級
-                        if (data.players.p2.powerUpLevels) {
-                            partnerPowerUpLevels = data.players.p2.powerUpLevels;
-                        }
-                    }
-                } else {
-                    // Guest: 第一次連線成功時，把自己的名字寫入 P2 (如果尚未寫入)
-                    if (!battleState.guestNameSynced && data.players?.p1) {
-                        db.ref(`coop_rooms/${roomId}/players/p2/name`).set(userData.nickname || 'Guest');
-                        battleState.guestNameSynced = true;
-                    }
-
-                    if (data.players?.p1) {
-                        updateSlotsFromSync(partnerSlots, data.players.p1.slots);
-                        if (data.players.p1.powerUpLevels) {
-                            partnerPowerUpLevels = data.players.p1.powerUpLevels;
-                        }
-                    }
-
-                    // Critical Fix: Guest 也需要監聽自己的資料 (p2)，因為 Host (Boss) 可能會修改它 (例如鎖定、降級)
-                    if (data.players?.p2) {
-                        updateSlotsFromSync(mySlots, data.players.p2.slots);
-                    }
-                }
-
-                // 儲存雙方名字以供 Game Over 顯示
-                if (data.players?.p1?.name) battleState.p1Name = data.players.p1.name;
-                if (data.players?.p2?.name) battleState.p2Name = data.players.p2.name;
-
-                updateUILive();
-            });
-
-            // 立即同步一次初始資料 (包含 Deck 與 Levels)
+            // 立即同步一次初始資料
             syncMyData();
         }
 
@@ -826,6 +869,9 @@
         let partnerPowerUpLevels = {};
 
 
+        // 用於防止重複寫入未變動的狀態
+        let lastSyncedState = { wave: -1, hp: -1, totalSpP2: -1, gameover: false, enemiesCount: -1 };
+
         // --- 6. 遊戲迴圈 ---
         let accumulatedTime = 0;
 
@@ -848,19 +894,85 @@
                 frameCount++;
 
                 // 1. 邏輯更新
+                // 1. 邏輯更新
                 if (role === 'host') {
                     updateHostLogic(); // 生怪、移動、傷害結算
-                    if (frameCount % 3 === 0) { // 每 3 幀同步一次，減少寫入頻率
-                        db.ref(`coop_rooms/${roomId}`).update({
-                            enemies: enemies,
-                            wave: battleState.wave,
-                            hp: battleState.hp,
-                            gameover: battleState.hp <= 0,
-                            gameStats: { totalSpP2: stateCache.totalSpP2 || 0 }
-                        });
+                    if (frameCount % 6 === 0) { // 每 6 幀同步一次 (10 FPS)
+
+                        // Check for changes (Channel 1: State)
+                        const currentTotalSpP2 = stateCache.totalSpP2 || 0;
+                        const isGameOver = battleState.hp <= 0;
+                        const currentSpEarnedP2 = battleState.spEarned.p2; // Track P2 SP
+
+                        // 只有當數值有變動時才寫入，減少 Host 端與網路負擔
+                        if (battleState.wave !== lastSyncedState.wave ||
+                            battleState.hp !== lastSyncedState.hp ||
+                            currentSpEarnedP2 !== lastSyncedState.spEarnedP2 || // Check SP change
+                            isGameOver !== lastSyncedState.gameover
+                        ) {
+                            db.ref(`coop_rooms/${roomId}`).update({
+                                wave: battleState.wave,
+                                hp: battleState.hp,
+                                gameover: isGameOver,
+                                gameStats: {
+                                    totalSpP2: currentTotalSpP2,
+                                    spEarnedP2: currentSpEarnedP2 // New: Sync earned SP
+                                }
+                            });
+
+                            lastSyncedState = {
+                                wave: battleState.wave,
+                                hp: battleState.hp,
+                                spEarnedP2: currentSpEarnedP2,
+                                totalSpP2: currentTotalSpP2,
+                                gameover: isGameOver
+                            };
+                        }
+
+                        // channel 2: 敵人 (高頻，僅傳送必要且取整後的資料)
+                        // 優化：當敵人為空且已經同步過空陣列時，不再送出寫入請求
+                        const hasEnemies = enemies.length > 0;
+                        const wasEmpty = (lastSyncedState.enemiesCount === 0);
+
+                        if (hasEnemies || !wasEmpty) {
+                            const optimizedEnemies = enemies.map(e => ({
+                                id: e.id,
+                                x: Math.round(e.x),
+                                y: Math.round(e.y),
+                                hp: Math.ceil(e.hp),
+                                maxHp: Math.ceil(e.maxHp),
+                                pathIndex: e.pathIndex,
+                                speed: e.speed,
+                                isSprinting: e.isSprinting || false,
+                                bossType: e.bossType || null,
+                                isBoss: e.isBoss || false,
+                                size: e.size || 40,
+                                color: e.color || '#fff',
+                                owner: e.owner,
+                                // Status flags for Guest rendering
+                                ice: e.iceTimer > 0,
+                                poison: e.poisonStacks || 0,
+                                lock: e.speed === 0, // Simplified lock check
+                                crack: e.crackMark || 0
+                            }));
+
+                            const optimizedBlackHoles = blackHoles.map(bh => ({
+                                x: Math.round(bh.x),
+                                y: Math.round(bh.y),
+                                owner: bh.owner // Optional, for rendering color if needed
+                            }));
+
+                            db.ref(`coop_rooms/${roomId}/enemies`).set({
+                                list: optimizedEnemies,
+                                bh: optimizedBlackHoles
+                            });
+
+                            // 更新計數 (用於下次判斷)
+                            lastSyncedState.enemiesCount = enemies.length;
+                        }
                     }
                 } else {
-                    updateGuestLogic(); // 預測移動
+                    updateGuestLogic(); // 插值移動
                 }
 
                 // 2. 戰鬥判定 (雙方都要跑，因為要發射子彈和特效)
@@ -875,37 +987,37 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // Guest 邏輯: 本地預測移動 (避免卡頓)
+        // Guest 邏輯: 插值移動 (Interpolation)
         function updateGuestLogic() {
             enemies.forEach(e => {
                 if (e.hp <= 0) return;
 
-                const path = e.owner === 'p1' ? paths.p1 : paths.p2;
-                // 防呆
-                if (!path || e.pathIndex >= path.length) return;
+                // 如果有目標點，則進行插值移動
+                if (e.targetX !== undefined && e.targetY !== undefined) {
+                    // 插值係數 0.2 (越小越滑順但延遲越高，越大越跟手但可能抖動)
+                    // 10 FPS sync -> 每 100ms 更新一次目標
+                    // 60 FPS render -> 每 16ms 跑一次 lerp
+                    const lerpFactor = 0.2;
 
-                const target = path[e.pathIndex];
-                if (target) {
-                    let dx = target.x - e.x;
-                    let dy = target.y - e.y;
-                    let dist = Math.hypot(dx, dy);
+                    e.x += (e.targetX - e.x) * lerpFactor;
+                    e.y += (e.targetY - e.y) * lerpFactor;
 
-                    // 簡單移動
-                    // 注意：e.speed 也是 sync 過來的，如果有 buff 會自動同步
-                    if (dist < e.speed) {
-                        e.pathIndex++;
-                        // 不做移除或扣血，只負責移動
-                        // 如果超出路徑，就停在終點等待 Host 移除
-                    } else {
-                        e.x += (dx / dist) * e.speed;
-                        e.y += (dy / dist) * e.speed;
-                    }
+                    // 如果距離很近了，直接吸附 (避免微小抖動)
+                    if (Math.abs(e.targetX - e.x) < 0.5) e.x = e.targetX;
+                    if (Math.abs(e.targetY - e.y) < 0.5) e.y = e.targetY;
                 }
             });
         }
 
         // --- Host 邏輯: 生怪與移動 ---
         function updateHostLogic() {
+            // 0. 重置所有怪物的暫時性狀態
+            enemies.forEach(e => {
+                e.isGalaxySlowed = false;
+                e.galaxyVisualOffsetX = 0;
+                e.galaxyVisualOffsetY = 0;
+            });
+
             // Wave 管理
             if (!waveState.waiting) {
                 waveState.timer++;
@@ -984,11 +1096,6 @@
             // 敵人移動與效果
             for (let i = enemies.length - 1; i >= 0; i--) {
                 let e = enemies[i];
-
-                // 0.1 重置銀河減速標記 (每幀重新計算)
-                e.isGalaxySlowed = false;
-                e.galaxyVisualOffsetX = 0;
-                e.galaxyVisualOffsetY = 0;
 
                 // 0.2 防呆：清除無效座標的怪物
                 if (Number.isNaN(e.x) || Number.isNaN(e.y)) {
@@ -1096,21 +1203,21 @@
                 // 死亡移除
                 if (e.hp <= 0) {
                     enemies.splice(i, 1);
-                    // 根據擊殺者給 SP? 目前簡化為 Host 通通拿到 (需改進：共享 SP 或各自擊殺)
-                    // 這版本簡化：擊殺不給 SP，SP 靠時間自動回復或 Pve 獎勵? 
-                    // 為了合作樂趣，我們設定：每殺一隻怪，雙方都加 SP (Host 寫入)
-                    // 這裡先簡單增加 Host 的，並透過 sync 同步給 Guest? 
-                    // 不，Guest 的 SP 是本地維護的。
-                    // 暫定：Host 廣播 "enemy_killed" 事件較複雜，這裡先讓 Host 拿到 SP，Guest 透過模擬擊殺拿 SP
+                    // 擊殺獎勵: 誰的怪死了加誰的 SP (10 SP)
+                    const REWARD = 10;
+                    if (e.owner === 'p1') {
+                        battleState.sp += REWARD;
+                        battleState.spEarned.p1 += REWARD;
+                        updateUILive(); // 更新 UI顯示
+                    } else {
+                        battleState.spEarned.p2 += REWARD;
+                    }
                 }
             }
         }
 
         // Guest 邏輯: 簡單插值
-        function updateGuestLogic() {
-            // 這裡其實只要依賴 Firebase 數據即可
-            // 但為了流暢，可以做本地預測移動
-        }
+
 
         // 生成唯一 ID
         function generateId() {
@@ -1551,14 +1658,8 @@
             // 1. 應用傷害
             target.hp -= dmg;
 
-            // 2. 死亡獎勵 (只有 Host 處理)
-            if (target.hp <= 0 && role === 'host') {
-                if (target.owner === 'p1') {
-                    battleState.sp += 10;
-                } else if (target.owner === 'p2') {
-                    stateCache.totalSpP2 = (stateCache.totalSpP2 || 0) + 10;
-                }
-            }
+            // 2. 死亡獎勵 (移除，統一在 updateHostLogic 處理)
+
 
             // 3. 特殊效果處理
             // 取得當前星數 (從子彈取得，若無則傳入 1)
@@ -1715,6 +1816,39 @@
                     }
                     break;
 
+                case 'galaxy':
+                    const galaxySpec = getDiceSpecialValue('galaxy', attackerRole, starLv);
+                    // 觸發機率：基礎值 (例如 15) / 100 => 15%
+                    const triggerChance = galaxySpec / 100;
+
+                    if (Math.random() < triggerChance) {
+                        const dmgPercent = galaxySpec / 100;
+                        const totalDmg = target.maxHp * dmgPercent;
+                        const duration = 180; // 3秒 (Sync with Battle)
+                        const dmgPerFrame = Math.max(0.5, totalDmg / duration);
+
+                        // [FIX] 只有 Host 負責生成持久性黑洞物件，Guest 依靠同步
+                        if (role === 'host') {
+                            blackHoles.push({
+                                x: target.x,
+                                y: target.y,
+                                timer: 0,
+                                owner: attackerRole,
+                                damagePerFrame: dmgPerFrame
+                            });
+                        }
+
+                        // 視覺特效 (雙方都跑)
+                        visualEffects.push({
+                            type: 'explosion',
+                            x: target.x, y: target.y,
+                            radius: 60,
+                            color: '#6366f1',
+                            life: 20, maxLife: 20
+                        });
+                    }
+                    break;
+
                 case 'doom':
                     // 毀滅標記 (每 10 次攻擊觸發)
                     if (projectile && projectile.slotIndex !== undefined && projectile.attackerRole) {
@@ -1762,14 +1896,7 @@
                     }
                     break;
 
-                case 'galaxy':
-                    // 黑洞效果 (動態機率計算，與 battle 模式一致)
-                    const galaxySpec = getDiceSpecialValue('galaxy', attackerRole, starLv);
-                    const galaxyTriggerChance = galaxySpec / 100;
-                    if (Math.random() < galaxyTriggerChance) {
-                        blackHoles.push({ x: target.x, y: target.y, timer: 0, owner: attackerRole });
-                    }
-                    break;
+
             }
         }
 
@@ -2009,6 +2136,7 @@
             });
 
             // 5. 畫傷害與特效
+            // 5. 畫傷害與特效
             damagePopups.forEach(d => {
                 ctx.fillStyle = d.color;
                 ctx.font = 'bold 16px Arial';
@@ -2017,6 +2145,36 @@
                 d.y -= 0.5; d.life--;
             });
             damagePopups = damagePopups.filter(d => d.life > 0);
+
+            // 5.5 畫視覺特效 (Visual Effects) - 修復 Memory Leak
+            visualEffects.forEach(eff => {
+                if (eff.type === 'explosion') {
+                    // 爆炸特效
+                    ctx.save();
+                    ctx.globalAlpha = Math.max(0, eff.life / eff.maxLife);
+                    ctx.fillStyle = eff.color;
+                    ctx.beginPath();
+                    ctx.arc(tx(eff.x), ty(eff.y), eff.radius * (1 - eff.life / eff.maxLife), 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                } else if (eff.type === 'lightning') {
+                    // 閃電特效 (連鎖骰子)
+                    ctx.save();
+                    ctx.strokeStyle = '#8b5cf6'; // Purple
+                    ctx.lineWidth = 2;
+                    ctx.globalAlpha = Math.max(0, eff.life / eff.maxLife);
+                    ctx.beginPath();
+                    ctx.moveTo(tx(eff.start.x), ty(eff.start.y));
+                    ctx.lineTo(tx(eff.end.x), ty(eff.end.y));
+                    ctx.stroke();
+                    ctx.restore();
+                }
+                eff.life--;
+            });
+            // 移除已結束的特效
+            if (visualEffects.length > 0) {
+                visualEffects = visualEffects.filter(e => e.life > 0);
+            }
 
             // 6. 畫黑洞
             blackHoles.forEach(bh => {
@@ -2151,7 +2309,11 @@
 
             // 2. 繪製四角 L 邊框
             const LSize = 20;
-            ctx.filter = 'drop-shadow(0 0 5px #3b82f6)'; // 發光
+            // 優化: 使用 shadowBlur 取代 filter 以改善 Chrome 效能
+            ctx.save();
+            ctx.shadowColor = '#3b82f6';
+            ctx.shadowBlur = 5;
+
             ctx.strokeStyle = (owner === 'p1' ? "#3b82f6" : "#f472b6"); // P1 藍, P2 粉
             ctx.lineWidth = 3;
 
@@ -2163,7 +2325,8 @@
             ctx.beginPath(); ctx.moveTo(minX, maxY - LSize); ctx.lineTo(minX, maxY); ctx.lineTo(minX + LSize, maxY); ctx.stroke();
             // 右下
             ctx.beginPath(); ctx.moveTo(maxX - LSize, maxY); ctx.lineTo(maxX, maxY); ctx.lineTo(maxX, maxY - LSize); ctx.stroke();
-            ctx.filter = 'none';
+
+            ctx.restore(); // 恢復 shadow 狀態
 
             slots.forEach(slot => {
                 const rawX = sideMargin + grid.padding + slot.col * (grid.slotSize + grid.padding);
@@ -2345,6 +2508,7 @@
             if (empties.length === 0) return;
 
             battleState.sp -= battleState.summonCost;
+            battleState.spentSp += battleState.summonCost; // Track spending
             battleState.summonCost += 10;
 
             const target = empties[Math.floor(Math.random() * empties.length)];
@@ -2365,6 +2529,7 @@
             const cost = 100 * Math.pow(2, lv - 1);
             if (battleState.sp >= cost && lv < 5) {
                 battleState.sp -= cost;
+                battleState.spentSp += cost; // Track spending
                 powerUpLevels[id] = lv + 1;
                 syncMyData(); // Powerup 雖然不影響盤面結構，但會影響傷害，這部分 Host 算傷害時需要知道對方等級嗎？
                 // 目前 syncMyData 只傳 slots.
@@ -2612,45 +2777,162 @@
             }
         }
 
+        // --- 繪製特徵圖案 ---
         function drawDiceFeature(ctx, x, y, size, pattern, diceColor) {
+            if (!pattern || !diceColor) return;
+
             const m = size / 2;
             ctx.save();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.translate(x, y);
 
-            const r = parseInt(diceColor.slice(1, 3), 16);
-            const g = parseInt(diceColor.slice(3, 5), 16);
-            const b = parseInt(diceColor.slice(5, 7), 16);
-            ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.8)`; // 加深顏色
+            // 顏色與線條處理
+            let r = 0, g = 0, b = 0;
+            if (diceColor.startsWith('#')) {
+                r = parseInt(diceColor.slice(1, 3), 16);
+                g = parseInt(diceColor.slice(3, 5), 16);
+                b = parseInt(diceColor.slice(5, 7), 16);
+            }
+
+            ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.8)`;
             ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.3)`;
-            ctx.lineWidth = 4;
+            // 關鍵：線條粗細隨 size 改變，首頁才不會歪
+            ctx.lineWidth = Math.max(1, size * 0.06);
             ctx.lineCap = "round";
             ctx.lineJoin = "round";
 
             switch (pattern) {
-                // --- Common ---
+                case 'laser_beam': // 雷射：科技感十字準星 + 脈衝光環
+                    // 1. 外圈旋轉光環
+                    ctx.save();
+                    ctx.translate(m, m);
+                    ctx.rotate(Date.now() / 500);
+                    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.4)`;
+                    ctx.lineWidth = Math.max(1, size * 0.03);
+                    ctx.beginPath();
+                    ctx.arc(0, 0, size * 0.35, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+
+                    // 2. 中心十字線 (準星)
+                    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.8)`;
+                    ctx.lineWidth = Math.max(1, size * 0.045);
+                    ctx.beginPath();
+                    ctx.moveTo(m - size * 0.2, m); ctx.lineTo(m + size * 0.2, m);
+                    ctx.moveTo(m, m - size * 0.2); ctx.lineTo(m, m + size * 0.2);
+                    ctx.stroke();
+
+                    // 3. 四個角落定位點
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.6)`;
+                    const corners = [
+                        [size * 0.15, size * 0.15],
+                        [size * 0.85, size * 0.15],
+                        [size * 0.15, size * 0.85],
+                        [size * 0.85, size * 0.85]
+                    ];
+                    corners.forEach(([cx, cy]) => {
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, size * 0.03, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+
+                    // 4. 中心發光點
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.9)`;
+                    ctx.beginPath();
+                    ctx.arc(m, m, size * 0.08, 0, Math.PI * 2);
+                    ctx.fill();
+                    break;
                 case 'fire':
                     ctx.beginPath();
-                    ctx.moveTo(m, size * 0.2); ctx.lineTo(size * 0.8, size * 0.8); ctx.lineTo(size * 0.2, size * 0.8);
-                    ctx.closePath(); ctx.stroke(); ctx.fill();
+                    ctx.moveTo(m, size * 0.25);
+                    ctx.lineTo(size * 0.75, size * 0.75);
+                    ctx.lineTo(size * 0.25, size * 0.75);
+                    ctx.closePath();
+                    ctx.stroke(); ctx.fill();
                     break;
                 case 'ice':
-                    ctx.beginPath(); ctx.arc(m, m, size * 0.35, 0, Math.PI * 2);
-                    ctx.moveTo(m, size * 0.1); ctx.lineTo(m, size * 0.9);
-                    ctx.moveTo(size * 0.1, m); ctx.lineTo(size * 0.9, m);
+                    ctx.beginPath();
+                    ctx.arc(m, m, size * 0.3, 0, Math.PI * 2);
+                    ctx.moveTo(m, size * 0.15); ctx.lineTo(m, size * 0.85);
+                    ctx.moveTo(size * 0.15, m); ctx.lineTo(size * 0.85, m);
                     ctx.stroke();
                     break;
                 case 'wind':
                     ctx.beginPath();
+                    const gap = size * 0.15;
                     for (let i = -1; i <= 1; i++) {
-                        ctx.moveTo(size * 0.2, m + (i * 12)); ctx.lineTo(size * 0.8, m + (i * 12));
+                        ctx.moveTo(size * 0.25, m + (i * gap));
+                        ctx.lineTo(size * 0.75, m + (i * gap));
                     }
                     ctx.stroke();
                     break;
+                case 'gamble': // 賭博：中央錢幣 + 隨機閃爍星
+                    // 1. 中央大圓 (錢幣)
+                    ctx.beginPath();
+                    ctx.arc(m, m, size * 0.25, 0, Math.PI * 2);
+                    ctx.stroke();
+                    // 2. 錢幣內的 $ 符號
+                    ctx.font = `bold ${size * 0.25}px Arial`;
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.5)`;
+                    ctx.fillText("$", m, m);
+                    // 3. 四周的小閃爍星
+                    const stars = [[0.2, 0.2], [0.8, 0.2], [0.2, 0.8], [0.8, 0.8]];
+                    stars.forEach(([sx, sy], i) => {
+                        // 簡單的十字閃爍，利用時間產生輪流閃爍感
+                        if ((Math.floor(Date.now() / 300) + i) % 4 === 0) {
+                            ctx.beginPath();
+                            ctx.moveTo(size * sx - 4, size * sy);
+                            ctx.lineTo(size * sx + 4, size * sy);
+                            ctx.moveTo(size * sx, size * sy - 4);
+                            ctx.lineTo(size * sx, size * sy + 4);
+                            ctx.stroke();
+                        }
+                    });
+                    break;
+
+                // --- Legend ---
+                case 'nut': // 營養：DNA 雙螺旋 (交叉曲線)
+                    ctx.lineWidth = size * 0.1;
+                    ctx.beginPath();
+                    // 兩條交叉的 S 型曲線
+                    ctx.moveTo(size * 0.3, size * 0.2);
+                    ctx.bezierCurveTo(size * 0.7, size * 0.4, size * 0.3, size * 0.6, size * 0.7, size * 0.8);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(size * 0.7, size * 0.2);
+                    ctx.bezierCurveTo(size * 0.3, size * 0.4, size * 0.7, size * 0.6, size * 0.3, size * 0.8);
+                    ctx.stroke();
+                    // 在交叉點點綴兩個小圓點
+                    ctx.beginPath();
+                    ctx.arc(m, size * 0.35, 3, 0, Math.PI * 2);
+                    ctx.arc(m, size * 0.65, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    break;
                 case 'electric':
                     ctx.beginPath();
-                    ctx.moveTo(m + 5, size * 0.15); ctx.lineTo(m - 10, m + 5);
-                    ctx.lineTo(m + 10, m - 5); ctx.lineTo(m - 5, size * 0.85);
+                    ctx.moveTo(m + size * 0.1, size * 0.2);
+                    ctx.lineTo(m - size * 0.15, m + size * 0.05);
+                    ctx.lineTo(m + size * 0.15, m - size * 0.05);
+                    ctx.lineTo(m - size * 0.1, size * 0.8);
                     ctx.stroke();
+                    break;
+                case 'switch': // 換位：左右循環互換箭頭
+                    ctx.beginPath();
+                    // 左箭頭
+                    ctx.moveTo(size * 0.3, size * 0.4);
+                    ctx.lineTo(size * 0.7, size * 0.4);
+                    ctx.lineTo(size * 0.6, size * 0.3);
+                    // 右箭頭
+                    ctx.moveTo(size * 0.7, size * 0.6);
+                    ctx.lineTo(size * 0.3, size * 0.6);
+                    ctx.lineTo(size * 0.4, size * 0.7);
+                    ctx.stroke();
+                    // 中心裝飾點
+                    ctx.beginPath();
+                    ctx.arc(m, m, 3, 0, Math.PI * 2);
+                    ctx.fill();
                     break;
                 case 'poison':
                     ctx.beginPath();
@@ -2659,64 +2941,386 @@
                     ctx.closePath(); ctx.stroke(); ctx.fill();
                     break;
                 case 'lock':
-                    ctx.strokeRect(size * 0.25, size * 0.25, size * 0.5, size * 0.5);
-                    ctx.beginPath(); ctx.arc(m, m, 4, 0, Math.PI * 2); ctx.fill();
+                    ctx.strokeRect(size * 0.3, size * 0.3, size * 0.4, size * 0.4);
+                    ctx.beginPath(); ctx.arc(m, m, size * 0.05, 0, Math.PI * 2); ctx.fill();
                     break;
                 case 'teleport':
-                    ctx.beginPath(); ctx.arc(size * 0.3, m, size * 0.3, -Math.PI / 2, Math.PI / 2); ctx.stroke();
-                    ctx.beginPath(); ctx.arc(size * 0.7, m, size * 0.3, Math.PI / 2, -Math.PI / 2); ctx.stroke();
-                    break;
-                case 'gear':
-                    ctx.beginPath(); ctx.setLineDash([5, 5]); ctx.arc(m, m, size * 0.35, 0, Math.PI * 2); ctx.stroke();
-                    ctx.setLineDash([]); ctx.beginPath(); ctx.arc(m, m, size * 0.15, 0, Math.PI * 2); ctx.stroke();
-                    break;
-                case 'gamble': // 賭博
-                    ctx.beginPath(); ctx.arc(m, m, size * 0.25, 0, Math.PI * 2); ctx.stroke();
-                    ctx.font = `bold ${size * 0.25}px Arial`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.5)`; ctx.fillText("$", m, m);
-                    break;
-
-                // --- Rare / Epic / Legend / Mythic 移植 ---
-                case 'joker':
-                    ctx.beginPath(); ctx.moveTo(size * 0.2, size * 0.3); ctx.lineTo(size * 0.8, size * 0.3); ctx.lineTo(m, size * 0.8); ctx.closePath(); ctx.stroke();
-                    ctx.beginPath(); ctx.arc(size * 0.35, size * 0.2, 3, 0, Math.PI * 2); ctx.fill();
-                    ctx.beginPath(); ctx.arc(size * 0.65, size * 0.2, 3, 0, Math.PI * 2); ctx.fill();
-                    break;
-                case 'growth':
-                    ctx.beginPath(); ctx.moveTo(m, size * 0.15); ctx.lineTo(m, size * 0.85);
-                    ctx.moveTo(m, size * 0.15); ctx.lineTo(size * 0.3, size * 0.4);
-                    ctx.moveTo(m, size * 0.15); ctx.lineTo(size * 0.7, size * 0.4);
+                    ctx.beginPath();
+                    ctx.arc(size * 0.35, m, size * 0.25, -Math.PI / 2, Math.PI / 2);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(size * 0.65, m, size * 0.25, Math.PI / 2, -Math.PI / 2);
                     ctx.stroke();
                     break;
-                // ... 其他高階圖案 (Nut, Switch, Laser, Mighty Wind, Galaxy, Doom, etc.)
-                // 為了節省 Token，這裡省略部分，但確保已支援 Galaxy/Doom
-                case 'mine':
-                    ctx.beginPath(); ctx.moveTo(size * 0.25, size * 0.35); ctx.quadraticCurveTo(m, size * 0.15, size * 0.75, size * 0.35); ctx.stroke();
-                    ctx.beginPath(); ctx.moveTo(m, size * 0.25); ctx.lineTo(m, size * 0.75); ctx.stroke();
+                case 'gear':
+                    ctx.beginPath();
+                    ctx.setLineDash([size * 0.05, size * 0.05]);
+                    ctx.arc(m, m, size * 0.3, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    ctx.beginPath(); ctx.arc(m, m, size * 0.12, 0, Math.PI * 2); ctx.stroke();
+                    break;
+                case 'joker':
+                    ctx.beginPath();
+                    ctx.moveTo(size * 0.25, size * 0.35); ctx.lineTo(size * 0.75, size * 0.35);
+                    ctx.lineTo(m, size * 0.75); ctx.closePath(); ctx.stroke();
+                    ctx.beginPath(); ctx.arc(size * 0.38, size * 0.25, size * 0.05, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(size * 0.62, size * 0.25, size * 0.05, 0, Math.PI * 2); ctx.fill();
+                    break;
+                case 'growth':
+                    ctx.beginPath();
+                    ctx.moveTo(m, size * 0.2); ctx.lineTo(m, size * 0.8);
+                    ctx.moveTo(m, size * 0.2); ctx.lineTo(size * 0.35, size * 0.4);
+                    ctx.moveTo(m, size * 0.2); ctx.lineTo(size * 0.65, size * 0.4);
+                    ctx.stroke();
                     break;
                 case 'sun':
-                    ctx.beginPath(); ctx.arc(m, m, size * 0.15, 0, Math.PI * 2); ctx.stroke(); ctx.fill();
-                    ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.arc(m, m, size * 0.18, 0, Math.PI * 2); ctx.stroke(); ctx.fill();
                     for (let i = 0; i < 8; i++) {
-                        ctx.save(); ctx.translate(m, m); ctx.rotate((i * Math.PI / 4) + (Math.PI / 8));
-                        ctx.beginPath(); ctx.moveTo(0, -size * 0.22); ctx.lineTo(0, -size * 0.32); ctx.stroke(); ctx.restore();
+                        ctx.save();
+                        ctx.translate(m, m); ctx.rotate(i * Math.PI / 4);
+                        ctx.moveTo(0, -size * 0.25); ctx.lineTo(0, -size * 0.4);
+                        ctx.stroke(); ctx.restore();
                     }
-                    ctx.lineWidth = 4;
                     break;
-                case 'galaxy': // 銀河
-                    ctx.beginPath(); ctx.moveTo(m, size * 0.1); ctx.bezierCurveTo(size * 0.9, size * 0.1, size * 0.1, size * 0.9, m, size * 0.9); ctx.stroke();
-                    ctx.beginPath(); ctx.arc(m, m, size * 0.1, 0, Math.PI * 2); ctx.fill();
+                case 'galaxy':
+                    ctx.beginPath();
+                    ctx.moveTo(m, size * 0.15);
+                    ctx.bezierCurveTo(size * 0.85, size * 0.15, size * 0.15, size * 0.85, m, size * 0.85);
+                    ctx.stroke();
+                    ctx.beginPath(); ctx.arc(m, m, size * 0.08, 0, Math.PI * 2); ctx.fill();
                     break;
-                case 'doom': // 毀滅
-                    ctx.beginPath(); ctx.arc(m, m, size * 0.35, 0, Math.PI * 2); ctx.stroke();
+                // --- 易傷 (Crack) 外觀：碎裂水晶效果 ---
+                case 'crack':
+                    // 1. 中心爆裂點
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.5)`;
+                    ctx.beginPath();
+                    ctx.arc(m, m, size * 0.12, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // 2. 多方向裂紋擴散
+                    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.7)`;
+                    ctx.lineWidth = Math.max(1, size * 0.04);
+                    const crackAngles = [0, 45, 90, 135, 180, 225, 270, 315];
+                    crackAngles.forEach(angle => {
+                        const rad = angle * Math.PI / 180;
+                        const x1 = m + Math.cos(rad) * size * 0.12;
+                        const y1 = m + Math.sin(rad) * size * 0.12;
+                        const x2 = m + Math.cos(rad) * size * 0.42;
+                        const y2 = m + Math.sin(rad) * size * 0.42;
+
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        ctx.lineTo(x2, y2);
+                        ctx.stroke();
+                    });
+
+                    // 3. 外圍碎片點綴
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.4)`;
+                    [0.1, 0.25, 0.75, 0.9].forEach(ratio => {
+                        ctx.beginPath();
+                        ctx.arc(size * ratio, size * 0.15, size * 0.025, 0, Math.PI * 2);
+                        ctx.arc(size * ratio, size * 0.85, size * 0.025, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                    break;
+
+                // --- 礦山 (Mine) 外觀：一個 T 字型的鎬頭 ---
+                case 'mine':
+                    ctx.beginPath();
+                    // 鎬頭的弧形金屬部分
+                    ctx.moveTo(size * 0.25, size * 0.35);
+                    ctx.quadraticCurveTo(m, size * 0.15, size * 0.75, size * 0.35);
+                    ctx.stroke();
+                    // 鎬頭的木柄
+                    ctx.beginPath();
+                    ctx.moveTo(m, size * 0.25);
+                    ctx.lineTo(m, size * 0.75);
+                    ctx.stroke();
+                    // 裝飾一個小錢幣圓點
+                    ctx.beginPath();
+                    ctx.arc(m + size * 0.15, size * 0.7, size * 0.08, 0, Math.PI * 2);
+                    ctx.fill(); ctx.stroke();
+                    break;
+                case 'mighty_wind': // 強風：多重氣流線條
+                    ctx.beginPath();
+                    for (let i = -1; i <= 1; i++) {
+                        ctx.moveTo(size * 0.2, m + i * size * 0.15);
+                        ctx.bezierCurveTo(m, m + i * size * 0.4, m, m - i * size * 0.4, size * 0.8, m + i * size * 0.15);
+                    }
+                    ctx.stroke();
+                    break;
+
+                // --- 聖域 (Sanctuary) 光環圓圈 ---
+                case 'sanctuary':
+                    ctx.beginPath();
+                    ctx.arc(m, m, size * 0.35, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(m, m, size * 0.25, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(m - size * 0.1, m); ctx.lineTo(m + size * 0.1, m);
+                    ctx.moveTo(m, m - size * 0.1); ctx.lineTo(m, m + size * 0.1);
+                    ctx.stroke();
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.6)`;
+                    [0, 90, 180, 270].forEach(angle => {
+                        const rad = angle * Math.PI / 180;
+                        const px = m + Math.cos(rad) * size * 0.3;
+                        const py = m + Math.sin(rad) * size * 0.3;
+                        ctx.beginPath();
+                        ctx.arc(px, py, size * 0.04, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                    break;
+
+                // --- 彗星 (Comet) 彗星拖尾 ---
+                case 'comet':
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.8)`;
+                    ctx.beginPath();
+                    ctx.arc(size * 0.65, size * 0.35, size * 0.12, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.5)`;
+                    for (let i = -1; i <= 1; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(size * 0.65, size * 0.35);
+                        ctx.quadraticCurveTo(
+                            size * 0.4, size * 0.5 + i * size * 0.1,
+                            size * 0.15, size * 0.7 + i * size * 0.15
+                        );
+                        ctx.stroke();
+                    }
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.4)`;
+                    [[0.3, 0.55], [0.2, 0.65], [0.15, 0.75]].forEach(([px, py]) => {
+                        ctx.beginPath();
+                        ctx.arc(size * px, size * py, size * 0.03, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                    break;
+
+                // --- 連鎖 (Chain) 閃電鏈 ---
+                case 'chain':
+                    const chainPoints = [
+                        [size * 0.2, size * 0.25],
+                        [size * 0.5, size * 0.65],
+                        [size * 0.8, size * 0.35]
+                    ];
+                    ctx.lineWidth = Math.max(1, size * 0.04);
+                    for (let i = 0; i < chainPoints.length - 1; i++) {
+                        const [x1, y1] = chainPoints[i];
+                        const [x2, y2] = chainPoints[i + 1];
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        const segments = 3;
+                        for (let s = 1; s <= segments; s++) {
+                            const t = s / segments;
+                            const mx = x1 + (x2 - x1) * t;
+                            const my = y1 + (y2 - y1) * t;
+                            const offset = (s % 2 === 0 ? 1 : -1) * size * 0.08;
+                            ctx.lineTo(mx + offset, my);
+                        }
+                        ctx.lineTo(x2, y2);
+                        ctx.stroke();
+                    }
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.7)`;
+                    chainPoints.forEach(([px, py]) => {
+                        ctx.beginPath();
+                        ctx.arc(px, py, size * 0.06, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                    break;
+
+                // --- 毀滅 (Doom) 末日時鐘 ---
+                case 'doom':
+                    ctx.beginPath();
+                    ctx.arc(m, m, size * 0.35, 0, Math.PI * 2);
+                    ctx.stroke();
                     [0, 90, 180, 270].forEach(angle => {
                         const rad = angle * Math.PI / 180 - Math.PI / 2;
-                        ctx.beginPath(); ctx.moveTo(m + Math.cos(rad) * size * 0.3, m + Math.sin(rad) * size * 0.3);
-                        ctx.lineTo(m + Math.cos(rad) * size * 0.35, m + Math.sin(rad) * size * 0.35); ctx.stroke();
+                        const x1 = m + Math.cos(rad) * size * 0.3;
+                        const y1 = m + Math.sin(rad) * size * 0.3;
+                        const x2 = m + Math.cos(rad) * size * 0.35;
+                        const y2 = m + Math.sin(rad) * size * 0.35;
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        ctx.lineTo(x2, y2);
+                        ctx.stroke();
                     });
-                    ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(m, m); ctx.lineTo(m, m - size * 0.25); ctx.stroke();
+                    ctx.lineWidth = Math.max(1, size * 0.03);
+                    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.9)`;
+                    ctx.beginPath();
+                    ctx.moveTo(m, m);
+                    ctx.lineTo(m, m - size * 0.25);
+                    ctx.stroke();
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.8)`;
+                    ctx.beginPath();
+                    ctx.arc(m, m, size * 0.06, 0, Math.PI * 2);
+                    ctx.fill();
                     break;
             }
+            ctx.restore();
+        }
+
+        // --- 純粹裝飾版：高品質靜態邊框 (強調設計感與階級差異) ---
+        function drawQualityBorder(ctx, x, y, size, diceId) {
+            if (!diceId || size < 1) return;
+
+            // 為了效能，我們這裡簡單讀取
+            // 實際專案中建議把 quality 屬性直接傳進來，不用每次 find
+            const db = ALL_DICES.find(d => d.id === diceId);
+            if (!db) return;
+            const quality = db.quality;
+            if (quality !== 'legend' && quality !== 'mythic') return;
+
+            // 基礎參數
+            const lw = Math.max(1.5, size * 0.05); // 線寬
+
+            // 內建繪圖工具：畫圓角路徑 (不stroke也不fill，只建立路徑)
+            function pathRound(cx, cy, w, h, r) {
+                if (w < 2 * r) r = w / 2; if (h < 2 * r) r = h / 2;
+                ctx.beginPath();
+                ctx.moveTo(cx + r, cy);
+                ctx.arcTo(cx + w, cy, cx + w, cy + h, r);
+                ctx.arcTo(cx + w, cy + h, cx, cy + h, r);
+                ctx.arcTo(cx, cy + h, cx, cy, r);
+                ctx.arcTo(cx, cy, cx + w, cy, r);
+                ctx.closePath();
+            }
+
+            ctx.save();
+            ctx.translate(x, y);
+
+            if (quality === 'legend') {
+                // ==========================================
+                // 傳說 (Legend)：龍爪裝飾 (霸氣、神獸、至高無上)
+                // ==========================================
+
+                // 神話漸層 (深紫 -> 金 -> 紅) - 更鮮艷
+                const grad = ctx.createLinearGradient(0, 0, size, size);
+                grad.addColorStop(0, '#a855f7');   // 亮紫
+                grad.addColorStop(0.5, '#fde047'); // 明亮金色
+                grad.addColorStop(1, '#f87171');   // 明亮紅色
+
+                // 1. 雙重外框 (內外雙層) - 更粗
+                ctx.strokeStyle = '#581c87'; // 外層深紫
+                ctx.lineWidth = lw * 2;
+                pathRound(1, 1, size - 2, size - 2, size * 0.15);
+                ctx.stroke();
+
+                ctx.strokeStyle = grad; // 內層漸層
+                ctx.lineWidth = lw * 1.2;
+                pathRound(3, 3, size - 6, size - 6, size * 0.13);
+                ctx.stroke();
+
+                // 2. 龍爪裝飾 (四個角落) - 更大
+                ctx.fillStyle = grad;
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2; // 更粗的邊框
+
+                const clawSize = size * 0.25; // 從 0.15 增加到 0.25
+                const clawOffset = size * 0.02; // 從 0.05 減少到 0.02 (更靠近邊緣)
+
+                // 左上龍爪
+                ctx.beginPath();
+                ctx.moveTo(clawOffset, clawOffset + clawSize * 0.8);
+                ctx.quadraticCurveTo(clawOffset, clawOffset, clawOffset + clawSize * 0.8, clawOffset);
+                ctx.lineTo(clawOffset + clawSize * 0.6, clawOffset + clawSize * 0.2);
+                ctx.lineTo(clawOffset + clawSize * 0.2, clawOffset + clawSize * 0.6);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 右上龍爪
+                ctx.beginPath();
+                ctx.moveTo(size - clawOffset - clawSize * 0.8, clawOffset);
+                ctx.quadraticCurveTo(size - clawOffset, clawOffset, size - clawOffset, clawOffset + clawSize * 0.8);
+                ctx.lineTo(size - clawOffset - clawSize * 0.2, clawOffset + clawSize * 0.6);
+                ctx.lineTo(size - clawOffset - clawSize * 0.6, clawOffset + clawSize * 0.2);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 右下龍爪
+                ctx.beginPath();
+                ctx.moveTo(size - clawOffset, size - clawOffset - clawSize * 0.8);
+                ctx.quadraticCurveTo(size - clawOffset, size - clawOffset, size - clawOffset - clawSize * 0.8, size - clawOffset);
+                ctx.lineTo(size - clawOffset - clawSize * 0.6, size - clawOffset - clawSize * 0.2);
+                ctx.lineTo(size - clawOffset - clawSize * 0.2, size - clawOffset - clawSize * 0.6);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 左下龍爪
+                ctx.beginPath();
+                ctx.moveTo(clawOffset + clawSize * 0.8, size - clawOffset);
+                ctx.quadraticCurveTo(clawOffset, size - clawOffset, clawOffset, size - clawOffset - clawSize * 0.8);
+                ctx.lineTo(clawOffset + clawSize * 0.2, size - clawOffset - clawSize * 0.6);
+                ctx.lineTo(clawOffset + clawSize * 0.6, size - clawOffset - clawSize * 0.2);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+            } else if (quality === 'mythic') {
+                // ==========================================
+                // 神話 (Mythic)：虛空矩陣 (懸浮、科技、神秘)
+                // ==========================================
+
+                // 定義神秘漸層 (紫 -> 青 -> 白)
+                const grad = ctx.createLinearGradient(0, 0, size, size);
+                grad.addColorStop(0, '#7c3aed');   // 紫色
+                grad.addColorStop(0.5, '#22d3ee'); // 青色
+                grad.addColorStop(1, '#e879f9');   // 粉紫
+
+                // 1. 斷裂式外框
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = lw * 0.8;
+                ctx.lineCap = "round";
+                const gap = size * 0.25;
+
+                ctx.beginPath();
+                ctx.moveTo(gap, 2); ctx.lineTo(size - gap, 2);
+                ctx.moveTo(gap, size - 2); ctx.lineTo(size - gap, size - 2);
+                ctx.moveTo(2, gap); ctx.lineTo(2, size - gap);
+                ctx.moveTo(size - 2, gap); ctx.lineTo(size - 2, size - gap);
+                ctx.stroke();
+
+                // 2. 角落懸浮矩陣
+                const cLen = size * 0.18;
+                const offset = 3;
+
+                ctx.strokeStyle = '#4c1d95';
+                ctx.lineWidth = lw * 1.5;
+                ctx.beginPath();
+                ctx.moveTo(offset, offset + cLen); ctx.lineTo(offset, offset); ctx.lineTo(offset + cLen, offset);
+                ctx.moveTo(size - offset, offset + cLen); ctx.lineTo(size - offset, offset); ctx.lineTo(size - offset - cLen, offset);
+                ctx.moveTo(size - offset, size - offset - cLen); ctx.lineTo(size - offset, size - offset); ctx.lineTo(size - offset - cLen, size - offset);
+                ctx.moveTo(offset, size - offset - cLen); ctx.lineTo(offset, size - offset); ctx.lineTo(offset + cLen, size - offset);
+                ctx.stroke();
+
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = lw * 0.6;
+                ctx.stroke();
+
+                // 3. 能量節點
+                ctx.fillStyle = grad;
+                const dotSize = size * 0.04;
+                const dotOff = size * 0.08;
+
+                ctx.beginPath();
+                ctx.arc(dotOff, dotOff, dotSize, 0, Math.PI * 2);
+                ctx.arc(size - dotOff, dotOff, dotSize, 0, Math.PI * 2);
+                ctx.arc(size - dotOff, size - dotOff, dotSize, 0, Math.PI * 2);
+                ctx.arc(dotOff, size - dotOff, dotSize, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 4. 內部幾何裝飾
+                ctx.strokeStyle = `rgba(255, 255, 255, 0.3)`;
+                ctx.lineWidth = 1;
+                pathRound(size * 0.15, size * 0.15, size * 0.7, size * 0.7, size * 0.05);
+                ctx.stroke();
+            }
+
             ctx.restore();
         }
 
@@ -2778,94 +3382,7 @@
             });
         }
 
-        // --- 高品質邊框繪製 (Legend/Mythic) ---
-        function drawQualityBorder(ctx, x, y, size, diceId) {
-            if (!diceId || size < 1) return;
-            const db = ALL_DICES.find(d => d.id === diceId);
-            if (!db) return;
-            const quality = db.quality;
-            if (quality !== 'legend' && quality !== 'mythic') return;
 
-            const lw = Math.max(1.5, size * 0.05);
-
-            // 輔助：圓角路徑
-            function pathRound(cx, cy, w, h, r) {
-                if (w < 2 * r) r = w / 2; if (h < 2 * r) r = h / 2;
-                ctx.beginPath();
-                ctx.moveTo(cx + r, cy);
-                ctx.arcTo(cx + w, cy, cx + w, cy + h, r);
-                ctx.arcTo(cx + w, cy + h, cx, cy + h, r);
-                ctx.arcTo(cx, cy + h, cx, cy, r);
-                ctx.arcTo(cx, cy, cx + w, cy, r);
-                ctx.closePath();
-            }
-
-            ctx.save();
-            ctx.translate(x, y);
-
-            if (quality === 'legend') {
-                // 傳說：龍爪 + 雙層
-                const grad = ctx.createLinearGradient(0, 0, size, size);
-                grad.addColorStop(0, '#a855f7');
-                grad.addColorStop(0.5, '#fde047');
-                grad.addColorStop(1, '#f87171');
-
-                ctx.strokeStyle = '#581c87';
-                ctx.lineWidth = lw * 2;
-                pathRound(1, 1, size - 2, size - 2, size * 0.15); ctx.stroke();
-
-                ctx.strokeStyle = grad;
-                ctx.lineWidth = lw * 1.2;
-                pathRound(3, 3, size - 6, size - 6, size * 0.13); ctx.stroke();
-
-                // 龍爪簡化繪製 (四角)
-                ctx.fillStyle = grad; ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
-                const cSz = size * 0.25; const cOff = size * 0.02;
-                // 左上
-                ctx.beginPath(); ctx.moveTo(cOff, cOff + cSz * 0.8); ctx.quadraticCurveTo(cOff, cOff, cOff + cSz * 0.8, cOff);
-                ctx.lineTo(cOff + cSz * 0.6, cOff + cSz * 0.2); ctx.lineTo(cOff + cSz * 0.2, cOff + cSz * 0.6); ctx.fill(); ctx.stroke();
-                // 右上
-                ctx.beginPath(); ctx.moveTo(size - cOff - cSz * 0.8, cOff); ctx.quadraticCurveTo(size - cOff, cOff, size - cOff, cOff + cSz * 0.8);
-                ctx.lineTo(size - cOff - cSz * 0.2, cOff + cSz * 0.6); ctx.lineTo(size - cOff - cSz * 0.6, cOff + cSz * 0.2); ctx.fill(); ctx.stroke();
-                // 右下
-                ctx.beginPath(); ctx.moveTo(size - cOff, size - cOff - cSz * 0.8); ctx.quadraticCurveTo(size - cOff, size - cOff, size - cOff - cSz * 0.8, size - cOff);
-                ctx.lineTo(size - cOff - cSz * 0.6, size - cOff - cSz * 0.2); ctx.lineTo(size - cOff - cSz * 0.2, size - cOff - cSz * 0.6); ctx.fill(); ctx.stroke();
-                // 左下
-                ctx.beginPath(); ctx.moveTo(cOff + cSz * 0.8, size - cOff); ctx.quadraticCurveTo(cOff, size - cOff, cOff, size - cOff - cSz * 0.8);
-                ctx.lineTo(cOff + cSz * 0.2, size - cOff - cSz * 0.6); ctx.lineTo(cOff + cSz * 0.6, size - cOff - cSz * 0.2); ctx.fill(); ctx.stroke();
-
-            } else if (quality === 'mythic') {
-                // 神話：虛空矩陣
-                const grad = ctx.createLinearGradient(0, 0, size, size);
-                grad.addColorStop(0, '#7c3aed'); grad.addColorStop(0.5, '#22d3ee'); grad.addColorStop(1, '#e879f9');
-
-                ctx.strokeStyle = grad; ctx.lineWidth = lw * 0.8; ctx.lineCap = "round";
-                const gap = size * 0.25;
-                ctx.beginPath();
-                ctx.moveTo(gap, 2); ctx.lineTo(size - gap, 2); ctx.moveTo(gap, size - 2); ctx.lineTo(size - gap, size - 2);
-                ctx.moveTo(2, gap); ctx.lineTo(2, size - gap); ctx.moveTo(size - 2, gap); ctx.lineTo(size - 2, size - gap);
-                ctx.stroke();
-
-                // 角落
-                const cLen = size * 0.18; const off = 3;
-                ctx.strokeStyle = '#4c1d95'; ctx.lineWidth = lw * 1.5;
-                ctx.beginPath();
-                ctx.moveTo(off, off + cLen); ctx.lineTo(off, off); ctx.lineTo(off + cLen, off); // TL
-                ctx.moveTo(size - off, off + cLen); ctx.lineTo(size - off, off); ctx.lineTo(size - off - cLen, off); // TR
-                ctx.moveTo(size - off, size - off - cLen); ctx.lineTo(size - off, size - off); ctx.lineTo(size - off - cLen, size - off); // BR
-                ctx.moveTo(off, size - off - cLen); ctx.lineTo(off, size - off); ctx.lineTo(off + cLen, size - off); // BL
-                ctx.stroke();
-                ctx.strokeStyle = '#fff'; ctx.lineWidth = lw * 0.6; ctx.stroke();
-
-                // 節點
-                ctx.fillStyle = grad; const dSz = size * 0.04; const dOff = size * 0.08;
-                ctx.beginPath();
-                ctx.arc(dOff, dOff, dSz, 0, Math.PI * 2); ctx.arc(size - dOff, dOff, dSz, 0, Math.PI * 2);
-                ctx.arc(size - dOff, size - dOff, dSz, 0, Math.PI * 2); ctx.arc(dOff, size - dOff, dSz, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            ctx.restore();
-        }
 
     </script>
 
