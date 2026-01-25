@@ -2474,30 +2474,79 @@
                 }
             });
 
-            if (target && target !== drag.fromSlot) {
+            if (target && target !== drag.fromSlot && target.dice) {
+                const isSameStar = drag.dice.lv === target.dice.lv;
+
+                // --- A. 換位骰子 (Switch) ---
+                if (drag.dice.id === 'switch' && isSameStar) {
+                    const temp = { ...target.dice };
+                    target.dice = { ...drag.fromSlot.dice };
+                    drag.fromSlot.dice = temp;
+                    drag.fromSlot.dice.isBeingDragged = false;
+                    target.dice.isBeingDragged = false;
+                    syncMyData();
+                    drag.isDragging = false;
+                    return;
+                }
+
+                // --- B. 營養骰子 (Nut) ---
+                if (drag.dice.id === 'nut' && isSameStar && target.dice.lv < 7) {
+                    const nutSpec = getDiceSpecialValue('nut', role === 'host' ? 'p1' : 'p2');
+                    battleState.sp += nutSpec; // 返還 SP
+
+                    const targetDb = ALL_DICES.find(d => d.id === target.dice.id);
+                    target.dice.lv += 1;
+                    target.dice.spawnTime = Date.now(); // 升級重置時間
+
+                    drag.fromSlot.dice = null; // 消耗掉
+                    syncMyData();
+                    updateUILive(); // 更新 SP 顯示
+                    drag.isDragging = false;
+                    return;
+                }
+
+                // --- C. 小丑骰子 (Joker) ---
+                if (drag.dice.id === 'joker' && isSameStar && target.dice.id !== 'joker') {
+                    const targetId = target.dice.id;
+                    const db = ALL_DICES.find(d => d.id === targetId);
+
+                    // 小丑變身：原位置變為目標骰子
+                    drag.fromSlot.dice = {
+                        id: targetId,
+                        lv: drag.dice.lv,
+                        baseColor: db.baseColor,
+                        color: db.baseColor,
+                        growthTimer: 0,
+                        attackCooldown: 0,
+                        spawnTime: Date.now()
+                    };
+
+                    syncMyData();
+                    drag.isDragging = false;
+                    return;
+                }
+
                 // 合成邏輯
-                if (target.dice && target.dice.id === drag.dice.id && target.dice.lv === drag.dice.lv && target.dice.lv < 7) {
+                if (target.dice.id === drag.dice.id && target.dice.lv === drag.dice.lv && target.dice.lv < 7) {
                     // 成功合成
                     const newId = userData.deck[Math.floor(Math.random() * userData.deck.length)];
                     const db = ALL_DICES.find(d => d.id === newId);
                     if (db) {
                         target.dice = {
                             id: newId, lv: drag.dice.lv + 1,
-                            baseColor: db.baseColor
+                            baseColor: db.baseColor,
+                            color: db.baseColor, // Ensure color prop
+                            spawnTime: Date.now()
                         };
                         drag.fromSlot.dice = null;
                         syncMyData();
                     }
-                } else if (!target.dice) {
-                    // 移動
-                    target.dice = drag.dice;
-                    drag.fromSlot.dice = null;
-                    syncMyData();
                 }
             }
 
-            drag.fromSlot.isBeingDragged = false;
+            if (drag.fromSlot) drag.fromSlot.isBeingDragged = false;
             drag.isDragging = false;
+
             drag.fromSlot = null;
         }
 
